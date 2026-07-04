@@ -1,13 +1,11 @@
 ---
+import { ProcessesView } from "@mano8/astro-reparto-m8/default-ui";
+import "../scaffold/styles/reparto.css";
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_REPARTO_API_PREFIX
+};
 ---
 
-<main data-reparto-route="processes">
-  <section data-reparto-panel="process-list">
-    <div data-reparto-slot="process-table"></div>
-    <button
-      type="button"
-      aria-label="Create process"
-      data-reparto-action="create-process"
-    ></button>
-  </section>
-</main>
+<ProcessesView client:load config={config} />

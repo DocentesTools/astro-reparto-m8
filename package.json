@@ -1,0 +1,64 @@
+{
+  "name": "@mano8/astro-reparto-m8",
+  "version": "0.1.0-alpha.0",
+  "description": "Astro integration and headless client for reparto-docente-m8.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DocentesTools/astro-reparto-m8.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "astro-integration",
+    "astro",
+    "reparto-docente",
+    "docentes",
+    "m8"
+  ],
+  "files": [
+    "dist",
+    "src/routes",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": "./dist/src/integration.js",
+    "./api": "./dist/src/runtime/api/index.js",
+    "./client": "./dist/src/runtime/client.js",
+    "./schemas": "./dist/src/runtime/schemas.js",
+    "./auth-adapter": "./dist/src/runtime/authAdapter.js",
+    "./routes": "./dist/src/runtime/routes.js",
+    "./routes/dashboard.astro": "./src/routes/dashboard.astro",
+    "./routes/meeting.astro": "./src/routes/meeting.astro",
+    "./compatibility": "./dist/src/runtime/compatibility.js"
+  },
+  "types": "./dist/src/integration.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run"
+  },
+  "peerDependencies": {
+    "@mano8/astro-auth-m8": "^0.1.0-alpha.1",
+    "astro": "^5.0.0 || ^6.0.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@mano8/astro-auth-m8": "^0.1.0-alpha.1",
+    "@types/node": "^22.0.0",
+    "@vitest/coverage-v8": "^4.1.9",
+    "astro": "^6.0.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.9",
+    "zod": "^4.0.0"
+  },
+  "repartoDocenteM8": {
+    "contract": "reparto-docente-m8@0.1",
+    "testedServiceVersion": "0.1.0-alpha.0",
+    "serviceVersionRange": ">=0.1.0 <0.2.0"
+  }
+}

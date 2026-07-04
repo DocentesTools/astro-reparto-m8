@@ -1,0 +1,122 @@
+import { describe, expect, it, vi } from "vitest";
+import faReparto, { checkAuthOrder } from "../src/integration.js";
+import { assertRepartoCompatibility } from "../src/runtime/compatibility.js";
+import { buildRepartoRoutes } from "../src/runtime/routes.js";
+
+describe("routes", () => {
+  it("builds defaults and accepts overrides", () => {
+    expect(buildRepartoRoutes()).toEqual({
+      dashboard: "/reparto",
+      meeting: "/reparto/meeting/[processId]"
+    });
+    expect(buildRepartoRoutes({ dashboard: false, meeting: "/m/[id]" })).toEqual({
+      dashboard: false,
+      meeting: "/m/[id]"
+    });
+  });
+});
+
+describe("compatibility", () => {
+  it("accepts supported contracts and rejects missing/unknown contracts", () => {
+    expect(() =>
+      assertRepartoCompatibility({ reparto_contract_version: "reparto-docente-m8@0.1" })
+    ).not.toThrow();
+    expect(() => assertRepartoCompatibility({ contract_version: "0.1" })).not.toThrow();
+    expect(() => assertRepartoCompatibility({ service_version: "x" })).toThrow(
+      "Unsupported reparto-docente-m8 contract: unknown"
+    );
+    expect(() => assertRepartoCompatibility({ contract_version: "2.0" })).toThrow(
+      "Unsupported reparto-docente-m8 contract: 2.0"
+    );
+  });
+});
+
+describe("integration", () => {
+  it("warns when auth is missing or ordered after reparto", () => {
+    const logger = { warn: vi.fn() };
+    expect(() => checkAuthOrder(undefined)).not.toThrow();
+    checkAuthOrder([], logger);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "@mano8/astro-auth-m8 is required for official M8 usage"
+    );
+    logger.warn.mockClear();
+    checkAuthOrder(
+      [{ name: "@mano8/astro-reparto-m8" }, { name: "@mano8/astro-auth-m8" }],
+      logger
+    );
+    expect(logger.warn).toHaveBeenCalledWith(
+      "@mano8/astro-auth-m8 should be listed before @mano8/astro-reparto-m8"
+    );
+    logger.warn.mockClear();
+    checkAuthOrder(
+      [{ name: "@mano8/astro-auth-m8" }, { name: "@mano8/astro-reparto-m8" }],
+      logger
+    );
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  it("configures env values and injects starter routes", () => {
+    const integration = faReparto({ mode: "starter", auth: { provider: "custom" } });
+    const hook = integration.hooks["astro:config:setup"];
+    const injectRoute = vi.fn();
+    const updateConfig = vi.fn();
+    hook?.({
+      injectRoute,
+      updateConfig,
+      config: { integrations: [] },
+      logger: { warn: vi.fn() }
+    } as never);
+    expect(updateConfig).toHaveBeenCalledWith({
+      vite: {
+        define: {
+          "import.meta.env.PUBLIC_FA_REPARTO_API_BASE": "\"/reparto\"",
+          "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": "\"\""
+        }
+      }
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(2);
+  });
+
+  it("checks auth order for official starter routes and skips disabled routes", () => {
+    const logger = { warn: vi.fn() };
+    const injectRoute = vi.fn();
+    faReparto({
+      mode: "starter",
+      routes: { dashboard: false, meeting: "/meeting/[processId]" }
+    }).hooks["astro:config:setup"]?.({
+      injectRoute,
+      updateConfig: vi.fn(),
+      config: { integrations: [] },
+      logger
+    } as never);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "@mano8/astro-auth-m8 is required for official M8 usage"
+    );
+    expect(injectRoute).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips routes in headless mode and warns for auth none", () => {
+    const headless = faReparto();
+    const headlessInjectRoute = vi.fn();
+    headless.hooks["astro:config:setup"]?.({
+      injectRoute: headlessInjectRoute,
+      updateConfig: vi.fn(),
+      config: { integrations: [] },
+      logger: { warn: vi.fn() }
+    } as never);
+    expect(headlessInjectRoute).not.toHaveBeenCalled();
+
+    const logger = { warn: vi.fn() };
+    faReparto({ mode: "starter", auth: { provider: "none" } }).hooks[
+      "astro:config:setup"
+    ]?.({
+      injectRoute: vi.fn(),
+      updateConfig: vi.fn(),
+      config: { integrations: [] },
+      logger
+    } as never);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "starter routes are enabled without an auth provider"
+    );
+  });
+});

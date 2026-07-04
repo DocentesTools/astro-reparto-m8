@@ -268,6 +268,28 @@ export const AssignmentCreateSchema = z
   .strict();
 export type AssignmentCreate = z.infer<typeof AssignmentCreateSchema>;
 
+export const AssignmentDirectChoiceSchema = z
+  .object({
+    meeting_session_id: uuidSchema,
+    hour_requirement_id: uuidSchema,
+    assigned_hours: z.number().positive(),
+    assignment_type: z
+      .enum(["main", "shared", "reinforcement", "split_group", "other"])
+      .optional(),
+    notes: z.string().max(1000).nullable().optional()
+  })
+  .strict();
+export type AssignmentDirectChoice = z.infer<
+  typeof AssignmentDirectChoiceSchema
+>;
+
+export const AssignmentPublicSchema = AssignmentCreateSchema.extend({
+  id: uuidSchema,
+  created_at: dateTimeSchema,
+  updated_at: dateTimeSchema
+}).strict();
+export type AssignmentPublic = z.infer<typeof AssignmentPublicSchema>;
+
 export const SelectionTurnPublicSchema = z
   .object({
     id: uuidSchema,
@@ -310,3 +332,89 @@ export const SelectionTurnCompleteSchema = z
   })
   .strict();
 export type SelectionTurnComplete = z.infer<typeof SelectionTurnCompleteSchema>;
+
+export const ExportArtifactTypeSchema = z.enum([
+  "internal_draft",
+  "school_leadership",
+  "final",
+  "teacher_summary",
+  "backup"
+]);
+export type ExportArtifactType = z.infer<typeof ExportArtifactTypeSchema>;
+
+export const ExportArtifactFormatSchema = z.enum(["pdf", "csv", "json"]);
+export type ExportArtifactFormat = z.infer<typeof ExportArtifactFormatSchema>;
+
+export const ProcessVersionCreateSchema = z
+  .object({
+    reason: z.string().max(500).nullable().optional()
+  })
+  .strict();
+export type ProcessVersionCreate = z.infer<typeof ProcessVersionCreateSchema>;
+
+export const ProcessVersionPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    version_number: z.number().int().positive(),
+    status: AssignmentProcessStatusSchema,
+    reason: z.string().nullable(),
+    created_by_user_id: uuidSchema,
+    snapshot_json: z.record(z.string(), z.unknown()),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type ProcessVersionPublic = z.infer<typeof ProcessVersionPublicSchema>;
+
+export const ProcessVersionsPublicSchema = z
+  .object({
+    data: z.array(ProcessVersionPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ProcessVersionsPublic = z.infer<typeof ProcessVersionsPublicSchema>;
+
+export const VersionComparisonSchema = z
+  .object({
+    left_version_id: uuidSchema,
+    right_version_id: uuidSchema,
+    changed_sections: z.array(z.string()),
+    required_hours_delta: z.number(),
+    assigned_hours_delta: z.number(),
+    teacher_count_delta: z.number().int(),
+    requirement_count_delta: z.number().int(),
+    assignment_count_delta: z.number().int()
+  })
+  .strict();
+export type VersionComparison = z.infer<typeof VersionComparisonSchema>;
+
+export const ExportArtifactCreateSchema = z
+  .object({
+    export_type: ExportArtifactTypeSchema,
+    format: ExportArtifactFormatSchema,
+    process_version_id: uuidSchema.nullable().optional()
+  })
+  .strict();
+export type ExportArtifactCreate = z.infer<typeof ExportArtifactCreateSchema>;
+
+export const ExportArtifactPublicSchema = ExportArtifactCreateSchema.extend({
+  id: uuidSchema,
+  assignment_process_id: uuidSchema,
+  process_version_id: uuidSchema.nullable(),
+  file_path: z.string(),
+  created_by_user_id: uuidSchema,
+  checksum: z.string().length(64),
+  content: z.string(),
+  created_at: dateTimeSchema,
+  updated_at: dateTimeSchema
+}).strict();
+export type ExportArtifactPublic = z.infer<typeof ExportArtifactPublicSchema>;
+
+export const ExportArtifactsPublicSchema = z
+  .object({
+    data: z.array(ExportArtifactPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ExportArtifactsPublic = z.infer<typeof ExportArtifactsPublicSchema>;

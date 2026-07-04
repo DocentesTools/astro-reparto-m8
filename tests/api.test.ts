@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  assignments,
   assignmentProcesses,
+  history,
   meetingSessions,
   selectionTurns
 } from "../src/runtime/api/index.js";
@@ -13,6 +15,9 @@ const userId = "33333333-3333-4333-8333-333333333333";
 const turnId = "77777777-7777-4777-8777-777777777777";
 const teacherId = "88888888-8888-4888-8888-888888888888";
 const requirementId = "99999999-9999-4999-8999-999999999999";
+const versionId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+const nextVersionId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const artifactId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const now = "2026-07-04T10:00:00Z";
 const fetchMock = vi.fn();
 
@@ -116,6 +121,61 @@ const teacherLanSummaryBody = {
   process_teacher_id: teacherId,
   generated_at: now,
   teacher_balance: teacherBalanceBody
+};
+
+const assignmentBody = {
+  id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  assignment_process_id: processId,
+  hour_requirement_id: requirementId,
+  process_teacher_id: teacherId,
+  assigned_hours: 4,
+  assignment_type: "main",
+  source: "teacher_direct",
+  status: "confirmed",
+  chosen_by_user_id: userId,
+  confirmed_by_user_id: userId,
+  override_reason: null,
+  overridden_by_user_id: null,
+  notes: null,
+  created_at: now,
+  updated_at: now
+};
+
+const versionBody = {
+  id: versionId,
+  assignment_process_id: processId,
+  version_number: 1,
+  status: "meeting_open",
+  reason: "baseline",
+  created_by_user_id: userId,
+  snapshot_json: { process: { id: processId } },
+  created_at: now,
+  updated_at: now
+};
+
+const comparisonBody = {
+  left_version_id: versionId,
+  right_version_id: nextVersionId,
+  changed_sections: ["assignments"],
+  required_hours_delta: 0,
+  assigned_hours_delta: 4,
+  teacher_count_delta: 0,
+  requirement_count_delta: 0,
+  assignment_count_delta: 1
+};
+
+const artifactBody = {
+  id: artifactId,
+  assignment_process_id: processId,
+  process_version_id: versionId,
+  export_type: "backup",
+  format: "json",
+  file_path: `exports/${processId}/backup.json`,
+  created_by_user_id: userId,
+  checksum: "a".repeat(64),
+  content: "{\"process\":{}}",
+  created_at: now,
+  updated_at: now
 };
 
 function response(body: unknown): Response {
@@ -260,6 +320,74 @@ describe("selection turn API", () => {
           assigned_hours: 0
         }
       })
+    ).toThrow();
+  });
+});
+
+describe("assignment direct choice API", () => {
+  it("creates direct teacher choices", async () => {
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.directChoice(processId, {
+        meeting_session_id: sessionId,
+        hour_requirement_id: requirementId,
+        assigned_hours: 4
+      })
+    ).resolves.toMatchObject({ source: "teacher_direct" });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/assignments/direct-choice`
+    );
+  });
+
+  it("validates direct teacher choices", () => {
+    expect(() =>
+      assignments.directChoice(processId, {
+        meeting_session_id: sessionId,
+        hour_requirement_id: requirementId,
+        assigned_hours: 0
+      })
+    ).toThrow();
+  });
+});
+
+describe("history API", () => {
+  it("runs version and export calls", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [versionBody], count: 1 }));
+    await expect(history.listVersions(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    fetchMock.mockResolvedValueOnce(response(versionBody));
+    await expect(
+      history.createVersion(processId, { reason: "baseline" })
+    ).resolves.toMatchObject({ id: versionId });
+    fetchMock.mockResolvedValueOnce(response(comparisonBody));
+    await expect(
+      history.compareVersions(processId, versionId, nextVersionId)
+    ).resolves.toMatchObject({ assignment_count_delta: 1 });
+    fetchMock.mockResolvedValueOnce(response(comparisonBody));
+    await expect(history.comparePreviousYear(processId)).resolves.toMatchObject({
+      changed_sections: ["assignments"]
+    });
+    fetchMock.mockResolvedValueOnce(response({ data: [artifactBody], count: 1 }));
+    await expect(history.listExports(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    fetchMock.mockResolvedValueOnce(response(artifactBody));
+    await expect(
+      history.createExport(processId, {
+        export_type: "backup",
+        format: "json",
+        process_version_id: versionId
+      })
+    ).resolves.toMatchObject({ checksum: "a".repeat(64) });
+  });
+
+  it("validates export calls", () => {
+    expect(() =>
+      history.createExport(processId, {
+        export_type: "backup",
+        format: "xml"
+      } as never)
     ).toThrow();
   });
 });

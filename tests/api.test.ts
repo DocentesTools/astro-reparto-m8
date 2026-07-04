@@ -67,6 +67,57 @@ const turnBody = {
   updated_at: now
 };
 
+const globalBalanceBody = {
+  total_required_hours: 4,
+  total_available_hours: 4,
+  total_assigned_hours: 4,
+  pending_required_hours: 0,
+  availability_difference: 0,
+  uncovered_requirements: 0,
+  overloaded_teachers: 0,
+  state: "balanced"
+};
+
+const teacherBalanceBody = {
+  process_teacher_id: teacherId,
+  teacher_profile_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  display_name: "Linked Teacher",
+  available_hours: 4,
+  assigned_hours: 4,
+  remaining_hours: 0,
+  excess_hours: 0,
+  assignment_count: 1,
+  has_override: false,
+  state: "balanced"
+};
+
+const summaryBody = {
+  process_id: processId,
+  global_balance: globalBalanceBody,
+  validations: [
+    {
+      severity: "info",
+      code: "process.balanced",
+      message: "Process hours are balanced.",
+      entity_type: "process",
+      entity_id: processId
+    }
+  ],
+  current_turn: null,
+  blocking_validation_count: 0
+};
+
+const teacherLanSummaryBody = {
+  process_id: processId,
+  global_balance: globalBalanceBody,
+  current_turn: null,
+  blocking_validation_count: 0,
+  teacher_profile_id: teacherBalanceBody.teacher_profile_id,
+  process_teacher_id: teacherId,
+  generated_at: now,
+  teacher_balance: teacherBalanceBody
+};
+
 function response(body: unknown): Response {
   return {
     ok: true,
@@ -101,6 +152,17 @@ describe("assignment process API", () => {
     await expect(assignmentProcesses.get(processId)).resolves.toMatchObject({
       id: processId
     });
+    fetchMock.mockResolvedValueOnce(response(summaryBody));
+    await expect(assignmentProcesses.summary(processId)).resolves.toMatchObject({
+      blocking_validation_count: 0
+    });
+    fetchMock.mockResolvedValueOnce(response(teacherLanSummaryBody));
+    await expect(assignmentProcesses.myLanSummary(processId)).resolves.toMatchObject({
+      teacher_balance: { display_name: "Linked Teacher" }
+    });
+    expect(assignmentProcesses.eventsUrl(processId)).toBe(
+      `http://localhost/reparto/assignment-processes/${processId}/events`
+    );
   });
 });
 

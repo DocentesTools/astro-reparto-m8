@@ -1,11 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { assignmentProcesses, meetingSessions } from "../src/runtime/api/index.js";
+import {
+  assignmentProcesses,
+  meetingSessions,
+  selectionTurns
+} from "../src/runtime/api/index.js";
 import { setRepartoAuthAdapter } from "../src/runtime/authAdapter.js";
 import { resetRepartoConfig } from "../src/runtime/config.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const sessionId = "22222222-2222-4222-8222-222222222222";
 const userId = "33333333-3333-4333-8333-333333333333";
+const turnId = "77777777-7777-4777-8777-777777777777";
+const teacherId = "88888888-8888-4888-8888-888888888888";
+const requirementId = "99999999-9999-4999-8999-999999999999";
 const now = "2026-07-04T10:00:00Z";
 const fetchMock = vi.fn();
 
@@ -40,6 +47,22 @@ const sessionBody = {
   started_by_user_id: userId,
   paused_at: null,
   closed_at: null,
+  created_at: now,
+  updated_at: now
+};
+
+const turnBody = {
+  id: turnId,
+  meeting_session_id: sessionId,
+  process_teacher_id: teacherId,
+  position: 0,
+  status: "active",
+  skip_reason: null,
+  forced_by_user_id: null,
+  notes: null,
+  started_at: now,
+  completed_at: null,
+  skipped_at: null,
   created_at: now,
   updated_at: now
 };
@@ -116,5 +139,65 @@ describe("meeting session API", () => {
         direct_teacher_selection_enabled: true
       })
     ).toThrow("Direct teacher selection requires LAN access.");
+  });
+});
+
+describe("selection turn API", () => {
+  it("lists and runs turn actions", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [turnBody], count: 1 }));
+    await expect(selectionTurns.list(processId, sessionId)).resolves.toMatchObject({
+      count: 1
+    });
+    fetchMock.mockResolvedValueOnce(response({ data: [turnBody], count: 1 }));
+    await expect(selectionTurns.initialize(processId, sessionId)).resolves.toMatchObject({
+      count: 1
+    });
+    fetchMock.mockResolvedValueOnce(response(turnBody));
+    await expect(selectionTurns.start(processId, sessionId, turnId)).resolves.toMatchObject({
+      id: turnId
+    });
+    fetchMock.mockResolvedValueOnce(
+      response({ ...turnBody, status: "completed", completed_at: now })
+    );
+    await expect(
+      selectionTurns.complete(processId, sessionId, turnId, {
+        assignment: {
+          assignment_process_id: processId,
+          hour_requirement_id: requirementId,
+          process_teacher_id: teacherId,
+          assigned_hours: 4
+        }
+      })
+    ).resolves.toMatchObject({ status: "completed" });
+    fetchMock.mockResolvedValueOnce(
+      response({ ...turnBody, status: "skipped", skip_reason: "Absent" })
+    );
+    await expect(
+      selectionTurns.skip(processId, sessionId, turnId, { reason: "Absent" })
+    ).resolves.toMatchObject({ skip_reason: "Absent" });
+    fetchMock.mockResolvedValueOnce(
+      response({ ...turnBody, status: "overridden", forced_by_user_id: userId })
+    );
+    await expect(
+      selectionTurns.override(processId, sessionId, turnId, {
+        reason: "Department head decision"
+      })
+    ).resolves.toMatchObject({ forced_by_user_id: userId });
+  });
+
+  it("validates turn action and assignment payloads", async () => {
+    expect(() =>
+      selectionTurns.skip(processId, sessionId, turnId, { reason: "" })
+    ).toThrow();
+    expect(() =>
+      selectionTurns.complete(processId, sessionId, turnId, {
+        assignment: {
+          assignment_process_id: processId,
+          hour_requirement_id: requirementId,
+          process_teacher_id: teacherId,
+          assigned_hours: 0
+        }
+      })
+    ).toThrow();
   });
 });

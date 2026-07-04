@@ -34,6 +34,15 @@ export const MeetingSessionStatusSchema = z.enum([
 ]);
 export type MeetingSessionStatus = z.infer<typeof MeetingSessionStatusSchema>;
 
+export const SelectionTurnStatusSchema = z.enum([
+  "pending",
+  "active",
+  "completed",
+  "skipped",
+  "overridden"
+]);
+export type SelectionTurnStatus = z.infer<typeof SelectionTurnStatusSchema>;
+
 const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
 
@@ -129,3 +138,73 @@ export const MeetingSessionUpdateSchema = MeetingSessionPayloadSchema.omit({
     "Direct teacher selection requires LAN access."
   );
 export type MeetingSessionUpdate = z.infer<typeof MeetingSessionUpdateSchema>;
+
+export const AssignmentCreateSchema = z
+  .object({
+    assignment_process_id: uuidSchema,
+    hour_requirement_id: uuidSchema,
+    process_teacher_id: uuidSchema,
+    assigned_hours: z.number().positive(),
+    assignment_type: z
+      .enum(["main", "shared", "reinforcement", "split_group", "other"])
+      .optional(),
+    source: z
+      .enum([
+        "department_head",
+        "teacher_direct",
+        "imported_from_previous_year",
+        "system_copy"
+      ])
+      .optional(),
+    status: z.enum(["draft", "confirmed", "overridden", "cancelled"]).optional(),
+    chosen_by_user_id: uuidSchema.nullable().optional(),
+    confirmed_by_user_id: uuidSchema.nullable().optional(),
+    override_reason: z.string().max(500).nullable().optional(),
+    overridden_by_user_id: uuidSchema.nullable().optional(),
+    notes: z.string().nullable().optional()
+  })
+  .strict();
+export type AssignmentCreate = z.infer<typeof AssignmentCreateSchema>;
+
+export const SelectionTurnPublicSchema = z
+  .object({
+    id: uuidSchema,
+    meeting_session_id: uuidSchema,
+    process_teacher_id: uuidSchema,
+    position: z.number().int().nonnegative(),
+    status: SelectionTurnStatusSchema,
+    skip_reason: z.string().nullable(),
+    forced_by_user_id: uuidSchema.nullable(),
+    notes: z.string().nullable(),
+    started_at: dateTimeSchema.nullable(),
+    completed_at: dateTimeSchema.nullable(),
+    skipped_at: dateTimeSchema.nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type SelectionTurnPublic = z.infer<typeof SelectionTurnPublicSchema>;
+
+export const SelectionTurnsPublicSchema = z
+  .object({
+    data: z.array(SelectionTurnPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type SelectionTurnsPublic = z.infer<typeof SelectionTurnsPublicSchema>;
+
+export const SelectionTurnActionSchema = z
+  .object({
+    reason: z.string().min(1).max(500),
+    notes: z.string().max(1000).nullable().optional()
+  })
+  .strict();
+export type SelectionTurnAction = z.infer<typeof SelectionTurnActionSchema>;
+
+export const SelectionTurnCompleteSchema = z
+  .object({
+    assignment: AssignmentCreateSchema.optional(),
+    notes: z.string().max(1000).nullable().optional()
+  })
+  .strict();
+export type SelectionTurnComplete = z.infer<typeof SelectionTurnCompleteSchema>;

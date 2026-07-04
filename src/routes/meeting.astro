@@ -2,4 +2,39 @@
 const { processId } = Astro.params;
 ---
 
-<main data-reparto-route="meeting" data-process-id={processId}></main>
+<main
+  data-reparto-route="meeting"
+  data-reparto-control="selection-turns"
+  data-process-id={processId}
+>
+  <section data-reparto-panel="turn-order">
+    <div data-reparto-slot="current-turn"></div>
+    <div data-reparto-slot="turn-actions">
+      <button
+        type="button"
+        aria-label="Initialize turns"
+        data-reparto-action="initialize-turns"
+      ></button>
+      <button
+        type="button"
+        aria-label="Start turn"
+        data-reparto-action="start-turn"
+      ></button>
+      <button
+        type="button"
+        aria-label="Complete turn"
+        data-reparto-action="complete-turn"
+      ></button>
+      <button
+        type="button"
+        aria-label="Skip turn"
+        data-reparto-action="skip-turn"
+      ></button>
+      <button
+        type="button"
+        aria-label="Override turn"
+        data-reparto-action="override-turn"
+      ></button>
+    </div>
+  </section>
+</main>

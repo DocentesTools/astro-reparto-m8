@@ -212,6 +212,30 @@ describe("assignment process API", () => {
     await expect(assignmentProcesses.get(processId)).resolves.toMatchObject({
       id: processId
     });
+    fetchMock.mockResolvedValueOnce(response(processBody));
+    await expect(
+      assignmentProcesses.create({
+        academic_year_id: processBody.academic_year_id,
+        school_id: processBody.school_id,
+        department_id: processBody.department_id
+      })
+    ).resolves.toMatchObject({ id: processId });
+    fetchMock.mockResolvedValueOnce(response(processBody));
+    await expect(
+      assignmentProcesses.update(processId, { lan_access_enabled: true })
+    ).resolves.toMatchObject({ lan_access_enabled: true });
+    fetchMock.mockResolvedValueOnce(
+      response({ ...processBody, status: "sent_to_school_leadership" })
+    );
+    await expect(
+      assignmentProcesses.transition(processId, {
+        target_status: "sent_to_school_leadership"
+      })
+    ).resolves.toMatchObject({ status: "sent_to_school_leadership" });
+    fetchMock.mockResolvedValueOnce(response({ ...processBody, status: "reopened" }));
+    await expect(
+      assignmentProcesses.reopen(processId, { reason: "Returned by leadership" })
+    ).resolves.toMatchObject({ status: "reopened" });
     fetchMock.mockResolvedValueOnce(response(summaryBody));
     await expect(assignmentProcesses.summary(processId)).resolves.toMatchObject({
       blocking_validation_count: 0
@@ -380,6 +404,10 @@ describe("history API", () => {
         process_version_id: versionId
       })
     ).resolves.toMatchObject({ checksum: "a".repeat(64) });
+    fetchMock.mockResolvedValueOnce(response(processBody));
+    await expect(
+      history.restoreDraft(processId, { content: artifactBody.content })
+    ).resolves.toMatchObject({ id: processId });
   });
 
   it("validates export calls", () => {
@@ -389,5 +417,6 @@ describe("history API", () => {
         format: "xml"
       } as never)
     ).toThrow();
+    expect(() => history.restoreDraft(processId, { content: "" })).toThrow();
   });
 });

@@ -19,7 +19,12 @@ export type FaRepartoAstroOptions = {
 
 const ROUTE_ENTRYPOINTS = {
   dashboard: "@mano8/astro-reparto-m8/routes/dashboard.astro",
-  meeting: "@mano8/astro-reparto-m8/routes/meeting.astro"
+  meeting: "@mano8/astro-reparto-m8/routes/meeting.astro",
+  processList: "@mano8/astro-reparto-m8/routes/processes.astro",
+  teacherView: "@mano8/astro-reparto-m8/routes/my-view.astro",
+  sharedScreen: "@mano8/astro-reparto-m8/routes/shared.astro",
+  versions: "@mano8/astro-reparto-m8/routes/versions.astro",
+  exports: "@mano8/astro-reparto-m8/routes/exports.astro"
 } as const;
 
 const AUTH_INTEGRATION_NAME = "@mano8/astro-auth-m8";

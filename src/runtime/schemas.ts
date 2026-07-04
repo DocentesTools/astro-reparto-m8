@@ -94,6 +94,51 @@ export type AssignmentProcessPublic = z.infer<
   typeof AssignmentProcessPublicSchema
 >;
 
+export const AssignmentProcessCreateSchema = z
+  .object({
+    academic_year_id: uuidSchema,
+    school_id: uuidSchema,
+    department_id: uuidSchema,
+    status: AssignmentProcessStatusSchema.optional(),
+    default_teacher_hours_reference: z.number().nonnegative().nullable().optional(),
+    selection_order_enabled: z.boolean().optional(),
+    selection_order_mode: SelectionOrderModeSchema.optional(),
+    direct_teacher_selection_enabled: z.boolean().optional(),
+    lan_access_enabled: z.boolean().optional(),
+    created_from_process_id: uuidSchema.nullable().optional()
+  })
+  .strict();
+export type AssignmentProcessCreate = z.infer<
+  typeof AssignmentProcessCreateSchema
+>;
+
+export const AssignmentProcessUpdateSchema = z
+  .object({
+    default_teacher_hours_reference: z.number().nonnegative().nullable().optional(),
+    selection_order_enabled: z.boolean().optional(),
+    selection_order_mode: SelectionOrderModeSchema.optional(),
+    direct_teacher_selection_enabled: z.boolean().optional(),
+    lan_access_enabled: z.boolean().optional()
+  })
+  .strict();
+export type AssignmentProcessUpdate = z.infer<
+  typeof AssignmentProcessUpdateSchema
+>;
+
+export const ProcessTransitionSchema = z
+  .object({
+    target_status: AssignmentProcessStatusSchema
+  })
+  .strict();
+export type ProcessTransition = z.infer<typeof ProcessTransitionSchema>;
+
+export const ProcessReopenSchema = z
+  .object({
+    reason: z.string().min(1).max(500)
+  })
+  .strict();
+export type ProcessReopen = z.infer<typeof ProcessReopenSchema>;
+
 export const AssignmentProcessesPublicSchema = z
   .object({
     data: z.array(AssignmentProcessPublicSchema),
@@ -397,6 +442,14 @@ export const ExportArtifactCreateSchema = z
   })
   .strict();
 export type ExportArtifactCreate = z.infer<typeof ExportArtifactCreateSchema>;
+
+export const ExportBackupRestoreSchema = z
+  .object({
+    content: z.string().min(2),
+    restore_assignments: z.boolean().optional()
+  })
+  .strict();
+export type ExportBackupRestore = z.infer<typeof ExportBackupRestoreSchema>;
 
 export const ExportArtifactPublicSchema = ExportArtifactCreateSchema.extend({
   id: uuidSchema,

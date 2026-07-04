@@ -7,11 +7,21 @@ describe("routes", () => {
   it("builds defaults and accepts overrides", () => {
     expect(buildRepartoRoutes()).toEqual({
       dashboard: "/reparto",
-      meeting: "/reparto/meeting/[processId]"
+      meeting: "/reparto/meeting/[processId]",
+      processList: "/reparto/processes",
+      teacherView: "/reparto/processes/[processId]/my-view",
+      sharedScreen: "/reparto/processes/[processId]/shared",
+      versions: "/reparto/processes/[processId]/versions",
+      exports: "/reparto/processes/[processId]/exports"
     });
     expect(buildRepartoRoutes({ dashboard: false, meeting: "/m/[id]" })).toEqual({
       dashboard: false,
-      meeting: "/m/[id]"
+      meeting: "/m/[id]",
+      processList: "/reparto/processes",
+      teacherView: "/reparto/processes/[processId]/my-view",
+      sharedScreen: "/reparto/processes/[processId]/shared",
+      versions: "/reparto/processes/[processId]/versions",
+      exports: "/reparto/processes/[processId]/exports"
     });
   });
 });
@@ -74,7 +84,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(2);
+    expect(injectRoute).toHaveBeenCalledTimes(7);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -92,7 +102,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(1);
+    expect(injectRoute).toHaveBeenCalledTimes(6);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {

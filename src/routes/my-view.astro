@@ -1,0 +1,25 @@
+---
+const { processId } = Astro.params;
+---
+
+<main
+  data-reparto-route="my-view"
+  data-reparto-control="lan-teacher"
+  data-process-id={processId}
+>
+  <section data-reparto-panel="teacher-summary">
+    <div data-reparto-slot="connection-state"></div>
+    <div data-reparto-slot="teacher-balance"></div>
+    <div data-reparto-slot="available-requirements"></div>
+    <button
+      type="button"
+      aria-label="Choose requirement"
+      data-reparto-action="direct-choice"
+    ></button>
+    <button
+      type="button"
+      aria-label="Pass turn"
+      data-reparto-action="pass-turn"
+    ></button>
+  </section>
+</main>

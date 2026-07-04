@@ -1,5 +1,7 @@
 import { request } from "../client.js";
 import {
+  AssignmentProcessPublicSchema,
+  ExportBackupRestoreSchema,
   ExportArtifactCreateSchema,
   ExportArtifactPublicSchema,
   ExportArtifactsPublicSchema,
@@ -7,6 +9,8 @@ import {
   ProcessVersionPublicSchema,
   ProcessVersionsPublicSchema,
   VersionComparisonSchema,
+  type AssignmentProcessPublic,
+  type ExportBackupRestore,
   type ExportArtifactCreate,
   type ExportArtifactPublic,
   type ExportArtifactsPublic,
@@ -65,6 +69,14 @@ export const history = {
       path: `/assignment-processes/${processId}/exports`,
       body: ExportArtifactCreateSchema.parse(body),
       schema: ExportArtifactPublicSchema,
+      auth: true
+    }),
+  restoreDraft: (processId: string, body: ExportBackupRestore) =>
+    request<AssignmentProcessPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/restore-draft`,
+      body: ExportBackupRestoreSchema.parse(body),
+      schema: AssignmentProcessPublicSchema,
       auth: true
     })
 } as const;

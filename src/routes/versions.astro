@@ -1,0 +1,23 @@
+---
+const { processId } = Astro.params;
+---
+
+<main
+  data-reparto-route="versions"
+  data-reparto-control="history"
+  data-process-id={processId}
+>
+  <section data-reparto-panel="version-list">
+    <div data-reparto-slot="versions"></div>
+    <button
+      type="button"
+      aria-label="Create version"
+      data-reparto-action="create-version"
+    ></button>
+    <button
+      type="button"
+      aria-label="Compare versions"
+      data-reparto-action="compare-versions"
+    ></button>
+  </section>
+</main>

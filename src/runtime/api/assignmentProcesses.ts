@@ -1,12 +1,20 @@
 import { request } from "../client.js";
 import {
+  AssignmentProcessCreateSchema,
   AssignmentProcessesPublicSchema,
   AssignmentProcessPublicSchema,
+  AssignmentProcessUpdateSchema,
   ProcessSummarySchema,
+  ProcessTransitionSchema,
+  ProcessReopenSchema,
   TeacherLanSummarySchema,
+  type AssignmentProcessCreate,
   type AssignmentProcessesPublic,
   type AssignmentProcessPublic,
+  type AssignmentProcessUpdate,
   type ProcessSummary,
+  type ProcessTransition,
+  type ProcessReopen,
   type TeacherLanSummary
 } from "../schemas.js";
 import { repartoUrl } from "../client.js";
@@ -24,6 +32,38 @@ export const assignmentProcesses = {
     request<AssignmentProcessPublic>({
       method: "GET",
       path: `/assignment-processes/${processId}`,
+      schema: AssignmentProcessPublicSchema,
+      auth: true
+    }),
+  create: (body: AssignmentProcessCreate) =>
+    request<AssignmentProcessPublic>({
+      method: "POST",
+      path: "/assignment-processes/",
+      body: AssignmentProcessCreateSchema.parse(body),
+      schema: AssignmentProcessPublicSchema,
+      auth: true
+    }),
+  update: (processId: string, body: AssignmentProcessUpdate) =>
+    request<AssignmentProcessPublic>({
+      method: "PATCH",
+      path: `/assignment-processes/${processId}`,
+      body: AssignmentProcessUpdateSchema.parse(body),
+      schema: AssignmentProcessPublicSchema,
+      auth: true
+    }),
+  transition: (processId: string, body: ProcessTransition) =>
+    request<AssignmentProcessPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/transition`,
+      body: ProcessTransitionSchema.parse(body),
+      schema: AssignmentProcessPublicSchema,
+      auth: true
+    }),
+  reopen: (processId: string, body: ProcessReopen) =>
+    request<AssignmentProcessPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/reopen`,
+      body: ProcessReopenSchema.parse(body),
       schema: AssignmentProcessPublicSchema,
       auth: true
     }),

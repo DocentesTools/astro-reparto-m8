@@ -1,0 +1,23 @@
+---
+const { processId } = Astro.params;
+---
+
+<main
+  data-reparto-route="exports"
+  data-reparto-control="export-center"
+  data-process-id={processId}
+>
+  <section data-reparto-panel="export-center">
+    <div data-reparto-slot="export-list"></div>
+    <button
+      type="button"
+      aria-label="Generate export"
+      data-reparto-action="create-export"
+    ></button>
+    <button
+      type="button"
+      aria-label="Restore draft"
+      data-reparto-action="restore-draft"
+    ></button>
+  </section>
+</main>

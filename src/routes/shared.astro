@@ -1,0 +1,16 @@
+---
+const { processId } = Astro.params;
+---
+
+<main
+  data-reparto-route="shared-screen"
+  data-reparto-control="projected-summary"
+  data-process-id={processId}
+>
+  <section data-reparto-panel="global-state">
+    <div data-reparto-slot="connection-state"></div>
+    <div data-reparto-slot="global-balance"></div>
+    <div data-reparto-slot="current-turn"></div>
+    <div data-reparto-slot="validations"></div>
+  </section>
+</main>

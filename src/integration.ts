@@ -8,6 +8,8 @@ export type FaRepartoAstroOptions = {
   apiBase?: string;
   apiPrefix?: string;
   mode?: "headless" | "starter";
+  locales?: string[];
+  defaultLocale?: string;
   auth?: {
     provider?: "fa-auth-astro" | "custom" | "none";
   };
@@ -29,6 +31,20 @@ const ROUTE_ENTRYPOINTS = {
 
 const AUTH_INTEGRATION_NAME = "@mano8/astro-auth-m8";
 const REPARTO_INTEGRATION_NAME = "@mano8/astro-reparto-m8";
+
+function normalizeRoutePattern(pattern: string): string {
+  return pattern.startsWith("/") ? pattern : `/${pattern}`;
+}
+
+export function localizedRoutePatterns(
+  pattern: string,
+  locales: string[] | undefined
+): string[] {
+  const normalized = normalizeRoutePattern(pattern);
+  if (!locales?.length) return [normalized];
+
+  return locales.map((locale) => `/${locale}${normalized}`);
+}
 
 export function checkAuthOrder(
   integrations: { name?: string }[] | undefined,
@@ -77,10 +93,12 @@ export default function faReparto(
         if (!starter) return;
         for (const [name, pattern] of Object.entries(routes)) {
           if (!pattern) continue;
-          injectRoute({
-            pattern,
-            entrypoint: ROUTE_ENTRYPOINTS[name as keyof typeof ROUTE_ENTRYPOINTS]
-          });
+          for (const routePattern of localizedRoutePatterns(pattern, options.locales)) {
+            injectRoute({
+              pattern: routePattern,
+              entrypoint: ROUTE_ENTRYPOINTS[name as keyof typeof ROUTE_ENTRYPOINTS]
+            });
+          }
         }
       }
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import faReparto, { checkAuthOrder } from "../src/integration.js";
+import faReparto, { checkAuthOrder, localizedRoutePatterns } from "../src/integration.js";
 import { assertRepartoCompatibility } from "../src/runtime/compatibility.js";
 import { buildRepartoRoutes } from "../src/runtime/routes.js";
 
@@ -23,6 +23,14 @@ describe("routes", () => {
       versions: "/reparto/processes/[processId]/versions",
       exports: "/reparto/processes/[processId]/exports"
     });
+  });
+
+  it("localizes route patterns when locales are configured", () => {
+    expect(localizedRoutePatterns("/reparto/processes", ["en", "fr"])).toEqual([
+      "/en/reparto/processes",
+      "/fr/reparto/processes"
+    ]);
+    expect(localizedRoutePatterns("reparto", undefined)).toEqual(["/reparto"]);
   });
 });
 
@@ -103,6 +111,30 @@ describe("integration", () => {
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
     expect(injectRoute).toHaveBeenCalledTimes(6);
+  });
+
+  it("injects localized starter routes for Starlight hosts", () => {
+    const injectRoute = vi.fn();
+    faReparto({
+      mode: "starter",
+      auth: { provider: "custom" },
+      locales: ["en", "es"]
+    }).hooks["astro:config:setup"]?.({
+      injectRoute,
+      updateConfig: vi.fn(),
+      config: { integrations: [] },
+      logger: { warn: vi.fn() }
+    } as never);
+
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/en/reparto",
+      entrypoint: "@mano8/astro-reparto-m8/routes/dashboard.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/es/reparto/processes/[processId]/my-view",
+      entrypoint: "@mano8/astro-reparto-m8/routes/my-view.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(14);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {

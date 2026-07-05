@@ -179,6 +179,23 @@ export const TeacherBalanceSchema = z
   .strict();
 export type TeacherBalance = z.infer<typeof TeacherBalanceSchema>;
 
+export const RequirementBalanceSchema = z
+  .object({
+    hour_requirement_id: uuidSchema,
+    teaching_group_id: uuidSchema,
+    teaching_group_label: z.string(),
+    subject_id: uuidSchema,
+    subject_name: z.string(),
+    required_hours: z.number().nonnegative(),
+    assigned_hours: z.number().nonnegative(),
+    pending_hours: z.number(),
+    assignment_count: z.number().int().nonnegative(),
+    has_override: z.boolean(),
+    state: z.enum(["balanced", "pending", "exceeded", "warning"])
+  })
+  .strict();
+export type RequirementBalance = z.infer<typeof RequirementBalanceSchema>;
+
 export const ValidationMessageSchema = z
   .object({
     severity: ValidationSeveritySchema,
@@ -212,6 +229,20 @@ export const ProcessSummarySchema = z
   })
   .strict();
 export type ProcessSummary = z.infer<typeof ProcessSummarySchema>;
+
+export const ProcessDashboardSchema = z
+  .object({
+    process_id: uuidSchema,
+    generated_at: dateTimeSchema,
+    global_balance: GlobalBalanceSchema,
+    teacher_balances: z.array(TeacherBalanceSchema),
+    requirement_balances: z.array(RequirementBalanceSchema),
+    validations: z.array(ValidationMessageSchema),
+    current_turn: CurrentTurnSummarySchema.nullable(),
+    blocking_validation_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ProcessDashboard = z.infer<typeof ProcessDashboardSchema>;
 
 export const TeacherLanSummarySchema = z
   .object({

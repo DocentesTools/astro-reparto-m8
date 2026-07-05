@@ -112,6 +112,27 @@ const summaryBody = {
   blocking_validation_count: 0
 };
 
+const dashboardBody = {
+  ...summaryBody,
+  generated_at: now,
+  teacher_balances: [teacherBalanceBody],
+  requirement_balances: [
+    {
+      hour_requirement_id: requirementId,
+      teaching_group_id: "12121212-1212-4121-8121-121212121212",
+      teaching_group_label: "1 ESO A",
+      subject_id: "34343434-3434-4343-8343-343434343434",
+      subject_name: "Mathematics",
+      required_hours: 4,
+      assigned_hours: 1,
+      pending_hours: 3,
+      assignment_count: 1,
+      has_override: false,
+      state: "pending"
+    }
+  ]
+};
+
 const teacherLanSummaryBody = {
   process_id: processId,
   global_balance: globalBalanceBody,
@@ -239,6 +260,11 @@ describe("assignment process API", () => {
     fetchMock.mockResolvedValueOnce(response(summaryBody));
     await expect(assignmentProcesses.summary(processId)).resolves.toMatchObject({
       blocking_validation_count: 0
+    });
+    fetchMock.mockResolvedValueOnce(response(dashboardBody));
+    await expect(assignmentProcesses.dashboard(processId)).resolves.toMatchObject({
+      teacher_balances: [{ display_name: "Linked Teacher" }],
+      requirement_balances: [{ subject_name: "Mathematics" }]
     });
     fetchMock.mockResolvedValueOnce(response(teacherLanSummaryBody));
     await expect(assignmentProcesses.myLanSummary(processId)).resolves.toMatchObject({

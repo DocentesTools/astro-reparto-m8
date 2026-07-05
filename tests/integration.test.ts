@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import faReparto, { checkAuthOrder, localizedRoutePatterns } from "../src/integration.js";
-import { assertRepartoCompatibility } from "../src/runtime/compatibility.js";
+import {
+  REPARTO_CONTRACT_OPERATIONS,
+  REPARTO_CONTRACT_VERSION,
+  assertRepartoCompatibility
+} from "../src/runtime/compatibility.js";
 import { buildRepartoRoutes } from "../src/runtime/routes.js";
 
 describe("routes", () => {
@@ -46,6 +50,21 @@ describe("compatibility", () => {
     expect(() => assertRepartoCompatibility({ contract_version: "2.0" })).toThrow(
       "Unsupported reparto-docente-m8 contract: 2.0"
     );
+  });
+
+  it("freezes the backend-facing operation contract for the UI rebuild", () => {
+    expect(REPARTO_CONTRACT_VERSION).toBe("reparto-docente-m8@0.1");
+    expect(REPARTO_CONTRACT_OPERATIONS["assignmentProcesses.dashboard"]).toEqual({
+      method: "GET",
+      path: "/assignment-processes/{process_id}/dashboard",
+      response: "ProcessDashboard"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["history.restoreDraft"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/restore-draft",
+      response: "AssignmentProcessPublic"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(28);
   });
 });
 

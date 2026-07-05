@@ -5,6 +5,7 @@ import {
   AssignmentProcessPublicSchema,
   AssignmentProcessUpdateSchema,
   ProcessSummarySchema,
+  ProcessDashboardSchema,
   ProcessTransitionSchema,
   ProcessReopenSchema,
   TeacherLanSummarySchema,
@@ -13,6 +14,7 @@ import {
   type AssignmentProcessPublic,
   type AssignmentProcessUpdate,
   type ProcessSummary,
+  type ProcessDashboard,
   type ProcessTransition,
   type ProcessReopen,
   type TeacherLanSummary
@@ -72,6 +74,13 @@ export const assignmentProcesses = {
       method: "GET",
       path: `/assignment-processes/${processId}/summary`,
       schema: ProcessSummarySchema,
+      auth: true
+    }),
+  dashboard: (processId: string) =>
+    request<ProcessDashboard>({
+      method: "GET",
+      path: `/assignment-processes/${processId}/dashboard`,
+      schema: ProcessDashboardSchema,
       auth: true
     }),
   myLanSummary: (processId: string) =>

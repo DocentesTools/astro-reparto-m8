@@ -6,10 +6,11 @@ export function getStaticPaths() {
   return [{ params: { processId: "current" } }];
 }
 
+const processId = Astro.params.processId ?? "current";
 const config = {
   apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
   apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
 };
 ---
 
-<RepartoVersionsView client:load config={config} />
+<RepartoVersionsView client:load config={config} processId={processId} />

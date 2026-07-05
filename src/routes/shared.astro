@@ -1,5 +1,5 @@
 ---
-import { SharedScreenView } from "@mano8/astro-reparto-m8/default-ui";
+import { RepartoSharedView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
 export function getStaticPaths() {
@@ -14,4 +14,4 @@ const config = {
 };
 ---
 
-<SharedScreenView client:load config={config} processId={processId} />
+<RepartoSharedView client:load config={config} processId={processId} />

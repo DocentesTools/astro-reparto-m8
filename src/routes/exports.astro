@@ -1,5 +1,5 @@
 ---
-import { RepartoExportCenterView } from "@mano8/astro-reparto-m8/default-ui";
+import { RepartoExportsView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
 export function getStaticPaths() {
@@ -13,4 +13,4 @@ const config = {
 };
 ---
 
-<RepartoExportCenterView client:load config={config} processId={processId} />
+<RepartoExportsView client:load config={config} processId={processId} />

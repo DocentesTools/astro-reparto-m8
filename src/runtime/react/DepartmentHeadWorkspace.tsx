@@ -1,7 +1,9 @@
 import type {
+  AssignmentProcessPublic,
   AssignmentProcessStatus,
   CurrentTurnSummary,
   ExportArtifactPublic,
+  ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
   VersionComparison
@@ -131,10 +133,13 @@ export function CurrentTurnCard({
 }
 
 export function DepartmentHeadWorkspace({
+  dashboard,
   summary = null
 }: {
+  dashboard?: ProcessDashboard | null;
   summary?: ProcessSummary | null;
 }) {
+  const activeSummary = summary ?? dashboard ?? null;
   return (
     <main className="reparto-shell" data-reparto-route="dashboard">
       <header className="reparto-header">
@@ -147,7 +152,29 @@ export function DepartmentHeadWorkspace({
             <h2>Current turn</h2>
             <span data-reparto-slot="turn-status" />
           </div>
-          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
+          <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} />
+          {activeSummary ? (
+            <dl className="reparto-metrics">
+              <div>
+                <dt>Required</dt>
+                <dd data-reparto-slot="total-required-hours">
+                  {activeSummary.global_balance.total_required_hours}
+                </dd>
+              </div>
+              <div>
+                <dt>Assigned</dt>
+                <dd data-reparto-slot="total-assigned-hours">
+                  {activeSummary.global_balance.total_assigned_hours}
+                </dd>
+              </div>
+              <div>
+                <dt>Blocking</dt>
+                <dd data-reparto-slot="blocking-count">
+                  {activeSummary.blocking_validation_count}
+                </dd>
+              </div>
+            </dl>
+          ) : null}
           <div className="reparto-actions">
             <button data-reparto-action="initialize-turns" type="button">
               initialize turns
@@ -198,11 +225,35 @@ export function DepartmentHeadWorkspace({
   );
 }
 
-export function ProcessListView() {
+export function ProcessListView({
+  count = 0,
+  processes = []
+}: {
+  count?: number;
+  processes?: AssignmentProcessPublic[];
+}) {
   return (
     <main className="reparto-shell" data-reparto-route="processes">
       <section className="reparto-panel" data-reparto-panel="process-list">
-        <div data-reparto-slot="process-table" />
+        <div className="reparto-panel-header">
+          <h2>Processes</h2>
+          <span data-reparto-slot="process-count">{count}</span>
+        </div>
+        <div data-reparto-slot="process-table">
+          {processes.length > 0 ? (
+            <ul>
+              {processes.map((process) => (
+                <li
+                  data-process-id={process.id}
+                  data-process-status={process.status}
+                  key={process.id}
+                >
+                  {process.status}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
         <button type="button" data-reparto-action="create-process">
           create process
         </button>
@@ -228,7 +279,21 @@ export function VersionsView({
             <h2>Versions</h2>
             <span data-reparto-slot="version-count">{versions.length}</span>
           </div>
-          <div data-reparto-slot="versions" />
+          <div data-reparto-slot="versions">
+            {versions.length > 0 ? (
+              <ul>
+                {versions.map((version) => (
+                  <li
+                    data-process-version-id={version.id}
+                    data-process-version-status={version.status}
+                    key={version.id}
+                  >
+                    Version {version.version_number}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
           <div className="reparto-actions">
             <button type="button" data-reparto-action="create-version">
               create version
@@ -314,7 +379,21 @@ export function ExportCenterView({
               </button>
             ))}
           </div>
-          <div data-reparto-slot="export-list" />
+          <div data-reparto-slot="export-list">
+            {exports.length > 0 ? (
+              <ul>
+                {exports.map((artifact) => (
+                  <li
+                    data-export-artifact-id={artifact.id}
+                    data-export-artifact-type={artifact.export_type}
+                    key={artifact.id}
+                  >
+                    {artifact.export_type} {artifact.format}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
         </section>
         <section className="reparto-panel" data-reparto-panel="final-close">
           <div className="reparto-panel-header">

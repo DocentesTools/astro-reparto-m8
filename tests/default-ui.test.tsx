@@ -1,10 +1,17 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.js";
+import { ProcessListView } from "../src/runtime/react/DepartmentHeadWorkspace.js";
 import {
   DepartmentHeadView,
   ProcessesView,
+  RepartoDashboardView,
+  RepartoExportsView,
   RepartoExportCenterView,
+  RepartoMeetingView,
+  RepartoMyView,
+  RepartoProcessesView,
+  RepartoSharedView,
   RepartoVersionsView,
   SharedScreenView,
   TeacherLanView
@@ -12,6 +19,8 @@ import {
 import type {
   ExportArtifactPublic,
   MeetingSessionPublic,
+  ProcessDashboard,
+  AssignmentProcessPublic,
   ProcessSummary,
   ProcessVersionPublic,
   TeacherLanSummary,
@@ -46,6 +55,36 @@ const processSummary: ProcessSummary = {
   },
   blocking_validation_count: 0
 };
+
+const dashboard = {
+  process_id: processSummary.process_id,
+  generated_at: "2026-07-04T10:00:00Z",
+  global_balance: processSummary.global_balance,
+  teacher_balances: [],
+  requirement_balances: [],
+  validations: [],
+  current_turn: processSummary.current_turn,
+  blocking_validation_count: 2
+} satisfies ProcessDashboard;
+
+const process = {
+  id: processSummary.process_id,
+  academic_year_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  school_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+  department_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+  status: "draft",
+  default_teacher_hours_reference: null,
+  selection_order_enabled: false,
+  selection_order_mode: "none",
+  direct_teacher_selection_enabled: true,
+  lan_access_enabled: true,
+  created_from_process_id: null,
+  closed_at: null,
+  closed_by_user_id: null,
+  created_by_user_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  created_at: "2026-07-04T10:00:00Z",
+  updated_at: "2026-07-04T10:00:00Z"
+} satisfies AssignmentProcessPublic;
 
 const teacherSummary: TeacherLanSummary = {
   process_id: processSummary.process_id,
@@ -203,10 +242,16 @@ describe("default reparto UI", () => {
     expect(renderToStaticMarkup(<ProcessesView />)).toContain(
       'data-reparto-action="create-process"'
     );
+    expect(renderToStaticMarkup(<RepartoProcessesView />)).toContain(
+      'data-reparto-slot="process-count"'
+    );
     const versions = renderToStaticMarkup(<RepartoVersionsView />);
     expect(versions).toContain('data-reparto-action="create-version"');
     expect(versions).toContain('data-reparto-action="compare-versions"');
     expect(versions).toContain('data-reparto-panel="comparison"');
+    expect(
+      renderToStaticMarkup(<ProcessListView count={1} processes={[process]} />)
+    ).toContain('data-process-status="draft"');
   });
 
   it("renders Phase 5 comparison, export and leadership workflow UI", () => {
@@ -248,6 +293,40 @@ describe("default reparto UI", () => {
       <RepartoExportCenterView processStatus="returned_by_school_leadership" />
     );
     expect(revision).toContain('data-reparto-workflow-action="start-revision"');
+  });
+
+  it("exports Phase 3 island-root names for full and headless consumers", () => {
+    expect(renderToStaticMarkup(<RepartoDashboardView dashboard={dashboard} />)).toContain(
+      'data-reparto-route="dashboard"'
+    );
+    expect(renderToStaticMarkup(<RepartoMeetingView summary={processSummary} />)).toContain(
+      'data-reparto-panel="current-turn"'
+    );
+    expect(
+      renderToStaticMarkup(
+        <RepartoMyView
+          meetingSession={meetingSession}
+          processId={processSummary.process_id}
+          requirementAssignedHours={1}
+          requirementRequiredHours={4}
+          summary={teacherSummary}
+        />
+      )
+    ).toContain('data-reparto-choice-state="ready"');
+    expect(
+      renderToStaticMarkup(
+        <RepartoSharedView processId={processSummary.process_id} summary={processSummary} />
+      )
+    ).toContain('data-reparto-route="shared-screen"');
+    expect(
+      renderToStaticMarkup(
+        <RepartoExportsView
+          exports={[backupExport]}
+          processId={processSummary.process_id}
+          summary={processSummary}
+        />
+      )
+    ).toContain('data-export-artifact-type="backup"');
   });
 
   it("exposes reparto context inside the provider", () => {

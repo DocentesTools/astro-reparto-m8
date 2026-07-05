@@ -1,5 +1,5 @@
 ---
-import { TeacherLanView } from "@mano8/astro-reparto-m8/default-ui";
+import { RepartoMyView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
 export function getStaticPaths() {
@@ -14,4 +14,4 @@ const config = {
 };
 ---
 
-<TeacherLanView client:load config={config} processId={processId} />
+<RepartoMyView client:load config={config} processId={processId} />

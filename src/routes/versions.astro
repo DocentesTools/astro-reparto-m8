@@ -2,6 +2,10 @@
 import { RepartoVersionsView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
+export function getStaticPaths() {
+  return [{ params: { processId: "current" } }];
+}
+
 const config = {
   apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
   apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX

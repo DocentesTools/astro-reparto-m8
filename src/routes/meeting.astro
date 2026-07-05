@@ -1,5 +1,9 @@
 ---
-const { processId } = Astro.params;
+export function getStaticPaths() {
+  return [{ params: { processId: "current" } }];
+}
+
+const processId = Astro.params.processId ?? "current";
 ---
 
 <main

@@ -2,7 +2,11 @@
 import { TeacherLanView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
-const { processId } = Astro.params;
+export function getStaticPaths() {
+  return [{ params: { processId: "current" } }];
+}
+
+const processId = Astro.params.processId ?? "current";
 
 const config = {
   apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,

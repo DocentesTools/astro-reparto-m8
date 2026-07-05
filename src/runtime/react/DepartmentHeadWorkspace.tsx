@@ -1,5 +1,18 @@
-import type { CurrentTurnSummary, ProcessSummary } from "../schemas.js";
-import { buildCurrentTurnDisplay } from "../ui/index.js";
+import type {
+  AssignmentProcessStatus,
+  CurrentTurnSummary,
+  ExportArtifactPublic,
+  ProcessSummary,
+  ProcessVersionPublic,
+  VersionComparison
+} from "../schemas.js";
+import {
+  buildCurrentTurnDisplay,
+  buildExportCenterState,
+  buildVersionComparisonLabel,
+  canCompareVersions,
+  nextLeadershipWorkflowAction
+} from "../ui/index.js";
 
 const sections = [
   {
@@ -56,6 +69,34 @@ const sections = [
     fields: ["version-reason", "left-version", "right-version"]
   }
 ] as const;
+
+const fallbackSummary: ProcessSummary = {
+  process_id: "00000000-0000-4000-8000-000000000001",
+  global_balance: {
+    total_required_hours: 0,
+    total_available_hours: 0,
+    total_assigned_hours: 0,
+    pending_required_hours: 0,
+    availability_difference: 0,
+    uncovered_requirements: 0,
+    overloaded_teachers: 0,
+    state: "pending"
+  },
+  validations: [],
+  current_turn: null,
+  blocking_validation_count: 0
+};
+
+const fallbackComparison: VersionComparison = {
+  left_version_id: "00000000-0000-4000-8000-000000000011",
+  right_version_id: "00000000-0000-4000-8000-000000000012",
+  changed_sections: [],
+  required_hours_delta: 0,
+  assigned_hours_delta: 0,
+  teacher_count_delta: 0,
+  requirement_count_delta: 0,
+  assignment_count_delta: 0
+};
 
 export function CurrentTurnCard({
   currentTurn
@@ -170,18 +211,168 @@ export function ProcessListView() {
   );
 }
 
-export function VersionsView() {
+export function VersionsView({
+  comparison = fallbackComparison,
+  versions = []
+}: {
+  comparison?: VersionComparison;
+  versions?: ProcessVersionPublic[];
+}) {
+  const comparisonEnabled = canCompareVersions(versions);
+  const comparisonLabel = buildVersionComparisonLabel(comparison);
   return (
     <main className="reparto-shell" data-reparto-route="versions">
-      <section className="reparto-panel" data-reparto-panel="version-list">
-        <div data-reparto-slot="versions" />
-        <button type="button" data-reparto-action="create-version">
-          create version
-        </button>
-        <button type="button" data-reparto-action="compare-versions">
-          compare versions
-        </button>
-      </section>
+      <div className="reparto-grid reparto-grid-main">
+        <section className="reparto-panel" data-reparto-panel="version-list">
+          <div className="reparto-panel-header">
+            <h2>Versions</h2>
+            <span data-reparto-slot="version-count">{versions.length}</span>
+          </div>
+          <div data-reparto-slot="versions" />
+          <div className="reparto-actions">
+            <button type="button" data-reparto-action="create-version">
+              create version
+            </button>
+            <button
+              data-reparto-action="compare-versions"
+              disabled={!comparisonEnabled}
+              type="button"
+            >
+              compare versions
+            </button>
+          </div>
+        </section>
+        <section className="reparto-panel" data-reparto-panel="comparison">
+          <div className="reparto-panel-header">
+            <h2>Comparison</h2>
+            <span data-reparto-slot="comparison-state">{comparisonLabel}</span>
+          </div>
+          <dl className="reparto-metrics">
+            <div>
+              <dt>Required delta</dt>
+              <dd data-reparto-slot="required-hours-delta">
+                {comparison.required_hours_delta}
+              </dd>
+            </div>
+            <div>
+              <dt>Assigned delta</dt>
+              <dd data-reparto-slot="assigned-hours-delta">
+                {comparison.assigned_hours_delta}
+              </dd>
+            </div>
+            <div>
+              <dt>Teachers</dt>
+              <dd data-reparto-slot="teacher-count-delta">
+                {comparison.teacher_count_delta}
+              </dd>
+            </div>
+          </dl>
+          <div data-reparto-slot="comparison-detail" />
+        </section>
+      </div>
+    </main>
+  );
+}
+
+export function ExportCenterView({
+  exports = [],
+  processId,
+  processStatus = "draft",
+  summary = fallbackSummary
+}: {
+  exports?: ExportArtifactPublic[];
+  processId?: string;
+  processStatus?: AssignmentProcessStatus;
+  summary?: ProcessSummary;
+}) {
+  const state = buildExportCenterState(summary, exports);
+  const workflowAction = nextLeadershipWorkflowAction(processStatus);
+  return (
+    <main
+      className="reparto-shell"
+      data-process-id={processId}
+      data-reparto-route="exports"
+      data-reparto-workflow-action={workflowAction ?? "none"}
+    >
+      <div className="reparto-grid reparto-grid-main">
+        <section className="reparto-panel" data-reparto-panel="export-center">
+          <div className="reparto-panel-header">
+            <h2>Export center</h2>
+            <span data-reparto-slot="export-state">
+              {state.finalBlocked ? "Final blocked" : "Final ready"}
+            </span>
+          </div>
+          <div className="reparto-export-types">
+            {state.availableExportTypes.map((exportType) => (
+              <button
+                data-reparto-action="create-export"
+                data-reparto-export-type={exportType}
+                key={exportType}
+                type="button"
+              >
+                {exportType.replaceAll("_", " ")}
+              </button>
+            ))}
+          </div>
+          <div data-reparto-slot="export-list" />
+        </section>
+        <section className="reparto-panel" data-reparto-panel="final-close">
+          <div className="reparto-panel-header">
+            <h2>Closeout</h2>
+            <span data-reparto-slot="blocking-count">
+              {summary.blocking_validation_count}
+            </span>
+          </div>
+          <div className="reparto-actions">
+            <button
+              data-reparto-action="create-final-export"
+              disabled={state.finalBlocked}
+              type="button"
+            >
+              final export
+            </button>
+            <button
+              data-reparto-action="restore-draft"
+              data-reparto-backup-id={state.latestBackupId ?? ""}
+              disabled={!state.restoreDraftEnabled}
+              type="button"
+            >
+              restore draft
+            </button>
+          </div>
+          <div data-reparto-slot="restore-result" />
+        </section>
+        <section className="reparto-panel" data-reparto-panel="leadership-workflow">
+          <div className="reparto-panel-header">
+            <h2>Leadership workflow</h2>
+            <span data-reparto-slot="process-status">{processStatus}</span>
+          </div>
+          <div className="reparto-actions">
+            <button
+              data-reparto-action="mark-returned"
+              data-reparto-active={workflowAction === "mark-returned"}
+              type="button"
+            >
+              mark returned
+            </button>
+            <button
+              data-reparto-action="start-revision"
+              data-reparto-active={workflowAction === "start-revision"}
+              type="button"
+            >
+              start revision
+            </button>
+            <button
+              data-reparto-action="reopen-final"
+              data-reparto-active={workflowAction === "reopen-final"}
+              type="button"
+            >
+              reopen final
+            </button>
+          </div>
+          <div data-reparto-slot="workflow-result" />
+        </section>
+      </div>
     </main>
   );
 }

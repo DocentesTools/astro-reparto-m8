@@ -1,19 +1,122 @@
 import { assignmentProcesses } from "../api/index.js";
-import type { ProcessSummary, TeacherLanSummary } from "../schemas.js";
+import type {
+  MeetingSessionPublic,
+  ProcessSummary,
+  TeacherLanSummary
+} from "../schemas.js";
+import { buildTeacherChoiceState, directChoiceConflictMessage } from "../ui/index.js";
 import { CurrentTurnCard } from "./DepartmentHeadWorkspace.js";
 
 function eventStreamUrl(processId?: string): string | undefined {
   return processId ? assignmentProcesses.eventsUrl(processId) : undefined;
 }
 
+const fallbackTeacherSummary: TeacherLanSummary = {
+  process_id: "00000000-0000-4000-8000-000000000001",
+  teacher_profile_id: "00000000-0000-4000-8000-000000000002",
+  process_teacher_id: "00000000-0000-4000-8000-000000000003",
+  generated_at: "2026-07-05T00:00:00Z",
+  global_balance: {
+    total_required_hours: 0,
+    total_available_hours: 0,
+    total_assigned_hours: 0,
+    pending_required_hours: 0,
+    availability_difference: 0,
+    uncovered_requirements: 0,
+    overloaded_teachers: 0,
+    state: "pending"
+  },
+  teacher_balance: {
+    process_teacher_id: "00000000-0000-4000-8000-000000000003",
+    teacher_profile_id: "00000000-0000-4000-8000-000000000002",
+    display_name: "Teacher",
+    available_hours: 0,
+    assigned_hours: 0,
+    remaining_hours: 0,
+    excess_hours: 0,
+    assignment_count: 0,
+    has_override: false,
+    state: "pending"
+  },
+  current_turn: null,
+  blocking_validation_count: 0
+};
+
+function TeacherDirectChoicePanel({
+  meetingSession = null,
+  requirementAssignedHours = 0,
+  requirementRequiredHours = 0,
+  summary
+}: {
+  meetingSession?: MeetingSessionPublic | null;
+  requirementAssignedHours?: number;
+  requirementRequiredHours?: number;
+  summary: TeacherLanSummary;
+}) {
+  const choice = buildTeacherChoiceState({
+    meetingSession,
+    requirementAssignedHours,
+    requirementRequiredHours,
+    summary
+  });
+  const conflictMessage = directChoiceConflictMessage(
+    choice.disabledReason ?? "Ready to choose."
+  );
+  return (
+    <section
+      className="reparto-panel"
+      data-reparto-panel="direct-choice-workflow"
+      data-reparto-choice-state={choice.canChoose ? "ready" : "blocked"}
+    >
+      <div className="reparto-panel-header">
+        <h2>Choose group</h2>
+        <span data-reparto-slot="choice-state">{conflictMessage}</span>
+      </div>
+      <div className="reparto-choice-layout">
+        <div data-reparto-slot="available-requirements-table" />
+        <aside className="reparto-confirmation" data-reparto-slot="choice-confirmation">
+          <span>Confirmation</span>
+          <strong>{choice.confirmationLabel}</strong>
+          <p data-reparto-slot="choice-conflict">{conflictMessage}</p>
+        </aside>
+      </div>
+      <div className="reparto-actions">
+        <button
+          data-reparto-action="direct-choice"
+          data-reparto-impact-hours={choice.impactHours}
+          disabled={!choice.canChoose}
+          type="button"
+        >
+          choose
+        </button>
+        <button
+          data-reparto-action="pass-turn"
+          disabled={!choice.passTurnEnabled}
+          type="button"
+        >
+          pass
+        </button>
+      </div>
+      <div data-reparto-slot="choice-result" />
+    </section>
+  );
+}
+
 export function TeacherLanWorkspace({
+  meetingSession = null,
   processId,
+  requirementAssignedHours = 0,
+  requirementRequiredHours = 0,
   summary = null
 }: {
+  meetingSession?: MeetingSessionPublic | null;
   processId?: string;
+  requirementAssignedHours?: number;
+  requirementRequiredHours?: number;
   summary?: TeacherLanSummary | null;
 }) {
   const eventsUrl = eventStreamUrl(processId);
+  const safeSummary = summary ?? fallbackTeacherSummary;
   return (
     <main
       className="reparto-shell"
@@ -48,23 +151,19 @@ export function TeacherLanWorkspace({
           </dl>
           <div data-reparto-slot="teacher-balance" />
         </section>
-        <section className="reparto-panel" data-reparto-panel="available-requirements">
+        <section className="reparto-panel" data-reparto-panel="turn-and-balance">
           <div className="reparto-panel-header">
-            <h2>Available groups</h2>
+            <h2>Turn state</h2>
             <span data-reparto-slot="turn-status" />
           </div>
           <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
-          <div data-reparto-slot="available-requirements-table" />
-          <div className="reparto-actions">
-            <button data-reparto-action="direct-choice" type="button">
-              choose
-            </button>
-            <button data-reparto-action="pass-turn" type="button">
-              pass
-            </button>
-          </div>
-          <div data-reparto-slot="choice-result" />
         </section>
+        <TeacherDirectChoicePanel
+          meetingSession={meetingSession}
+          requirementAssignedHours={requirementAssignedHours}
+          requirementRequiredHours={requirementRequiredHours}
+          summary={safeSummary}
+        />
       </div>
     </main>
   );

@@ -12,6 +12,12 @@ const sections = [
     fields: ["default-hours", "selection-mode", "lan-access"]
   },
   {
+    id: "lan-meeting-settings",
+    title: "LAN Meeting",
+    actions: ["create-session", "update-session", "close-session"],
+    fields: ["lan-access", "direct-selection", "selection-mode", "session-notes"]
+  },
+  {
     id: "teachers-view",
     title: "Teachers",
     actions: ["add-teacher", "link-auth-user", "save-teacher-hours"],
@@ -33,7 +39,12 @@ const sections = [
     id: "validation-summary",
     title: "Validation",
     actions: ["refresh-summary", "transition-process"],
-    fields: ["blocking-count", "global-balance", "teacher-balance"]
+    fields: [
+      "blocking-count",
+      "global-balance",
+      "teacher-balance",
+      "process-summary-stream"
+    ]
   },
   {
     id: "version-list",

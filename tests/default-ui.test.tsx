@@ -4,7 +4,9 @@ import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.j
 import {
   DepartmentHeadView,
   ProcessesView,
-  RepartoVersionsView
+  RepartoVersionsView,
+  SharedScreenView,
+  TeacherLanView
 } from "../src/runtime/react/default-ui/index.js";
 
 function ContextReader() {
@@ -23,7 +25,38 @@ describe("default reparto UI", () => {
     expect(html).toContain('data-reparto-panel="required-hours"');
     expect(html).toContain('data-reparto-panel="manual-assignment-board"');
     expect(html).toContain('data-reparto-panel="validation-summary"');
+    expect(html).toContain('data-reparto-panel="lan-meeting-settings"');
+    expect(html).toContain('data-reparto-action="create-session"');
     expect(html).toContain('data-reparto-action="record-override"');
+  });
+
+  it("renders Phase 2 LAN teacher and shared-screen views", () => {
+    const teacherHtml = renderToStaticMarkup(
+      <TeacherLanView
+        config={{ apiBase: "/api", apiPrefix: "/reparto" }}
+        processId="11111111-1111-4111-8111-111111111111"
+      />
+    );
+    expect(teacherHtml).toContain('data-reparto-route="my-view"');
+    expect(teacherHtml).toContain('data-reparto-events-url=');
+    expect(teacherHtml).toContain('data-reparto-action="direct-choice"');
+    expect(teacherHtml).toContain('data-reparto-action="pass-turn"');
+
+    const sharedHtml = renderToStaticMarkup(
+      <SharedScreenView
+        config={{ apiBase: "/api", apiPrefix: "/reparto" }}
+        processId="11111111-1111-4111-8111-111111111111"
+      />
+    );
+    expect(sharedHtml).toContain('data-reparto-route="shared-screen"');
+    expect(sharedHtml).toContain('data-reparto-panel="global-state"');
+    expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
+  });
+
+  it("renders LAN views before a process is selected", () => {
+    expect(renderToStaticMarkup(<TeacherLanView />)).toContain(
+      'data-reparto-route="my-view"'
+    );
   });
 
   it("renders prompt-style starter views for process and version routes", () => {

@@ -6,6 +6,10 @@ import {
   ProcessListView,
   VersionsView
 } from "../DepartmentHeadWorkspace.js";
+import {
+  SharedScreenWorkspace,
+  TeacherLanWorkspace
+} from "../LanWorkspace.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
 
 type ViewConfig = Partial<RepartoRuntimeConfig>;
@@ -38,6 +42,34 @@ export function RepartoVersionsView({ config }: { config?: ViewConfig }) {
   return (
     <Shell config={config}>
       <VersionsView />
+    </Shell>
+  );
+}
+
+export function TeacherLanView({
+  config,
+  processId
+}: {
+  config?: ViewConfig;
+  processId?: string;
+}) {
+  return (
+    <Shell config={config}>
+      <TeacherLanWorkspace processId={processId} />
+    </Shell>
+  );
+}
+
+export function SharedScreenView({
+  config,
+  processId
+}: {
+  config?: ViewConfig;
+  processId?: string;
+}) {
+  return (
+    <Shell config={config}>
+      <SharedScreenWorkspace processId={processId} />
     </Shell>
   );
 }

@@ -1,16 +1,13 @@
 ---
+import { SharedScreenView } from "@mano8/astro-reparto-m8/default-ui";
+import "../scaffold/styles/reparto.css";
+
 const { processId } = Astro.params;
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
 ---
 
-<main
-  data-reparto-route="shared-screen"
-  data-reparto-control="projected-summary"
-  data-process-id={processId}
->
-  <section data-reparto-panel="global-state">
-    <div data-reparto-slot="connection-state"></div>
-    <div data-reparto-slot="global-balance"></div>
-    <div data-reparto-slot="current-turn"></div>
-    <div data-reparto-slot="validations"></div>
-  </section>
-</main>
+<SharedScreenView client:load config={config} processId={processId} />

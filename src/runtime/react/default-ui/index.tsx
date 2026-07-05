@@ -11,6 +11,7 @@ import {
   TeacherLanWorkspace
 } from "../LanWorkspace.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
+import type { ProcessSummary, TeacherLanSummary } from "../../schemas.js";
 
 type ViewConfig = Partial<RepartoRuntimeConfig>;
 
@@ -22,10 +23,16 @@ function Shell({ children, config }: { children: ReactNode; config?: ViewConfig 
   );
 }
 
-export function DepartmentHeadView({ config }: { config?: ViewConfig }) {
+export function DepartmentHeadView({
+  config,
+  summary
+}: {
+  config?: ViewConfig;
+  summary?: ProcessSummary | null;
+}) {
   return (
     <Shell config={config}>
-      <DepartmentHeadWorkspace />
+      <DepartmentHeadWorkspace summary={summary} />
     </Shell>
   );
 }
@@ -48,28 +55,32 @@ export function RepartoVersionsView({ config }: { config?: ViewConfig }) {
 
 export function TeacherLanView({
   config,
-  processId
+  processId,
+  summary
 }: {
   config?: ViewConfig;
   processId?: string;
+  summary?: TeacherLanSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <TeacherLanWorkspace processId={processId} />
+      <TeacherLanWorkspace processId={processId} summary={summary} />
     </Shell>
   );
 }
 
 export function SharedScreenView({
   config,
-  processId
+  processId,
+  summary
 }: {
   config?: ViewConfig;
   processId?: string;
+  summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <SharedScreenWorkspace processId={processId} />
+      <SharedScreenWorkspace processId={processId} summary={summary} />
     </Shell>
   );
 }

@@ -99,6 +99,35 @@
   min-height: 1.6rem;
 }
 
+.reparto-turn-summary {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  margin: 0.875rem 0;
+}
+
+.reparto-turn-summary div {
+  border-left: 3px solid #2563eb;
+  min-width: 0;
+  padding-left: 0.625rem;
+}
+
+.reparto-turn-summary span,
+.reparto-turn-summary strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.reparto-turn-summary span {
+  color: #4b5563;
+  font-size: 0.8125rem;
+}
+
+.reparto-turn-summary strong {
+  font-size: 0.9375rem;
+  margin-top: 0.125rem;
+}
+
 .reparto-actions {
   flex-wrap: wrap;
   justify-content: flex-start;

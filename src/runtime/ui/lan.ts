@@ -1,9 +1,17 @@
 import type {
+  CurrentTurnSummary,
   MeetingSessionPublic,
   TeacherLanSummary
 } from "../schemas.js";
 
 export type LanConnectionState = "disconnected" | "live" | "stale";
+
+export type CurrentTurnDisplayState = {
+  statusLabel: string;
+  turnLabel: string;
+  positionLabel: string;
+  startedLabel: string;
+};
 
 export type TeacherChoiceState = {
   canChoose: boolean;
@@ -27,6 +35,25 @@ export function getLanConnectionState(
 ): LanConnectionState {
   if (lastEventAtMs === null) return "disconnected";
   return nowMs - lastEventAtMs > staleAfterMs ? "stale" : "live";
+}
+
+export function buildCurrentTurnDisplay(
+  currentTurn: CurrentTurnSummary | null
+): CurrentTurnDisplayState {
+  if (currentTurn === null) {
+    return {
+      statusLabel: "Waiting",
+      turnLabel: "No active turn",
+      positionLabel: "No position",
+      startedLabel: "Not started"
+    };
+  }
+  return {
+    statusLabel: labelFromStatus(currentTurn.status),
+    turnLabel: `Teacher ${currentTurn.process_teacher_id}`,
+    positionLabel: `Turn ${currentTurn.position + 1}`,
+    startedLabel: currentTurn.started_at ?? "Not started"
+  };
 }
 
 export function buildTeacherChoiceState(
@@ -78,4 +105,11 @@ function teacherChoiceDisabledReason(
 
 function isOwnTurn(summary: TeacherLanSummary): boolean {
   return summary.current_turn?.process_teacher_id === summary.process_teacher_id;
+}
+
+function labelFromStatus(status: CurrentTurnSummary["status"]): string {
+  return status
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

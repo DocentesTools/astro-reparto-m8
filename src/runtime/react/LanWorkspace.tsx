@@ -1,10 +1,18 @@
 import { assignmentProcesses } from "../api/index.js";
+import type { ProcessSummary, TeacherLanSummary } from "../schemas.js";
+import { CurrentTurnCard } from "./DepartmentHeadWorkspace.js";
 
 function eventStreamUrl(processId?: string): string | undefined {
   return processId ? assignmentProcesses.eventsUrl(processId) : undefined;
 }
 
-export function TeacherLanWorkspace({ processId }: { processId?: string }) {
+export function TeacherLanWorkspace({
+  processId,
+  summary = null
+}: {
+  processId?: string;
+  summary?: TeacherLanSummary | null;
+}) {
   const eventsUrl = eventStreamUrl(processId);
   return (
     <main
@@ -43,8 +51,9 @@ export function TeacherLanWorkspace({ processId }: { processId?: string }) {
         <section className="reparto-panel" data-reparto-panel="available-requirements">
           <div className="reparto-panel-header">
             <h2>Available groups</h2>
-            <span data-reparto-slot="current-turn" />
+            <span data-reparto-slot="turn-status" />
           </div>
+          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
           <div data-reparto-slot="available-requirements-table" />
           <div className="reparto-actions">
             <button data-reparto-action="direct-choice" type="button">
@@ -61,7 +70,13 @@ export function TeacherLanWorkspace({ processId }: { processId?: string }) {
   );
 }
 
-export function SharedScreenWorkspace({ processId }: { processId?: string }) {
+export function SharedScreenWorkspace({
+  processId,
+  summary = null
+}: {
+  processId?: string;
+  summary?: ProcessSummary | null;
+}) {
   const eventsUrl = eventStreamUrl(processId);
   return (
     <main
@@ -102,7 +117,7 @@ export function SharedScreenWorkspace({ processId }: { processId?: string }) {
             <h2>Current turn</h2>
             <span data-reparto-slot="turn-status" />
           </div>
-          <div data-reparto-slot="current-turn" />
+          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
           <div data-reparto-slot="validations" />
         </section>
       </div>

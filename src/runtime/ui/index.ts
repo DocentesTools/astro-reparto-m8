@@ -1,7 +1,9 @@
 export {
+  buildCurrentTurnDisplay,
   buildTeacherChoiceState,
   directChoiceConflictMessage,
   getLanConnectionState,
+  type CurrentTurnDisplayState,
   type LanConnectionState,
   type TeacherChoiceState
 } from "./lan.js";

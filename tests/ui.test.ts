@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCurrentTurnDisplay,
   buildExportCenterState,
   buildTeacherChoiceState,
   buildVersionComparisonLabel,
@@ -77,6 +78,39 @@ describe("LAN UI state", () => {
     expect(getLanConnectionState(null, 20)).toBe("disconnected");
     expect(getLanConnectionState(10, 20, 15)).toBe("live");
     expect(getLanConnectionState(0, 20, 15)).toBe("stale");
+  });
+
+  it("formats current-turn display state", () => {
+    expect(buildCurrentTurnDisplay(null)).toMatchObject({
+      statusLabel: "Waiting",
+      turnLabel: "No active turn",
+      positionLabel: "No position"
+    });
+    expect(
+      buildCurrentTurnDisplay({
+        meeting_session_id: sessionId,
+        selection_turn_id: "66666666-6666-4666-8666-666666666666",
+        process_teacher_id: teacherId,
+        position: 2,
+        status: "active",
+        started_at: now
+      })
+    ).toMatchObject({
+      statusLabel: "Active",
+      turnLabel: `Teacher ${teacherId}`,
+      positionLabel: "Turn 3",
+      startedLabel: now
+    });
+    expect(
+      buildCurrentTurnDisplay({
+        meeting_session_id: sessionId,
+        selection_turn_id: "66666666-6666-4666-8666-666666666666",
+        process_teacher_id: teacherId,
+        position: 0,
+        status: "pending",
+        started_at: null
+      }).startedLabel
+    ).toBe("Not started");
   });
 
   it("enables and disables direct teacher choices", () => {

@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-  useQuery: vi.fn((options: { queryFn: () => unknown }) => {
-    options.queryFn();
+  useQuery: vi.fn((options: { enabled?: boolean; queryFn: () => unknown }) => {
+    if (options.enabled !== false) {
+      options.queryFn();
+    }
     return options;
   }),
   assignmentProcesses: {
@@ -31,6 +33,17 @@ vi.mock("../src/runtime/api/index.js", () => ({
 }));
 
 describe("reparto React hooks", () => {
+  beforeEach(() => {
+    mocks.useQuery.mockClear();
+    mocks.assignmentProcesses.list.mockClear();
+    mocks.assignmentProcesses.dashboard.mockClear();
+    mocks.assignmentProcesses.summary.mockClear();
+    mocks.assignmentProcesses.myLanSummary.mockClear();
+    mocks.history.listVersions.mockClear();
+    mocks.history.listExports.mockClear();
+    mocks.meetingSessions.list.mockClear();
+  });
+
   it("wires query keys to typed API wrappers", async () => {
     const {
       useRepartoDashboard,
@@ -61,5 +74,38 @@ describe("reparto React hooks", () => {
     expect(mocks.history.listVersions).toHaveBeenCalledWith("process-1");
     expect(mocks.history.listExports).toHaveBeenCalledWith("process-1");
     expect(mocks.useQuery).toHaveBeenCalledTimes(7);
+  });
+
+  it("disables process-rooted queries until a process is selected", async () => {
+    const {
+      useRepartoDashboard,
+      useRepartoExports,
+      useRepartoMeetingSessions,
+      useRepartoSummary,
+      useRepartoTeacherLan,
+      useRepartoVersions
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoDashboard();
+    useRepartoSummary();
+    useRepartoMeetingSessions();
+    useRepartoTeacherLan();
+    useRepartoVersions();
+    useRepartoExports();
+
+    expect(mocks.assignmentProcesses.dashboard).not.toHaveBeenCalled();
+    expect(mocks.assignmentProcesses.summary).not.toHaveBeenCalled();
+    expect(mocks.assignmentProcesses.myLanSummary).not.toHaveBeenCalled();
+    expect(mocks.meetingSessions.list).not.toHaveBeenCalled();
+    expect(mocks.history.listVersions).not.toHaveBeenCalled();
+    expect(mocks.history.listExports).not.toHaveBeenCalled();
+    expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]);
   });
 });

@@ -15,7 +15,30 @@ export type RepartoFieldKey =
   | "locality"
   | "province"
   | "region"
-  | "address";
+  | "address"
+  | "stage"
+  | "grade"
+  | "groupCode"
+  | "subject"
+  | "classroom"
+  | "teacher"
+  | "hourRequirement"
+  | "processParticipant"
+  | "requirementType"
+  | "assignmentType"
+  | "source"
+  | "requiredHours"
+  | "assignedHours"
+  | "availableHours"
+  | "participatesInSelection"
+  | "selectionPosition"
+  | "selectionPoints"
+  | "selectionCriteria"
+  | "selectionNotes"
+  | "orderLocked"
+  | "overrideReason"
+  | "flags"
+  | "previousAcademicYear";
 
 export type RepartoErrorKey =
   | "required"
@@ -67,7 +90,30 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   locality: "locality",
   province: "province",
   region: "region",
-  address: "address"
+  address: "address",
+  stage: "stage",
+  grade: "grade",
+  group_code: "groupCode",
+  subject_id: "subject",
+  teaching_group_id: "classroom",
+  hour_requirement_id: "hourRequirement",
+  process_teacher_id: "processParticipant",
+  teacher_profile_id: "teacher",
+  requirement_type: "requirementType",
+  assignment_type: "assignmentType",
+  source: "source",
+  required_hours: "requiredHours",
+  assigned_hours: "assignedHours",
+  available_hours: "availableHours",
+  participates_in_selection: "participatesInSelection",
+  selection_position: "selectionPosition",
+  selection_points: "selectionPoints",
+  selection_criteria_label: "selectionCriteria",
+  selection_notes: "selectionNotes",
+  order_locked: "orderLocked",
+  override_reason: "overrideReason",
+  flags: "flags",
+  previous_academic_year_id: "previousAcademicYear"
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {

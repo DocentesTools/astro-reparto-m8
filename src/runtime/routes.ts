@@ -10,6 +10,12 @@ export type RepartoRouteFragments = {
   academicYears?: string | false;
   departments?: string | false;
   teacherRoster?: string | false;
+  subjects?: string | false;
+  classrooms?: string | false;
+  requirements?: string | false;
+  participants?: string | false;
+  assignments?: string | false;
+  audit?: string | false;
 };
 
 export type BuiltRepartoRoutes = {
@@ -24,6 +30,12 @@ export type BuiltRepartoRoutes = {
   academicYears: string | false;
   departments: string | false;
   teacherRoster: string | false;
+  subjects: string | false;
+  classrooms: string | false;
+  requirements: string | false;
+  participants: string | false;
+  assignments: string | false;
+  audit: string | false;
 };
 
 export function buildRepartoRoutes(
@@ -40,7 +52,13 @@ export function buildRepartoRoutes(
     schools: routes.schools ?? "/reparto/setup/schools",
     academicYears: routes.academicYears ?? "/reparto/setup/academic-years",
     departments: routes.departments ?? "/reparto/setup/departments",
-    teacherRoster: routes.teacherRoster ?? "/reparto/setup/teacher-roster"
+    teacherRoster: routes.teacherRoster ?? "/reparto/setup/teacher-roster",
+    subjects: routes.subjects ?? "/reparto/processes/[processId]/subjects",
+    classrooms: routes.classrooms ?? "/reparto/processes/[processId]/classrooms",
+    requirements: routes.requirements ?? "/reparto/processes/[processId]/requirements",
+    participants: routes.participants ?? "/reparto/processes/[processId]/participants",
+    assignments: routes.assignments ?? "/reparto/processes/[processId]/assignments",
+    audit: routes.audit ?? "/reparto/processes/[processId]/audit"
   };
 }
 

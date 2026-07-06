@@ -1,19 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  academicYears,
-  assignmentProcesses,
-  assignments,
-  auditEvents,
-  departments,
-  history,
-  hourRequirements,
-  meetingSessions,
-  processTeachers,
-  schools,
-  subjects,
-  teacherProfiles,
-  teachingGroups
-} from "../api/index.js";
+import { academicYears } from "../api/academicYears.js";
+import { assignmentProcesses } from "../api/assignmentProcesses.js";
+import { assignments } from "../api/assignments.js";
+import { auditEvents } from "../api/auditEvents.js";
+import { departments } from "../api/departments.js";
+import { history } from "../api/history.js";
+import { hourRequirements } from "../api/hourRequirements.js";
+import { meetingSessions } from "../api/meetingSessions.js";
+import { processTeachers } from "../api/processTeachers.js";
+import { schools } from "../api/schools.js";
+import { subjects } from "../api/subjects.js";
+import { teacherProfiles } from "../api/teacherProfiles.js";
+import { teachingGroups } from "../api/teachingGroups.js";
 import type {
   AcademicYearCreate,
   AcademicYearUpdate,

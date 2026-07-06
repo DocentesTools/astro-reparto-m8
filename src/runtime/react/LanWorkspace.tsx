@@ -1,4 +1,4 @@
-import { assignmentProcesses } from "../api/index.js";
+import { assignmentProcesses } from "../api/assignmentProcesses.js";
 import type {
   MeetingSessionPublic,
   ProcessDashboard,

@@ -90,19 +90,43 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: mocks.useQueryClient
 }));
 
-vi.mock("../src/runtime/api/index.js", () => ({
-  assignmentProcesses: mocks.assignmentProcesses,
-  history: mocks.history,
-  meetingSessions: mocks.meetingSessions,
-  schools: mocks.schools,
-  academicYears: mocks.academicYears,
-  departments: mocks.departments,
-  teacherProfiles: mocks.teacherProfiles,
-  subjects: mocks.subjects,
-  teachingGroups: mocks.teachingGroups,
-  hourRequirements: mocks.hourRequirements,
-  processTeachers: mocks.processTeachers,
-  assignments: mocks.assignments,
+vi.mock("../src/runtime/api/assignmentProcesses.js", () => ({
+  assignmentProcesses: mocks.assignmentProcesses
+}));
+vi.mock("../src/runtime/api/history.js", () => ({
+  history: mocks.history
+}));
+vi.mock("../src/runtime/api/meetingSessions.js", () => ({
+  meetingSessions: mocks.meetingSessions
+}));
+vi.mock("../src/runtime/api/schools.js", () => ({
+  schools: mocks.schools
+}));
+vi.mock("../src/runtime/api/academicYears.js", () => ({
+  academicYears: mocks.academicYears
+}));
+vi.mock("../src/runtime/api/departments.js", () => ({
+  departments: mocks.departments
+}));
+vi.mock("../src/runtime/api/teacherProfiles.js", () => ({
+  teacherProfiles: mocks.teacherProfiles
+}));
+vi.mock("../src/runtime/api/subjects.js", () => ({
+  subjects: mocks.subjects
+}));
+vi.mock("../src/runtime/api/teachingGroups.js", () => ({
+  teachingGroups: mocks.teachingGroups
+}));
+vi.mock("../src/runtime/api/hourRequirements.js", () => ({
+  hourRequirements: mocks.hourRequirements
+}));
+vi.mock("../src/runtime/api/processTeachers.js", () => ({
+  processTeachers: mocks.processTeachers
+}));
+vi.mock("../src/runtime/api/assignments.js", () => ({
+  assignments: mocks.assignments
+}));
+vi.mock("../src/runtime/api/auditEvents.js", () => ({
   auditEvents: mocks.auditEvents
 }));
 

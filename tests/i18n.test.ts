@@ -180,6 +180,12 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.error.fkViolation).toContain("{count}");
     expect(en.error.hoursExceed).toContain("{assigned}");
     expect(en.error.unauthorized).toBeTruthy();
+    expect(en.error.invalidDate).toBeTruthy();
+    expect(en.error.conflict).toBeTruthy();
+    expect(fr.error.invalidDate).toBeTruthy();
+    expect(fr.error.conflict).toBeTruthy();
+    expect(es.error.invalidDate).toBeTruthy();
+    expect(es.error.conflict).toBeTruthy();
   });
 
   it("exposes the setup-checklist bootstrap keys", () => {

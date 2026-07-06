@@ -125,7 +125,9 @@ export const fr: RepartoDictionary = {
     permission: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
     unauthorized: "Votre session a expiré. Veuillez vous reconnecter.",
     network: "Le serveur est injoignable. Veuillez réessayer.",
-    server: "Une erreur est survenue de notre côté. Veuillez réessayer."
+    server: "Une erreur est survenue de notre côté. Veuillez réessayer.",
+    invalidDate: "La date de début doit être antérieure ou égale à la date de fin.",
+    conflict: "Cette action entre en conflit avec l'état actuel."
   },
   disabled: {
     noProcess: "Sélectionnez ou créez d'abord un processus.",

@@ -126,7 +126,9 @@ export const en = {
     permission: "You do not have permission to perform this action.",
     unauthorized: "Your session has expired. Please sign in again.",
     network: "The server is unreachable. Please retry.",
-    server: "Something went wrong on our side. Please retry."
+    server: "Something went wrong on our side. Please retry.",
+    invalidDate: "Start date must be on or before end date.",
+    conflict: "This action conflicts with the current state."
   },
   disabled: {
     noProcess: "Select or create a process first.",

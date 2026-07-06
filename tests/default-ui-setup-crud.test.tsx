@@ -6,8 +6,6 @@ const yearId = "22222222-2222-4222-8222-222222222222";
 const departmentId = "33333333-3333-4333-8333-333333333333";
 const teacherProfileId = "44444444-4444-4444-8444-444444444444";
 
-type Scope = "schools" | "academic-years" | "departments" | "teacher-profiles";
-
 const queryState = vi.hoisted(() => ({
   schools: [] as { id: string; name: string }[],
   years: [] as {
@@ -111,7 +109,7 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(html).not.toContain('data-reparto-row-action="archive"');
   });
 
-  it("schools create form opens with name field", async () => {
+  it("renders the schools form shell with name field", async () => {
     resetState();
     queryState.schools = [];
     const { RepartoSchoolsView } = await import(
@@ -174,6 +172,7 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(archiveMatch).not.toBeNull();
     expect(archiveMatch?.[0]).toContain("disabled");
     expect(html).toContain('data-disabled-reason=');
+    expect(html).toContain('data-reparto-disabled-reason=""');
   });
 
   it("renders departments list (edit-only) and disables Create with a visible reason when no school exists (D-7 + freeze rule)", async () => {
@@ -249,5 +248,137 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     for (const html of [schools, years, departments, roster]) {
       expect(html).toContain('data-reparto-group="setup"');
     }
+  });
+});
+
+describe("Phase 2 step 2 — error mapping + disabled-reason + i18n", () => {
+  it("exposes the empty mapped error shape and fieldError lookup", async () => {
+    const { EMPTY_REPARTO_MAPPED_ERROR, findFieldError } = await import(
+      "../src/runtime/errorMapping.js"
+    );
+    expect(EMPTY_REPARTO_MAPPED_ERROR).toEqual({ fieldErrors: [], formError: null });
+    expect(findFieldError(EMPTY_REPARTO_MAPPED_ERROR, "name")).toBeUndefined();
+  });
+
+  it("renders a field-error slot inside the school form when a 422 maps to the name field", async () => {
+    resetState();
+    queryState.schools = [];
+    const { RepartoApiError } = await import("../src/runtime/errors.js");
+    const { mapRepartoError } = await import(
+      "../src/runtime/errorMapping.js"
+    );
+    const err = new RepartoApiError(422, [
+      {
+        loc: ["body", "name"],
+        msg: "School name is required",
+        type: "value_error"
+      }
+    ]);
+    const mapped = mapRepartoError(err);
+    expect(mapped.fieldErrors).toEqual([
+      {
+        field: "name",
+        message: "School name is required",
+        errorKey: "required"
+      }
+    ]);
+  });
+
+  it("renders localized labels in French for the schools form (i18n fr dictionary)", async () => {
+    resetState();
+    queryState.schools = [];
+    const { RepartoSchoolsView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const html = renderToStaticMarkup(<RepartoSchoolsView locale="fr" />);
+    expect(html).toContain("Établissements");
+  });
+
+  it("renders localized labels in Spanish for the teacher roster", async () => {
+    resetState();
+    const { RepartoTeacherRosterView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const html = renderToStaticMarkup(<RepartoTeacherRosterView locale="es" />);
+    expect(html).toContain("Docentes");
+  });
+
+  it("renders the create-disabled reason inline for departments when no school exists", async () => {
+    resetState();
+    queryState.departments = [];
+    const { RepartoDepartmentsView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const html = renderToStaticMarkup(<RepartoDepartmentsView locale="es" />);
+    expect(html).toContain('data-reparto-disabled-reason=""');
+    expect(html).toContain("centro");
+  });
+
+  it("renders RepartoFieldError with role=alert and per-field key when present", async () => {
+    const { RepartoFieldError } = await import(
+      "../src/runtime/react/default-ui/feedback.js"
+    );
+    const { mapRepartoError } = await import("../src/runtime/errorMapping.js");
+    const { RepartoApiError } = await import("../src/runtime/errors.js");
+    const mapped = mapRepartoError(
+      new RepartoApiError(422, [
+        { loc: ["body", "name"], msg: "name required", type: "value_error" }
+      ])
+    );
+    const html = renderToStaticMarkup(
+      <RepartoFieldError field="name" id="x-error" mapped={mapped} />
+    );
+    expect(html).toContain('data-reparto-slot="field-error"');
+    expect(html).toContain('data-reparto-field="name"');
+    expect(html).toContain('data-reparto-error-key="required"');
+    expect(html).toContain('id="x-error"');
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("name required");
+  });
+
+  it("renders nothing when RepartoFieldError is given an empty mapped error", async () => {
+    const { RepartoFieldError } = await import(
+      "../src/runtime/react/default-ui/feedback.js"
+    );
+    const { EMPTY_REPARTO_MAPPED_ERROR } = await import(
+      "../src/runtime/errorMapping.js"
+    );
+    const html = renderToStaticMarkup(
+      <RepartoFieldError field="name" mapped={EMPTY_REPARTO_MAPPED_ERROR} />
+    );
+    expect(html).toBe("");
+  });
+
+  it("renders RepartoFormError with errorKey=conflict on a 409 response", async () => {
+    const { RepartoFormError } = await import(
+      "../src/runtime/react/default-ui/feedback.js"
+    );
+    const { mapRepartoError } = await import("../src/runtime/errorMapping.js");
+    const { RepartoApiError } = await import("../src/runtime/errors.js");
+    const mapped = mapRepartoError(
+      new RepartoApiError(409, "Auth user is already linked")
+    );
+    const html = renderToStaticMarkup(<RepartoFormError mapped={mapped} />);
+    expect(html).toContain('data-reparto-slot="form-error"');
+    expect(html).toContain('data-reparto-error-key="conflict"');
+    expect(html).toContain("Auth user is already linked");
+  });
+
+  it("renders RepartoDisabledReason with the freeze-required data attribute", async () => {
+    const { RepartoDisabledReason } = await import(
+      "../src/runtime/react/default-ui/feedback.js"
+    );
+    const html = renderToStaticMarkup(
+      <RepartoDisabledReason reason="Select a process first" />
+    );
+    expect(html).toContain('data-reparto-disabled-reason=""');
+    expect(html).toContain("Select a process first");
+  });
+
+  it("renders nothing when RepartoDisabledReason has no reason", async () => {
+    const { RepartoDisabledReason } = await import(
+      "../src/runtime/react/default-ui/feedback.js"
+    );
+    expect(renderToStaticMarkup(<RepartoDisabledReason reason={null} />)).toBe("");
   });
 });

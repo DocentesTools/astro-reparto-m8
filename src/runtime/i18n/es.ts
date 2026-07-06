@@ -125,7 +125,9 @@ export const es: RepartoDictionary = {
     permission: "No tiene permiso para realizar esta acción.",
     unauthorized: "Su sesión ha caducado. Inicie sesión de nuevo.",
     network: "No se puede contactar con el servidor. Inténtelo de nuevo.",
-    server: "Se ha producido un error en el servidor. Inténtelo de nuevo."
+    server: "Se ha producido un error en el servidor. Inténtelo de nuevo.",
+    invalidDate: "La fecha de inicio debe ser anterior o igual a la fecha de fin.",
+    conflict: "Esta acción entra en conflicto con el estado actual."
   },
   disabled: {
     noProcess: "Seleccione o cree primero un proceso.",

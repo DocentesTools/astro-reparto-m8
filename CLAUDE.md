@@ -38,7 +38,11 @@ Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
 
 - `src/runtime/api/**` - assignmentProcesses, assignments, meetingSessions,
   selectionTurns, history, plus the Phase 1 global-entity wrappers: schools,
-  academicYears, departments, teacherProfiles.
+  academicYears, departments, teacherProfiles. Phase 2 step 2 ships
+  `errorMapping.ts` (`mapRepartoError`/`findFieldError`/`describeErrorKey`)
+  that turns `RepartoApiError` / `RepartoUnauthenticatedError` / network
+  failures into per-field + form-level mapped errors, re-exported via
+  `./api` and `./error-mapping`.
 - `src/runtime/i18n/**` - English-first runtime dictionary (`en`/`fr`/`es`),
   `formatRepartoMessage`, `getRepartoDictionary`, `normalizeRepartoLocale`.
   Mirrors `docs/ui-naming-freeze.md`; tests fail on missing keys, the bare
@@ -77,8 +81,17 @@ departments / teacher-roster ship in `src/runtime/react/default-ui/setup-crud.ts
 (edit-only schools/departments; archive-only academic years; hard delete +
 link-user for the teacher roster), backed by the four new starter `.astro`
 routes and the `DEFAULT_REPARTO_NAV` / `buildRepartoNav` plugin nav snapshot.
-Phase 2 step 2 (backend-error mapping + E2E gate) and Phase 3+ (process-scoped
-CRUD, dashboards, host wiring) are still TODO.
+Phase 2 step 2 (backend-error mapping + disabled-reason surfacing + i18n
+labels + component tests) is also done 2026-07-06: `runtime/errorMapping.ts`
+turns `RepartoApiError` (and the unauth/network paths) into per-field +
+form-level mapped errors; the four Setup islands surface them via
+`RepartoFieldError` / `RepartoFormError` / `RepartoDisabledReason` (in
+`runtime/react/default-ui/feedback.tsx`) with `aria-invalid` + `role="alert"`
+on the affected inputs and always-visible `data-reparto-disabled-reason`
+spans. The i18n dict gains `error.invalidDate` and `error.conflict` for
+en/fr/es. 184/184 tests green; runtime coverage 100/100/100/100.
+Phase 3+ (process-scoped CRUD, dashboards, host wiring) and the
+`fa-ui-m8` Playwright E2E gate for empty-DB bootstrap are still TODO.
 
 ## Repo-specific rules
 

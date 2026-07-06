@@ -24,6 +24,17 @@ import {
   type RepartoLocale
 } from "../../i18n/index.js";
 import {
+  EMPTY_REPARTO_MAPPED_ERROR,
+  findFieldError,
+  mapRepartoError,
+  type RepartoMappedError
+} from "../../errorMapping.js";
+import {
+  RepartoDisabledReason,
+  RepartoFieldError,
+  RepartoFormError
+} from "./feedback.js";
+import {
   repartoActionRowClass,
   repartoButtonClass,
   repartoFieldCaptionClass,
@@ -46,6 +57,7 @@ import type {
 
 type ViewConfig = Partial<RepartoRuntimeConfig>;
 type InputChangeEvent = { target: { value: string } };
+type CheckboxChangeEvent = { target: { checked: boolean } };
 type FormEvent = { preventDefault: () => void };
 
 function Shell({ children, config }: { children: React.ReactNode; config?: ViewConfig }) {
@@ -75,9 +87,15 @@ function QueryState({
     );
   }
   if (!isError) return null;
+  const mapped = mapRepartoError(error);
+  const message = mapped.formError?.message ?? `${label} unavailable`;
   return (
-    <section className={repartoPanelClass} data-reparto-state="error">
-      {error instanceof Error ? error.message : `${label} unavailable`}
+    <section
+      className={repartoPanelClass}
+      data-reparto-state="error"
+      data-reparto-error-key={mapped.formError?.errorKey ?? "server"}
+    >
+      {message}
     </section>
   );
 }
@@ -115,7 +133,9 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
   const [region, setRegion] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
 
   const formOpen = creating || Boolean(editing);
 
@@ -128,7 +148,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
     setRegion("");
     setAddress("");
     setNotes("");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function openEdit(school: SchoolPublic) {
@@ -140,13 +160,13 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
     setRegion(school.region ?? "");
     setAddress(school.address ?? "");
     setNotes(school.notes ?? "");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function closeForm() {
     setCreating(false);
     setEditing(null);
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   const canSave =
@@ -157,7 +177,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!canSave) return;
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
     const body = {
       name: name.trim(),
       locality: locality.trim() || null,
@@ -166,8 +186,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
       address: address.trim() || null,
       notes: notes.trim() || null
     };
-    const onErr = (err: unknown) =>
-      setError(err instanceof Error ? err.message : dict.error.server);
+    const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
       updateMutation.mutate(
         { schoolId: editing.id, body },
@@ -180,6 +199,8 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
       });
     }
   }
+
+  const error = mapped.formError?.message ?? null;
 
   return (
     <main
@@ -252,12 +273,20 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
             <label className={repartoFieldLabelClass}>
               {dict.field.name}
               <input
+                aria-invalid={
+                  findFieldError(mapped, "name") ? true : undefined
+                }
+                aria-describedby={
+                  findFieldError(mapped, "name") ? "school-name-error" : undefined
+                }
                 className={repartoInputClass}
                 data-reparto-field="name"
+                id="school-name"
                 maxLength={200}
                 onChange={(e: InputChangeEvent) => setName(e.target.value)}
                 value={name}
               />
+              <RepartoFieldError field="name" id="school-name-error" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.locality}
@@ -309,11 +338,8 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
                 value={notes}
               />
             </label>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={mapped} />
+            {error ? null : null}
             <RowActions>
               <button
                 className={repartoButtonClass}
@@ -366,7 +392,12 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   const [label, setLabel] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
+  const [archiveMapped, setArchiveMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
 
   const formOpen = creating || Boolean(editing);
 
@@ -376,7 +407,7 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     setLabel("");
     setStartDate("");
     setEndDate("");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function openEdit(year: AcademicYearPublic) {
@@ -385,13 +416,13 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     setLabel(year.label);
     setStartDate(year.start_date);
     setEndDate(year.end_date);
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function closeForm() {
     setCreating(false);
     setEditing(null);
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   const datesValid =
@@ -408,14 +439,13 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!canSave) return;
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
     const body = {
       label: label.trim(),
       start_date: startDate,
       end_date: endDate
     };
-    const onErr = (err: unknown) =>
-      setError(err instanceof Error ? err.message : dict.error.server);
+    const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
       updateMutation.mutate(
         { yearId: editing.id, body },
@@ -430,10 +460,9 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   }
 
   function handleArchive(year: AcademicYearPublic) {
-    setError(null);
+    setArchiveMapped(EMPTY_REPARTO_MAPPED_ERROR);
     archiveMutation.mutate(year.id, {
-      onError: (err: unknown) =>
-        setError(err instanceof Error ? err.message : dict.error.server)
+      onError: (err: unknown) => setArchiveMapped(mapRepartoError(err))
     });
   }
 
@@ -458,62 +487,72 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
             </button>
           </RowActions>
         </div>
+        {archiveMapped.formError ? (
+          <p
+            className="text-sm text-destructive"
+            data-reparto-slot="archive-error"
+            data-reparto-error-key={archiveMapped.formError.errorKey ?? "server"}
+          >
+            {archiveMapped.formError.message}
+          </p>
+        ) : null}
         <ul className={repartoListClass} data-reparto-table="academic-years">
           {rows.length === 0 && !query.isLoading ? (
             <li className={repartoListItemClass} data-reparto-state="empty">
               {dict.table.noResults}
             </li>
           ) : (
-            rows.map((year) => (
-              <li
-                className={repartoListItemClass}
-                data-reparto-row="academic-year"
-                data-year-id={year.id}
-                data-year-status={year.status}
-                key={year.id}
-              >
-                <div className={repartoPanelHeaderClass}>
-                  <span data-reparto-slot="year-label">{year.label}</span>
-                  <span
-                    className={repartoFieldCaptionClass}
-                    data-reparto-slot="year-status"
-                  >
-                    {dict.entity.academicYear.status[year.status]}
-                  </span>
-                </div>
-                <p className={repartoFieldCaptionClass}>
-                  {year.start_date} → {year.end_date}
-                </p>
-                <RowActions>
-                  <button
-                    className={repartoButtonClass}
-                    data-reparto-action="edit"
-                    data-reparto-row-action="edit"
-                    onClick={() => openEdit(year)}
-                    type="button"
-                  >
-                    {dict.action.edit}
-                  </button>
-                  <button
-                    className={repartoButtonClass}
-                    data-reparto-action="archive"
-                    data-reparto-row-action="archive"
-                    data-disabled-reason={
-                      year.status === "archived"
-                        ? dict.entity.academicYear.status.archived
-                        : undefined
-                    }
-                    disabled={
-                      archiveMutation.isPending || year.status === "archived"
-                    }
-                    onClick={() => handleArchive(year)}
-                    type="button"
-                  >
-                    {dict.action.archive}
-                  </button>
-                </RowActions>
-              </li>
-            ))
+            rows.map((year) => {
+              const isArchived = year.status === "archived";
+              const archiveReason = isArchived
+                ? dict.entity.academicYear.status.archived
+                : null;
+              return (
+                <li
+                  className={repartoListItemClass}
+                  data-reparto-row="academic-year"
+                  data-year-id={year.id}
+                  data-year-status={year.status}
+                  key={year.id}
+                >
+                  <div className={repartoPanelHeaderClass}>
+                    <span data-reparto-slot="year-label">{year.label}</span>
+                    <span
+                      className={repartoFieldCaptionClass}
+                      data-reparto-slot="year-status"
+                    >
+                      {dict.entity.academicYear.status[year.status]}
+                    </span>
+                  </div>
+                  <p className={repartoFieldCaptionClass}>
+                    {year.start_date} → {year.end_date}
+                  </p>
+                  <RowActions>
+                    <button
+                      className={repartoButtonClass}
+                      data-reparto-action="edit"
+                      data-reparto-row-action="edit"
+                      onClick={() => openEdit(year)}
+                      type="button"
+                    >
+                      {dict.action.edit}
+                    </button>
+                    <button
+                      className={repartoButtonClass}
+                      data-reparto-action="archive"
+                      data-reparto-row-action="archive"
+                      data-disabled-reason={archiveReason ?? undefined}
+                      disabled={archiveMutation.isPending || isArchived}
+                      onClick={() => handleArchive(year)}
+                      type="button"
+                    >
+                      {dict.action.archive}
+                    </button>
+                    <RepartoDisabledReason reason={archiveReason} />
+                  </RowActions>
+                </li>
+              );
+            })
           )}
         </ul>
         <QueryState
@@ -534,10 +573,12 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 className={repartoInputClass}
                 data-reparto-field="label"
+                id="year-label"
                 maxLength={20}
                 onChange={(e: InputChangeEvent) => setLabel(e.target.value)}
                 value={label}
               />
+              <RepartoFieldError field="label" id="year-label-error" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.startDate}
@@ -545,9 +586,10 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
                 className={repartoInputClass}
                 data-reparto-field="start-date"
                 type="date"
-                onChange={(e: InputChangeEvent) => setStartDate(e.target.value)}
                 value={startDate}
+                onChange={(e: InputChangeEvent) => setStartDate(e.target.value)}
               />
+              <RepartoFieldError field="startDate" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.endDate}
@@ -555,15 +597,12 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
                 className={repartoInputClass}
                 data-reparto-field="end-date"
                 type="date"
-                onChange={(e: InputChangeEvent) => setEndDate(e.target.value)}
                 value={endDate}
+                onChange={(e: InputChangeEvent) => setEndDate(e.target.value)}
               />
+              <RepartoFieldError field="endDate" mapped={mapped} />
             </label>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={mapped} />
             <RowActions>
               <button
                 className={repartoButtonClass}
@@ -617,7 +656,9 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
   const [schoolId, setSchoolId] = useState("");
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
 
   const formOpen = creating || Boolean(editing);
 
@@ -627,7 +668,7 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
     setSchoolId(schools[0]?.id ?? "");
     setName("");
     setNotes("");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function openEdit(department: DepartmentPublic) {
@@ -636,16 +677,22 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
     setSchoolId(department.school_id);
     setName(department.name);
     setNotes(department.notes ?? "");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function closeForm() {
     setCreating(false);
     setEditing(null);
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   const schoolsMissing = schools.length === 0;
+  const createReason = schoolsMissing
+    ? dict.disabled.missingPrereq.replace(
+        "{prereq}",
+        dict.entity.school.singular.toLowerCase()
+      )
+    : null;
   const canSave =
     schoolId.trim() !== "" &&
     name.trim().length > 0 &&
@@ -655,14 +702,13 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!canSave) return;
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
     const body = {
       school_id: schoolId,
       name: name.trim(),
       notes: notes.trim() || null
     };
-    const onErr = (err: unknown) =>
-      setError(err instanceof Error ? err.message : dict.error.server);
+    const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
       updateMutation.mutate(
         {
@@ -695,33 +741,16 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
             <button
               className={repartoButtonClass}
               data-reparto-action="create"
-              data-disabled-reason={
-                schoolsMissing
-                  ? dict.disabled.missingPrereq.replace(
-                      "{prereq}",
-                      dict.entity.school.singular.toLowerCase()
-                    )
-                  : undefined
-              }
+              data-disabled-reason={createReason ?? undefined}
               disabled={formOpen || schoolsMissing}
               onClick={openCreate}
               type="button"
             >
               {dict.action.create}
             </button>
+            <RepartoDisabledReason reason={createReason} />
           </RowActions>
         </div>
-        {schoolsMissing ? (
-          <p
-            className="text-sm text-muted-foreground"
-            data-reparto-disabled-reason=""
-          >
-            {dict.disabled.missingPrereq.replace(
-              "{prereq}",
-              dict.entity.school.singular.toLowerCase()
-            )}
-          </p>
-        ) : null}
         <ul className={repartoListClass} data-reparto-table="departments">
           {rows.length === 0 && !query.isLoading ? (
             <li className={repartoListItemClass} data-reparto-state="empty">
@@ -785,16 +814,19 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
                   </option>
                 ))}
               </select>
+              <RepartoFieldError field="school" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.name}
               <input
                 className={repartoInputClass}
                 data-reparto-field="name"
+                id="department-name"
                 maxLength={150}
                 onChange={(e: InputChangeEvent) => setName(e.target.value)}
                 value={name}
               />
+              <RepartoFieldError field="name" id="department-name-error" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.notes}
@@ -806,11 +838,7 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
                 value={notes}
               />
             </label>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={mapped} />
             <RowActions>
               <button
                 className={repartoButtonClass}
@@ -867,7 +895,15 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const [displayName, setDisplayName] = useState("");
   const [active, setActive] = useState(true);
   const [notes, setNotes] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
+  const [linkMapped, setLinkMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
+  const [deleteMapped, setDeleteMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
 
   const formOpen = creating || Boolean(editing);
 
@@ -877,7 +913,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     setDisplayName("");
     setActive(true);
     setNotes("");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function openEdit(profile: TeacherProfilePublic) {
@@ -886,13 +922,13 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     setDisplayName(profile.display_name);
     setActive(profile.active);
     setNotes(profile.notes ?? "");
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   function closeForm() {
     setCreating(false);
     setEditing(null);
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
   const canSave =
@@ -903,14 +939,13 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!canSave) return;
-    setError(null);
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
     const body = {
       display_name: displayName.trim(),
       active,
       notes: notes.trim() || null
     };
-    const onErr = (err: unknown) =>
-      setError(err instanceof Error ? err.message : dict.error.server);
+    const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
       updateMutation.mutate(
         { profileId: editing.id, body },
@@ -926,18 +961,17 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
 
   function handleDelete() {
     if (!confirmDelete) return;
-    setError(null);
+    setDeleteMapped(EMPTY_REPARTO_MAPPED_ERROR);
     deleteMutation.mutate(confirmDelete.id, {
       onSuccess: () => setConfirmDelete(null),
-      onError: (err: unknown) =>
-        setError(err instanceof Error ? err.message : dict.error.server)
+      onError: (err: unknown) => setDeleteMapped(mapRepartoError(err))
     });
   }
 
   function handleLink(event: FormEvent) {
     event.preventDefault();
     if (!linkTarget || linkUserId.trim() === "") return;
-    setError(null);
+    setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
     linkMutation.mutate(
       { profileId: linkTarget.id, body: { user_id: linkUserId.trim() } },
       {
@@ -945,11 +979,13 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
           setLinkTarget(null);
           setLinkUserId("");
         },
-        onError: (err: unknown) =>
-          setError(err instanceof Error ? err.message : dict.error.server)
+        onError: (err: unknown) => setLinkMapped(mapRepartoError(err))
       }
     );
   }
+
+  const linkReason =
+    linkUserId.trim() === "" ? dict.error.required : null;
 
   return (
     <main
@@ -1052,9 +1088,15 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 className={repartoInputClass}
                 data-reparto-field="display-name"
+                id="teacher-display-name"
                 maxLength={150}
                 onChange={(e: InputChangeEvent) => setDisplayName(e.target.value)}
                 value={displayName}
+              />
+              <RepartoFieldError
+                field="displayName"
+                id="teacher-display-name-error"
+                mapped={mapped}
               />
             </label>
             <label className={repartoFieldLabelClass}>
@@ -1062,9 +1104,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 checked={active}
                 data-reparto-field="active"
-                onChange={(e: { target: { checked: boolean } }) =>
-                  setActive(e.target.checked)
-                }
+                onChange={(e: CheckboxChangeEvent) => setActive(e.target.checked)}
                 type="checkbox"
               />
             </label>
@@ -1078,11 +1118,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
                 value={notes}
               />
             </label>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={mapped} />
             <RowActions>
               <button
                 className={repartoButtonClass}
@@ -1115,25 +1151,26 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
             <label className={repartoFieldLabelClass}>
               {dict.field.linkedUser}
               <input
+                aria-invalid={linkReason ? true : undefined}
                 className={repartoInputClass}
                 data-reparto-field="user-id"
+                id="teacher-link-user"
                 onChange={(e: InputChangeEvent) => setLinkUserId(e.target.value)}
                 placeholder={dict.field.linkedUser}
                 value={linkUserId}
               />
+              <RepartoFieldError
+                field="userId"
+                id="teacher-link-user-error"
+                mapped={linkMapped}
+              />
             </label>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={linkMapped} />
             <RowActions>
               <button
                 className={repartoButtonClass}
                 data-reparto-action="link-user"
-                data-disabled-reason={
-                  linkUserId.trim() === "" ? dict.error.required : undefined
-                }
+                data-disabled-reason={linkReason ?? undefined}
                 disabled={
                   linkUserId.trim() === "" || linkMutation.isPending
                 }
@@ -1141,13 +1178,14 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
               >
                 {dict.action.linkUser}
               </button>
+              <RepartoDisabledReason reason={linkReason} />
               <button
                 className={repartoButtonClass}
                 data-reparto-action="cancel"
                 onClick={() => {
                   setLinkTarget(null);
                   setLinkUserId("");
-                  setError(null);
+                  setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
                 }}
                 type="button"
               >
@@ -1161,15 +1199,16 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
             className={repartoPanelClass}
             data-reparto-form="teacher-delete-confirm"
           >
-            <h3>{dict.confirm.delete.title.replace("{entity}", dict.entity.teacherRoster.singular.toLowerCase())}</h3>
+            <h3>
+              {dict.confirm.delete.title.replace(
+                "{entity}",
+                dict.entity.teacherRoster.singular.toLowerCase()
+              )}
+            </h3>
             <p data-reparto-slot="confirm-body">
               {dict.confirm.delete.body.replace("{name}", confirmDelete.display_name)}
             </p>
-            {error ? (
-              <p className="text-sm text-destructive" data-reparto-slot="form-error">
-                {error}
-              </p>
-            ) : null}
+            <RepartoFormError mapped={deleteMapped} />
             <RowActions>
               <button
                 className={repartoButtonClass}
@@ -1185,7 +1224,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
                 data-reparto-action="cancel"
                 onClick={() => {
                   setConfirmDelete(null);
-                  setError(null);
+                  setDeleteMapped(EMPTY_REPARTO_MAPPED_ERROR);
                 }}
                 type="button"
               >

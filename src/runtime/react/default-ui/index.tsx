@@ -972,6 +972,12 @@ export {
   RepartoTeacherRosterView
 } from "./setup-crud.js";
 
+export {
+  RepartoDisabledReason,
+  RepartoFieldError,
+  RepartoFormError
+} from "./feedback.js";
+
 export function DepartmentHeadView(props: Parameters<typeof RepartoDashboardView>[0]) {
   return <RepartoDashboardView {...props} />;
 }

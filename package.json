@@ -38,6 +38,7 @@
     "./i18n": "./dist/src/runtime/i18n/index.js",
     "./routes": "./dist/src/runtime/routes.js",
     "./ui": "./dist/src/runtime/ui/index.js",
+    "./error-mapping": "./dist/src/runtime/errorMapping.js",
     "./routes/dashboard.astro": "./src/routes/dashboard.astro",
     "./routes/meeting.astro": "./src/routes/meeting.astro",
     "./routes/processes.astro": "./src/routes/processes.astro",

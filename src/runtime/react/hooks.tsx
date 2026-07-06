@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   assignmentProcesses,
   history,
   meetingSessions
 } from "../api/index.js";
+import type { AssignmentProcessCreate } from "../schemas.js";
 import {
   normalizeListParams,
   repartoKeys,
@@ -17,6 +18,17 @@ export function useRepartoProcesses(params: RepartoListParams = {}) {
   return useQuery({
     queryKey: repartoKeys.processList(listParams),
     queryFn: () => assignmentProcesses.list(listParams)
+  });
+}
+
+export function useCreateRepartoProcess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: AssignmentProcessCreate) =>
+      assignmentProcesses.create(body),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: repartoKeys.processes() });
+    }
   });
 }
 

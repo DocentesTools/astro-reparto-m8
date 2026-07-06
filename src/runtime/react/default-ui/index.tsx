@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+
+type FormSubmitEvent = { preventDefault: () => void };
+type InputChangeEvent = { target: { value: string } };
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
 import {
@@ -12,6 +15,7 @@ import {
   TeacherLanWorkspace
 } from "../LanWorkspace.js";
 import {
+  useCreateRepartoProcess,
   useRepartoDashboard,
   useRepartoExports,
   useRepartoMeetingSessions,
@@ -21,6 +25,18 @@ import {
   useRepartoVersions
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
+import {
+  repartoActionRowClass,
+  repartoButtonClass,
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
+  repartoInputClass,
+  repartoListClass,
+  repartoListItemClass,
+  repartoPanelClass,
+  repartoPanelHeaderClass,
+  repartoShellClass
+} from "../styles.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
 import type {
   AssignmentProcessStatus,
@@ -32,7 +48,6 @@ import type {
   TeacherLanSummary,
   VersionComparison
 } from "../../schemas.js";
-import { repartoPanelClass } from "../styles.js";
 
 type ViewConfig = Partial<RepartoRuntimeConfig>;
 
@@ -70,6 +85,150 @@ function QueryState({
   );
 }
 
+function ProcessPicker({ onSelect }: { onSelect: (processId: string) => void }) {
+  const processesQuery = useRepartoProcesses();
+  const createProcess = useCreateRepartoProcess();
+  const processes = processesQuery.data?.data ?? [];
+  const [academicYearId, setAcademicYearId] = useState("");
+  const [schoolId, setSchoolId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+
+  const canCreate =
+    academicYearId.trim() !== "" &&
+    schoolId.trim() !== "" &&
+    departmentId.trim() !== "" &&
+    !createProcess.isPending;
+
+  function handleCreate(event: FormSubmitEvent) {
+    event.preventDefault();
+    if (!canCreate) return;
+    createProcess.mutate(
+      {
+        academic_year_id: academicYearId.trim(),
+        school_id: schoolId.trim(),
+        department_id: departmentId.trim()
+      },
+      { onSuccess: (process) => onSelect(process.id) }
+    );
+  }
+
+  return (
+    <main className={repartoShellClass} data-reparto-route="process-picker">
+      <section className={repartoPanelClass} data-reparto-panel="process-picker">
+        <div className={repartoPanelHeaderClass}>
+          <h2>Select a process</h2>
+          <span className="text-sm text-muted-foreground" data-reparto-slot="process-count">
+            {processesQuery.data?.count ?? 0}
+          </span>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          Choose an assignment process to continue, or create a new one.
+        </p>
+        <div data-reparto-slot="process-picker-list">
+          {processes.length > 0 ? (
+            <ul className={repartoListClass}>
+              {processes.map((process) => (
+                <li
+                  className={repartoListItemClass}
+                  data-process-id={process.id}
+                  data-process-status={process.status}
+                  key={process.id}
+                >
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="select-process"
+                    onClick={() => onSelect(process.id)}
+                    type="button"
+                  >
+                    {process.status}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground" data-reparto-slot="process-empty">
+              No processes yet. Create the first one below.
+            </p>
+          )}
+        </div>
+        <QueryState
+          error={processesQuery.error}
+          isError={processesQuery.isError}
+          isLoading={processesQuery.isLoading}
+          label="Processes"
+        />
+        <form
+          className={repartoFieldGridClass}
+          data-reparto-form="create-process"
+          onSubmit={handleCreate}
+        >
+          <label className={repartoFieldLabelClass}>
+            Academic year id
+            <input
+              className={repartoInputClass}
+              data-reparto-field="academic-year"
+              onChange={(event: InputChangeEvent) => setAcademicYearId(event.target.value)}
+              value={academicYearId}
+            />
+          </label>
+          <label className={repartoFieldLabelClass}>
+            School id
+            <input
+              className={repartoInputClass}
+              data-reparto-field="school"
+              onChange={(event: InputChangeEvent) => setSchoolId(event.target.value)}
+              value={schoolId}
+            />
+          </label>
+          <label className={repartoFieldLabelClass}>
+            Department id
+            <input
+              className={repartoInputClass}
+              data-reparto-field="department"
+              onChange={(event: InputChangeEvent) => setDepartmentId(event.target.value)}
+              value={departmentId}
+            />
+          </label>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="create-process"
+              disabled={!canCreate}
+              type="submit"
+            >
+              {createProcess.isPending ? "creating…" : "create process"}
+            </button>
+          </div>
+          {createProcess.isError ? (
+            <p className="text-sm text-destructive" data-reparto-slot="create-error">
+              {createProcess.error instanceof Error
+                ? createProcess.error.message
+                : "Could not create process."}
+            </p>
+          ) : null}
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function WithSelectedProcess({
+  bypass = false,
+  children,
+  processId
+}: {
+  bypass?: boolean;
+  children: (processId: string | undefined) => ReactNode;
+  processId?: string;
+}) {
+  const [selected, setSelected] = useState<string | undefined>(undefined);
+  const effective = resolveProcessId(processId) ?? selected;
+  if (!bypass && !effective) {
+    return <ProcessPicker onSelect={setSelected} />;
+  }
+  return <>{children(effective ?? processId)}</>;
+}
+
 function dashboardSummary(dashboard?: ProcessDashboard | null): ProcessSummary | null {
   if (!dashboard) return null;
   return {
@@ -100,11 +259,15 @@ export function RepartoDashboardView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoDashboardContent
-        dashboard={dashboard}
-        processId={processId}
-        summary={summary}
-      />
+      <WithSelectedProcess bypass={Boolean(dashboard || summary)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoDashboardContent
+            dashboard={dashboard}
+            processId={resolvedProcessId}
+            summary={summary}
+          />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }
@@ -150,7 +313,11 @@ export function RepartoMeetingView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoMeetingContent processId={processId} summary={summary} />
+      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoMeetingContent processId={resolvedProcessId} summary={summary} />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }
@@ -226,13 +393,17 @@ export function RepartoMyView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoMyContent
-        meetingSession={meetingSession}
-        processId={processId}
-        requirementAssignedHours={requirementAssignedHours}
-        requirementRequiredHours={requirementRequiredHours}
-        summary={summary}
-      />
+      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoMyContent
+            meetingSession={meetingSession}
+            processId={resolvedProcessId}
+            requirementAssignedHours={requirementAssignedHours}
+            requirementRequiredHours={requirementRequiredHours}
+            summary={summary}
+          />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }
@@ -289,7 +460,11 @@ export function RepartoSharedView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoSharedContent processId={processId} summary={summary} />
+      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoSharedContent processId={resolvedProcessId} summary={summary} />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }
@@ -331,11 +506,15 @@ export function RepartoVersionsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoVersionsContent
-        comparison={comparison}
-        processId={processId}
-        versions={versions}
-      />
+      <WithSelectedProcess bypass={Boolean(versions)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoVersionsContent
+            comparison={comparison}
+            processId={resolvedProcessId}
+            versions={versions}
+          />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }
@@ -381,12 +560,16 @@ export function RepartoExportsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoExportsContent
-        exports={exports}
-        processId={processId}
-        processStatus={processStatus}
-        summary={summary}
-      />
+      <WithSelectedProcess bypass={Boolean(exports || summary)} processId={processId}>
+        {(resolvedProcessId) => (
+          <RepartoExportsContent
+            exports={exports}
+            processId={resolvedProcessId}
+            processStatus={processStatus}
+            summary={summary}
+          />
+        )}
+      </WithSelectedProcess>
     </Shell>
   );
 }

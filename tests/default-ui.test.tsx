@@ -209,16 +209,16 @@ describe("default reparto UI", () => {
     expect(sharedHtml).toContain("Teacher 44444444-4444-4444-8444-444444444444");
   });
 
-  it("renders LAN views before a process is selected", () => {
-    expect(renderToStaticMarkup(<TeacherLanView />)).toContain(
-      'data-reparto-route="my-view"'
-    );
-    expect(renderToStaticMarkup(<DepartmentHeadView />)).toContain(
-      "No active turn"
-    );
-    expect(renderToStaticMarkup(<SharedScreenView />)).toContain(
-      "No active turn"
-    );
+  it("shows the process picker when no process is selected", () => {
+    for (const view of [
+      renderToStaticMarkup(<TeacherLanView />),
+      renderToStaticMarkup(<DepartmentHeadView />),
+      renderToStaticMarkup(<SharedScreenView />)
+    ]) {
+      expect(view).toContain('data-reparto-route="process-picker"');
+      expect(view).toContain('data-reparto-form="create-process"');
+      expect(view).toContain('data-reparto-action="create-process"');
+    }
   });
 
   it("renders Phase 4 direct-choice readiness and confirmation UI", () => {
@@ -245,7 +245,7 @@ describe("default reparto UI", () => {
     expect(renderToStaticMarkup(<RepartoProcessesView />)).toContain(
       'data-reparto-slot="process-count"'
     );
-    const versions = renderToStaticMarkup(<RepartoVersionsView />);
+    const versions = renderToStaticMarkup(<RepartoVersionsView versions={[]} />);
     expect(versions).toContain('data-reparto-action="create-version"');
     expect(versions).toContain('data-reparto-action="compare-versions"');
     expect(versions).toContain('data-reparto-panel="comparison"');
@@ -279,18 +279,18 @@ describe("default reparto UI", () => {
     expect(exports).toContain('data-reparto-action="reopen-final"');
     expect(exports).toContain('data-reparto-active="true"');
 
-    const defaultExports = renderToStaticMarkup(<RepartoExportCenterView />);
+    const defaultExports = renderToStaticMarkup(<RepartoExportCenterView exports={[]} />);
     expect(defaultExports).toContain('data-reparto-workflow-action="none"');
     expect(defaultExports).toContain("Final ready");
     expect(defaultExports).toContain('data-reparto-backup-id=""');
 
     const returned = renderToStaticMarkup(
-      <RepartoExportCenterView processStatus="sent_to_school_leadership" />
+      <RepartoExportCenterView exports={[]} processStatus="sent_to_school_leadership" />
     );
     expect(returned).toContain('data-reparto-workflow-action="mark-returned"');
 
     const revision = renderToStaticMarkup(
-      <RepartoExportCenterView processStatus="returned_by_school_leadership" />
+      <RepartoExportCenterView exports={[]} processStatus="returned_by_school_leadership" />
     );
     expect(revision).toContain('data-reparto-workflow-action="start-revision"');
   });

@@ -51,17 +51,17 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
     entries: [
       { labelKey: "nav.item.dashboard", route: "dashboard" },
       { labelKey: "nav.item.processes", route: "processList" },
-      { labelKey: "nav.item.classrooms", href: "#" },
-      { labelKey: "nav.item.subjects", href: "#" },
-      { labelKey: "nav.item.requirements", href: "#" },
-      { labelKey: "nav.item.processParticipants", href: "#" },
-      { labelKey: "nav.item.assignments", href: "#" },
+      { labelKey: "nav.item.classrooms", route: "classrooms" },
+      { labelKey: "nav.item.subjects", route: "subjects" },
+      { labelKey: "nav.item.requirements", route: "requirements" },
+      { labelKey: "nav.item.processParticipants", route: "participants" },
+      { labelKey: "nav.item.assignments", route: "assignments" },
       { labelKey: "nav.item.meeting", route: "meeting" },
       { labelKey: "nav.item.myView", route: "teacherView" },
       { labelKey: "nav.item.shared", route: "sharedScreen" },
       { labelKey: "nav.item.versions", route: "versions" },
       { labelKey: "nav.item.exports", route: "exports" },
-      { labelKey: "nav.item.audit", href: "#" }
+      { labelKey: "nav.item.audit", route: "audit" }
     ]
   }
 };
@@ -77,7 +77,7 @@ export function buildRepartoNav(
     return {
       ...entry,
       href: pattern
-        ? String(pattern).replace(/\[.*?\]/g, "")
+        ? String(pattern).replace(/\/\[[^\]]*\]/g, "")
         : "#"
     };
   }
@@ -98,7 +98,13 @@ const ROUTE_ENTRYPOINTS = {
   schools: "@mano8/astro-reparto-m8/routes/schools.astro",
   academicYears: "@mano8/astro-reparto-m8/routes/academic-years.astro",
   departments: "@mano8/astro-reparto-m8/routes/departments.astro",
-  teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro"
+  teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro",
+  subjects: "@mano8/astro-reparto-m8/routes/subjects.astro",
+  classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
+  requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
+  participants: "@mano8/astro-reparto-m8/routes/participants.astro",
+  assignments: "@mano8/astro-reparto-m8/routes/assignments.astro",
+  audit: "@mano8/astro-reparto-m8/routes/audit.astro"
 } as const;
 
 const AUTH_INTEGRATION_NAME = "@mano8/astro-auth-m8";

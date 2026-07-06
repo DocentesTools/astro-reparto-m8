@@ -6,6 +6,22 @@ import type {
 } from "../schemas.js";
 import { buildTeacherChoiceState, directChoiceConflictMessage } from "../ui/index.js";
 import { CurrentTurnCard } from "./DepartmentHeadWorkspace.js";
+import {
+  repartoActionRowClass,
+  repartoButtonClass,
+  repartoChoiceLayoutClass,
+  repartoConfirmationClass,
+  repartoEyebrowClass,
+  repartoHeaderClass,
+  repartoMainGridClass,
+  repartoMetricItemClass,
+  repartoMetricLabelClass,
+  repartoMetricValueLargeClass,
+  repartoMetricsClass,
+  repartoPanelClass,
+  repartoPanelHeaderClass,
+  repartoShellClass
+} from "./styles.js";
 
 function eventStreamUrl(processId?: string): string | undefined {
   return processId ? assignmentProcesses.eventsUrl(processId) : undefined;
@@ -64,24 +80,31 @@ function TeacherDirectChoicePanel({
   );
   return (
     <section
-      className="reparto-panel"
+      className={repartoPanelClass}
       data-reparto-panel="direct-choice-workflow"
       data-reparto-choice-state={choice.canChoose ? "ready" : "blocked"}
     >
-      <div className="reparto-panel-header">
+      <div className={repartoPanelHeaderClass}>
         <h2>Choose group</h2>
-        <span data-reparto-slot="choice-state">{conflictMessage}</span>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="choice-state">
+          {conflictMessage}
+        </span>
       </div>
-      <div className="reparto-choice-layout">
+      <div className={repartoChoiceLayoutClass}>
         <div data-reparto-slot="available-requirements-table" />
-        <aside className="reparto-confirmation" data-reparto-slot="choice-confirmation">
-          <span>Confirmation</span>
-          <strong>{choice.confirmationLabel}</strong>
-          <p data-reparto-slot="choice-conflict">{conflictMessage}</p>
+        <aside className={repartoConfirmationClass} data-reparto-slot="choice-confirmation">
+          <span className="block text-xs text-muted-foreground">Confirmation</span>
+          <strong className="mt-1 block text-sm font-semibold text-foreground">
+            {choice.confirmationLabel}
+          </strong>
+          <p className="mt-2 text-sm text-muted-foreground" data-reparto-slot="choice-conflict">
+            {conflictMessage}
+          </p>
         </aside>
       </div>
-      <div className="reparto-actions">
+      <div className={repartoActionRowClass}>
         <button
+          className={repartoButtonClass}
           data-reparto-action="direct-choice"
           data-reparto-impact-hours={choice.impactHours}
           disabled={!choice.canChoose}
@@ -90,6 +113,7 @@ function TeacherDirectChoicePanel({
           choose
         </button>
         <button
+          className={repartoButtonClass}
           data-reparto-action="pass-turn"
           disabled={!choice.passTurnEnabled}
           type="button"
@@ -119,42 +143,42 @@ export function TeacherLanWorkspace({
   const safeSummary = summary ?? fallbackTeacherSummary;
   return (
     <main
-      className="reparto-shell"
+      className={repartoShellClass}
       data-process-id={processId}
       data-reparto-control="lan-teacher"
       data-reparto-events-url={eventsUrl}
       data-reparto-route="my-view"
     >
-      <header className="reparto-header">
-        <p className="reparto-eyebrow">LAN meeting</p>
+      <header className={repartoHeaderClass}>
+        <p className={repartoEyebrowClass}>LAN meeting</p>
         <h1>My teaching load</h1>
       </header>
-      <div className="reparto-grid reparto-grid-main">
-        <section className="reparto-panel" data-reparto-panel="teacher-summary">
-          <div className="reparto-panel-header">
+      <div className={repartoMainGridClass}>
+        <section className={repartoPanelClass} data-reparto-panel="teacher-summary">
+          <div className={repartoPanelHeaderClass}>
             <h2>Summary</h2>
-            <span data-reparto-slot="connection-state" />
+            <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
           </div>
-          <dl className="reparto-metrics">
-            <div>
-              <dt>Available</dt>
-              <dd data-reparto-slot="teacher-available-hours" />
+          <dl className={repartoMetricsClass}>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Available</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-available-hours" />
             </div>
-            <div>
-              <dt>Assigned</dt>
-              <dd data-reparto-slot="teacher-assigned-hours" />
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Assigned</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-assigned-hours" />
             </div>
-            <div>
-              <dt>Remaining</dt>
-              <dd data-reparto-slot="teacher-remaining-hours" />
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Remaining</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-remaining-hours" />
             </div>
           </dl>
           <div data-reparto-slot="teacher-balance" />
         </section>
-        <section className="reparto-panel" data-reparto-panel="turn-and-balance">
-          <div className="reparto-panel-header">
+        <section className={repartoPanelClass} data-reparto-panel="turn-and-balance">
+          <div className={repartoPanelHeaderClass}>
             <h2>Turn state</h2>
-            <span data-reparto-slot="turn-status" />
+            <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status" />
           </div>
           <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
         </section>
@@ -179,42 +203,42 @@ export function SharedScreenWorkspace({
   const eventsUrl = eventStreamUrl(processId);
   return (
     <main
-      className="reparto-shell reparto-shared-screen"
+      className={repartoShellClass}
       data-process-id={processId}
       data-reparto-control="projected-summary"
       data-reparto-events-url={eventsUrl}
       data-reparto-route="shared-screen"
     >
-      <header className="reparto-header">
-        <p className="reparto-eyebrow">Department meeting</p>
+      <header className={repartoHeaderClass}>
+        <p className={repartoEyebrowClass}>Department meeting</p>
         <h1>Reparto live state</h1>
       </header>
-      <div className="reparto-grid reparto-grid-main">
-        <section className="reparto-panel" data-reparto-panel="global-state">
-          <div className="reparto-panel-header">
+      <div className={repartoMainGridClass}>
+        <section className={repartoPanelClass} data-reparto-panel="global-state">
+          <div className={repartoPanelHeaderClass}>
             <h2>Balance</h2>
-            <span data-reparto-slot="connection-state" />
+            <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
           </div>
-          <dl className="reparto-metrics">
-            <div>
-              <dt>Required</dt>
-              <dd data-reparto-slot="total-required-hours" />
+          <dl className={repartoMetricsClass}>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Required</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-required-hours" />
             </div>
-            <div>
-              <dt>Assigned</dt>
-              <dd data-reparto-slot="total-assigned-hours" />
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Assigned</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-assigned-hours" />
             </div>
-            <div>
-              <dt>Pending</dt>
-              <dd data-reparto-slot="pending-required-hours" />
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Pending</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="pending-required-hours" />
             </div>
           </dl>
           <div data-reparto-slot="global-balance" />
         </section>
-        <section className="reparto-panel" data-reparto-panel="turn-state">
-          <div className="reparto-panel-header">
+        <section className={repartoPanelClass} data-reparto-panel="turn-state">
+          <div className={repartoPanelHeaderClass}>
             <h2>Current turn</h2>
-            <span data-reparto-slot="turn-status" />
+            <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status" />
           </div>
           <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
           <div data-reparto-slot="validations" />

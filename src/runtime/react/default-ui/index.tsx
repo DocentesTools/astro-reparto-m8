@@ -32,6 +32,7 @@ import type {
   TeacherLanSummary,
   VersionComparison
 } from "../../schemas.js";
+import { repartoPanelClass } from "../styles.js";
 
 type ViewConfig = Partial<RepartoRuntimeConfig>;
 
@@ -56,14 +57,14 @@ function QueryState({
 }) {
   if (isLoading) {
     return (
-      <section className="reparto-panel" data-reparto-state="loading">
+      <section className={repartoPanelClass} data-reparto-state="loading">
         {label} loading
       </section>
     );
   }
   if (!isError) return null;
   return (
-    <section className="reparto-panel" data-reparto-state="error">
+    <section className={repartoPanelClass} data-reparto-state="error">
       {error instanceof Error ? error.message : `${label} unavailable`}
     </section>
   );

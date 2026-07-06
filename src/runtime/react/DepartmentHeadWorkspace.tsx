@@ -15,6 +15,30 @@ import {
   canCompareVersions,
   nextLeadershipWorkflowAction
 } from "../ui/index.js";
+import {
+  repartoActionRowClass,
+  repartoButtonClass,
+  repartoEyebrowClass,
+  repartoFieldCaptionClass,
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
+  repartoGridClass,
+  repartoHeaderClass,
+  repartoInputClass,
+  repartoListClass,
+  repartoListItemClass,
+  repartoMainGridClass,
+  repartoMetricItemClass,
+  repartoMetricLabelClass,
+  repartoMetricValueClass,
+  repartoMetricValueLargeClass,
+  repartoMetricsClass,
+  repartoPanelClass,
+  repartoPanelHeaderClass,
+  repartoShellClass,
+  repartoTurnSummaryClass,
+  repartoTurnSummaryItemClass
+} from "./styles.js";
 
 const sections = [
   {
@@ -108,25 +132,25 @@ export function CurrentTurnCard({
   const display = buildCurrentTurnDisplay(currentTurn);
   return (
     <div
-      className="reparto-turn-summary"
+      className={repartoTurnSummaryClass}
       data-reparto-slot="current-turn"
       data-reparto-turn-status={currentTurn?.status ?? "none"}
     >
-      <div>
-        <span>Status</span>
-        <strong>{display.statusLabel}</strong>
+      <div className={repartoTurnSummaryItemClass}>
+        <span className={repartoMetricLabelClass}>Status</span>
+        <strong className={repartoMetricValueClass}>{display.statusLabel}</strong>
       </div>
-      <div>
-        <span>Turn</span>
-        <strong>{display.positionLabel}</strong>
+      <div className={repartoTurnSummaryItemClass}>
+        <span className={repartoMetricLabelClass}>Turn</span>
+        <strong className={repartoMetricValueClass}>{display.positionLabel}</strong>
       </div>
-      <div>
-        <span>Teacher</span>
-        <strong>{display.turnLabel}</strong>
+      <div className={repartoTurnSummaryItemClass}>
+        <span className={repartoMetricLabelClass}>Teacher</span>
+        <strong className={repartoMetricValueClass}>{display.turnLabel}</strong>
       </div>
-      <div>
-        <span>Started</span>
-        <strong>{display.startedLabel}</strong>
+      <div className={repartoTurnSummaryItemClass}>
+        <span className={repartoMetricLabelClass}>Started</span>
+        <strong className={repartoMetricValueClass}>{display.startedLabel}</strong>
       </div>
     </div>
   );
@@ -141,79 +165,87 @@ export function DepartmentHeadWorkspace({
 }) {
   const activeSummary = summary ?? dashboard ?? null;
   return (
-    <main className="reparto-shell" data-reparto-route="dashboard">
-      <header className="reparto-header">
-        <p className="reparto-eyebrow">Department head</p>
+    <main className={repartoShellClass} data-reparto-route="dashboard">
+      <header className={repartoHeaderClass}>
+        <p className={repartoEyebrowClass}>Department head</p>
         <h1>Reparto docente</h1>
       </header>
-      <div className="reparto-grid">
-        <section className="reparto-panel" data-reparto-panel="current-turn">
-          <div className="reparto-panel-header">
+      <div className={repartoGridClass}>
+        <section className={repartoPanelClass} data-reparto-panel="current-turn">
+          <div className={repartoPanelHeaderClass}>
             <h2>Current turn</h2>
-            <span data-reparto-slot="turn-status" />
+            <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status" />
           </div>
           <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} />
           {activeSummary ? (
-            <dl className="reparto-metrics">
-              <div>
-                <dt>Required</dt>
-                <dd data-reparto-slot="total-required-hours">
+            <dl className={repartoMetricsClass}>
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>Required</dt>
+                <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-required-hours">
                   {activeSummary.global_balance.total_required_hours}
                 </dd>
               </div>
-              <div>
-                <dt>Assigned</dt>
-                <dd data-reparto-slot="total-assigned-hours">
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>Assigned</dt>
+                <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-assigned-hours">
                   {activeSummary.global_balance.total_assigned_hours}
                 </dd>
               </div>
-              <div>
-                <dt>Blocking</dt>
-                <dd data-reparto-slot="blocking-count">
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>Blocking</dt>
+                <dd className={repartoMetricValueLargeClass} data-reparto-slot="blocking-count">
                   {activeSummary.blocking_validation_count}
                 </dd>
               </div>
             </dl>
           ) : null}
-          <div className="reparto-actions">
-            <button data-reparto-action="initialize-turns" type="button">
+          <div className={repartoActionRowClass}>
+            <button className={repartoButtonClass} data-reparto-action="initialize-turns" type="button">
               initialize turns
             </button>
-            <button data-reparto-action="start-turn" type="button">
+            <button className={repartoButtonClass} data-reparto-action="start-turn" type="button">
               start turn
             </button>
-            <button data-reparto-action="complete-turn" type="button">
+            <button className={repartoButtonClass} data-reparto-action="complete-turn" type="button">
               complete turn
             </button>
-            <button data-reparto-action="skip-turn" type="button">
+            <button className={repartoButtonClass} data-reparto-action="skip-turn" type="button">
               skip turn
             </button>
-            <button data-reparto-action="override-turn" type="button">
+            <button className={repartoButtonClass} data-reparto-action="override-turn" type="button">
               override turn
             </button>
           </div>
         </section>
         {sections.map((section) => (
           <section
-            className="reparto-panel"
+            className={repartoPanelClass}
             data-reparto-panel={section.id}
             key={section.id}
           >
-            <div className="reparto-panel-header">
+            <div className={repartoPanelHeaderClass}>
               <h2>{section.title}</h2>
-              <span data-reparto-slot={`${section.id}-status`} />
+              <span
+                className="text-sm text-muted-foreground"
+                data-reparto-slot={`${section.id}-status`}
+              />
             </div>
-            <div className="reparto-fields">
+            <div className={repartoFieldGridClass}>
               {section.fields.map((field) => (
-                <label data-reparto-field={field} key={field}>
-                  <span>{field.replaceAll("-", " ")}</span>
-                  <input name={field} />
+                <label className={repartoFieldLabelClass} data-reparto-field={field} key={field}>
+                  <span className={repartoFieldCaptionClass}>{field.replaceAll("-", " ")}</span>
+                  <input className={repartoInputClass} name={field} />
                 </label>
               ))}
             </div>
-            <div className="reparto-actions">
+            <div className={repartoActionRowClass}>
               {section.actions.map((action) => (
-                <button data-reparto-action={action} key={action} type="button">
+                <button
+                  className={repartoButtonClass}
+                  data-reparto-action={action}
+                  key={action}
+                  type="button"
+                >
                   {action.replaceAll("-", " ")}
                 </button>
               ))}
@@ -233,17 +265,20 @@ export function ProcessListView({
   processes?: AssignmentProcessPublic[];
 }) {
   return (
-    <main className="reparto-shell" data-reparto-route="processes">
-      <section className="reparto-panel" data-reparto-panel="process-list">
-        <div className="reparto-panel-header">
+    <main className={repartoShellClass} data-reparto-route="processes">
+      <section className={repartoPanelClass} data-reparto-panel="process-list">
+        <div className={repartoPanelHeaderClass}>
           <h2>Processes</h2>
-          <span data-reparto-slot="process-count">{count}</span>
+          <span className="text-sm text-muted-foreground" data-reparto-slot="process-count">
+            {count}
+          </span>
         </div>
         <div data-reparto-slot="process-table">
           {processes.length > 0 ? (
-            <ul>
+            <ul className={repartoListClass}>
               {processes.map((process) => (
                 <li
+                  className={repartoListItemClass}
                   data-process-id={process.id}
                   data-process-status={process.status}
                   key={process.id}
@@ -254,7 +289,7 @@ export function ProcessListView({
             </ul>
           ) : null}
         </div>
-        <button type="button" data-reparto-action="create-process">
+        <button className={repartoButtonClass} type="button" data-reparto-action="create-process">
           create process
         </button>
       </section>
@@ -272,18 +307,21 @@ export function VersionsView({
   const comparisonEnabled = canCompareVersions(versions);
   const comparisonLabel = buildVersionComparisonLabel(comparison);
   return (
-    <main className="reparto-shell" data-reparto-route="versions">
-      <div className="reparto-grid reparto-grid-main">
-        <section className="reparto-panel" data-reparto-panel="version-list">
-          <div className="reparto-panel-header">
+    <main className={repartoShellClass} data-reparto-route="versions">
+      <div className={repartoMainGridClass}>
+        <section className={repartoPanelClass} data-reparto-panel="version-list">
+          <div className={repartoPanelHeaderClass}>
             <h2>Versions</h2>
-            <span data-reparto-slot="version-count">{versions.length}</span>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="version-count">
+              {versions.length}
+            </span>
           </div>
           <div data-reparto-slot="versions">
             {versions.length > 0 ? (
-              <ul>
+              <ul className={repartoListClass}>
                 {versions.map((version) => (
                   <li
+                    className={repartoListItemClass}
                     data-process-version-id={version.id}
                     data-process-version-status={version.status}
                     key={version.id}
@@ -294,11 +332,12 @@ export function VersionsView({
               </ul>
             ) : null}
           </div>
-          <div className="reparto-actions">
-            <button type="button" data-reparto-action="create-version">
+          <div className={repartoActionRowClass}>
+            <button className={repartoButtonClass} type="button" data-reparto-action="create-version">
               create version
             </button>
             <button
+              className={repartoButtonClass}
               data-reparto-action="compare-versions"
               disabled={!comparisonEnabled}
               type="button"
@@ -307,27 +346,29 @@ export function VersionsView({
             </button>
           </div>
         </section>
-        <section className="reparto-panel" data-reparto-panel="comparison">
-          <div className="reparto-panel-header">
+        <section className={repartoPanelClass} data-reparto-panel="comparison">
+          <div className={repartoPanelHeaderClass}>
             <h2>Comparison</h2>
-            <span data-reparto-slot="comparison-state">{comparisonLabel}</span>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="comparison-state">
+              {comparisonLabel}
+            </span>
           </div>
-          <dl className="reparto-metrics">
-            <div>
-              <dt>Required delta</dt>
-              <dd data-reparto-slot="required-hours-delta">
+          <dl className={repartoMetricsClass}>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Required delta</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="required-hours-delta">
                 {comparison.required_hours_delta}
               </dd>
             </div>
-            <div>
-              <dt>Assigned delta</dt>
-              <dd data-reparto-slot="assigned-hours-delta">
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Assigned delta</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-hours-delta">
                 {comparison.assigned_hours_delta}
               </dd>
             </div>
-            <div>
-              <dt>Teachers</dt>
-              <dd data-reparto-slot="teacher-count-delta">
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>Teachers</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-count-delta">
                 {comparison.teacher_count_delta}
               </dd>
             </div>
@@ -354,22 +395,23 @@ export function ExportCenterView({
   const workflowAction = nextLeadershipWorkflowAction(processStatus);
   return (
     <main
-      className="reparto-shell"
+      className={repartoShellClass}
       data-process-id={processId}
       data-reparto-route="exports"
       data-reparto-workflow-action={workflowAction ?? "none"}
     >
-      <div className="reparto-grid reparto-grid-main">
-        <section className="reparto-panel" data-reparto-panel="export-center">
-          <div className="reparto-panel-header">
+      <div className={repartoMainGridClass}>
+        <section className={repartoPanelClass} data-reparto-panel="export-center">
+          <div className={repartoPanelHeaderClass}>
             <h2>Export center</h2>
-            <span data-reparto-slot="export-state">
+            <span className="text-sm text-muted-foreground" data-reparto-slot="export-state">
               {state.finalBlocked ? "Final blocked" : "Final ready"}
             </span>
           </div>
-          <div className="reparto-export-types">
+          <div className={repartoActionRowClass}>
             {state.availableExportTypes.map((exportType) => (
               <button
+                className={repartoButtonClass}
                 data-reparto-action="create-export"
                 data-reparto-export-type={exportType}
                 key={exportType}
@@ -381,9 +423,10 @@ export function ExportCenterView({
           </div>
           <div data-reparto-slot="export-list">
             {exports.length > 0 ? (
-              <ul>
+              <ul className={repartoListClass}>
                 {exports.map((artifact) => (
                   <li
+                    className={repartoListItemClass}
                     data-export-artifact-id={artifact.id}
                     data-export-artifact-type={artifact.export_type}
                     key={artifact.id}
@@ -395,15 +438,16 @@ export function ExportCenterView({
             ) : null}
           </div>
         </section>
-        <section className="reparto-panel" data-reparto-panel="final-close">
-          <div className="reparto-panel-header">
+        <section className={repartoPanelClass} data-reparto-panel="final-close">
+          <div className={repartoPanelHeaderClass}>
             <h2>Closeout</h2>
-            <span data-reparto-slot="blocking-count">
+            <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
               {summary.blocking_validation_count}
             </span>
           </div>
-          <div className="reparto-actions">
+          <div className={repartoActionRowClass}>
             <button
+              className={repartoButtonClass}
               data-reparto-action="create-final-export"
               disabled={state.finalBlocked}
               type="button"
@@ -411,6 +455,7 @@ export function ExportCenterView({
               final export
             </button>
             <button
+              className={repartoButtonClass}
               data-reparto-action="restore-draft"
               data-reparto-backup-id={state.latestBackupId ?? ""}
               disabled={!state.restoreDraftEnabled}
@@ -421,13 +466,16 @@ export function ExportCenterView({
           </div>
           <div data-reparto-slot="restore-result" />
         </section>
-        <section className="reparto-panel" data-reparto-panel="leadership-workflow">
-          <div className="reparto-panel-header">
+        <section className={repartoPanelClass} data-reparto-panel="leadership-workflow">
+          <div className={repartoPanelHeaderClass}>
             <h2>Leadership workflow</h2>
-            <span data-reparto-slot="process-status">{processStatus}</span>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="process-status">
+              {processStatus}
+            </span>
           </div>
-          <div className="reparto-actions">
+          <div className={repartoActionRowClass}>
             <button
+              className={repartoButtonClass}
               data-reparto-action="mark-returned"
               data-reparto-active={workflowAction === "mark-returned"}
               type="button"
@@ -435,6 +483,7 @@ export function ExportCenterView({
               mark returned
             </button>
             <button
+              className={repartoButtonClass}
               data-reparto-action="start-revision"
               data-reparto-active={workflowAction === "start-revision"}
               type="button"
@@ -442,6 +491,7 @@ export function ExportCenterView({
               start revision
             </button>
             <button
+              className={repartoButtonClass}
               data-reparto-action="reopen-final"
               data-reparto-active={workflowAction === "reopen-final"}
               type="button"

@@ -1,4 +1,5 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoDashboardView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
@@ -8,4 +9,12 @@ const config = {
 };
 ---
 
-<RepartoDashboardView client:load config={config} />
+<StarlightPage
+  frontmatter={{
+    title: "Reparto dashboard",
+    description: "Monitor assignment progress and current turn state.",
+    tableOfContents: false
+  }}
+>
+  <RepartoDashboardView client:load config={config} />
+</StarlightPage>

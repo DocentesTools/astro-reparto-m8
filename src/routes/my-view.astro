@@ -1,4 +1,5 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoMyView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
@@ -14,4 +15,12 @@ const config = {
 };
 ---
 
-<RepartoMyView client:load config={config} processId={processId} />
+<StarlightPage
+  frontmatter={{
+    title: "My reparto view",
+    description: "Follow your live assignment turn and available choices.",
+    tableOfContents: false
+  }}
+>
+  <RepartoMyView client:load config={config} processId={processId} />
+</StarlightPage>

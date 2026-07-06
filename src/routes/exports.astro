@@ -1,4 +1,5 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoExportsView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
@@ -13,4 +14,12 @@ const config = {
 };
 ---
 
-<RepartoExportsView client:load config={config} processId={processId} />
+<StarlightPage
+  frontmatter={{
+    title: "Reparto exports",
+    description: "Prepare final exports, backups, and revision workflows.",
+    tableOfContents: false
+  }}
+>
+  <RepartoExportsView client:load config={config} processId={processId} />
+</StarlightPage>

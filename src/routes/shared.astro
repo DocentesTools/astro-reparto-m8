@@ -1,4 +1,5 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoSharedView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
@@ -14,4 +15,12 @@ const config = {
 };
 ---
 
-<RepartoSharedView client:load config={config} processId={processId} />
+<StarlightPage
+  frontmatter={{
+    title: "Shared reparto screen",
+    description: "Project the live reparto meeting state for the room.",
+    tableOfContents: false
+  }}
+>
+  <RepartoSharedView client:load config={config} processId={processId} />
+</StarlightPage>

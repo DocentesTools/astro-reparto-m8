@@ -1,4 +1,5 @@
 ---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoMeetingView } from "@mano8/astro-reparto-m8/default-ui";
 import "../scaffold/styles/reparto.css";
 
@@ -14,4 +15,12 @@ const config = {
 };
 ---
 
-<RepartoMeetingView client:load config={config} processId={processId} />
+<StarlightPage
+  frontmatter={{
+    title: "Reparto meeting",
+    description: "Run the active assignment meeting and selection turns.",
+    tableOfContents: false
+  }}
+>
+  <RepartoMeetingView client:load config={config} processId={processId} />
+</StarlightPage>

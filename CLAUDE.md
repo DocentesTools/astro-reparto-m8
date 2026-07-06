@@ -28,7 +28,11 @@ wire after `faAuth`.
 - `starter` - injects the `.astro` routes below (host default for this plugin).
 
 Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
-`shared` (shared screen), `versions`, `exports`.
+`shared` (shared screen), `versions`, `exports`, plus the Phase 2 Setup routes
+`schools`, `academic-years`, `departments`, `teacher-roster` (under
+`/reparto/setup/*`). `DEFAULT_REPARTO_NAV` / `buildRepartoNav` (see
+`src/integration.ts`) expose the Setup/Process sidebar nav groups with
+`nav.*` i18n label keys for hosts importing the default.
 
 ## Repo-specific structure
 
@@ -67,8 +71,14 @@ unblock process creation from an empty database:
   `tests/default-ui-bootstrap.test.tsx`; the gate definition is
   `docs/empty-db-bootstrap-spec.md`.
 
-Phase 2 (global setup CRUD pages + starter routes + host nav) and Phase 3+
-(process-scoped CRUD, dashboards, host wiring) are still TODO.
+Phase 2 step 1 (global setup CRUD pages + starter routes + plugin nav) is
+done 2026-07-06: setup-crud islands for schools / academic-years /
+departments / teacher-roster ship in `src/runtime/react/default-ui/setup-crud.tsx`
+(edit-only schools/departments; archive-only academic years; hard delete +
+link-user for the teacher roster), backed by the four new starter `.astro`
+routes and the `DEFAULT_REPARTO_NAV` / `buildRepartoNav` plugin nav snapshot.
+Phase 2 step 2 (backend-error mapping + E2E gate) and Phase 3+ (process-scoped
+CRUD, dashboards, host wiring) are still TODO.
 
 ## Repo-specific rules
 

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import faReparto, { checkAuthOrder, localizedRoutePatterns } from "../src/integration.js";
+import faReparto, {
+  buildRepartoNav,
+  checkAuthOrder,
+  DEFAULT_REPARTO_NAV,
+  localizedRoutePatterns
+} from "../src/integration.js";
 import {
   REPARTO_CONTRACT_OPERATIONS,
   REPARTO_CONTRACT_VERSION,
@@ -16,7 +21,11 @@ describe("routes", () => {
       teacherView: "/reparto/processes/[processId]/my-view",
       sharedScreen: "/reparto/processes/[processId]/shared",
       versions: "/reparto/processes/[processId]/versions",
-      exports: "/reparto/processes/[processId]/exports"
+      exports: "/reparto/processes/[processId]/exports",
+      schools: "/reparto/setup/schools",
+      academicYears: "/reparto/setup/academic-years",
+      departments: "/reparto/setup/departments",
+      teacherRoster: "/reparto/setup/teacher-roster"
     });
     expect(buildRepartoRoutes({ dashboard: false, meeting: "/m/[id]" })).toEqual({
       dashboard: false,
@@ -25,7 +34,11 @@ describe("routes", () => {
       teacherView: "/reparto/processes/[processId]/my-view",
       sharedScreen: "/reparto/processes/[processId]/shared",
       versions: "/reparto/processes/[processId]/versions",
-      exports: "/reparto/processes/[processId]/exports"
+      exports: "/reparto/processes/[processId]/exports",
+      schools: "/reparto/setup/schools",
+      academicYears: "/reparto/setup/academic-years",
+      departments: "/reparto/setup/departments",
+      teacherRoster: "/reparto/setup/teacher-roster"
     });
   });
 
@@ -111,7 +124,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(7);
+    expect(injectRoute).toHaveBeenCalledTimes(11);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -129,10 +142,10 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(6);
+    expect(injectRoute).toHaveBeenCalledTimes(10);
   });
 
-  it("injects localized starter routes for Starlight hosts", () => {
+  it("injects localized starter routes for Starlight hosts", async () => {
     const injectRoute = vi.fn();
     faReparto({
       mode: "starter",
@@ -153,7 +166,15 @@ describe("integration", () => {
       pattern: "/es/reparto/processes/[processId]/my-view",
       entrypoint: "@mano8/astro-reparto-m8/routes/my-view.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(14);
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/en/reparto/setup/schools",
+      entrypoint: "@mano8/astro-reparto-m8/routes/schools.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/es/reparto/setup/teacher-roster",
+      entrypoint: "@mano8/astro-reparto-m8/routes/teacher-roster.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(22);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -179,5 +200,52 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "starter routes are enabled without an auth provider"
     );
+  });
+
+  it("exposes the default Setup/Process sidebar nav metadata and resolves route hrefs", () => {
+    const routes = buildRepartoRoutes();
+    const resolved = buildRepartoNav(routes);
+    expect(DEFAULT_REPARTO_NAV.setup.labelKey).toBe("nav.group.setup");
+    expect(DEFAULT_REPARTO_NAV.setup.entries.map((entry) => entry.labelKey)).toEqual([
+      "nav.item.schools",
+      "nav.item.academicYears",
+      "nav.item.departments",
+      "nav.item.teacherRoster"
+    ]);
+    const schoolsEntry = resolved.setup.entries.find(
+      (entry) => entry.labelKey === "nav.item.schools"
+    );
+    expect(schoolsEntry?.href).toBe("/reparto/setup/schools");
+    const dashboardEntry = resolved.process.entries.find(
+      (entry) => entry.labelKey === "nav.item.dashboard"
+    );
+    expect(dashboardEntry?.href).toBe("/reparto");
+    const classroomsEntry = resolved.process.entries.find(
+      (entry) => entry.labelKey === "nav.item.classrooms"
+    );
+    expect(classroomsEntry?.href).toBe("#");
+    const resolvedMissing = buildRepartoNav(
+      buildRepartoRoutes({ dashboard: false })
+    );
+    const missingDashboard = resolvedMissing.process.entries.find(
+      (entry) => entry.labelKey === "nav.item.dashboard"
+    );
+    expect(missingDashboard?.href).toBe("#");
+
+    const customNav = buildRepartoNav(buildRepartoRoutes(), {
+      setup: DEFAULT_REPARTO_NAV.setup,
+      process: {
+        labelKey: "nav.group.process",
+        entries: [
+          { labelKey: "nav.item.audit" },
+          { labelKey: "nav.item.dashboard", route: "dashboard" },
+          { labelKey: "nav.item.exports", href: "/custom/exports" }
+        ]
+      }
+    });
+    const [audit, dashboard, exportsEntry] = customNav.process.entries;
+    expect(audit.href).toBe("#");
+    expect(dashboard.href).toBe("/reparto");
+    expect(exportsEntry.href).toBe("/custom/exports");
   });
 });

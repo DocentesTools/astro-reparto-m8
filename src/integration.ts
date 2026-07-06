@@ -1,8 +1,25 @@
 import type { AstroIntegration } from "astro";
 import {
   buildRepartoRoutes,
+  type BuiltRepartoRoutes,
   type RepartoRouteFragments
 } from "./runtime/routes.js";
+
+export type FaRepartoNavEntry = {
+  labelKey: string;
+  route?: keyof BuiltRepartoRoutes;
+  href?: string;
+};
+
+export type FaRepartoNavGroup = {
+  labelKey: string;
+  entries: FaRepartoNavEntry[];
+};
+
+export type FaRepartoNav = {
+  setup: FaRepartoNavGroup;
+  process: FaRepartoNavGroup;
+};
 
 export type FaRepartoAstroOptions = {
   apiBase?: string;
@@ -19,6 +36,57 @@ export type FaRepartoAstroOptions = {
   };
 };
 
+export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
+  setup: {
+    labelKey: "nav.group.setup",
+    entries: [
+      { labelKey: "nav.item.schools", route: "schools" },
+      { labelKey: "nav.item.academicYears", route: "academicYears" },
+      { labelKey: "nav.item.departments", route: "departments" },
+      { labelKey: "nav.item.teacherRoster", route: "teacherRoster" }
+    ]
+  },
+  process: {
+    labelKey: "nav.group.process",
+    entries: [
+      { labelKey: "nav.item.dashboard", route: "dashboard" },
+      { labelKey: "nav.item.processes", route: "processList" },
+      { labelKey: "nav.item.classrooms", href: "#" },
+      { labelKey: "nav.item.subjects", href: "#" },
+      { labelKey: "nav.item.requirements", href: "#" },
+      { labelKey: "nav.item.processParticipants", href: "#" },
+      { labelKey: "nav.item.assignments", href: "#" },
+      { labelKey: "nav.item.meeting", route: "meeting" },
+      { labelKey: "nav.item.myView", route: "teacherView" },
+      { labelKey: "nav.item.shared", route: "sharedScreen" },
+      { labelKey: "nav.item.versions", route: "versions" },
+      { labelKey: "nav.item.exports", route: "exports" },
+      { labelKey: "nav.item.audit", href: "#" }
+    ]
+  }
+};
+
+export function buildRepartoNav(
+  routes: BuiltRepartoRoutes,
+  nav: FaRepartoNav = DEFAULT_REPARTO_NAV
+): FaRepartoNav {
+  function resolveHref(entry: FaRepartoNavEntry): FaRepartoNavEntry {
+    if (entry.href) return entry;
+    if (!entry.route) return { ...entry, href: "#" };
+    const pattern = routes[entry.route];
+    return {
+      ...entry,
+      href: pattern
+        ? String(pattern).replace(/\[.*?\]/g, "")
+        : "#"
+    };
+  }
+  return {
+    setup: { ...nav.setup, entries: nav.setup.entries.map(resolveHref) },
+    process: { ...nav.process, entries: nav.process.entries.map(resolveHref) }
+  };
+}
+
 const ROUTE_ENTRYPOINTS = {
   dashboard: "@mano8/astro-reparto-m8/routes/dashboard.astro",
   meeting: "@mano8/astro-reparto-m8/routes/meeting.astro",
@@ -26,7 +94,11 @@ const ROUTE_ENTRYPOINTS = {
   teacherView: "@mano8/astro-reparto-m8/routes/my-view.astro",
   sharedScreen: "@mano8/astro-reparto-m8/routes/shared.astro",
   versions: "@mano8/astro-reparto-m8/routes/versions.astro",
-  exports: "@mano8/astro-reparto-m8/routes/exports.astro"
+  exports: "@mano8/astro-reparto-m8/routes/exports.astro",
+  schools: "@mano8/astro-reparto-m8/routes/schools.astro",
+  academicYears: "@mano8/astro-reparto-m8/routes/academic-years.astro",
+  departments: "@mano8/astro-reparto-m8/routes/departments.astro",
+  teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro"
 } as const;
 
 const AUTH_INTEGRATION_NAME = "@mano8/astro-auth-m8";

@@ -1,0 +1,20 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoDepartmentsView } from "@mano8/astro-reparto-m8/default-ui";
+import "../scaffold/styles/reparto.css";
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Reparto departments",
+    description: "Create and edit reparto departments (edit-only, no delete).",
+    tableOfContents: false
+  }}
+>
+  <RepartoDepartmentsView client:load config={config} />
+</StarlightPage>

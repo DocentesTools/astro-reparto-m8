@@ -11,7 +11,11 @@ const routeCases = [
   ["my-view.astro", "RepartoMyView", "My reparto view"],
   ["shared.astro", "RepartoSharedView", "Shared reparto screen"],
   ["versions.astro", "RepartoVersionsView", "Reparto versions"],
-  ["exports.astro", "RepartoExportsView", "Reparto exports"]
+  ["exports.astro", "RepartoExportsView", "Reparto exports"],
+  ["schools.astro", "RepartoSchoolsView", "Reparto schools"],
+  ["academic-years.astro", "RepartoAcademicYearsView", "Reparto academic years"],
+  ["departments.astro", "RepartoDepartmentsView", "Reparto departments"],
+  ["teacher-roster.astro", "RepartoTeacherRosterView", "Reparto teacher roster"]
 ] as const;
 
 describe("starter route shells", () => {

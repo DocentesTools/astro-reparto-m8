@@ -45,6 +45,10 @@
     "./routes/shared.astro": "./src/routes/shared.astro",
     "./routes/versions.astro": "./src/routes/versions.astro",
     "./routes/exports.astro": "./src/routes/exports.astro",
+    "./routes/schools.astro": "./src/routes/schools.astro",
+    "./routes/academic-years.astro": "./src/routes/academic-years.astro",
+    "./routes/departments.astro": "./src/routes/departments.astro",
+    "./routes/teacher-roster.astro": "./src/routes/teacher-roster.astro",
     "./compatibility": "./dist/src/runtime/compatibility.js"
   },
   "types": "./dist/src/integration.d.ts",

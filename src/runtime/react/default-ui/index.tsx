@@ -965,6 +965,13 @@ function RepartoExportsContent({
   );
 }
 
+export {
+  RepartoAcademicYearsView,
+  RepartoDepartmentsView,
+  RepartoSchoolsView,
+  RepartoTeacherRosterView
+} from "./setup-crud.js";
+
 export function DepartmentHeadView(props: Parameters<typeof RepartoDashboardView>[0]) {
   return <RepartoDashboardView {...props} />;
 }

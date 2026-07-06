@@ -1,4 +1,4 @@
-import { useState, type FC, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   getRepartoDictionary,
@@ -209,15 +209,16 @@ export type RowShellProps = {
   idAttr: string;
   idValue: string;
   extras?: Record<string, string>;
+  key?: string;
 };
 
-export const RowShell: FC<RowShellProps> = ({
+export function RowShell({
   children,
   rowAttr,
   idAttr,
   idValue,
   extras
-}) => {
+}: RowShellProps) {
   const attribute: Record<string, string> = { [idAttr]: idValue };
   return (
     <li
@@ -229,7 +230,7 @@ export const RowShell: FC<RowShellProps> = ({
       {children}
     </li>
   );
-};
+}
 
 export function RowHeader({
   label,

@@ -94,8 +94,21 @@ form-level mapped errors; the four Setup islands surface them via
 on the affected inputs and always-visible `data-reparto-disabled-reason`
 spans. The i18n dict gains `error.invalidDate` and `error.conflict` for
 en/fr/es. 184/184 tests green; runtime coverage 100/100/100/100.
-Phase 3+ (process-scoped CRUD, dashboards, host wiring) and the
-`fa-ui-m8` Playwright E2E gate for empty-DB bootstrap are still TODO.
+Phase 3 step 2 is also done 2026-07-06: process-scoped default-UI CRUD
+islands are split by entity and operation under
+`src/runtime/react/default-ui/process-crud/**` (`add.tsx`, `edit.tsx`,
+`delete.tsx`, `list.tsx` plus read-only audit), exported through
+`default-ui/index.tsx`, and wired into six starter routes plus
+`buildRepartoRoutes`, `ROUTE_ENTRYPOINTS`, and `DEFAULT_REPARTO_NAV`.
+Requirements use classroom + subject FK selects with one-level inline create;
+participants use teacher-roster FK select with one-level inline create;
+assignments link to missing requirement/participant prerequisites instead of
+nested dialogs. `errorMapping.ts` covers the process-scoped `FIELD_ALIASES` /
+`RepartoFieldKey` values and en/fr/es dictionaries include the process CRUD
+entity/field/nav labels. 216/216 tests green; runtime coverage
+100/100/100/100; `typecheck`, `build`, `build:registry`,
+`verify:starter-routes`, and `pack --dry-run` all green.
+Dashboards, host wiring, and the `fa-ui-m8` Playwright E2E gate remain TODO.
 
 Phase 3 step 1 (runtime for process-scoped entities) is done 2026-07-06:
 `src/runtime/schemas.ts` gains `Subject*`, `TeachingGroup*`,
@@ -112,9 +125,7 @@ create/update/remove join `api/index.ts`; `repartoKeys` gains
 and `react/hooks.tsx` ships the matching list + CRUD + direct-choice hooks
 (exported through `react/index.ts`). 199/199 tests green; runtime coverage
 100/100/100/100; `typecheck`, `build`, `build:registry`,
-`verify:starter-routes`, and `pack --dry-run` all green. Phase 3 step 2
-(CRUD pages + FK-selects + relationship-aware delete + error-mapping field
-aliases for these entities) and the host Playwright gate remain TODO.
+`verify:starter-routes`, and `pack --dry-run` all green.
 
 ## Repo-specific rules
 

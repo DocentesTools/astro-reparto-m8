@@ -1,0 +1,25 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoSubjectsView } from "@mano8/astro-reparto-m8/default-ui";
+import "../scaffold/styles/reparto.css";
+
+export function getStaticPaths() {
+  return [{ params: { processId: "current" } }];
+}
+
+const processId = Astro.params.processId ?? "current";
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Reparto subjects",
+    description: "Create, edit, and delete reparto subjects for the active process.",
+    tableOfContents: false
+  }}
+>
+  <RepartoSubjectsView client:load config={config} processId={processId} />
+</StarlightPage>

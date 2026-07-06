@@ -50,6 +50,12 @@
     "./routes/academic-years.astro": "./src/routes/academic-years.astro",
     "./routes/departments.astro": "./src/routes/departments.astro",
     "./routes/teacher-roster.astro": "./src/routes/teacher-roster.astro",
+    "./routes/subjects.astro": "./src/routes/subjects.astro",
+    "./routes/classrooms.astro": "./src/routes/classrooms.astro",
+    "./routes/requirements.astro": "./src/routes/requirements.astro",
+    "./routes/participants.astro": "./src/routes/participants.astro",
+    "./routes/assignments.astro": "./src/routes/assignments.astro",
+    "./routes/audit.astro": "./src/routes/audit.astro",
     "./compatibility": "./dist/src/runtime/compatibility.js"
   },
   "types": "./dist/src/integration.d.ts",

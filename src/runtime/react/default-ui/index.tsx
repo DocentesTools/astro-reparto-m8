@@ -81,20 +81,28 @@ function latestMeetingSession(
 export function RepartoDashboardView({
   config,
   dashboard,
+  locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
   dashboard?: ProcessDashboard | null;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(dashboard || summary)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(dashboard || summary)}
+        locale={locale}
+        mode="admin"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
           <RepartoDashboardContent
             dashboard={dashboard}
+            locale={locale}
             processId={resolvedProcessId}
             summary={summary}
           />
@@ -106,10 +114,12 @@ export function RepartoDashboardView({
 
 function RepartoDashboardContent({
   dashboard,
+  locale,
   processId,
   summary
 }: {
   dashboard?: ProcessDashboard | null;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
@@ -118,7 +128,12 @@ function RepartoDashboardContent({
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
   return (
     <>
-      <DepartmentHeadWorkspace dashboard={activeDashboard} summary={activeSummary} />
+      <DepartmentHeadWorkspace
+        dashboard={activeDashboard}
+        locale={locale}
+        mode="admin"
+        summary={activeSummary}
+      />
       <QueryState
         error={dashboardQuery.error}
         isError={dashboardQuery.isError}
@@ -136,18 +151,29 @@ function RepartoDashboardContent({
 
 export function RepartoMeetingView({
   config,
+  locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(summary)}
+        locale={locale}
+        mode="admin"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
-          <RepartoMeetingContent processId={resolvedProcessId} summary={summary} />
+          <RepartoMeetingContent
+            locale={locale}
+            processId={resolvedProcessId}
+            summary={summary}
+          />
         )}
       </WithSelectedProcess>
     </Shell>
@@ -155,9 +181,11 @@ export function RepartoMeetingView({
 }
 
 function RepartoMeetingContent({
+  locale,
   processId,
   summary
 }: {
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
@@ -165,7 +193,7 @@ function RepartoMeetingContent({
   const activeSummary = summary ?? summaryQuery.data ?? null;
   return (
     <>
-      <DepartmentHeadWorkspace summary={activeSummary} />
+      <DepartmentHeadWorkspace locale={locale} mode="admin" summary={activeSummary} />
       <QueryState
         error={summaryQuery.error}
         isError={summaryQuery.isError}
@@ -210,6 +238,7 @@ function RepartoProcessesContent({ params }: { params?: RepartoListParams }) {
 
 export function RepartoMyView({
   config,
+  locale,
   meetingSession,
   processId,
   requirementAssignedHours,
@@ -217,6 +246,7 @@ export function RepartoMyView({
   summary
 }: {
   config?: ViewConfig;
+  locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
   requirementAssignedHours?: number;
@@ -225,9 +255,15 @@ export function RepartoMyView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(summary)}
+        locale={locale}
+        mode="readonly"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
           <RepartoMyContent
+            locale={locale}
             meetingSession={meetingSession}
             processId={resolvedProcessId}
             requirementAssignedHours={requirementAssignedHours}
@@ -241,12 +277,14 @@ export function RepartoMyView({
 }
 
 function RepartoMyContent({
+  locale,
   meetingSession,
   processId,
   requirementAssignedHours,
   requirementRequiredHours,
   summary
 }: {
+  locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
   requirementAssignedHours?: number;
@@ -261,6 +299,7 @@ function RepartoMyContent({
   return (
     <>
       <TeacherLanWorkspace
+        locale={locale}
         meetingSession={activeSession}
         processId={processId}
         requirementAssignedHours={requirementAssignedHours}
@@ -283,18 +322,32 @@ function RepartoMyContent({
 
 export function RepartoSharedView({
   config,
+  dashboard,
+  locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
+  dashboard?: ProcessDashboard | null;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(summary)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(dashboard || summary)}
+        locale={locale}
+        mode="readonly"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
-          <RepartoSharedContent processId={resolvedProcessId} summary={summary} />
+          <RepartoSharedContent
+            dashboard={dashboard}
+            locale={locale}
+            processId={resolvedProcessId}
+            summary={summary}
+          />
         )}
       </WithSelectedProcess>
     </Shell>
@@ -302,22 +355,35 @@ export function RepartoSharedView({
 }
 
 function RepartoSharedContent({
+  dashboard,
+  locale,
   processId,
   summary
 }: {
+  dashboard?: ProcessDashboard | null;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
-  const summaryQuery = useRepartoSummary(processId);
-  const activeSummary = summary ?? summaryQuery.data ?? null;
+  const dashboardQuery = useRepartoDashboard(processId);
+  const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
+  const activeSummary = summary ?? dashboardSummary(activeDashboard);
   return (
     <>
-      <SharedScreenWorkspace processId={processId} summary={activeSummary} />
+      <SharedScreenWorkspace
+        dashboard={activeDashboard}
+        locale={locale}
+        processId={processId}
+        summary={activeSummary}
+      />
       <QueryState
-        error={summaryQuery.error}
-        isError={summaryQuery.isError}
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
         isLoading={
-          summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
+          dashboardQuery.isLoading &&
+          Boolean(resolveProcessId(processId)) &&
+          !dashboard &&
+          !summary
         }
         label="Shared view"
       />
@@ -328,17 +394,24 @@ function RepartoSharedContent({
 export function RepartoVersionsView({
   comparison,
   config,
+  locale,
   processId,
   versions
 }: {
   comparison?: VersionComparison;
   config?: ViewConfig;
+  locale?: "en" | "fr" | "es";
   processId?: string;
   versions?: ProcessVersionPublic[];
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(versions)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(versions)}
+        locale={locale}
+        mode="admin"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
           <RepartoVersionsContent
             comparison={comparison}
@@ -380,19 +453,26 @@ function RepartoVersionsContent({
 export function RepartoExportsView({
   config,
   exports,
+  locale,
   processId,
   processStatus,
   summary
 }: {
   config?: ViewConfig;
   exports?: ExportArtifactPublic[];
+  locale?: "en" | "fr" | "es";
   processId?: string;
   processStatus?: AssignmentProcessStatus;
   summary?: ProcessSummary;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess bypass={Boolean(exports || summary)} processId={processId}>
+      <WithSelectedProcess
+        bypass={Boolean(exports || summary)}
+        locale={locale}
+        mode="admin"
+        processId={processId}
+      >
         {(resolvedProcessId) => (
           <RepartoExportsContent
             exports={exports}

@@ -129,6 +129,45 @@ export const en = {
       open: "Open"
     }
   },
+  dashboard: {
+    title: "Reparto dashboard",
+    subtitleAdmin: "Follow balance, coverage, and meeting readiness before the live session.",
+    subtitleReadonly: "Project a calm read-only view for the live meeting.",
+    pickerLabel: "Current process",
+    pickerHint: "Switch process when the route is not locked to a specific id.",
+    mode: { admin: "Admin mode", readonly: "Read-only mode" },
+    section: {
+      overview: "Overview",
+      teacherLoad: "Teacher load",
+      classroomCoverage: "Classroom coverage",
+      validations: "Validations",
+      checklist: "Setup checklist",
+      meetingReadiness: "Meeting readiness"
+    },
+    metric: {
+      required: "Required",
+      assigned: "Assigned",
+      available: "Available",
+      pending: "Pending",
+      blocking: "Blocking",
+      participants: "Participants",
+      requirements: "Requirements"
+    },
+    state: {
+      noDashboard: "Dashboard data will appear once the process is ready.",
+      noTeachers: "Add process participants to see teacher balance.",
+      noRequirements: "Add requirements to see classroom coverage.",
+      noValidations: "No blocking validations.",
+      lockedToRoute: "This route is pinned to the current URL process."
+    },
+    summary: {
+      balance: "{assigned} of {required} hours assigned. {pending} hours still pending.",
+      teacherLoad: "{count} participant(s) tracked; {overloaded} overloaded.",
+      classroomCoverage: "{count} requirement(s), {uncovered} uncovered.",
+      validations: "{blocking} blocking validation(s) and {total} total message(s).",
+      checklist: "{done} of {total} setup steps complete."
+    }
+  },
   error: {
     required: "This field is required.",
     requiredNamed: "{field} is required.",

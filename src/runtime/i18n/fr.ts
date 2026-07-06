@@ -128,6 +128,45 @@ export const fr: RepartoDictionary = {
       open: "Ouvrir"
     }
   },
+  dashboard: {
+    title: "Tableau de bord du reparto",
+    subtitleAdmin: "Suivez l'equilibre, la couverture et l'etat de la seance avant le direct.",
+    subtitleReadonly: "Projetez une vue calme en lecture seule pour la seance en direct.",
+    pickerLabel: "Processus courant",
+    pickerHint: "Changez de processus quand la route n'est pas verrouillee sur un id precis.",
+    mode: { admin: "Mode admin", readonly: "Mode lecture seule" },
+    section: {
+      overview: "Vue d'ensemble",
+      teacherLoad: "Charge des enseignants",
+      classroomCoverage: "Couverture des classes",
+      validations: "Validations",
+      checklist: "Checklist de configuration",
+      meetingReadiness: "Preparation de la seance"
+    },
+    metric: {
+      required: "Requises",
+      assigned: "Affectees",
+      available: "Disponibles",
+      pending: "En attente",
+      blocking: "Bloquantes",
+      participants: "Participants",
+      requirements: "Besoins"
+    },
+    state: {
+      noDashboard: "Les donnees du tableau de bord apparaitront quand le processus sera pret.",
+      noTeachers: "Ajoutez des participants au processus pour voir la charge des enseignants.",
+      noRequirements: "Ajoutez des besoins horaires pour voir la couverture des classes.",
+      noValidations: "Aucune validation bloquante.",
+      lockedToRoute: "Cette route est fixee au processus de l'URL courante."
+    },
+    summary: {
+      balance: "{assigned} heures affectees sur {required}. {pending} heures restent a couvrir.",
+      teacherLoad: "{count} participant(s) suivis ; {overloaded} en surcharge.",
+      classroomCoverage: "{count} besoin(s), {uncovered} non couverts.",
+      validations: "{blocking} validation(s) bloquante(s) et {total} message(s) au total.",
+      checklist: "{done} etape(s) terminee(s) sur {total}."
+    }
+  },
   error: {
     required: "Ce champ est obligatoire.",
     requiredNamed: "{field} est obligatoire.",

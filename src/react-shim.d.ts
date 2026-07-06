@@ -6,8 +6,14 @@ declare module "react" {
   export function useContext<T>(context: {
     Provider: (props: { value: T; children?: ReactNode }) => unknown;
   }): T;
+  export function useEffect(
+    effect: () => void | (() => void),
+    deps?: readonly unknown[]
+  ): void;
   export function useMemo<T>(factory: () => T, deps: readonly unknown[]): T;
-  export function useState<T>(initial: T | (() => T)): [T, (value: T) => void];
+  export function useState<T>(
+    initial: T | (() => T)
+  ): [T, (value: T | ((current: T) => T)) => void];
 }
 
 declare module "react/jsx-runtime" {

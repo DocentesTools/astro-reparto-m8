@@ -128,6 +128,45 @@ export const es: RepartoDictionary = {
       open: "Abrir"
     }
   },
+  dashboard: {
+    title: "Panel de reparto",
+    subtitleAdmin: "Siga el equilibrio, la cobertura y el estado de la sesion antes del directo.",
+    subtitleReadonly: "Proyecte una vista tranquila en solo lectura para la sesion en directo.",
+    pickerLabel: "Proceso actual",
+    pickerHint: "Cambie de proceso cuando la ruta no este bloqueada a un id concreto.",
+    mode: { admin: "Modo admin", readonly: "Modo solo lectura" },
+    section: {
+      overview: "Resumen",
+      teacherLoad: "Carga docente",
+      classroomCoverage: "Cobertura por grupos",
+      validations: "Validaciones",
+      checklist: "Checklist de configuracion",
+      meetingReadiness: "Preparacion de la sesion"
+    },
+    metric: {
+      required: "Necesarias",
+      assigned: "Asignadas",
+      available: "Disponibles",
+      pending: "Pendientes",
+      blocking: "Bloqueantes",
+      participants: "Participantes",
+      requirements: "Necesidades"
+    },
+    state: {
+      noDashboard: "Los datos del panel apareceran cuando el proceso este listo.",
+      noTeachers: "Anada participantes al proceso para ver la carga docente.",
+      noRequirements: "Anada necesidades horarias para ver la cobertura por grupos.",
+      noValidations: "No hay validaciones bloqueantes.",
+      lockedToRoute: "Esta ruta queda fijada al proceso de la URL actual."
+    },
+    summary: {
+      balance: "{assigned} horas asignadas de {required}. Quedan {pending} horas pendientes.",
+      teacherLoad: "{count} participante(s) seguidos; {overloaded} con sobrecarga.",
+      classroomCoverage: "{count} necesidad(es), {uncovered} sin cubrir.",
+      validations: "{blocking} validacion(es) bloqueante(s) y {total} mensaje(s) en total.",
+      checklist: "{done} paso(s) completado(s) de {total}."
+    }
+  },
   error: {
     required: "Este campo es obligatorio.",
     requiredNamed: "{field} es obligatorio.",

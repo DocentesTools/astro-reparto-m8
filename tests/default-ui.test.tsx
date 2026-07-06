@@ -162,7 +162,7 @@ const backupExport: ExportArtifactPublic = {
 };
 
 describe("default reparto UI", () => {
-  it("renders the department-head MVP workflow panels", () => {
+  it("renders the phase-4 dashboard panels", () => {
     const html = renderToStaticMarkup(
       <DepartmentHeadView
         config={{ apiBase: "/api", apiPrefix: "/reparto" }}
@@ -173,14 +173,13 @@ describe("default reparto UI", () => {
     expect(html).toContain('data-reparto-panel="current-turn"');
     expect(html).toContain("Turn 2");
     expect(html).toContain('data-reparto-action="start-turn"');
-    expect(html).toContain('data-reparto-panel="setup-wizard"');
-    expect(html).toContain('data-reparto-panel="teachers-view"');
-    expect(html).toContain('data-reparto-panel="required-hours"');
-    expect(html).toContain('data-reparto-panel="manual-assignment-board"');
+    expect(html).toContain('data-reparto-panel="overview-chart"');
+    expect(html).toContain('data-reparto-panel="teacher-load-chart"');
+    expect(html).toContain('data-reparto-panel="classroom-coverage-chart"');
     expect(html).toContain('data-reparto-panel="validation-summary"');
-    expect(html).toContain('data-reparto-panel="lan-meeting-settings"');
-    expect(html).toContain('data-reparto-action="create-session"');
-    expect(html).toContain('data-reparto-action="record-override"');
+    expect(html).toContain('data-reparto-panel="setup-checklist"');
+    expect(html).toContain('data-reparto-slot="balance-summary"');
+    expect(html).toContain('data-reparto-chart-bar="required"');
   });
 
   it("renders Phase 2 LAN teacher and shared-screen views", () => {

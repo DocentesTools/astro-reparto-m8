@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type FormSubmitEvent = { preventDefault: () => void };
 type InputChangeEvent = { target: { value: string } };
@@ -16,6 +16,7 @@ import {
 } from "../hooks.js";
 import { resolveProcessId } from "../../queryKeys.js";
 import {
+  formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
   type RepartoLocale
@@ -35,6 +36,8 @@ import {
 import type { RepartoRuntimeConfig } from "../../config.js";
 
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
+
+const LAST_PROCESS_STORAGE_KEY = "reparto.lastProcessId";
 
 export function Shell({
   children,
@@ -163,9 +166,125 @@ export function ProcessPicker({
     value: department.id,
     label: department.name
   }));
+  const checklistSteps: Array<{
+    key: keyof typeof dict.flow.bootstrap.step;
+    done: boolean;
+    disabledReason?: string;
+    onOpen?: () => void;
+  }> = [
+    {
+      key: "school",
+      done: schoolOptions.length > 0,
+      onOpen: () => setInlineCreate("school")
+    },
+    {
+      key: "academicYear",
+      done: yearOptions.length > 0,
+      onOpen: () => setInlineCreate("academicYear")
+    },
+    {
+      key: "department",
+      done: departmentOptions.length > 0,
+      onOpen: () => setInlineCreate("department")
+    },
+    {
+      key: "process",
+      done: processes.length > 0,
+      onOpen: () => undefined
+    },
+    {
+      key: "subjects",
+      done: false,
+      disabledReason: dict.disabled.noProcess
+    },
+    {
+      key: "classrooms",
+      done: false,
+      disabledReason: dict.disabled.noProcess
+    },
+    {
+      key: "teacherRoster",
+      done: false,
+      disabledReason: dict.disabled.noProcess
+    },
+    {
+      key: "requirements",
+      done: false,
+      disabledReason: dict.disabled.noProcess
+    },
+    {
+      key: "participants",
+      done: false,
+      disabledReason: dict.disabled.noProcess
+    }
+  ];
+  const checklistDoneCount = checklistSteps.filter((step) => step.done).length;
 
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
+      <section
+        className={repartoPanelClass}
+        data-reparto-panel="setup-checklist"
+        data-reparto-slot="setup-checklist"
+      >
+        <div className={repartoPanelHeaderClass}>
+          <div className="space-y-1">
+            <h2>{dict.flow.bootstrap.title}</h2>
+            <p className="text-sm text-muted-foreground">
+              {dict.flow.bootstrap.subtitle}
+            </p>
+          </div>
+          <span
+            className="text-sm text-muted-foreground"
+            data-reparto-slot="setup-progress"
+          >
+            {formatRepartoMessage("{done}/9", { done: checklistDoneCount })}
+          </span>
+        </div>
+        <ol className="mt-3 grid gap-2" data-reparto-checklist="">
+          {checklistSteps.map((step) => (
+            <li
+              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
+              data-reparto-checklist-step={step.key}
+              data-reparto-checklist-state={step.done ? "done" : "pending"}
+              key={step.key}
+            >
+              <div className="min-w-0">
+                <strong className="block text-foreground">
+                  {dict.flow.bootstrap.step[step.key]}
+                </strong>
+                {step.disabledReason ? (
+                  <span
+                    className="text-xs text-muted-foreground"
+                    data-reparto-disabled-reason=""
+                  >
+                    {step.disabledReason}
+                  </span>
+                ) : null}
+              </div>
+              {step.done ? (
+                <span
+                  className="text-xs font-medium text-primary"
+                  data-reparto-step-status="done"
+                >
+                  {dict.flow.bootstrap.done}
+                </span>
+              ) : (
+                <button
+                  className={repartoButtonClass}
+                  data-reparto-action={`open-${step.key}`}
+                  data-disabled-reason={step.disabledReason ?? undefined}
+                  disabled={Boolean(step.disabledReason)}
+                  onClick={step.onOpen ?? (() => undefined)}
+                  type="button"
+                >
+                  {dict.flow.bootstrap.open}
+                </button>
+              )}
+            </li>
+          ))}
+        </ol>
+      </section>
       <section className={repartoPanelClass} data-reparto-panel="process-picker">
         <div className={repartoPanelHeaderClass}>
           <h2>{dict.picker.selectProcess}</h2>
@@ -335,19 +454,86 @@ export function WithSelectedProcess({
   bypass = false,
   children,
   locale,
+  mode = "admin",
   processId
 }: {
   bypass?: boolean;
   children: (processId: string | undefined) => ReactNode;
   locale?: RepartoLocale;
+  mode?: "admin" | "readonly";
   processId?: string;
 }) {
   const [selected, setSelected] = useState<string | undefined>(undefined);
-  const effective = resolveProcessId(processId) ?? selected;
+  const effective = selected ?? resolveProcessId(processId);
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const processesQuery = useRepartoProcesses();
+  const processes = processesQuery.data?.data ?? [];
+  const routeProcessId = resolveProcessId(processId);
+
+  useEffect(() => {
+    if (routeProcessId || selected || typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim();
+    if (stored) {
+      setSelected(stored);
+    }
+  }, [routeProcessId, selected]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (effective) {
+      window.localStorage.setItem(LAST_PROCESS_STORAGE_KEY, effective);
+    }
+  }, [effective]);
+
   if (!bypass && !effective) {
     return <ProcessPicker locale={locale} onSelect={setSelected} />;
   }
-  return <>{children(effective ?? processId)}</>;
+  return (
+    <>
+      {processes.length > 0 ? (
+        <section className={repartoPanelClass} data-reparto-panel="process-toolbar">
+          <div className={repartoPanelHeaderClass}>
+            <div className="space-y-1">
+              <h2>{dict.dashboard.pickerLabel}</h2>
+              <p className="text-sm text-muted-foreground">
+                {dict.dashboard.pickerHint}
+              </p>
+            </div>
+            <span
+              className="rounded-full border border-primary/30 bg-primary/5 px-2 py-1 text-xs font-medium text-primary"
+              data-reparto-dashboard-mode={mode}
+            >
+              {dict.dashboard.mode[mode]}
+            </span>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <select
+              className={repartoInputClass}
+              data-reparto-field="selected-process"
+              disabled={Boolean(routeProcessId)}
+              onChange={(event: InputChangeEvent) => setSelected(event.target.value)}
+              value={effective ?? routeProcessId ?? ""}
+            >
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>
+                  {process.status}
+                </option>
+              ))}
+            </select>
+            {routeProcessId ? (
+              <span
+                className="text-xs text-muted-foreground"
+                data-reparto-disabled-reason=""
+              >
+                {dict.dashboard.state.lockedToRoute}
+              </span>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+      {children(effective ?? processId)}
+    </>
+  );
 }
 
 type DictType = ReturnType<typeof getRepartoDictionary>;

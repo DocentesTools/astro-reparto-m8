@@ -140,4 +140,63 @@ describe("reparto query keys", () => {
       null
     ]);
   });
+
+  it("builds stable keys for process-scoped entities (Phase 3 step 1)", () => {
+    expect(repartoKeys.subjects("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "subjects"
+    ]);
+    expect(repartoKeys.subjects("current")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      null,
+      "subjects"
+    ]);
+    expect(repartoKeys.teachingGroups("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "groups"
+    ]);
+    expect(repartoKeys.hourRequirements("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "requirements"
+    ]);
+    expect(repartoKeys.processTeachers("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teachers"
+    ]);
+    expect(repartoKeys.assignments("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "assignments"
+    ]);
+    expect(repartoKeys.auditEvents("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "audit-events"
+    ]);
+    expect(repartoKeys.subjects()).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      null,
+      "subjects"
+    ]);
+  });
 });

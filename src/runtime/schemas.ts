@@ -67,6 +67,44 @@ export const ValidationSeveritySchema = z.enum([
 ]);
 export type ValidationSeverity = z.infer<typeof ValidationSeveritySchema>;
 
+export const RequirementTypeSchema = z.enum([
+  "ordinary",
+  "reinforcement",
+  "split_group",
+  "optional",
+  "bilingual",
+  "other"
+]);
+export type RequirementType = z.infer<typeof RequirementTypeSchema>;
+
+export const ProcessTeacherStatusSchema = z.enum(["active", "inactive"]);
+export type ProcessTeacherStatus = z.infer<typeof ProcessTeacherStatusSchema>;
+
+export const AssignmentTypeSchema = z.enum([
+  "main",
+  "shared",
+  "reinforcement",
+  "split_group",
+  "other"
+]);
+export type AssignmentType = z.infer<typeof AssignmentTypeSchema>;
+
+export const AssignmentSourceSchema = z.enum([
+  "department_head",
+  "teacher_direct",
+  "imported_from_previous_year",
+  "system_copy"
+]);
+export type AssignmentSource = z.infer<typeof AssignmentSourceSchema>;
+
+export const AssignmentStatusSchema = z.enum([
+  "draft",
+  "confirmed",
+  "overridden",
+  "cancelled"
+]);
+export type AssignmentStatus = z.infer<typeof AssignmentStatusSchema>;
+
 const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
 const dateOnlySchema = z
@@ -326,18 +364,9 @@ export const AssignmentCreateSchema = z
     hour_requirement_id: uuidSchema,
     process_teacher_id: uuidSchema,
     assigned_hours: z.number().positive(),
-    assignment_type: z
-      .enum(["main", "shared", "reinforcement", "split_group", "other"])
-      .optional(),
-    source: z
-      .enum([
-        "department_head",
-        "teacher_direct",
-        "imported_from_previous_year",
-        "system_copy"
-      ])
-      .optional(),
-    status: z.enum(["draft", "confirmed", "overridden", "cancelled"]).optional(),
+    assignment_type: AssignmentTypeSchema.optional(),
+    source: AssignmentSourceSchema.optional(),
+    status: AssignmentStatusSchema.optional(),
     chosen_by_user_id: uuidSchema.nullable().optional(),
     confirmed_by_user_id: uuidSchema.nullable().optional(),
     override_reason: z.string().max(500).nullable().optional(),
@@ -347,14 +376,26 @@ export const AssignmentCreateSchema = z
   .strict();
 export type AssignmentCreate = z.infer<typeof AssignmentCreateSchema>;
 
+export const AssignmentUpdateSchema = z
+  .object({
+    assigned_hours: z.number().positive().optional(),
+    assignment_type: AssignmentTypeSchema.optional(),
+    source: AssignmentSourceSchema.optional(),
+    status: AssignmentStatusSchema.optional(),
+    confirmed_by_user_id: uuidSchema.nullable().optional(),
+    override_reason: z.string().max(500).nullable().optional(),
+    overridden_by_user_id: uuidSchema.nullable().optional(),
+    notes: z.string().nullable().optional()
+  })
+  .strict();
+export type AssignmentUpdate = z.infer<typeof AssignmentUpdateSchema>;
+
 export const AssignmentDirectChoiceSchema = z
   .object({
     meeting_session_id: uuidSchema,
     hour_requirement_id: uuidSchema,
     assigned_hours: z.number().positive(),
-    assignment_type: z
-      .enum(["main", "shared", "reinforcement", "split_group", "other"])
-      .optional(),
+    assignment_type: AssignmentTypeSchema.optional(),
     notes: z.string().max(1000).nullable().optional()
   })
   .strict();
@@ -368,6 +409,14 @@ export const AssignmentPublicSchema = AssignmentCreateSchema.extend({
   updated_at: dateTimeSchema
 }).strict();
 export type AssignmentPublic = z.infer<typeof AssignmentPublicSchema>;
+
+export const AssignmentsPublicSchema = z
+  .object({
+    data: z.array(AssignmentPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type AssignmentsPublic = z.infer<typeof AssignmentsPublicSchema>;
 
 export const SelectionTurnPublicSchema = z
   .object({
@@ -701,3 +750,226 @@ export const TeacherProfileLinkUserSchema = z
 export type TeacherProfileLinkUser = z.infer<
   typeof TeacherProfileLinkUserSchema
 >;
+
+export const SubjectPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    name: z.string().min(1).max(150),
+    stage: z.string().max(50).nullable(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type SubjectPublic = z.infer<typeof SubjectPublicSchema>;
+
+export const SubjectCreateSchema = z
+  .object({
+    name: z.string().min(1).max(150),
+    stage: z.string().max(50).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type SubjectCreate = z.infer<typeof SubjectCreateSchema>;
+
+export const SubjectUpdateSchema = z
+  .object({
+    name: z.string().min(1).max(150).optional(),
+    stage: z.string().max(50).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type SubjectUpdate = z.infer<typeof SubjectUpdateSchema>;
+
+export const SubjectsPublicSchema = z
+  .object({
+    data: z.array(SubjectPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type SubjectsPublic = z.infer<typeof SubjectsPublicSchema>;
+
+export const TeachingGroupPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    stage: z.string().min(1).max(50),
+    grade: z.number().int().min(0).max(20),
+    group_code: z.string().min(1).max(10),
+    label: z.string().min(1).max(100),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type TeachingGroupPublic = z.infer<typeof TeachingGroupPublicSchema>;
+
+export const TeachingGroupCreateSchema = z
+  .object({
+    stage: z.string().min(1).max(50),
+    grade: z.number().int().min(0).max(20),
+    group_code: z.string().min(1).max(10),
+    label: z.string().min(1).max(100),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type TeachingGroupCreate = z.infer<typeof TeachingGroupCreateSchema>;
+
+export const TeachingGroupUpdateSchema = z
+  .object({
+    stage: z.string().min(1).max(50).optional(),
+    grade: z.number().int().min(0).max(20).optional(),
+    group_code: z.string().min(1).max(10).optional(),
+    label: z.string().min(1).max(100).optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type TeachingGroupUpdate = z.infer<typeof TeachingGroupUpdateSchema>;
+
+export const TeachingGroupsPublicSchema = z
+  .object({
+    data: z.array(TeachingGroupPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type TeachingGroupsPublic = z.infer<typeof TeachingGroupsPublicSchema>;
+
+export const HourRequirementPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    teaching_group_id: uuidSchema,
+    subject_id: uuidSchema,
+    required_hours: z.number().positive(),
+    requirement_type: RequirementTypeSchema,
+    flags: z.string().nullable(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type HourRequirementPublic = z.infer<typeof HourRequirementPublicSchema>;
+
+export const HourRequirementCreateSchema = z
+  .object({
+    teaching_group_id: uuidSchema,
+    subject_id: uuidSchema,
+    required_hours: z.number().positive(),
+    requirement_type: RequirementTypeSchema.optional(),
+    flags: z.string().max(500).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type HourRequirementCreate = z.infer<
+  typeof HourRequirementCreateSchema
+>;
+
+export const HourRequirementUpdateSchema = z
+  .object({
+    required_hours: z.number().positive().optional(),
+    requirement_type: RequirementTypeSchema.optional(),
+    flags: z.string().max(500).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type HourRequirementUpdate = z.infer<
+  typeof HourRequirementUpdateSchema
+>;
+
+export const HourRequirementsPublicSchema = z
+  .object({
+    data: z.array(HourRequirementPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type HourRequirementsPublic = z.infer<
+  typeof HourRequirementsPublicSchema
+>;
+
+export const ProcessTeacherPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    teacher_profile_id: uuidSchema,
+    available_hours: z.number().nonnegative(),
+    participates_in_selection: z.boolean(),
+    selection_position: z.number().int().nonnegative().nullable(),
+    selection_points: z.number().nonnegative().nullable(),
+    selection_criteria_label: z.string().nullable(),
+    selection_notes: z.string().nullable(),
+    order_locked: z.boolean(),
+    status: ProcessTeacherStatusSchema,
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type ProcessTeacherPublic = z.infer<typeof ProcessTeacherPublicSchema>;
+
+export const ProcessTeacherCreateSchema = z
+  .object({
+    teacher_profile_id: uuidSchema,
+    available_hours: z.number().nonnegative(),
+    participates_in_selection: z.boolean().optional(),
+    selection_position: z.number().int().nonnegative().nullable().optional(),
+    selection_points: z.number().nonnegative().nullable().optional(),
+    selection_criteria_label: z.string().max(150).nullable().optional(),
+    selection_notes: z.string().max(2000).nullable().optional(),
+    order_locked: z.boolean().optional(),
+    status: ProcessTeacherStatusSchema.optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type ProcessTeacherCreate = z.infer<typeof ProcessTeacherCreateSchema>;
+
+export const ProcessTeacherUpdateSchema = z
+  .object({
+    available_hours: z.number().nonnegative().optional(),
+    participates_in_selection: z.boolean().optional(),
+    selection_position: z.number().int().nonnegative().nullable().optional(),
+    selection_points: z.number().nonnegative().nullable().optional(),
+    selection_criteria_label: z.string().max(150).nullable().optional(),
+    selection_notes: z.string().max(2000).nullable().optional(),
+    order_locked: z.boolean().optional(),
+    status: ProcessTeacherStatusSchema.optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type ProcessTeacherUpdate = z.infer<typeof ProcessTeacherUpdateSchema>;
+
+export const ProcessTeachersPublicSchema = z
+  .object({
+    data: z.array(ProcessTeacherPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ProcessTeachersPublic = z.infer<
+  typeof ProcessTeachersPublicSchema
+>;
+
+export const AuditEventPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    actor_user_id: uuidSchema.nullable(),
+    actor_role: z.string().nullable(),
+    event_type: z.string(),
+    entity_type: z.string().nullable(),
+    entity_id: uuidSchema.nullable(),
+    before_json: z.unknown().nullable(),
+    after_json: z.unknown().nullable(),
+    reason: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type AuditEventPublic = z.infer<typeof AuditEventPublicSchema>;
+
+export const AuditEventsPublicSchema = z
+  .object({
+    data: z.array(AuditEventPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type AuditEventsPublic = z.infer<typeof AuditEventsPublicSchema>;

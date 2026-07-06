@@ -3,23 +3,44 @@ import {
   AcademicYearCreateSchema,
   AcademicYearPublicSchema,
   AcademicYearsPublicSchema,
+  AssignmentCreateSchema,
   AssignmentDirectChoiceSchema,
   AssignmentProcessCreateSchema,
   AssignmentProcessPublicSchema,
+  AssignmentPublicSchema,
+  AssignmentUpdateSchema,
+  AuditEventPublicSchema,
+  AuditEventsPublicSchema,
   DepartmentCreateSchema,
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
+  HourRequirementCreateSchema,
+  HourRequirementPublicSchema,
+  HourRequirementsPublicSchema,
+  HourRequirementUpdateSchema,
   MeetingSessionCreateSchema,
   ProcessDashboardSchema,
+  ProcessTeacherCreateSchema,
+  ProcessTeacherPublicSchema,
+  ProcessTeachersPublicSchema,
+  ProcessTeacherUpdateSchema,
   SchoolCreateSchema,
   SchoolPublicSchema,
   SchoolsPublicSchema,
+  SubjectCreateSchema,
+  SubjectPublicSchema,
+  SubjectsPublicSchema,
+  SubjectUpdateSchema,
   TeacherLanSummarySchema,
   TeacherProfileCreateSchema,
   TeacherProfileLinkUserSchema,
   TeacherProfilePublicSchema,
-  TeacherProfilesPublicSchema
+  TeacherProfilesPublicSchema,
+  TeachingGroupCreateSchema,
+  TeachingGroupPublicSchema,
+  TeachingGroupsPublicSchema,
+  TeachingGroupUpdateSchema
 } from "../src/runtime/schemas.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
@@ -298,6 +319,269 @@ describe("global entity schemas (Phase 1)", () => {
     ).toThrow();
     expect(() =>
       AcademicYearsPublicSchema.parse({ data: [yearBody], count: 1, extra: true })
+    ).toThrow();
+  });
+});
+
+describe("process-scoped entity schemas (Phase 3 step 1)", () => {
+  const processId = "11111111-1111-4111-8111-111111111111";
+  const subjectId = "22222222-2222-4222-8222-222222222222";
+  const groupId = "33333333-3333-4333-8333-333333333333";
+  const requirementId = "44444444-4444-4444-8444-444444444444";
+  const processTeacherId = "55555555-5555-4555-8555-555555555555";
+  const teacherProfileId = "66666666-6666-4666-8666-666666666666";
+  const assignmentId = "77777777-7777-4777-8777-777777777777";
+  const auditId = "88888888-8888-4888-8888-888888888888";
+  const userId = "99999999-9999-4999-8999-999999999999";
+  const now = "2026-07-04T10:00:00Z";
+
+  const subjectBody = {
+    id: subjectId,
+    assignment_process_id: processId,
+    name: "Mathematics",
+    stage: "ESO",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const groupBody = {
+    id: groupId,
+    assignment_process_id: processId,
+    stage: "ESO",
+    grade: 1,
+    group_code: "A",
+    label: "1 ESO A",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const requirementBody = {
+    id: requirementId,
+    assignment_process_id: processId,
+    teaching_group_id: groupId,
+    subject_id: subjectId,
+    required_hours: 4,
+    requirement_type: "ordinary",
+    flags: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const processTeacherBody = {
+    id: processTeacherId,
+    assignment_process_id: processId,
+    teacher_profile_id: teacherProfileId,
+    available_hours: 18,
+    participates_in_selection: true,
+    selection_position: 1,
+    selection_points: 10,
+    selection_criteria_label: "Seniority",
+    selection_notes: null,
+    order_locked: false,
+    status: "active",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const assignmentBody = {
+    id: assignmentId,
+    assignment_process_id: processId,
+    hour_requirement_id: requirementId,
+    process_teacher_id: processTeacherId,
+    assigned_hours: 4,
+    assignment_type: "main",
+    source: "department_head",
+    status: "confirmed",
+    chosen_by_user_id: userId,
+    confirmed_by_user_id: userId,
+    override_reason: null,
+    overridden_by_user_id: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const auditBody = {
+    id: auditId,
+    assignment_process_id: processId,
+    actor_user_id: userId,
+    actor_role: "department_head",
+    event_type: "assignment.created",
+    entity_type: "assignment",
+    entity_id: assignmentId,
+    before_json: null,
+    after_json: { id: assignmentId },
+    reason: "Manual assignment",
+    created_at: now,
+    updated_at: now
+  };
+
+  it("parses subject payloads strictly and validates create/update", () => {
+    expect(SubjectPublicSchema.parse(subjectBody).name).toBe("Mathematics");
+    expect(() =>
+      SubjectPublicSchema.parse({ ...subjectBody, extra: true })
+    ).toThrow();
+    expect(SubjectCreateSchema.parse({ name: "Maths" }).name).toBe("Maths");
+    expect(() => SubjectCreateSchema.parse({})).toThrow();
+    expect(SubjectUpdateSchema.parse({}).notes).toBeUndefined();
+    expect(SubjectUpdateSchema.parse({ stage: null }).stage).toBeNull();
+    expect(() => SubjectUpdateSchema.parse({ name: "" })).toThrow();
+    expect(SubjectsPublicSchema.parse({ data: [subjectBody], count: 1 }).count).toBe(1);
+    expect(() =>
+      SubjectsPublicSchema.parse({ data: [subjectBody], count: 1, extra: 1 })
+    ).toThrow();
+  });
+
+  it("parses teaching-group payloads and validates create/update", () => {
+    expect(TeachingGroupPublicSchema.parse(groupBody).label).toBe("1 ESO A");
+    expect(() =>
+      TeachingGroupPublicSchema.parse({ ...groupBody, extra: true })
+    ).toThrow();
+    expect(
+      TeachingGroupCreateSchema.parse({
+        stage: "ESO",
+        grade: 1,
+        group_code: "A",
+        label: "1 ESO A"
+      }).grade
+    ).toBe(1);
+    expect(() =>
+      TeachingGroupCreateSchema.parse({
+        stage: "ESO",
+        grade: 21,
+        group_code: "A",
+        label: "1 ESO A"
+      })
+    ).toThrow();
+    expect(TeachingGroupUpdateSchema.parse({ label: "Renamed" }).label).toBe(
+      "Renamed"
+    );
+    expect(() => TeachingGroupUpdateSchema.parse({ group_code: "" })).toThrow();
+    expect(
+      TeachingGroupsPublicSchema.parse({ data: [], count: 0 }).count
+    ).toBe(0);
+  });
+
+  it("parses hour-requirement payloads and validates create/update", () => {
+    expect(HourRequirementPublicSchema.parse(requirementBody).required_hours).toBe(4);
+    expect(() =>
+      HourRequirementPublicSchema.parse({ ...requirementBody, extra: 1 })
+    ).toThrow();
+    expect(
+      HourRequirementCreateSchema.parse({
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_hours: 3
+      }).requirement_type
+    ).toBeUndefined();
+    expect(() =>
+      HourRequirementCreateSchema.parse({
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_hours: 0
+      })
+    ).toThrow();
+    expect(
+      HourRequirementUpdateSchema.parse({ required_hours: 6, flags: "bilingual" })
+        .flags
+    ).toBe("bilingual");
+    expect(() =>
+      HourRequirementUpdateSchema.parse({ required_hours: -1 })
+    ).toThrow();
+    expect(
+      HourRequirementsPublicSchema.parse({ data: [requirementBody], count: 1 })
+        .count
+    ).toBe(1);
+  });
+
+  it("parses process-teacher payloads and validates create/update", () => {
+    expect(ProcessTeacherPublicSchema.parse(processTeacherBody).status).toBe(
+      "active"
+    );
+    expect(() =>
+      ProcessTeacherPublicSchema.parse({ ...processTeacherBody, extra: 1 })
+    ).toThrow();
+    expect(
+      ProcessTeacherCreateSchema.parse({
+        teacher_profile_id: teacherProfileId,
+        available_hours: 0
+      }).available_hours
+    ).toBe(0);
+    expect(() =>
+      ProcessTeacherCreateSchema.parse({
+        teacher_profile_id: teacherProfileId,
+        available_hours: -1
+      })
+    ).toThrow();
+    expect(
+      ProcessTeacherUpdateSchema.parse({ status: "inactive" }).status
+    ).toBe("inactive");
+    expect(() =>
+      ProcessTeacherUpdateSchema.parse({ status: "removed" })
+    ).toThrow();
+    expect(
+      ProcessTeachersPublicSchema.parse({ data: [processTeacherBody], count: 1 })
+        .count
+    ).toBe(1);
+  });
+
+  it("parses assignment update schema and validates update shapes", () => {
+    const parsed = AssignmentPublicSchema.parse(assignmentBody);
+    expect(parsed.assignment_type).toBe("main");
+    expect(() =>
+      AssignmentPublicSchema.parse({ ...assignmentBody, surprise: 1 })
+    ).toThrow();
+    expect(
+      AssignmentCreateSchema.parse({
+        assignment_process_id: processId,
+        hour_requirement_id: requirementId,
+        process_teacher_id: processTeacherId,
+        assigned_hours: 2
+      }).assigned_hours
+    ).toBe(2);
+    expect(
+      AssignmentUpdateSchema.parse({ assigned_hours: 5 }).assigned_hours
+    ).toBe(5);
+    expect(() =>
+      AssignmentUpdateSchema.parse({ assigned_hours: 0 })
+    ).toThrow();
+    expect(() =>
+      AssignmentUpdateSchema.parse({ status: "removed" })
+    ).toThrow();
+    expect(
+      AssignmentDirectChoiceSchema.parse({
+        meeting_session_id: groupId,
+        hour_requirement_id: requirementId,
+        assigned_hours: 1
+      }).assigned_hours
+    ).toBe(1);
+  });
+
+  it("parses audit-event payloads strictly and rejects drift", () => {
+    expect(AuditEventPublicSchema.parse(auditBody).event_type).toBe(
+      "assignment.created"
+    );
+    expect(() =>
+      AuditEventPublicSchema.parse({ ...auditBody, secret: 1 })
+    ).toThrow();
+    expect(
+      AuditEventPublicSchema.parse({
+        ...auditBody,
+        actor_user_id: null,
+        entity_id: null,
+        before_json: { prior: true },
+        after_json: null
+      }).actor_user_id
+    ).toBeNull();
+    expect(
+      AuditEventsPublicSchema.parse({ data: [auditBody], count: 1 }).count
+    ).toBe(1);
+    expect(() =>
+      AuditEventsPublicSchema.parse({ data: [], count: -1 })
     ).toThrow();
   });
 });

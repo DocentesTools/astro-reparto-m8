@@ -124,5 +124,17 @@ export const repartoKeys = {
       normalizeTeacherProfileListParams(params)
     ] as const,
   teacherProfile: (profileId?: string) =>
-    [...repartoKeys.teacherProfiles(), "detail", profileId ?? null] as const
+    [...repartoKeys.teacherProfiles(), "detail", profileId ?? null] as const,
+  subjects: (processId?: string) =>
+    [...repartoKeys.process(processId), "subjects"] as const,
+  teachingGroups: (processId?: string) =>
+    [...repartoKeys.process(processId), "groups"] as const,
+  hourRequirements: (processId?: string) =>
+    [...repartoKeys.process(processId), "requirements"] as const,
+  processTeachers: (processId?: string) =>
+    [...repartoKeys.process(processId), "teachers"] as const,
+  assignments: (processId?: string) =>
+    [...repartoKeys.process(processId), "assignments"] as const,
+  auditEvents: (processId?: string) =>
+    [...repartoKeys.process(processId), "audit-events"] as const
 } as const;

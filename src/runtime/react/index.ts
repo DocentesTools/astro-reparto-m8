@@ -27,7 +27,29 @@ export {
   useUpdateRepartoAcademicYear,
   useUpdateRepartoDepartment,
   useUpdateRepartoSchool,
-  useUpdateRepartoTeacherProfile
+  useUpdateRepartoTeacherProfile,
+  useRepartoSubjects,
+  useCreateRepartoSubject,
+  useUpdateRepartoSubject,
+  useDeleteRepartoSubject,
+  useRepartoTeachingGroups,
+  useCreateRepartoTeachingGroup,
+  useUpdateRepartoTeachingGroup,
+  useDeleteRepartoTeachingGroup,
+  useRepartoHourRequirements,
+  useCreateRepartoHourRequirement,
+  useUpdateRepartoHourRequirement,
+  useDeleteRepartoHourRequirement,
+  useRepartoProcessTeachers,
+  useCreateRepartoProcessTeacher,
+  useUpdateRepartoProcessTeacher,
+  useDeleteRepartoProcessTeacher,
+  useRepartoAssignments,
+  useCreateRepartoAssignment,
+  useUpdateRepartoAssignment,
+  useDeleteRepartoAssignment,
+  useRepartoDirectChoiceAssignment,
+  useRepartoAuditEvents
 } from "./hooks.js";
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";

@@ -3,12 +3,17 @@ import {
   academicYears,
   assignments,
   assignmentProcesses,
+  auditEvents,
   departments,
   history,
+  hourRequirements,
   meetingSessions,
+  processTeachers,
   schools,
   selectionTurns,
-  teacherProfiles
+  subjects,
+  teacherProfiles,
+  teachingGroups
 } from "../src/runtime/api/index.js";
 import { setRepartoAuthAdapter } from "../src/runtime/authAdapter.js";
 import { resetRepartoConfig } from "../src/runtime/config.js";
@@ -625,5 +630,368 @@ describe("global entity API (Phase 1)", () => {
     });
     const removeCall = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
     expect(removeCall?.method).toBe("DELETE");
+  });
+});
+
+describe("process-scoped entity API (Phase 3 step 1)", () => {
+  const processId = "11111111-1111-4111-8111-111111111111";
+  const subjectId = "22222222-2222-4222-8222-222222222222";
+  const groupId = "33333333-3333-4333-8333-333333333333";
+  const requirementId = "44444444-4444-4444-8444-444444444444";
+  const processTeacherId = "55555555-5555-4555-8555-555555555555";
+  const teacherProfileId = "66666666-6666-4666-8666-666666666666";
+  const assignmentId = "77777777-7777-4777-8777-777777777777";
+  const auditId = "88888888-8888-4888-8888-888888888888";
+  const userId = "99999999-9999-4999-8999-999999999999";
+  const now = "2026-07-04T10:00:00Z";
+
+  const subjectBody = {
+    id: subjectId,
+    assignment_process_id: processId,
+    name: "Mathematics",
+    stage: "ESO",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const groupBody = {
+    id: groupId,
+    assignment_process_id: processId,
+    stage: "ESO",
+    grade: 1,
+    group_code: "A",
+    label: "1 ESO A",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const requirementBody = {
+    id: requirementId,
+    assignment_process_id: processId,
+    teaching_group_id: groupId,
+    subject_id: subjectId,
+    required_hours: 4,
+    requirement_type: "ordinary",
+    flags: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const processTeacherBody = {
+    id: processTeacherId,
+    assignment_process_id: processId,
+    teacher_profile_id: teacherProfileId,
+    available_hours: 18,
+    participates_in_selection: true,
+    selection_position: 1,
+    selection_points: 10,
+    selection_criteria_label: "Seniority",
+    selection_notes: null,
+    order_locked: false,
+    status: "active",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const assignmentBody = {
+    id: assignmentId,
+    assignment_process_id: processId,
+    hour_requirement_id: requirementId,
+    process_teacher_id: processTeacherId,
+    assigned_hours: 4,
+    assignment_type: "main",
+    source: "department_head",
+    status: "confirmed",
+    chosen_by_user_id: userId,
+    confirmed_by_user_id: userId,
+    override_reason: null,
+    overridden_by_user_id: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const auditBody = {
+    id: auditId,
+    assignment_process_id: processId,
+    actor_user_id: userId,
+    actor_role: "department_head",
+    event_type: "assignment.created",
+    entity_type: "assignment",
+    entity_id: assignmentId,
+    before_json: null,
+    after_json: { id: assignmentId },
+    reason: "Manual assignment",
+    created_at: now,
+    updated_at: now
+  };
+
+  it("subjects list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [subjectBody], count: 1 }));
+    await expect(subjects.list(processId)).resolves.toMatchObject({ count: 1 });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/subjects/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(subjectBody));
+    await expect(subjects.get(processId, subjectId)).resolves.toMatchObject({
+      id: subjectId
+    });
+
+    fetchMock.mockResolvedValueOnce(response(subjectBody));
+    await expect(
+      subjects.create(processId, { name: "Mathematics" })
+    ).resolves.toMatchObject({ name: "Mathematics" });
+
+    fetchMock.mockResolvedValueOnce(response({ ...subjectBody, name: "Maths" }));
+    await expect(
+      subjects.update(processId, subjectId, { name: "Maths" })
+    ).resolves.toMatchObject({ name: "Maths" });
+
+    fetchMock.mockResolvedValueOnce(response(subjectBody));
+    await expect(subjects.remove(processId, subjectId)).resolves.toMatchObject({
+      id: subjectId
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/subjects/${subjectId}`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() => subjects.create(processId, { name: "" } as never)).toThrow();
+    expect(() =>
+      subjects.update(processId, subjectId, { name: "" } as never)
+    ).toThrow();
+  });
+
+  it("teaching groups list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [groupBody], count: 1 }));
+    await expect(teachingGroups.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/groups/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(groupBody));
+    await expect(teachingGroups.get(processId, groupId)).resolves.toMatchObject({
+      label: "1 ESO A"
+    });
+
+    fetchMock.mockResolvedValueOnce(response(groupBody));
+    await expect(
+      teachingGroups.create(processId, {
+        stage: "ESO",
+        grade: 1,
+        group_code: "A",
+        label: "1 ESO A"
+      })
+    ).resolves.toMatchObject({ group_code: "A" });
+
+    fetchMock.mockResolvedValueOnce(response({ ...groupBody, label: "Renamed" }));
+    await expect(
+      teachingGroups.update(processId, groupId, { label: "Renamed" })
+    ).resolves.toMatchObject({ label: "Renamed" });
+
+    fetchMock.mockResolvedValueOnce(response(groupBody));
+    await expect(
+      teachingGroups.remove(processId, groupId)
+    ).resolves.toMatchObject({ id: groupId });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() =>
+      teachingGroups.create(processId, {
+        stage: "ESO",
+        grade: 21,
+        group_code: "A",
+        label: "1 ESO A"
+      } as never)
+    ).toThrow();
+    expect(() =>
+      teachingGroups.update(processId, groupId, { group_code: "" } as never)
+    ).toThrow();
+  });
+
+  it("hour requirements list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({ data: [requirementBody], count: 1 })
+    );
+    await expect(hourRequirements.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/requirements/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(requirementBody));
+    await expect(
+      hourRequirements.get(processId, requirementId)
+    ).resolves.toMatchObject({ required_hours: 4 });
+
+    fetchMock.mockResolvedValueOnce(response(requirementBody));
+    await expect(
+      hourRequirements.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_hours: 4
+      })
+    ).resolves.toMatchObject({ requirement_type: "ordinary" });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...requirementBody, required_hours: 6 })
+    );
+    await expect(
+      hourRequirements.update(processId, requirementId, {
+        required_hours: 6
+      })
+    ).resolves.toMatchObject({ required_hours: 6 });
+
+    fetchMock.mockResolvedValueOnce(response(requirementBody));
+    await expect(
+      hourRequirements.remove(processId, requirementId)
+    ).resolves.toMatchObject({ id: requirementId });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() =>
+      hourRequirements.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_hours: 0
+      } as never)
+    ).toThrow();
+    expect(() =>
+      hourRequirements.update(processId, requirementId, {
+        requirement_type: "unknown"
+      } as never)
+    ).toThrow();
+  });
+
+  it("process teachers list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({ data: [processTeacherBody], count: 1 })
+    );
+    await expect(processTeachers.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/teachers/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(processTeacherBody));
+    await expect(
+      processTeachers.get(processId, processTeacherId)
+    ).resolves.toMatchObject({ status: "active" });
+
+    fetchMock.mockResolvedValueOnce(response(processTeacherBody));
+    await expect(
+      processTeachers.create(processId, {
+        teacher_profile_id: teacherProfileId,
+        available_hours: 18
+      })
+    ).resolves.toMatchObject({ available_hours: 18 });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...processTeacherBody, status: "inactive" })
+    );
+    await expect(
+      processTeachers.update(processId, processTeacherId, {
+        status: "inactive"
+      })
+    ).resolves.toMatchObject({ status: "inactive" });
+
+    fetchMock.mockResolvedValueOnce(response(processTeacherBody));
+    await expect(
+      processTeachers.remove(processId, processTeacherId)
+    ).resolves.toMatchObject({ id: processTeacherId });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() =>
+      processTeachers.create(processId, {
+        teacher_profile_id: teacherProfileId,
+        available_hours: -1
+      } as never)
+    ).toThrow();
+    expect(() =>
+      processTeachers.update(processId, processTeacherId, {
+        status: "removed"
+      } as never)
+    ).toThrow();
+  });
+
+  it("assignments list/get/create/update/remove + direct-choice", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [assignmentBody], count: 1 }));
+    await expect(assignments.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/assignments/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.get(processId, assignmentId)
+    ).resolves.toMatchObject({ id: assignmentId });
+
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.create(processId, {
+        assignment_process_id: processId,
+        hour_requirement_id: requirementId,
+        process_teacher_id: processTeacherId,
+        assigned_hours: 4
+      })
+    ).resolves.toMatchObject({ assignment_type: "main" });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...assignmentBody, assigned_hours: 5 })
+    );
+    await expect(
+      assignments.update(processId, assignmentId, { assigned_hours: 5 })
+    ).resolves.toMatchObject({ assigned_hours: 5 });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/assignments/${assignmentId}`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "PATCH"
+    );
+
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.remove(processId, assignmentId)
+    ).resolves.toMatchObject({ id: assignmentId });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() =>
+      assignments.update(processId, assignmentId, { assigned_hours: 0 } as never)
+    ).toThrow();
+    expect(() =>
+      assignments.create(processId, {
+        assignment_process_id: processId,
+        hour_requirement_id: requirementId,
+        process_teacher_id: processTeacherId,
+        assigned_hours: 0
+      } as never)
+    ).toThrow();
+  });
+
+  it("audit events list only", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [auditBody], count: 1 }));
+    await expect(auditEvents.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/audit-events/`
+    );
+    expect(auditEvents).not.toHaveProperty("create");
+    expect(auditEvents).not.toHaveProperty("update");
+    expect(auditEvents).not.toHaveProperty("remove");
   });
 });

@@ -2,23 +2,40 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   academicYears,
   assignmentProcesses,
+  assignments,
+  auditEvents,
   departments,
   history,
+  hourRequirements,
   meetingSessions,
+  processTeachers,
   schools,
-  teacherProfiles
+  subjects,
+  teacherProfiles,
+  teachingGroups
 } from "../api/index.js";
 import type {
   AcademicYearCreate,
   AcademicYearUpdate,
+  AssignmentCreate,
+  AssignmentDirectChoice,
   AssignmentProcessCreate,
+  AssignmentUpdate,
   DepartmentCreate,
   DepartmentUpdate,
+  HourRequirementCreate,
+  HourRequirementUpdate,
+  ProcessTeacherCreate,
+  ProcessTeacherUpdate,
   SchoolCreate,
   SchoolUpdate,
+  SubjectCreate,
+  SubjectUpdate,
   TeacherProfileCreate,
   TeacherProfileLinkUser,
-  TeacherProfileUpdate
+  TeacherProfileUpdate,
+  TeachingGroupCreate,
+  TeachingGroupUpdate
 } from "../schemas.js";
 import {
   normalizeAcademicYearListParams,
@@ -274,5 +291,336 @@ export function useDeleteRepartoTeacherProfile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
     }
+  });
+}
+
+export function useRepartoSubjects(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.subjects(processId),
+    queryFn: () => subjects.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useCreateRepartoSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, body }: { processId: string; body: SubjectCreate }) =>
+      subjects.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+    }
+  });
+}
+
+export function useUpdateRepartoSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      subjectId,
+      body
+    }: {
+      processId: string;
+      subjectId: string;
+      body: SubjectUpdate;
+    }) => subjects.update(processId, subjectId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+    }
+  });
+}
+
+export function useDeleteRepartoSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      subjectId
+    }: {
+      processId: string;
+      subjectId: string;
+    }) => subjects.remove(processId, subjectId),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+    }
+  });
+}
+
+export function useRepartoTeachingGroups(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingGroups(processId),
+    queryFn: () => teachingGroups.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useCreateRepartoTeachingGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: TeachingGroupCreate;
+    }) => teachingGroups.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingGroups(processId)
+      });
+    }
+  });
+}
+
+export function useUpdateRepartoTeachingGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupId,
+      body
+    }: {
+      processId: string;
+      groupId: string;
+      body: TeachingGroupUpdate;
+    }) => teachingGroups.update(processId, groupId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingGroups(processId)
+      });
+    }
+  });
+}
+
+export function useDeleteRepartoTeachingGroup() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupId
+    }: {
+      processId: string;
+      groupId: string;
+    }) => teachingGroups.remove(processId, groupId),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingGroups(processId)
+      });
+    }
+  });
+}
+
+export function useRepartoHourRequirements(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.hourRequirements(processId),
+    queryFn: () => hourRequirements.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useCreateRepartoHourRequirement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: HourRequirementCreate;
+    }) => hourRequirements.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.hourRequirements(processId)
+      });
+    }
+  });
+}
+
+export function useUpdateRepartoHourRequirement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      requirementId,
+      body
+    }: {
+      processId: string;
+      requirementId: string;
+      body: HourRequirementUpdate;
+    }) => hourRequirements.update(processId, requirementId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.hourRequirements(processId)
+      });
+    }
+  });
+}
+
+export function useDeleteRepartoHourRequirement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      requirementId
+    }: {
+      processId: string;
+      requirementId: string;
+    }) => hourRequirements.remove(processId, requirementId),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.hourRequirements(processId)
+      });
+    }
+  });
+}
+
+export function useRepartoProcessTeachers(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.processTeachers(processId),
+    queryFn: () => processTeachers.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useCreateRepartoProcessTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: ProcessTeacherCreate;
+    }) => processTeachers.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.processTeachers(processId)
+      });
+    }
+  });
+}
+
+export function useUpdateRepartoProcessTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      processTeacherId,
+      body
+    }: {
+      processId: string;
+      processTeacherId: string;
+      body: ProcessTeacherUpdate;
+    }) => processTeachers.update(processId, processTeacherId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.processTeachers(processId)
+      });
+    }
+  });
+}
+
+export function useDeleteRepartoProcessTeacher() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      processTeacherId
+    }: {
+      processId: string;
+      processTeacherId: string;
+    }) => processTeachers.remove(processId, processTeacherId),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.processTeachers(processId)
+      });
+    }
+  });
+}
+
+export function useRepartoAssignments(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.assignments(processId),
+    queryFn: () => assignments.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useCreateRepartoAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, body }: { processId: string; body: AssignmentCreate }) =>
+      assignments.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+    }
+  });
+}
+
+export function useUpdateRepartoAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      assignmentId,
+      body
+    }: {
+      processId: string;
+      assignmentId: string;
+      body: AssignmentUpdate;
+    }) => assignments.update(processId, assignmentId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+    }
+  });
+}
+
+export function useDeleteRepartoAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      assignmentId
+    }: {
+      processId: string;
+      assignmentId: string;
+    }) => assignments.remove(processId, assignmentId),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+    }
+  });
+}
+
+export function useRepartoDirectChoiceAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, body }: { processId: string; body: AssignmentDirectChoice }) =>
+      assignments.directChoice(processId, body),
+    onSuccess: (_data, { processId }) => {
+      queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+    }
+  });
+}
+
+export function useRepartoAuditEvents(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.auditEvents(processId),
+    queryFn: () => auditEvents.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
   });
 }

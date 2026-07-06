@@ -7,6 +7,11 @@ export { schools } from "./schools.js";
 export { academicYears } from "./academicYears.js";
 export { departments } from "./departments.js";
 export { teacherProfiles } from "./teacherProfiles.js";
+export { subjects } from "./subjects.js";
+export { teachingGroups } from "./teachingGroups.js";
+export { hourRequirements } from "./hourRequirements.js";
+export { processTeachers } from "./processTeachers.js";
+export { auditEvents } from "./auditEvents.js";
 export {
   EMPTY_REPARTO_MAPPED_ERROR,
   describeErrorKey,

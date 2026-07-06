@@ -38,11 +38,15 @@ Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
 
 - `src/runtime/api/**` - assignmentProcesses, assignments, meetingSessions,
   selectionTurns, history, plus the Phase 1 global-entity wrappers: schools,
-  academicYears, departments, teacherProfiles. Phase 2 step 2 ships
-  `errorMapping.ts` (`mapRepartoError`/`findFieldError`/`describeErrorKey`)
-  that turns `RepartoApiError` / `RepartoUnauthenticatedError` / network
-  failures into per-field + form-level mapped errors, re-exported via
-  `./api` and `./error-mapping`.
+  academicYears, departments, teacherProfiles; and the Phase 3 step 1
+  process-scoped wrappers: subjects, teachingGroups, hourRequirements,
+  processTeachers, auditEvents (read-only). `assignments` gained
+  list/get/create/update/remove alongside its existing `directChoice`.
+  Phase 2 step 2 ships `errorMapping.ts`
+  (`mapRepartoError`/`findFieldError`/`describeErrorKey`) that turns
+  `RepartoApiError` / `RepartoUnauthenticatedError` / network failures into
+  per-field + form-level mapped errors, re-exported via `./api` and
+  `./error-mapping`.
 - `src/runtime/i18n/**` - English-first runtime dictionary (`en`/`fr`/`es`),
   `formatRepartoMessage`, `getRepartoDictionary`, `normalizeRepartoLocale`.
   Mirrors `docs/ui-naming-freeze.md`; tests fail on missing keys, the bare
@@ -92,6 +96,25 @@ spans. The i18n dict gains `error.invalidDate` and `error.conflict` for
 en/fr/es. 184/184 tests green; runtime coverage 100/100/100/100.
 Phase 3+ (process-scoped CRUD, dashboards, host wiring) and the
 `fa-ui-m8` Playwright E2E gate for empty-DB bootstrap are still TODO.
+
+Phase 3 step 1 (runtime for process-scoped entities) is done 2026-07-06:
+`src/runtime/schemas.ts` gains `Subject*`, `TeachingGroup*`,
+`HourRequirement*` (+ `RequirementTypeSchema`), `ProcessTeacher*` (+
+`ProcessTeacherStatusSchema`), `AuditEvent*`, plus standalone
+`AssignmentTypeSchema`/`AssignmentSourceSchema`/`AssignmentStatusSchema`
+enums (reused by `AssignmentCreate`/`AssignmentUpdate`/`AssignmentDirectChoice`)
+and a new `AssignmentUpdateSchema` + `AssignmentsPublicSchema`. Five new
+api wrappers (`subjects`, `teachingGroups`, `hourRequirements`,
+`processTeachers`, `auditEvents` [list-only]) and `assignments` list/get/
+create/update/remove join `api/index.ts`; `repartoKeys` gains
+`subjects`/`teachingGroups`/`hourRequirements`/`processTeachers`/
+`assignments`/`auditEvents` (process-scoped under `repartoKeys.process`)
+and `react/hooks.tsx` ships the matching list + CRUD + direct-choice hooks
+(exported through `react/index.ts`). 199/199 tests green; runtime coverage
+100/100/100/100; `typecheck`, `build`, `build:registry`,
+`verify:starter-routes`, and `pack --dry-run` all green. Phase 3 step 2
+(CRUD pages + FK-selects + relationship-aware delete + error-mapping field
+aliases for these entities) and the host Playwright gate remain TODO.
 
 ## Repo-specific rules
 

@@ -18,37 +18,38 @@ Fronts **`reparto-docente-m8`** over its HTTP API. Pinned to the
 
 ## Auth coupling
 
-`@mano8/astro-auth-m8` is a **required** peer — the backend accepts fa-auth-m8
+`@mano8/astro-auth-m8` is a **required** peer - the backend accepts fa-auth-m8
 tokens. Couple only through `RepartoAuthAdapter` / the `fa-auth-astro` provider;
 wire after `faAuth`.
 
 ## Modes
 
-- `headless` — schemas, API wrappers, auth adapter, React providers; no pages.
-- `starter` — injects the `.astro` routes below (host default for this plugin).
+- `headless` - schemas, API wrappers, auth adapter, React providers; no pages.
+- `starter` - injects the `.astro` routes below (host default for this plugin).
 
 Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
 `shared` (shared screen), `versions`, `exports`.
 
-## Repo-specific structure (beyond the canonical layout)
+## Repo-specific structure
 
-- `src/runtime/api/**` — assignmentProcesses, assignments, meetingSessions,
+- `src/runtime/api/**` - assignmentProcesses, assignments, meetingSessions,
   selectionTurns, history.
-- `src/runtime/react/**` — `RepartoProvider`, `RepartoQueryProvider`
+- `src/runtime/react/**` - `RepartoProvider`, `RepartoQueryProvider`
   (TanStack Query), `LanWorkspace`, `DepartmentHeadWorkspace`, `default-ui/`.
-- `src/runtime/ui/**` — framework-neutral view-state helpers (`lan`, `history`)
+- `src/runtime/ui/**` - framework-neutral view-state helpers (`lan`, `history`)
   exported via `./ui`.
+- `registry/**` - shadcn registry skins generated into `registry/r`, composing
+  canonical `@mano8/astro-ui-m8` data-table and state blocks.
 
 ## Repo-specific rules
 
-- UI delivery is **package exports only** (`/react`, `/ui`, `/default-ui`) —
-  this repo does **not** ship a shadcn registry today. React UI stays pure
-  shadcn/Tailwind; table/list screens follow the `astro-prompt-m8` data-table
-  pattern and dashboards use shadcn chart patterns.
+- UI delivery is **package exports plus shadcn registry skins** (`/react`, `/ui`,
+  `/default-ui`, `registry/r`). React UI stays pure shadcn/Tailwind; table/list
+  registry skins consume `@mano8/astro-ui-m8` data-table/state blocks and
+  dashboards use shadcn chart patterns.
 - Consumers own secrets, env, i18n labels, and final composition.
 
-## Follow-ups (documented, not yet built)
+## Follow-ups
 
-- No shadcn registry (`registry.json` / `registry/r` / `build-registry.mjs`)
-  yet — hosts consume components via package exports. Add one if a host needs
-  editable skins, matching the media/prompt pattern.
+- Starter routes still need the Starlight-shell replacement tracked by the
+  shared Phase 3 plan.

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "fa-m8-reparto",
+  "homepage": "https://github.com/DocentesTools/astro-reparto-m8",
+  "items": [
+    {
+      "name": "reparto-processes-table",
+      "type": "registry:component",
+      "title": "Reparto Processes Table",
+      "description": "Editable reparto process list skin using the canonical @mano8/astro-ui-m8 controlled data-table block.",
+      "dependencies": ["@tanstack/react-table", "lucide-react"],
+      "registryDependencies": [
+        "badge",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/processes/reparto-processes-table.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-processes-table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-state-panel",
+      "type": "registry:component",
+      "title": "Reparto State Panel",
+      "description": "Reparto loading, empty, error, and unauthorized state adapter backed by the canonical @mano8/astro-ui-m8 state blocks.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-loading.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-empty.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-error.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-unauthorized.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/state/reparto-state-panel.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-state-panel.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-starter-views",
+      "type": "registry:component",
+      "title": "Reparto Starter Views",
+      "description": "Starter copied skins for the reparto dashboard, meeting, processes, teacher, shared, versions, and exports islands. Requires @mano8/astro-reparto-m8 installed.",
+      "dependencies": ["@tanstack/react-table", "lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-processes-table.json",
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-state-panel.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/views/reparto-starter-views.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-starter-views.tsx"
+        }
+      ]
+    }
+  ]
+}

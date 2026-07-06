@@ -28,8 +28,30 @@ export default defineConfig({
 });
 ```
 
-## UI direction
+## Registry skins
 
 React UI should stay pure shadcn/Tailwind. Table and list screens should use the
-full `astro-prompt-m8` data-table pattern, and dashboard charts should use
-shadcn chart patterns.
+canonical `@mano8/astro-ui-m8` data-table/state blocks, and dashboard charts
+should use shadcn chart patterns.
+
+This package ships shadcn registry items under `registry/r`:
+
+- `reparto-processes-table` - editable process table skin using the canonical
+  M8 data table.
+- `reparto-state-panel` - loading, empty, error, and unauthorized state adapter
+  using the canonical M8 state blocks.
+- `reparto-starter-views` - starter copied skins for the dashboard, meeting,
+  processes, teacher, shared, versions, and exports islands.
+
+Consumers need shadcn configured with the usual `@/components/ui/*` and
+`@/lib/utils` aliases, and should install the registry items from the package:
+
+```sh
+npx shadcn add ./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-starter-views.json
+```
+
+Regenerate registry output with:
+
+```sh
+npm run build:registry
+```

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "fa-m8-reparto",
+  "homepage": "https://github.com/DocentesTools/astro-reparto-m8",
+  "items": [
+    {
+      "name": "reparto-processes-table",
+      "type": "registry:component",
+      "title": "Reparto Processes Table",
+      "description": "Editable reparto process list skin using the canonical @mano8/astro-ui-m8 controlled data-table block."
+    },
+    {
+      "name": "reparto-state-panel",
+      "type": "registry:component",
+      "title": "Reparto State Panel",
+      "description": "Reparto loading, empty, error, and unauthorized state adapter backed by the canonical @mano8/astro-ui-m8 state blocks."
+    },
+    {
+      "name": "reparto-starter-views",
+      "type": "registry:component",
+      "title": "Reparto Starter Views",
+      "description": "Starter copied skins for the reparto dashboard, meeting, processes, teacher, shared, versions, and exports islands. Requires @mano8/astro-reparto-m8 installed."
+    }
+  ]
+}

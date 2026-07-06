@@ -1,22 +1,28 @@
 // Client-side auth bridge for the fa-auth-astro provider.
 //
 // reparto-docente-m8 only accepts fa-auth-m8 tokens. In `starter` mode the
-// plugin owns its routes, so the host never gets to wrap the islands the way it
-// does for headless plugins (e.g. media's host-side MediaProvider). Instead the
-// integration injects this module on every page (only when
+// plugin owns its routes, so — unlike headless plugins that the host wraps in a
+// host-side provider (e.g. media's MediaProvider, prompt's PromptProvider) — no
+// host island ever configures the auth runtime or wires the reparto adapter on
+// these pages. The integration injects this module on every page (only when
 // `auth.provider === "fa-auth-astro"`), which:
 //
-//   1. registers a RepartoAuthAdapter backed by the auth plugin's in-memory
-//      token store (same token + refresh the auth plugin already manages — no
-//      second store), so authenticated writes carry `Authorization: Bearer …`;
-//   2. verifies the session on reparto routes and redirects unauthenticated
-//      visitors to the login page before they can submit a form that the
-//      backend would reject with 401.
+//   1. points the fa-auth client at the same backend the host configured
+//      (`PUBLIC_FA_AUTH_API_BASE`), so its `refreshToken`/`getToken` resolve to
+//      the auth service instead of the current origin;
+//   2. registers a RepartoAuthAdapter backed by fa-auth's `getToken` +
+//      `refreshToken`. It performs NO eager network call: exactly like the
+//      prompt client, the reparto client lazily calls `adapter.refresh()` on a
+//      401 (fa-auth owns the refresh + token store — no second store, no
+//      duplicate refresh), then retries the request with the fresh Bearer.
+//
+// On a genuinely unauthenticated visit the reparto client's refresh fails and
+// invokes `onUnauthenticated`, which sends the visitor to the login page.
 //
 // The `@mano8/astro-auth-m8` imports live here — never in the always-built route
 // path — so the plugin still builds with `auth.provider: "custom" | "none"` and
 // no auth plugin installed (see the starter fixture).
-import { getToken } from "@mano8/astro-auth-m8/client";
+import { getToken, configureAuth } from "@mano8/astro-auth-m8/client";
 import { refreshToken } from "@mano8/astro-auth-m8/api";
 import { createFaAuthAdapter, setRepartoAuthAdapter } from "./authAdapter.js";
 
@@ -75,9 +81,16 @@ function redirectToLogin(options: RepartoFaAuthBridgeOptions): void {
   window.location.assign(`${loginHref}?next=${next}`);
 }
 
+/** Resolve the fa-auth API base the host configured for the auth service. */
+function resolveAuthApiBase(): string | undefined {
+  return import.meta.env.PUBLIC_FA_AUTH_API_BASE;
+}
+
 /**
- * Register the fa-auth-backed reparto adapter and, on reparto routes, redirect
- * unauthenticated visitors to the login page. Idempotent and browser-only.
+ * Register the fa-auth-backed reparto adapter. Points the fa-auth client at the
+ * configured auth service, then wires `getToken`/`refreshToken` so the reparto
+ * client can lazily refresh on a 401. No eager request is made. Idempotent and
+ * browser-only.
  */
 export function installRepartoFaAuthBridge(
   options: RepartoFaAuthBridgeOptions = {}
@@ -85,19 +98,20 @@ export function installRepartoFaAuthBridge(
   if (installed || typeof window === "undefined") return;
   installed = true;
 
+  // fa-auth's refreshToken/getToken resolve their URL against this base; without
+  // it they would post to the current origin (the Astro host) and 404.
+  const apiBase = resolveAuthApiBase();
+  if (apiBase) configureAuth({ apiBase });
+
   setRepartoAuthAdapter(
     createFaAuthAdapter({
       getToken,
       refreshToken,
+      // Fires only after the reparto client's own 401 → refresh cycle fails,
+      // i.e. the visitor has no valid session — send them to login.
       onUnauthenticated: () => redirectToLogin(options)
     })
   );
-
-  if (isRepartoRoute(window.location.pathname, options)) {
-    // A successful refresh also primes the shared token store for the first
-    // write; a rejection means there is no valid session → send them to login.
-    void refreshToken().catch(() => redirectToLogin(options));
-  }
 }
 
 /** Test-only: allow {@link installRepartoFaAuthBridge} to run again. */

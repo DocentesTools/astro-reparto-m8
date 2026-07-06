@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const authApi = vi.hoisted(() => ({
   refreshToken: vi.fn(async () => ({ access_token: "tok" }))
 }));
-const authClient = vi.hoisted(() => ({ getToken: vi.fn(() => "tok") }));
+const authClient = vi.hoisted(() => ({
+  getToken: vi.fn(() => "tok"),
+  configureAuth: vi.fn()
+}));
 
 vi.mock("@mano8/astro-auth-m8/api", () => authApi);
 vi.mock("@mano8/astro-auth-m8/client", () => authClient);
@@ -29,13 +32,20 @@ function stubWindow(pathname: string, search = "") {
 
 afterEach(() => {
   delete (globalThis as { window?: unknown }).window;
+  vi.unstubAllEnvs();
   resetRepartoAuthAdapter();
   resetRepartoFaAuthBridge();
   authApi.refreshToken.mockReset();
   authApi.refreshToken.mockResolvedValue({ access_token: "tok" });
   authClient.getToken.mockReset();
   authClient.getToken.mockReturnValue("tok");
+  authClient.configureAuth.mockReset();
 });
+
+/** Set the auth API base the host build injects for the fa-auth client. */
+function stubAuthApiBase(apiBase: string) {
+  vi.stubEnv("PUBLIC_FA_AUTH_API_BASE", apiBase);
+}
 
 describe("isRepartoRoute", () => {
   it("matches reparto routes with and without a locale prefix", () => {
@@ -61,36 +71,45 @@ describe("resolveLoginHref", () => {
 });
 
 describe("installRepartoFaAuthBridge", () => {
-  it("registers a fa-auth-backed adapter and verifies the session on reparto routes", async () => {
+  it("points the fa-auth client at the configured auth service", () => {
+    stubAuthApiBase("http://auth.test/user");
+    stubWindow("/en/reparto/setup/schools");
+    installRepartoFaAuthBridge({ locales: ["en"] });
+
+    expect(authClient.configureAuth).toHaveBeenCalledWith({
+      apiBase: "http://auth.test/user"
+    });
+  });
+
+  it("registers a fa-auth-backed adapter without making an eager request", async () => {
     stubWindow("/en/reparto/setup/schools");
     installRepartoFaAuthBridge({ locales: ["en"], loginPath: "/auth/login" });
 
-    expect(await getRepartoAuthAdapter().getAccessToken()).toBe("tok");
+    const adapter = getRepartoAuthAdapter();
+    expect(await adapter.getAccessToken()).toBe("tok");
+    // Refresh is lazy: the reparto client drives it on a 401, not the bridge.
+    expect(authApi.refreshToken).not.toHaveBeenCalled();
+    // The wired adapter delegates refresh to fa-auth's refreshToken.
+    expect(await adapter.refresh?.()).toBe("tok");
     expect(authApi.refreshToken).toHaveBeenCalledTimes(1);
   });
 
-  it("redirects to the locale login page when the session refresh fails", async () => {
-    authApi.refreshToken.mockRejectedValueOnce(new Error("no session"));
+  it("redirects to the locale login page when the adapter reports no session", async () => {
     const assign = stubWindow("/es/reparto/setup/schools", "?tab=1");
     installRepartoFaAuthBridge({ locales: ["en", "es"], loginPath: "/auth/login" });
 
-    await vi.waitFor(() =>
-      expect(assign).toHaveBeenCalledWith(
-        "/es/auth/login?next=%2Fes%2Freparto%2Fsetup%2Fschools%3Ftab%3D1"
-      )
+    getRepartoAuthAdapter().onUnauthenticated?.("refresh-failed");
+
+    expect(assign).toHaveBeenCalledWith(
+      "/es/auth/login?next=%2Fes%2Freparto%2Fsetup%2Fschools%3Ftab%3D1"
     );
   });
 
-  it("does not verify the session outside reparto routes", () => {
-    stubWindow("/en/docs");
-    installRepartoFaAuthBridge({ locales: ["en"] });
-    expect(authApi.refreshToken).not.toHaveBeenCalled();
-  });
-
   it("is idempotent until reset", () => {
+    stubAuthApiBase("http://auth.test/user");
     stubWindow("/reparto");
     installRepartoFaAuthBridge();
     installRepartoFaAuthBridge();
-    expect(authApi.refreshToken).toHaveBeenCalledTimes(1);
+    expect(authClient.configureAuth).toHaveBeenCalledTimes(1);
   });
 });

@@ -22,8 +22,8 @@ configuration. Consumers own secrets, env, i18n labels, and final composition.
 - Model public backend responses only; never expose secret/session fields.
 - Export public modules through explicit `package.json` subpaths.
 - React UI must use pure shadcn/Tailwind composition.
-- Table/list views must use the full data-table component pattern from
-  `astro-prompt-m8`, not one-off tables.
+- Table/list views must use the canonical `@mano8/astro-ui-m8` data-table
+  pattern, not one-off tables.
 - Charts and dashboard visuals should use shadcn chart patterns.
 
 ## Commands

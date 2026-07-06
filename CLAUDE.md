@@ -48,8 +48,3 @@ Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
   registry skins consume `@mano8/astro-ui-m8` data-table/state blocks and
   dashboards use shadcn chart patterns.
 - Consumers own secrets, env, i18n labels, and final composition.
-
-## Follow-ups
-
-- Starter routes still need the Starlight-shell replacement tracked by the
-  shared Phase 3 plan.

@@ -15,7 +15,13 @@ const routeCases = [
   ["schools.astro", "RepartoSchoolsView", "Reparto schools"],
   ["academic-years.astro", "RepartoAcademicYearsView", "Reparto academic years"],
   ["departments.astro", "RepartoDepartmentsView", "Reparto departments"],
-  ["teacher-roster.astro", "RepartoTeacherRosterView", "Reparto teacher roster"]
+  ["teacher-roster.astro", "RepartoTeacherRosterView", "Reparto teacher roster"],
+  ["subjects.astro", "RepartoSubjectsView", "Reparto subjects"],
+  ["classrooms.astro", "RepartoClassroomsView", "Reparto classrooms"],
+  ["requirements.astro", "RepartoHourRequirementsView", "Reparto requirements"],
+  ["participants.astro", "RepartoProcessParticipantsView", "Reparto participants"],
+  ["assignments.astro", "RepartoAssignmentsView", "Reparto assignments"],
+  ["audit.astro", "RepartoAuditView", "Reparto audit"]
 ] as const;
 
 describe("starter route shells", () => {

@@ -225,6 +225,45 @@ describe("mapRepartoError", () => {
       formError: null
     });
   });
+
+  it("maps the Phase 3 process-scoped field aliases to their RepartoFieldKey", () => {
+    const cases: Array<[string, ReturnType<typeof import("../src/runtime/errorMapping.js").mapRepartoError>["fieldErrors"][number]["field"]]> = [
+      ["teaching_group_id", "classroom"],
+      ["subject_id", "subject"],
+      ["teacher_profile_id", "teacher"],
+      ["hour_requirement_id", "hourRequirement"],
+      ["process_teacher_id", "processParticipant"],
+      ["requirement_type", "requirementType"],
+      ["assignment_type", "assignmentType"],
+      ["source", "source"],
+      ["required_hours", "requiredHours"],
+      ["assigned_hours", "assignedHours"],
+      ["available_hours", "availableHours"],
+      ["participates_in_selection", "participatesInSelection"],
+      ["selection_position", "selectionPosition"],
+      ["selection_points", "selectionPoints"],
+      ["selection_criteria_label", "selectionCriteria"],
+      ["selection_notes", "selectionNotes"],
+      ["order_locked", "orderLocked"],
+      ["override_reason", "overrideReason"],
+      ["flags", "flags"],
+      ["stage", "stage"],
+      ["grade", "grade"],
+      ["group_code", "groupCode"],
+      ["previous_academic_year_id", "previousAcademicYear"]
+    ];
+    for (const [loc, expectedField] of cases) {
+      const mapped = mapRepartoError(
+        new RepartoApiError(422, [
+          { loc: ["body", loc], msg: `${loc} invalid`, type: "value_error" }
+        ])
+      );
+      expect(mapped.fieldErrors, `loc ${loc}`).toEqual([
+        expect.objectContaining({ field: expectedField })
+      ]);
+      expect(mapped.formError).toBeNull();
+    }
+  });
 });
 
 describe("describeErrorKey", () => {

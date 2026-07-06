@@ -25,7 +25,13 @@ describe("routes", () => {
       schools: "/reparto/setup/schools",
       academicYears: "/reparto/setup/academic-years",
       departments: "/reparto/setup/departments",
-      teacherRoster: "/reparto/setup/teacher-roster"
+      teacherRoster: "/reparto/setup/teacher-roster",
+      subjects: "/reparto/processes/[processId]/subjects",
+      classrooms: "/reparto/processes/[processId]/classrooms",
+      requirements: "/reparto/processes/[processId]/requirements",
+      participants: "/reparto/processes/[processId]/participants",
+      assignments: "/reparto/processes/[processId]/assignments",
+      audit: "/reparto/processes/[processId]/audit"
     });
     expect(buildRepartoRoutes({ dashboard: false, meeting: "/m/[id]" })).toEqual({
       dashboard: false,
@@ -38,7 +44,13 @@ describe("routes", () => {
       schools: "/reparto/setup/schools",
       academicYears: "/reparto/setup/academic-years",
       departments: "/reparto/setup/departments",
-      teacherRoster: "/reparto/setup/teacher-roster"
+      teacherRoster: "/reparto/setup/teacher-roster",
+      subjects: "/reparto/processes/[processId]/subjects",
+      classrooms: "/reparto/processes/[processId]/classrooms",
+      requirements: "/reparto/processes/[processId]/requirements",
+      participants: "/reparto/processes/[processId]/participants",
+      assignments: "/reparto/processes/[processId]/assignments",
+      audit: "/reparto/processes/[processId]/audit"
     });
   });
 
@@ -124,7 +136,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(11);
+    expect(injectRoute).toHaveBeenCalledTimes(17);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -142,7 +154,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(10);
+    expect(injectRoute).toHaveBeenCalledTimes(16);
   });
 
   it("injects localized starter routes for Starlight hosts", async () => {
@@ -174,7 +186,15 @@ describe("integration", () => {
       pattern: "/es/reparto/setup/teacher-roster",
       entrypoint: "@mano8/astro-reparto-m8/routes/teacher-roster.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(22);
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/en/reparto/processes/[processId]/subjects",
+      entrypoint: "@mano8/astro-reparto-m8/routes/subjects.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/es/reparto/processes/[processId]/audit",
+      entrypoint: "@mano8/astro-reparto-m8/routes/audit.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(34);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -223,7 +243,11 @@ describe("integration", () => {
     const classroomsEntry = resolved.process.entries.find(
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
-    expect(classroomsEntry?.href).toBe("#");
+    expect(classroomsEntry?.href).toBe("/reparto/processes/classrooms");
+    const auditEntry = resolved.process.entries.find(
+      (entry) => entry.labelKey === "nav.item.audit"
+    );
+    expect(auditEntry?.href).toBe("/reparto/processes/audit");
     const resolvedMissing = buildRepartoNav(
       buildRepartoRoutes({ dashboard: false })
     );

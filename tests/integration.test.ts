@@ -3,7 +3,8 @@ import faReparto, {
   buildRepartoNav,
   checkAuthOrder,
   DEFAULT_REPARTO_NAV,
-  localizedRoutePatterns
+  localizedRoutePatterns,
+  repartoRoutePrefixes
 } from "../src/integration.js";
 import {
   REPARTO_CONTRACT_OPERATIONS,
@@ -147,6 +148,7 @@ describe("integration", () => {
       routes: { dashboard: false, meeting: "/meeting/[processId]" }
     }).hooks["astro:config:setup"]?.({
       injectRoute,
+      injectScript: vi.fn(),
       updateConfig: vi.fn(),
       config: { integrations: [] },
       logger
@@ -155,6 +157,53 @@ describe("integration", () => {
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
     expect(injectRoute).toHaveBeenCalledTimes(16);
+  });
+
+  it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
+    const faAuthScript = vi.fn();
+    faReparto({
+      mode: "starter",
+      locales: ["en", "es"],
+      auth: { provider: "fa-auth-astro", loginPath: "/auth/login" }
+    }).hooks["astro:config:setup"]?.({
+      injectRoute: vi.fn(),
+      injectScript: faAuthScript,
+      updateConfig: vi.fn(),
+      config: { integrations: [{ name: "@mano8/astro-auth-m8" }] },
+      logger: { warn: vi.fn() }
+    } as never);
+    expect(faAuthScript).toHaveBeenCalledTimes(1);
+    const [stage, code] = faAuthScript.mock.calls[0];
+    expect(stage).toBe("page");
+    expect(code).toContain("@mano8/astro-reparto-m8/fa-auth-bridge");
+    expect(code).toContain("\"loginPath\":\"/auth/login\"");
+    expect(code).toContain("\"routePrefixes\":[\"/reparto\"]");
+
+    const customScript = vi.fn();
+    faReparto({ mode: "starter", auth: { provider: "custom" } }).hooks[
+      "astro:config:setup"
+    ]?.({
+      injectRoute: vi.fn(),
+      injectScript: customScript,
+      updateConfig: vi.fn(),
+      config: { integrations: [] },
+      logger: { warn: vi.fn() }
+    } as never);
+    expect(customScript).not.toHaveBeenCalled();
+  });
+
+  it("derives route prefixes for the auth guard", () => {
+    expect(repartoRoutePrefixes(buildRepartoRoutes())).toEqual(["/reparto"]);
+    expect(
+      repartoRoutePrefixes(buildRepartoRoutes({ dashboard: "custom/home" }))
+    ).toEqual(expect.arrayContaining(["/custom", "/reparto"]));
+    expect(
+      repartoRoutePrefixes({ ...buildRepartoRoutes(), dashboard: false } as never)
+    ).toContain("/reparto");
+    const allDisabled = Object.fromEntries(
+      Object.keys(buildRepartoRoutes()).map((key) => [key, false])
+    );
+    expect(repartoRoutePrefixes(allDisabled as never)).toEqual(["/reparto"]);
   });
 
   it("injects localized starter routes for Starlight hosts", async () => {

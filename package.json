@@ -33,6 +33,7 @@
     "./client": "./dist/src/runtime/client.js",
     "./schemas": "./dist/src/runtime/schemas.js",
     "./auth-adapter": "./dist/src/runtime/authAdapter.js",
+    "./fa-auth-bridge": "./dist/src/runtime/faAuthBridge.js",
     "./react": "./dist/src/runtime/react/index.js",
     "./default-ui": "./dist/src/runtime/react/default-ui/index.js",
     "./i18n": "./dist/src/runtime/i18n/index.js",

@@ -4,6 +4,7 @@ import starlight from "@astrojs/starlight";
 import faReparto from "@mano8/astro-reparto-m8";
 
 export default defineConfig({
+  site: "https://example.test",
   integrations: [
     react(),
     starlight({

@@ -29,6 +29,11 @@ export type FaRepartoAstroOptions = {
   defaultLocale?: string;
   auth?: {
     provider?: "fa-auth-astro" | "custom" | "none";
+    /**
+     * Login route path (without locale prefix) the fa-auth-astro guard sends
+     * unauthenticated visitors to. Defaults to `/login`.
+     */
+    loginPath?: string;
   };
   routes?: RepartoRouteFragments;
   views?: {
@@ -124,6 +129,15 @@ export function localizedRoutePatterns(
   return locales.map((locale) => `/${locale}${normalized}`);
 }
 
+/** Distinct top-level path prefixes (`/reparto`, …) the route set lives under. */
+export function repartoRoutePrefixes(routes: BuiltRepartoRoutes): string[] {
+  const prefixes = new Set<string>();
+  for (const pattern of Object.values(routes)) {
+    if (pattern) prefixes.add(`/${normalizeRoutePattern(pattern).split("/")[1]}`);
+  }
+  return prefixes.size ? [...prefixes] : ["/reparto"];
+}
+
 export function checkAuthOrder(
   integrations: { name?: string }[] | undefined,
   logger?: { warn: (message: string) => void }
@@ -146,11 +160,12 @@ export default function faReparto(
   const routes = buildRepartoRoutes(options.routes);
   const apiBase = options.apiBase ?? "/reparto";
   const apiPrefix = options.apiPrefix ?? "";
+  const loginPath = options.auth?.loginPath ?? "/login";
 
   return {
     name: REPARTO_INTEGRATION_NAME,
     hooks: {
-      "astro:config:setup": ({ injectRoute, updateConfig, config, logger }) => {
+      "astro:config:setup": ({ injectRoute, injectScript, updateConfig, config, logger }) => {
         updateConfig({
           vite: {
             define: {
@@ -177,6 +192,22 @@ export default function faReparto(
               entrypoint: ROUTE_ENTRYPOINTS[name as keyof typeof ROUTE_ENTRYPOINTS]
             });
           }
+        }
+
+        // Wire the fa-auth token into the reparto client and guard reparto
+        // routes on the client. Injected only for the fa-auth-astro provider so
+        // the `@mano8/astro-auth-m8` import never enters a custom/none build.
+        if (provider === "fa-auth-astro") {
+          const bridgeOptions = {
+            loginPath,
+            locales: options.locales ?? [],
+            routePrefixes: repartoRoutePrefixes(routes)
+          };
+          injectScript(
+            "page",
+            `import { installRepartoFaAuthBridge } from "@mano8/astro-reparto-m8/fa-auth-bridge";` +
+              `installRepartoFaAuthBridge(${JSON.stringify(bridgeOptions)});`
+          );
         }
       }
     }

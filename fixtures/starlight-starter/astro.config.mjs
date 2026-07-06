@@ -4,6 +4,7 @@ import starlight from "@astrojs/starlight";
 import faReparto from "@mano8/astro-reparto-m8";
 
 export default defineConfig({
+  site: "https://example.test",
   integrations: [
     react(),
     starlight({
@@ -27,7 +28,7 @@ export default defineConfig({
       mode: "starter",
       apiBase: "/reparto",
       apiPrefix: "/fastapi",
-      auth: { provider: "none" }
+      auth: { provider: "custom" }
     })
   ]
 });

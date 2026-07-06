@@ -69,6 +69,9 @@ export type ValidationSeverity = z.infer<typeof ValidationSeveritySchema>;
 
 const uuidSchema = z.string().uuid();
 const dateTimeSchema = z.string().datetime({ offset: true });
+const dateOnlySchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be a YYYY-MM-DD string.");
 
 export const AssignmentProcessPublicSchema = z
   .object({
@@ -502,3 +505,199 @@ export const ExportArtifactsPublicSchema = z
   })
   .strict();
 export type ExportArtifactsPublic = z.infer<typeof ExportArtifactsPublicSchema>;
+
+export const AcademicYearStatusSchema = z.enum(["active", "archived"]);
+export type AcademicYearStatus = z.infer<typeof AcademicYearStatusSchema>;
+
+export const SchoolPublicSchema = z
+  .object({
+    id: uuidSchema,
+    name: z.string().min(1).max(200),
+    locality: z.string().nullable(),
+    province: z.string().nullable(),
+    region: z.string().nullable(),
+    address: z.string().nullable(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type SchoolPublic = z.infer<typeof SchoolPublicSchema>;
+
+export const SchoolCreateSchema = z
+  .object({
+    name: z.string().min(1).max(200),
+    locality: z.string().max(200).nullable().optional(),
+    province: z.string().max(200).nullable().optional(),
+    region: z.string().max(200).nullable().optional(),
+    address: z.string().max(500).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type SchoolCreate = z.infer<typeof SchoolCreateSchema>;
+
+export const SchoolUpdateSchema = z
+  .object({
+    name: z.string().min(1).max(200).optional(),
+    locality: z.string().max(200).nullable().optional(),
+    province: z.string().max(200).nullable().optional(),
+    region: z.string().max(200).nullable().optional(),
+    address: z.string().max(500).nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type SchoolUpdate = z.infer<typeof SchoolUpdateSchema>;
+
+export const SchoolsPublicSchema = z
+  .object({
+    data: z.array(SchoolPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type SchoolsPublic = z.infer<typeof SchoolsPublicSchema>;
+
+export const AcademicYearPublicSchema = z
+  .object({
+    id: uuidSchema,
+    label: z.string().min(1).max(20),
+    start_date: dateOnlySchema,
+    end_date: dateOnlySchema,
+    status: AcademicYearStatusSchema,
+    previous_academic_year_id: uuidSchema.nullable(),
+    school_id: uuidSchema,
+    created_by_user_id: uuidSchema,
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type AcademicYearPublic = z.infer<typeof AcademicYearPublicSchema>;
+
+export const AcademicYearCreateSchema = z
+  .object({
+    label: z.string().min(1).max(20),
+    start_date: dateOnlySchema,
+    end_date: dateOnlySchema,
+    previous_academic_year_id: uuidSchema.nullable().optional(),
+    school_id: uuidSchema.optional()
+  })
+  .strict()
+  .refine(
+    (value) => value.start_date <= value.end_date,
+    "Start date must be on or before end date."
+  );
+export type AcademicYearCreate = z.infer<typeof AcademicYearCreateSchema>;
+
+export const AcademicYearUpdateSchema = z
+  .object({
+    label: z.string().min(1).max(20).optional(),
+    start_date: dateOnlySchema.optional(),
+    end_date: dateOnlySchema.optional(),
+    status: AcademicYearStatusSchema.optional(),
+    previous_academic_year_id: uuidSchema.nullable().optional(),
+    school_id: uuidSchema.optional()
+  })
+  .strict();
+export type AcademicYearUpdate = z.infer<typeof AcademicYearUpdateSchema>;
+
+export const AcademicYearsPublicSchema = z
+  .object({
+    data: z.array(AcademicYearPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type AcademicYearsPublic = z.infer<typeof AcademicYearsPublicSchema>;
+
+export const DepartmentPublicSchema = z
+  .object({
+    id: uuidSchema,
+    school_id: uuidSchema,
+    name: z.string().min(1).max(150),
+    slug: z.string(),
+    department_head_user_id: uuidSchema.nullable(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type DepartmentPublic = z.infer<typeof DepartmentPublicSchema>;
+
+export const DepartmentCreateSchema = z
+  .object({
+    school_id: uuidSchema,
+    name: z.string().min(1).max(150),
+    slug: z.string().max(150).optional(),
+    department_head_user_id: uuidSchema.nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type DepartmentCreate = z.infer<typeof DepartmentCreateSchema>;
+
+export const DepartmentUpdateSchema = z
+  .object({
+    name: z.string().min(1).max(150).optional(),
+    slug: z.string().max(150).optional(),
+    department_head_user_id: uuidSchema.nullable().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type DepartmentUpdate = z.infer<typeof DepartmentUpdateSchema>;
+
+export const DepartmentsPublicSchema = z
+  .object({
+    data: z.array(DepartmentPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type DepartmentsPublic = z.infer<typeof DepartmentsPublicSchema>;
+
+export const TeacherProfilePublicSchema = z
+  .object({
+    id: uuidSchema,
+    display_name: z.string().min(1).max(150),
+    user_id: uuidSchema.nullable(),
+    active: z.boolean(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type TeacherProfilePublic = z.infer<typeof TeacherProfilePublicSchema>;
+
+export const TeacherProfileCreateSchema = z
+  .object({
+    display_name: z.string().min(1).max(150),
+    user_id: uuidSchema.nullable().optional(),
+    active: z.boolean().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type TeacherProfileCreate = z.infer<typeof TeacherProfileCreateSchema>;
+
+export const TeacherProfileUpdateSchema = z
+  .object({
+    display_name: z.string().min(1).max(150).optional(),
+    user_id: uuidSchema.nullable().optional(),
+    active: z.boolean().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type TeacherProfileUpdate = z.infer<typeof TeacherProfileUpdateSchema>;
+
+export const TeacherProfilesPublicSchema = z
+  .object({
+    data: z.array(TeacherProfilePublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type TeacherProfilesPublic = z.infer<
+  typeof TeacherProfilesPublicSchema
+>;
+
+export const TeacherProfileLinkUserSchema = z
+  .object({
+    user_id: uuidSchema
+  })
+  .strict();
+export type TeacherProfileLinkUser = z.infer<
+  typeof TeacherProfileLinkUserSchema
+>;

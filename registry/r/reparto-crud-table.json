@@ -1,0 +1,25 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "reparto-crud-table",
+  "type": "registry:component",
+  "title": "Reparto CRUD Table",
+  "description": "Generic admin CRUD table skin composing the canonical @mano8/astro-ui-m8 data-table and state blocks, with create action and loading/empty/error adapters.",
+  "dependencies": [
+    "@tanstack/react-table",
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json",
+    "./node_modules/@mano8/astro-ui-m8/registry/r/state-loading.json",
+    "./node_modules/@mano8/astro-ui-m8/registry/r/state-empty.json",
+    "./node_modules/@mano8/astro-ui-m8/registry/r/state-error.json"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/crud/reparto-crud-table.tsx",
+      "content": "\"use client\";\n\nimport type { ColumnDef } from \"@tanstack/react-table\";\nimport { DataTable } from \"@/components/m8-ui/data-table\";\nimport { DataTableColumnHeader } from \"@/components/m8-ui/data-table-column-header\";\nimport { StateLoading } from \"@/components/m8-ui/state-loading\";\nimport { StateEmpty } from \"@/components/m8-ui/state-empty\";\nimport { StateError } from \"@/components/m8-ui/state-error\";\nimport { Button } from \"@/components/ui/button\";\n\nexport interface RepartoCrudTableLabels {\n  create: string;\n  searchPlaceholder: string;\n  loading: string;\n  noResults: string;\n  error: string;\n  retry: string;\n}\n\nexport interface RepartoCrudTableProps<T> {\n  rows: T[];\n  columns: ColumnDef<T>[];\n  labels: RepartoCrudTableLabels;\n  loading?: boolean;\n  error?: string | null;\n  onRetry?: () => void;\n  onCreate?: () => void;\n  page?: number;\n  pageSize?: number;\n  rowCount?: number;\n  onPageChange?: (page: number) => void;\n  onPageSizeChange?: (pageSize: number) => void;\n}\n\nexport function RepartoCrudTable<T>({\n  columns,\n  error,\n  labels,\n  loading = false,\n  onCreate,\n  onPageSizeChange,\n  onPageChange,\n  page = 1,\n  pageSize,\n  rowCount,\n  rows\n}: RepartoCrudTableProps<T>) {\n  if (loading && rows.length === 0) {\n    return (\n      <div data-reparto-state=\"loading\">\n        <StateLoading message={labels.loading} />\n      </div>\n    );\n  }\n  if (error && rows.length === 0) {\n    return (\n      <div data-reparto-state=\"error\">\n        <StateError\n          message={labels.error}\n          detail={error}\n          action={onRetry ? { label: labels.retry, onClick: onRetry } : undefined}\n        />\n      </div>\n    );\n  }\n  return (\n    <div data-reparto-table=\"crud\" className=\"space-y-3\">\n      <div className=\"flex flex-wrap items-center justify-between gap-2\">\n        {onCreate ? (\n          <Button data-reparto-action=\"create\" onClick={onCreate} type=\"button\">\n            {labels.create}\n          </Button>\n        ) : (\n          <span />\n        )}\n      </div>\n      <DataTable\n        columns={columns}\n        data={rows}\n        labels={{\n          empty: labels.noResults,\n          loading: labels.loading,\n          toolbar: { search: labels.searchPlaceholder }\n        }}\n        loading={loading}\n        onPageChange={onPageChange ?? (() => undefined)}\n        onPageSizeChange={onPageSizeChange ?? (() => undefined)}\n        page={page}\n        pageSize={pageSize ?? Math.max(rows.length, 1)}\n        q=\"\"\n        rowCount={rowCount ?? rows.length}\n      />\n      {rows.length === 0 && !loading ? (\n        <div data-reparto-state=\"empty\">\n          <StateEmpty message={labels.noResults} />\n        </div>\n      ) : null}\n    </div>\n  );\n}\n\nexport type { ColumnDef } from \"@tanstack/react-table\";\nexport { DataTableColumnHeader };\n",
+      "type": "registry:component",
+      "target": "components/fa-reparto/reparto-crud-table.tsx"
+    }
+  ]
+}

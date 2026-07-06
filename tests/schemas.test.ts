@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
+  AcademicYearCreateSchema,
+  AcademicYearPublicSchema,
+  AcademicYearsPublicSchema,
   AssignmentDirectChoiceSchema,
   AssignmentProcessCreateSchema,
   AssignmentProcessPublicSchema,
+  DepartmentCreateSchema,
+  DepartmentPublicSchema,
+  DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
   MeetingSessionCreateSchema,
   ProcessDashboardSchema,
-  TeacherLanSummarySchema
+  SchoolCreateSchema,
+  SchoolPublicSchema,
+  SchoolsPublicSchema,
+  TeacherLanSummarySchema,
+  TeacherProfileCreateSchema,
+  TeacherProfileLinkUserSchema,
+  TeacherProfilePublicSchema,
+  TeacherProfilesPublicSchema
 } from "../src/runtime/schemas.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
@@ -165,6 +178,126 @@ describe("reparto schemas", () => {
         created_at: now,
         updated_at: now
       })
+    ).toThrow();
+  });
+});
+
+describe("global entity schemas (Phase 1)", () => {
+  const schoolId = "11111111-1111-4111-8111-111111111111";
+  const yearId = "22222222-2222-4222-8222-222222222222";
+  const departmentId = "33333333-3333-4333-8333-333333333333";
+  const profileId = "44444444-4444-4444-8444-444444444444";
+  const userId = "55555555-5555-4555-8555-555555555555";
+  const now = "2026-07-04T10:00:00Z";
+
+  const schoolBody = {
+    id: schoolId,
+    name: "IES Almería Centro",
+    locality: "Almería",
+    province: "Almería",
+    region: "Andalucía",
+    address: "C/ Real 1",
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const yearBody = {
+    id: yearId,
+    label: "2025-2026",
+    start_date: "2025-09-01",
+    end_date: "2026-06-30",
+    status: "active",
+    previous_academic_year_id: null,
+    school_id: schoolId,
+    created_by_user_id: userId,
+    created_at: now,
+    updated_at: now
+  };
+
+  const departmentBody = {
+    id: departmentId,
+    school_id: schoolId,
+    name: "Matemáticas",
+    slug: "matematicas",
+    department_head_user_id: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const profileBody = {
+    id: profileId,
+    display_name: "Ana García",
+    user_id: null,
+    active: true,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("parses school payloads and rejects drift", () => {
+    expect(SchoolPublicSchema.parse(schoolBody).name).toBe("IES Almería Centro");
+    expect(() => SchoolPublicSchema.parse({ ...schoolBody, extra: true })).toThrow();
+    expect(SchoolCreateSchema.parse({ name: "S" }).name).toBe("S");
+    expect(() => SchoolCreateSchema.parse({})).toThrow();
+  });
+
+  it("parses academic-year payloads and validates date order", () => {
+    expect(AcademicYearPublicSchema.parse(yearBody).status).toBe("active");
+    expect(() =>
+      AcademicYearPublicSchema.parse({ ...yearBody, start_date: "2025/09/01" })
+    ).toThrow();
+    expect(
+      AcademicYearCreateSchema.parse({
+        label: "2025-2026",
+        start_date: "2025-09-01",
+        end_date: "2026-06-30"
+      }).start_date
+    ).toBe("2025-09-01");
+    expect(() =>
+      AcademicYearCreateSchema.parse({
+        label: "2025-2026",
+        start_date: "2026-06-30",
+        end_date: "2025-09-01"
+      })
+    ).toThrow("Start date must be on or before end date.");
+    expect(
+      AcademicYearsPublicSchema.parse({ data: [yearBody], count: 1 }).count
+    ).toBe(1);
+  });
+
+  it("parses department payloads", () => {
+    expect(DepartmentPublicSchema.parse(departmentBody).slug).toBe("matematicas");
+    expect(
+      DepartmentCreateSchema.parse({ school_id: schoolId, name: "Matemáticas" })
+        .school_id
+    ).toBe(schoolId);
+    expect(
+      DepartmentsPublicSchema.parse({ data: [], count: 0 }).count
+    ).toBe(0);
+  });
+
+  it("parses teacher-profile payloads and link-user body", () => {
+    expect(TeacherProfilePublicSchema.parse(profileBody).active).toBe(true);
+    expect(
+      TeacherProfileCreateSchema.parse({ display_name: "Ana" }).display_name
+    ).toBe("Ana");
+    expect(
+      TeacherProfilesPublicSchema.parse({ data: [profileBody], count: 1 }).count
+    ).toBe(1);
+    expect(
+      TeacherProfileLinkUserSchema.parse({ user_id: userId }).user_id
+    ).toBe(userId);
+    expect(() => TeacherProfileLinkUserSchema.parse({ user_id: "nope" })).toThrow();
+  });
+
+  it("schools and academic-year response shapes are strict", () => {
+    expect(() =>
+      SchoolsPublicSchema.parse({ data: [schoolBody], count: 1, extra: true })
+    ).toThrow();
+    expect(() =>
+      AcademicYearsPublicSchema.parse({ data: [yearBody], count: 1, extra: true })
     ).toThrow();
   });
 });

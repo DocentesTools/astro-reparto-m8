@@ -20,6 +20,48 @@
       "type": "registry:component",
       "title": "Reparto Starter Views",
       "description": "Starter copied skins for the reparto dashboard, meeting, processes, teacher, shared, versions, and exports islands. Requires @mano8/astro-reparto-m8 installed."
+    },
+    {
+      "name": "reparto-crud-table",
+      "type": "registry:component",
+      "title": "Reparto CRUD Table",
+      "description": "Generic admin CRUD table skin composing the canonical @mano8/astro-ui-m8 data-table and state blocks, with create action and loading/empty/error adapters."
+    },
+    {
+      "name": "reparto-fk-select",
+      "type": "registry:component",
+      "title": "Reparto FK Select",
+      "description": "Cascading select skin populated from a reparto list hook, with one-level inline create. Honours the freeze rule (D-7): no nested modals beyond one level."
+    },
+    {
+      "name": "reparto-delete-confirm",
+      "type": "registry:component",
+      "title": "Reparto Delete Confirm",
+      "description": "Relationship-aware destructive confirmation skin (AlertDialog) for hard-delete entities. Includes the entity label and record name per the freeze."
+    },
+    {
+      "name": "reparto-school-dialog",
+      "type": "registry:component",
+      "title": "Reparto School Dialog",
+      "description": "Create/edit dialog for schools (edit-only, no delete). Composes reparto hooks and the i18n dictionary."
+    },
+    {
+      "name": "reparto-academic-year-dialog",
+      "type": "registry:component",
+      "title": "Reparto Academic Year Dialog",
+      "description": "Create/edit/archive dialog for academic years. Date-only inputs (no timezone round-trip). Honours the archive-not-delete freeze rule."
+    },
+    {
+      "name": "reparto-department-dialog",
+      "type": "registry:component",
+      "title": "Reparto Department Dialog",
+      "description": "Create/edit dialog for departments with a cascading School FK select and one-level inline create link. Edit-only (no delete)."
+    },
+    {
+      "name": "reparto-teacher-roster-dialog",
+      "type": "registry:component",
+      "title": "Reparto Teacher Roster Dialog",
+      "description": "Create/edit/delete dialog for teacher roster entries. Hard delete with relationship-aware confirm."
     }
   ]
 }

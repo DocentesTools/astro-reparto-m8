@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "reparto-fk-select",
+  "type": "registry:component",
+  "title": "Reparto FK Select",
+  "description": "Cascading select skin populated from a reparto list hook, with one-level inline create. Honours the freeze rule (D-7): no nested modals beyond one level.",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [
+    "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/fk/reparto-fk-select.tsx",
+      "content": "\"use client\";\n\nimport { useState } from \"react\";\nimport {\n  Select,\n  SelectContent,\n  SelectItem,\n  SelectTrigger,\n  SelectValue\n} from \"@/components/ui/select\";\nimport { Button } from \"@/components/ui/button\";\nimport {\n  Dialog,\n  DialogContent,\n  DialogHeader,\n  DialogTitle,\n  DialogTrigger\n} from \"@/components/ui/dialog\";\n\nexport interface RepartoFkOption {\n  value: string;\n  label: string;\n}\n\nexport interface RepartoFkSelectLabels {\n  placeholder: string;\n  createNew: string;\n  loading: string;\n  noResults: string;\n}\n\nexport interface RepartoFkSelectProps {\n  value: string;\n  options: RepartoFkOption[];\n  labels: RepartoFkSelectLabels;\n  loading?: boolean;\n  disabled?: boolean;\n  disabledReason?: string;\n  onChange: (value: string) => void;\n  renderInlineCreate?: (onDone: (newId: string) => void) => React.ReactNode;\n}\n\nconst CREATE_NEW_SENTINEL = \"__create_new__\";\n\nexport function RepartoFkSelect({\n  disabled,\n  disabledReason,\n  labels,\n  loading = false,\n  onChange,\n  options,\n  renderInlineCreate,\n  value\n}: RepartoFkSelectProps) {\n  const [creating, setCreating] = useState(false);\n\n  function handleValueChange(next: string) {\n    if (next === CREATE_NEW_SENTINEL) {\n      setCreating(true);\n      return;\n    }\n    onChange(next);\n  }\n\n  return (\n    <div className=\"space-y-2\" data-reparto-fk-select=\"\">\n      <Select disabled={disabled || loading} value={value || undefined} onValueChange={handleValueChange}>\n        <SelectTrigger aria-label={labels.placeholder} aria-disabled={disabled}>\n          <SelectValue placeholder={labels.placeholder} />\n        </SelectTrigger>\n        <SelectContent>\n          {loading ? (\n            <div className=\"p-2 text-sm text-muted-foreground\" data-reparto-fk-state=\"loading\">\n              {labels.loading}\n            </div>\n          ) : options.length === 0 ? (\n            <div className=\"p-2 text-sm text-muted-foreground\" data-reparto-fk-state=\"empty\">\n              {labels.noResults}\n            </div>\n          ) : (\n            options.map((option) => (\n              <SelectItem key={option.value} value={option.value}>\n                {option.label}\n              </SelectItem>\n            ))\n          )}\n          {renderInlineCreate ? (\n            <SelectItem value={CREATE_NEW_SENTINEL} data-reparto-fk-action=\"create-new\">\n              {labels.createNew}\n            </SelectItem>\n          ) : null}\n        </SelectContent>\n      </Select>\n      {disabled && disabledReason ? (\n        <p className=\"text-xs text-muted-foreground\" data-reparto-disabled-reason=\"\">\n          {disabledReason}\n        </p>\n      ) : null}\n      {renderInlineCreate && creating ? (\n        <Dialog open onOpenChange={(open) => { if (!open) setCreating(false); }}>\n          <DialogTrigger asChild>\n            <span className=\"hidden\" />\n          </DialogTrigger>\n          <DialogContent data-reparto-inline-create=\"\">\n            <DialogHeader>\n              <DialogTitle>{labels.createNew}</DialogTitle>\n            </DialogHeader>\n            {renderInlineCreate((newId) => {\n              setCreating(false);\n              onChange(newId);\n            })}\n          </DialogContent>\n        </Dialog>\n      ) : null}\n    </div>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/fa-reparto/reparto-fk-select.tsx"
+    }
+  ]
+}

@@ -3,6 +3,18 @@ export type RepartoListParams = {
   limit?: number;
 };
 
+export type RepartoSchoolListParams = RepartoListParams;
+
+export type RepartoAcademicYearListParams = RepartoListParams;
+
+export type RepartoDepartmentListParams = RepartoListParams & {
+  schoolId?: string | null;
+};
+
+export type RepartoTeacherProfileListParams = RepartoListParams & {
+  active?: boolean | null;
+};
+
 const CURRENT_PROCESS_PLACEHOLDER = "current";
 
 export function resolveProcessId(processId?: string): string | undefined {
@@ -26,6 +38,42 @@ export function normalizeListParams(
   };
 }
 
+export function normalizeSchoolListParams(
+  params: RepartoSchoolListParams = {}
+): Required<RepartoSchoolListParams> {
+  return normalizeListParams(params);
+}
+
+export function normalizeAcademicYearListParams(
+  params: RepartoAcademicYearListParams = {}
+): Required<RepartoAcademicYearListParams> {
+  return normalizeListParams(params);
+}
+
+export function normalizeDepartmentListParams(
+  params: RepartoDepartmentListParams = {}
+): Required<Omit<RepartoDepartmentListParams, "schoolId">> & {
+  schoolId: string | null;
+} {
+  const { schoolId, ...rest } = params;
+  return {
+    ...normalizeListParams(rest),
+    schoolId: schoolId?.trim() ? schoolId.trim() : null
+  };
+}
+
+export function normalizeTeacherProfileListParams(
+  params: RepartoTeacherProfileListParams = {}
+): Required<Omit<RepartoTeacherProfileListParams, "active">> & {
+  active: boolean | null;
+} {
+  const { active, ...rest } = params;
+  return {
+    ...normalizeListParams(rest),
+    active: active === undefined ? null : active
+  };
+}
+
 export const repartoKeys = {
   all: ["reparto"] as const,
   processes: () => [...repartoKeys.all, "processes"] as const,
@@ -44,5 +92,37 @@ export const repartoKeys = {
   versions: (processId?: string) =>
     [...repartoKeys.process(processId), "versions"] as const,
   exports: (processId?: string) =>
-    [...repartoKeys.process(processId), "exports"] as const
+    [...repartoKeys.process(processId), "exports"] as const,
+  schools: () => [...repartoKeys.all, "schools"] as const,
+  schoolList: (params: RepartoSchoolListParams = {}) =>
+    [...repartoKeys.schools(), "list", normalizeSchoolListParams(params)] as const,
+  school: (schoolId?: string) =>
+    [...repartoKeys.schools(), "detail", schoolId ?? null] as const,
+  academicYears: () => [...repartoKeys.all, "academic-years"] as const,
+  academicYearList: (params: RepartoAcademicYearListParams = {}) =>
+    [
+      ...repartoKeys.academicYears(),
+      "list",
+      normalizeAcademicYearListParams(params)
+    ] as const,
+  academicYear: (yearId?: string) =>
+    [...repartoKeys.academicYears(), "detail", yearId ?? null] as const,
+  departments: () => [...repartoKeys.all, "departments"] as const,
+  departmentList: (params: RepartoDepartmentListParams = {}) =>
+    [
+      ...repartoKeys.departments(),
+      "list",
+      normalizeDepartmentListParams(params)
+    ] as const,
+  department: (departmentId?: string) =>
+    [...repartoKeys.departments(), "detail", departmentId ?? null] as const,
+  teacherProfiles: () => [...repartoKeys.all, "teacher-profiles"] as const,
+  teacherProfileList: (params: RepartoTeacherProfileListParams = {}) =>
+    [
+      ...repartoKeys.teacherProfiles(),
+      "list",
+      normalizeTeacherProfileListParams(params)
+    ] as const,
+  teacherProfile: (profileId?: string) =>
+    [...repartoKeys.teacherProfiles(), "detail", profileId ?? null] as const
 } as const;

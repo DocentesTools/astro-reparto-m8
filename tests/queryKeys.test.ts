@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  normalizeAcademicYearListParams,
+  normalizeDepartmentListParams,
   normalizeListParams,
+  normalizeSchoolListParams,
+  normalizeTeacherProfileListParams,
   repartoKeys,
   requireProcessId,
   resolveProcessId
@@ -41,6 +45,99 @@ describe("reparto query keys", () => {
       "detail",
       "p1",
       "exports"
+    ]);
+  });
+
+  it("builds stable keys for global entity lists (Phase 1)", () => {
+    expect(normalizeSchoolListParams()).toEqual({ skip: 0, limit: 25 });
+    expect(normalizeAcademicYearListParams({ skip: 1 })).toEqual({
+      skip: 1,
+      limit: 25
+    });
+    expect(normalizeDepartmentListParams({ schoolId: "  " })).toEqual({
+      skip: 0,
+      limit: 25,
+      schoolId: null
+    });
+    expect(normalizeDepartmentListParams({ schoolId: " s1 " })).toEqual({
+      skip: 0,
+      limit: 25,
+      schoolId: "s1"
+    });
+    expect(normalizeTeacherProfileListParams({ active: undefined })).toEqual({
+      skip: 0,
+      limit: 25,
+      active: null
+    });
+    expect(normalizeTeacherProfileListParams({ active: false }).active).toBe(
+      false
+    );
+
+    expect(repartoKeys.schoolList()).toEqual([
+      "reparto",
+      "schools",
+      "list",
+      { skip: 0, limit: 25 }
+    ]);
+    expect(repartoKeys.school("s1")).toEqual([
+      "reparto",
+      "schools",
+      "detail",
+      "s1"
+    ]);
+    expect(repartoKeys.school()).toEqual([
+      "reparto",
+      "schools",
+      "detail",
+      null
+    ]);
+    expect(repartoKeys.academicYearList()).toEqual([
+      "reparto",
+      "academic-years",
+      "list",
+      { skip: 0, limit: 25 }
+    ]);
+    expect(repartoKeys.academicYear("y1")).toEqual([
+      "reparto",
+      "academic-years",
+      "detail",
+      "y1"
+    ]);
+    expect(repartoKeys.academicYear()).toEqual([
+      "reparto",
+      "academic-years",
+      "detail",
+      null
+    ]);
+    expect(repartoKeys.departmentList({ schoolId: "s1" })).toEqual([
+      "reparto",
+      "departments",
+      "list",
+      { skip: 0, limit: 25, schoolId: "s1" }
+    ]);
+    expect(repartoKeys.department()).toEqual([
+      "reparto",
+      "departments",
+      "detail",
+      null
+    ]);
+    expect(repartoKeys.teacherProfileList({ active: true })).toEqual([
+      "reparto",
+      "teacher-profiles",
+      "list",
+      { skip: 0, limit: 25, active: true }
+    ]);
+    expect(repartoKeys.teacherProfile("p1")).toEqual([
+      "reparto",
+      "teacher-profiles",
+      "detail",
+      "p1"
+    ]);
+    expect(repartoKeys.teacherProfile()).toEqual([
+      "reparto",
+      "teacher-profiles",
+      "detail",
+      null
     ]);
   });
 });

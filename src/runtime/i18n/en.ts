@@ -1,0 +1,143 @@
+import type { RepartoLocale } from "./types.js";
+
+export const en = {
+  locale: "en" as RepartoLocale,
+  entity: {
+    school: { singular: "School", plural: "Schools", status: {} },
+    academicYear: { singular: "Academic year", plural: "Academic years", status: { active: "Active", archived: "Archived" } },
+    department: { singular: "Department", plural: "Departments", status: {} },
+    teacherRoster: { singular: "Teacher roster entry", plural: "Teacher roster entries", status: {} },
+    assignmentProcess: { singular: "Assignment process", plural: "Assignment processes", status: { draft: "Draft", ready_for_meeting: "Ready for meeting", meeting_open: "Meeting open", assigning: "Assigning", department_proposal: "Department proposal", sent_to_school_leadership: "Sent to school leadership", returned_by_school_leadership: "Returned by school leadership", internal_revision: "Internal revision", final: "Final", reopened: "Reopened", archived: "Archived" } },
+    subject: { singular: "Subject", plural: "Subjects", status: {} },
+    classroom: { singular: "Classroom", plural: "Classrooms", status: {} },
+    hourRequirement: { singular: "Hour requirement", plural: "Hour requirements", status: {} },
+    processParticipant: { singular: "Process participant", plural: "Process participants", status: { active: "Active", inactive: "Inactive" } },
+    assignment: { singular: "Assignment", plural: "Assignments", status: { draft: "Draft", confirmed: "Confirmed", overridden: "Overridden", cancelled: "Cancelled" } },
+    meetingSession: { singular: "Meeting session", plural: "Meeting sessions", status: { prepared: "Prepared", open: "Open", selecting: "Selecting", paused: "Paused", closed: "Closed", reopened: "Reopened" } },
+    selectionTurn: { singular: "Selection turn", plural: "Selection turns", status: { pending: "Pending", active: "Active", completed: "Completed", skipped: "Skipped", overridden: "Overridden" } },
+    auditEvent: { singular: "Audit event", plural: "Audit events", status: {} },
+    version: { singular: "Version", plural: "Versions", status: {} },
+    exportArtifact: { singular: "Export artifact", plural: "Export artifacts", status: {} }
+  },
+  field: {
+    name: "Name",
+    label: "Label",
+    slug: "Slug",
+    stage: "Stage",
+    grade: "Grade",
+    groupCode: "Group code",
+    locality: "Locality",
+    province: "Province",
+    region: "Region",
+    address: "Address",
+    notes: "Notes",
+    displayName: "Display name",
+    linkedUser: "Linked user",
+    active: "Active",
+    startDate: "Start date",
+    endDate: "End date",
+    status: "Status",
+    previousAcademicYear: "Previous academic year",
+    school: "School",
+    academicYear: "Academic year",
+    department: "Department",
+    departmentHead: "Department head",
+    requiredHours: "Required hours",
+    availableHours: "Available hours",
+    assignedHours: "Assigned hours",
+    defaultTeacherHoursReference: "Default hours reference",
+    selectionOrderEnabled: "Selection order enabled",
+    selectionOrderMode: "Selection order mode",
+    directTeacherSelectionEnabled: "Direct teacher selection",
+    lanAccessEnabled: "LAN access"
+  },
+  action: {
+    create: "Create",
+    edit: "Edit",
+    delete: "Delete",
+    archive: "Archive",
+    unarchive: "Unarchive",
+    close: "Close",
+    reopen: "Reopen",
+    transition: "Transition",
+    save: "Save changes",
+    cancel: "Cancel",
+    confirm: "Confirm",
+    search: "Search",
+    filter: "Filter",
+    refresh: "Refresh",
+    linkUser: "Link user",
+    unlinkUser: "Unlink user",
+    export: "Export",
+    restore: "Restore draft",
+    copyFrom: "Copy from previous year",
+    startTurn: "Start turn",
+    completeTurn: "Complete turn",
+    skipTurn: "Skip turn",
+    overrideTurn: "Override turn",
+    initializeTurns: "Initialize turns"
+  },
+  confirm: {
+    delete: { title: "Delete {entity}?", body: "This will permanently delete **{name}**. This action cannot be undone.", proceed: "Delete permanently" },
+    archive: { title: "Archive {entity}?", body: "**{name}** will no longer appear in active lists. Existing data is kept and can be reviewed from the archive view.", proceed: "Archive" },
+    cancel: "Cancel"
+  },
+  nav: {
+    group: { setup: "Setup", process: "Process" },
+    item: {
+      schools: "Schools",
+      academicYears: "Academic years",
+      departments: "Departments",
+      teacherRoster: "Teacher roster",
+      dashboard: "Dashboard",
+      processes: "Processes",
+      classrooms: "Classrooms",
+      subjects: "Subjects",
+      requirements: "Requirements",
+      processParticipants: "Process participants",
+      assignments: "Assignments",
+      meeting: "Meeting",
+      myView: "My view",
+      shared: "Shared screen",
+      versions: "Versions",
+      exports: "Exports",
+      audit: "Audit"
+    }
+  },
+  flow: {
+    bootstrap: {
+      title: "Set up your reparto",
+      subtitle: "A few steps before you can run the meeting.",
+      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create a process", subjects: "Add subjects", classrooms: "Add classrooms", teacherRoster: "Add teachers", requirements: "Add hour requirements", participants: "Add process participants" },
+      done: "Done",
+      open: "Open"
+    }
+  },
+  error: {
+    required: "This field is required.",
+    requiredNamed: "{field} is required.",
+    duplicate: "An entry with this name already exists.",
+    duplicateScoped: "An entry with this name already exists in {scope}.",
+    fkMissing: "The selected {field} no longer exists. Please pick another.",
+    fkViolation: "Cannot delete: {count} item(s) still depend on this entry.",
+    hoursInvalid: "Hours must be a positive number.",
+    hoursExceed: "Total assigned hours ({assigned}) exceed required hours ({required}). Provide an override reason.",
+    processState: "The process is in {status}; this action is not allowed in that state.",
+    permission: "You do not have permission to perform this action.",
+    unauthorized: "Your session has expired. Please sign in again.",
+    network: "The server is unreachable. Please retry.",
+    server: "Something went wrong on our side. Please retry."
+  },
+  disabled: {
+    noProcess: "Select or create a process first.",
+    processClosed: "The process is in {status}; this action is disabled.",
+    missingPrereq: "Create the {prereq} first.",
+    invalidHours: "Hours are invalid.",
+    noData: "No data available yet.",
+    noPermission: "You do not have permission."
+  },
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading..." },
+  picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
+};
+
+export const enLocale: RepartoLocale = "en";

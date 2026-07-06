@@ -45,7 +45,14 @@ describe("reparto shadcn registry", () => {
     expect(itemNames).toEqual([
       "reparto-processes-table",
       "reparto-state-panel",
-      "reparto-starter-views"
+      "reparto-starter-views",
+      "reparto-crud-table",
+      "reparto-fk-select",
+      "reparto-delete-confirm",
+      "reparto-school-dialog",
+      "reparto-academic-year-dialog",
+      "reparto-department-dialog",
+      "reparto-teacher-roster-dialog"
     ]);
     expect(generatedIndex.items.map((item) => item.name)).toEqual(itemNames);
 
@@ -69,7 +76,14 @@ describe("reparto shadcn registry", () => {
         expect.arrayContaining([
           "components/fa-reparto/reparto-processes-table.tsx",
           "components/fa-reparto/reparto-state-panel.tsx",
-          "components/fa-reparto/reparto-starter-views.tsx"
+          "components/fa-reparto/reparto-starter-views.tsx",
+          "components/fa-reparto/reparto-crud-table.tsx",
+          "components/fa-reparto/reparto-fk-select.tsx",
+          "components/fa-reparto/reparto-delete-confirm.tsx",
+          "components/fa-reparto/reparto-school-dialog.tsx",
+          "components/fa-reparto/reparto-academic-year-dialog.tsx",
+          "components/fa-reparto/reparto-department-dialog.tsx",
+          "components/fa-reparto/reparto-teacher-roster-dialog.tsx"
         ])
       );
     expect(
@@ -81,5 +95,34 @@ describe("reparto shadcn registry", () => {
         expect.stringContaining("@mano8/astro-reparto-m8/default-ui")
       ])
     );
+  });
+
+  it("ships Phase 1 admin CRUD skins that compose reparto hooks + i18n", () => {
+    const registry = readJson<RegistryFile>("registry.json");
+    const names = registry.items.map((item) => item.name);
+    const phase1 = [
+      "reparto-crud-table",
+      "reparto-fk-select",
+      "reparto-delete-confirm",
+      "reparto-school-dialog",
+      "reparto-academic-year-dialog",
+      "reparto-department-dialog",
+      "reparto-teacher-roster-dialog"
+    ];
+    for (const name of phase1) {
+      expect(names, `missing ${name}`).toContain(name);
+    }
+    const fk = readJson<RegistryItem>("registry/r/reparto-fk-select.json");
+    expect(fk.files[0].content).toContain("create-new");
+    expect(fk.files[0].content).toContain("RepartoFkSelect");
+    const dept = readJson<RegistryItem>("registry/r/reparto-department-dialog.json");
+    expect(dept.files[0].content).toContain("useRepartoSchools");
+    expect(dept.files[0].content).toContain("RepartoFkSelect");
+    const roster = readJson<RegistryItem>("registry/r/reparto-teacher-roster-dialog.json");
+    expect(roster.files[0].content).toContain("useDeleteRepartoTeacherProfile");
+    expect(roster.files[0].content).toContain("RepartoDeleteConfirm");
+    const year = readJson<RegistryItem>("registry/r/reparto-academic-year-dialog.json");
+    expect(year.files[0].content).toContain("useArchiveRepartoAcademicYear");
+    expect(year.files[0].content).toContain('type="date"');
   });
 });

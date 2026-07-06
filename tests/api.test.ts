@@ -1,10 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  academicYears,
   assignments,
   assignmentProcesses,
+  departments,
   history,
   meetingSessions,
-  selectionTurns
+  schools,
+  selectionTurns,
+  teacherProfiles
 } from "../src/runtime/api/index.js";
 import { setRepartoAuthAdapter } from "../src/runtime/authAdapter.js";
 import { resetRepartoConfig } from "../src/runtime/config.js";
@@ -444,5 +448,182 @@ describe("history API", () => {
       } as never)
     ).toThrow();
     expect(() => history.restoreDraft(processId, { content: "" })).toThrow();
+  });
+});
+
+describe("global entity API (Phase 1)", () => {
+  const schoolId = "11111111-1111-4111-8111-111111111111";
+  const yearId = "22222222-2222-4222-8222-222222222222";
+  const departmentId = "33333333-3333-4333-8333-333333333333";
+  const profileId = "44444444-4444-4444-8444-444444444444";
+  const userId = "55555555-5555-4555-8555-555555555555";
+  const now = "2026-07-04T10:00:00Z";
+
+  const schoolBody = {
+    id: schoolId,
+    name: "IES Almería Centro",
+    locality: null,
+    province: null,
+    region: null,
+    address: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const yearBody = {
+    id: yearId,
+    label: "2025-2026",
+    start_date: "2025-09-01",
+    end_date: "2026-06-30",
+    status: "active",
+    previous_academic_year_id: null,
+    school_id: schoolId,
+    created_by_user_id: userId,
+    created_at: now,
+    updated_at: now
+  };
+  const departmentBody = {
+    id: departmentId,
+    school_id: schoolId,
+    name: "Matemáticas",
+    slug: "matematicas",
+    department_head_user_id: null,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const profileBody = {
+    id: profileId,
+    display_name: "Ana García",
+    user_id: null,
+    active: true,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("schools list/get/create/update", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [schoolBody], count: 1 }));
+    await expect(schools.list({ skip: 0, limit: 25 })).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain("/schools/");
+
+    fetchMock.mockResolvedValueOnce(response(schoolBody));
+    await expect(schools.get(schoolId)).resolves.toMatchObject({ id: schoolId });
+
+    fetchMock.mockResolvedValueOnce(response(schoolBody));
+    await expect(schools.create({ name: "IES" })).resolves.toMatchObject({
+      name: "IES Almería Centro"
+    });
+
+    fetchMock.mockResolvedValueOnce(response({ ...schoolBody, name: "Renamed" }));
+    await expect(
+      schools.update(schoolId, { name: "Renamed" })
+    ).resolves.toMatchObject({ name: "Renamed" });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(`/schools/${schoolId}`);
+  });
+
+  it("academic years list/create/update/archive", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [yearBody], count: 1 }));
+    await expect(academicYears.list()).resolves.toMatchObject({ count: 1 });
+
+    fetchMock.mockResolvedValueOnce(response(yearBody));
+    await expect(academicYears.get(yearId)).resolves.toMatchObject({
+      id: yearId
+    });
+
+    fetchMock.mockResolvedValueOnce(response(yearBody));
+    await expect(
+      academicYears.create({
+        label: "2025-2026",
+        start_date: "2025-09-01",
+        end_date: "2026-06-30"
+      })
+    ).resolves.toMatchObject({ label: "2025-2026" });
+
+    fetchMock.mockResolvedValueOnce(response(yearBody));
+    await expect(
+      academicYears.update(yearId, { status: "archived" })
+    ).resolves.toMatchObject({ status: "active" });
+
+    fetchMock.mockResolvedValueOnce(response({ ...yearBody, status: "archived" }));
+    await expect(academicYears.archive(yearId)).resolves.toMatchObject({
+      status: "archived"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/academic-years/${yearId}/archive`
+    );
+  });
+
+  it("departments list with optional school_id filter, create, update", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [departmentBody], count: 1 }));
+    await expect(
+      departments.list({ schoolId: schoolId })
+    ).resolves.toMatchObject({ count: 1 });
+    expect(fetchMock.mock.calls[0][0]).toContain(`school_id=${schoolId}`);
+
+    fetchMock.mockResolvedValueOnce(response({ data: [], count: 0 }));
+    await expect(
+      departments.list({ schoolId: null })
+    ).resolves.toMatchObject({ count: 0 });
+
+    fetchMock.mockResolvedValueOnce(response(departmentBody));
+    await expect(departments.get(departmentId)).resolves.toMatchObject({
+      id: departmentId
+    });
+
+    fetchMock.mockResolvedValueOnce(response(departmentBody));
+    await expect(
+      departments.create({ school_id: schoolId, name: "Matemáticas" })
+    ).resolves.toMatchObject({ slug: "matematicas" });
+
+    fetchMock.mockResolvedValueOnce(response({ ...departmentBody, name: "Lengua" }));
+    await expect(
+      departments.update(departmentId, { name: "Lengua" })
+    ).resolves.toMatchObject({ name: "Lengua" });
+  });
+
+  it("teacher profiles list/get/create/update/link-user/delete", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [profileBody], count: 1 }));
+    await expect(
+      teacherProfiles.list({ active: true })
+    ).resolves.toMatchObject({ count: 1 });
+    expect(fetchMock.mock.calls[0][0]).toContain("active=true");
+
+    fetchMock.mockResolvedValueOnce(response({ data: [profileBody], count: 1 }));
+    await expect(
+      teacherProfiles.list({ active: null })
+    ).resolves.toMatchObject({ count: 1 });
+
+    fetchMock.mockResolvedValueOnce(response(profileBody));
+    await expect(teacherProfiles.get(profileId)).resolves.toMatchObject({
+      id: profileId
+    });
+
+    fetchMock.mockResolvedValueOnce(response(profileBody));
+    await expect(
+      teacherProfiles.create({ display_name: "Ana" })
+    ).resolves.toMatchObject({ display_name: "Ana García" });
+
+    fetchMock.mockResolvedValueOnce(response({ ...profileBody, active: false }));
+    await expect(
+      teacherProfiles.update(profileId, { active: false })
+    ).resolves.toMatchObject({ active: false });
+
+    fetchMock.mockResolvedValueOnce(response({ ...profileBody, user_id: userId }));
+    await expect(
+      teacherProfiles.linkUser(profileId, { user_id: userId })
+    ).resolves.toMatchObject({ user_id: userId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/teacher-profiles/${profileId}/link-user`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(profileBody));
+    await expect(teacherProfiles.remove(profileId)).resolves.toMatchObject({
+      id: profileId
+    });
+    const removeCall = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
+    expect(removeCall?.method).toBe("DELETE");
   });
 });

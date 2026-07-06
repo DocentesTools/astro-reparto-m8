@@ -35,6 +35,7 @@
     "./auth-adapter": "./dist/src/runtime/authAdapter.js",
     "./react": "./dist/src/runtime/react/index.js",
     "./default-ui": "./dist/src/runtime/react/default-ui/index.js",
+    "./i18n": "./dist/src/runtime/i18n/index.js",
     "./routes": "./dist/src/runtime/routes.js",
     "./ui": "./dist/src/runtime/ui/index.js",
     "./routes/dashboard.astro": "./src/routes/dashboard.astro",

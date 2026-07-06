@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "reparto-delete-confirm",
+  "type": "registry:component",
+  "title": "Reparto Delete Confirm",
+  "description": "Relationship-aware destructive confirmation skin (AlertDialog) for hard-delete entities. Includes the entity label and record name per the freeze.",
+  "dependencies": [
+    "lucide-react"
+  ],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "registry/blocks/dialogs/reparto-delete-confirm.tsx",
+      "content": "\"use client\";\n\nimport {\n  AlertDialog,\n  AlertDialogAction,\n  AlertDialogCancel,\n  AlertDialogContent,\n  AlertDialogDescription,\n  AlertDialogFooter,\n  AlertDialogHeader,\n  AlertDialogTitle\n} from \"@/components/ui/alert-dialog\";\nimport { Button } from \"@/components/ui/button\";\n\nexport interface RepartoDeleteConfirmLabels {\n  title: string;\n  body: string;\n  cancel: string;\n  proceed: string;\n}\n\nexport interface RepartoDeleteConfirmProps {\n  open: boolean;\n  entityLabel: string;\n  recordName: string;\n  relationshipWarning?: string;\n  labels: RepartoDeleteConfirmLabels;\n  isPending?: boolean;\n  onOpenChange: (open: boolean) => void;\n  onConfirm: () => void;\n}\n\nexport function RepartoDeleteConfirm({\n  entityLabel,\n  isPending = false,\n  onConfirm,\n  onOpenChange,\n  open,\n  recordName,\n  relationshipWarning,\n  labels\n}: RepartoDeleteConfirmProps) {\n  const title = labels.title.replace(\"{entity}\", entityLabel);\n  const body = labels.body.replace(\"{name}\", recordName);\n  return (\n    <AlertDialog open={open} onOpenChange={onOpenChange}>\n      <AlertDialogContent data-reparto-confirm=\"delete\">\n        <AlertDialogHeader>\n          <AlertDialogTitle>{title}</AlertDialogTitle>\n          <AlertDialogDescription>\n            {body}\n            {relationshipWarning ? (\n              <span className=\"block mt-2 text-destructive\" data-reparto-confirm-warning=\"\">\n                {relationshipWarning}\n              </span>\n            ) : null}\n          </AlertDialogDescription>\n        </AlertDialogHeader>\n        <AlertDialogFooter>\n          <AlertDialogCancel asChild>\n            <Button variant=\"ghost\" data-reparto-action=\"cancel\" disabled={isPending}>\n              {labels.cancel}\n            </Button>\n          </AlertDialogCancel>\n          <AlertDialogAction asChild>\n            <Button variant=\"destructive\" data-reparto-action=\"confirm\" disabled={isPending} onClick={onConfirm}>\n              {isPending ? labels.proceed + \"…\" : labels.proceed}\n            </Button>\n          </AlertDialogAction>\n        </AlertDialogFooter>\n      </AlertDialogContent>\n    </AlertDialog>\n  );\n}\n",
+      "type": "registry:component",
+      "target": "components/fa-reparto/reparto-delete-confirm.tsx"
+    }
+  ]
+}

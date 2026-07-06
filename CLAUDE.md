@@ -33,13 +33,42 @@ Route set: `dashboard`, `processes`, `meeting`, `my-view` (teacher view),
 ## Repo-specific structure
 
 - `src/runtime/api/**` - assignmentProcesses, assignments, meetingSessions,
-  selectionTurns, history.
+  selectionTurns, history, plus the Phase 1 global-entity wrappers: schools,
+  academicYears, departments, teacherProfiles.
+- `src/runtime/i18n/**` - English-first runtime dictionary (`en`/`fr`/`es`),
+  `formatRepartoMessage`, `getRepartoDictionary`, `normalizeRepartoLocale`.
+  Mirrors `docs/ui-naming-freeze.md`; tests fail on missing keys, the bare
+  `common.teachers` key, or UUIDs leaking into dictionary values.
 - `src/runtime/react/**` - `RepartoProvider`, `RepartoQueryProvider`
   (TanStack Query), `LanWorkspace`, `DepartmentHeadWorkspace`, `default-ui/`.
+  `default-ui/index.tsx` ships the rebuilt create-process picker: three
+  cascading `<select>`s (academic year / school / department) with one-level
+  inline create — no raw UUID inputs (empty-DB bootstrap gate, see
+  `docs/empty-db-bootstrap-spec.md`).
 - `src/runtime/ui/**` - framework-neutral view-state helpers (`lan`, `history`)
   exported via `./ui`.
 - `registry/**` - shadcn registry skins generated into `registry/r`, composing
-  canonical `@mano8/astro-ui-m8` data-table and state blocks.
+  canonical `@mano8/astro-ui-m8` data-table and state blocks. Phase 1 admin
+  skins: `reparto-crud-table`, `reparto-fk-select`, `reparto-delete-confirm`,
+  `reparto-school-dialog`, `reparto-academic-year-dialog`,
+  `reparto-department-dialog`, `reparto-teacher-roster-dialog`.
+
+## Admin management console (Phase 1+)
+
+Phase 1 of `reparto-admin-crud-plan-2026-07-06` ships the runtime + skins that
+unblock process creation from an empty database:
+
+- Runtime: schemas + api wrappers + query keys + CRUD/archive/link-user/delete
+  hooks for schools, academic-years, departments, teacher-profiles.
+- Skins: generic CRUD table, FK select with one-level inline create,
+  relationship-aware delete confirm, and per-entity create/edit dialogs.
+- Default-UI: the process picker is now three cascading selects (no UUID
+  typing). The empty-DB bootstrap component gate lives at
+  `tests/default-ui-bootstrap.test.tsx`; the gate definition is
+  `docs/empty-db-bootstrap-spec.md`.
+
+Phase 2 (global setup CRUD pages + starter routes + host nav) and Phase 3+
+(process-scoped CRUD, dashboards, host wiring) are still TODO.
 
 ## Repo-specific rules
 

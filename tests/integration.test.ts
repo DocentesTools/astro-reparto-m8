@@ -292,11 +292,11 @@ describe("integration", () => {
     const classroomsEntry = resolved.process.entries.find(
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
-    expect(classroomsEntry?.href).toBe("/reparto/processes/classrooms");
+    expect(classroomsEntry?.href).toBe("/reparto/processes/current/classrooms");
     const auditEntry = resolved.process.entries.find(
       (entry) => entry.labelKey === "nav.item.audit"
     );
-    expect(auditEntry?.href).toBe("/reparto/processes/audit");
+    expect(auditEntry?.href).toBe("/reparto/processes/current/audit");
     const resolvedMissing = buildRepartoNav(
       buildRepartoRoutes({ dashboard: false })
     );

@@ -17,7 +17,7 @@ import {
   useRepartoTeachingGroups
 } from "../../../hooks.js";
 import type {
-  HourRequirementCreate,
+  HourRequirementCreateInput,
   RequirementType,
   SubjectPublic,
   TeachingGroupPublic
@@ -66,7 +66,7 @@ export function RequirementAdd({ dict, processId, onDone }: RequirementAddProps)
     event.preventDefault();
     if (!canSave) return;
     clearError();
-    const body: HourRequirementCreate = {
+    const body: HourRequirementCreateInput = {
       teaching_group_id: teachingGroupId,
       subject_id: subjectId,
       required_hours: hoursNum,

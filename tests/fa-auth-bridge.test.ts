@@ -30,6 +30,11 @@ function stubWindow(pathname: string, search = "") {
   return assign;
 }
 
+async function flushBridgeGuard() {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 afterEach(() => {
   delete (globalThis as { window?: unknown }).window;
   vi.unstubAllEnvs();
@@ -84,19 +89,57 @@ describe("installRepartoFaAuthBridge", () => {
   it("registers a fa-auth-backed adapter without making an eager request", async () => {
     stubWindow("/en/reparto/setup/schools");
     installRepartoFaAuthBridge({ locales: ["en"], loginPath: "/auth/login" });
+    await flushBridgeGuard();
 
     const adapter = getRepartoAuthAdapter();
     expect(await adapter.getAccessToken()).toBe("tok");
-    // Refresh is lazy: the reparto client drives it on a 401, not the bridge.
+    // With a token already present, the route guard does not refresh eagerly.
     expect(authApi.refreshToken).not.toHaveBeenCalled();
     // The wired adapter delegates refresh to fa-auth's refreshToken.
     expect(await adapter.refresh?.()).toBe("tok");
     expect(authApi.refreshToken).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the visitor on reparto pages when fa-auth refresh restores a token", async () => {
+    const assign = stubWindow("/es/reparto/setup/schools");
+    authClient.getToken.mockReturnValue(null);
+    authApi.refreshToken.mockResolvedValue({ access_token: "fresh" });
+
+    installRepartoFaAuthBridge({ locales: ["es"], loginPath: "/auth/login" });
+    await flushBridgeGuard();
+
+    expect(authApi.refreshToken).toHaveBeenCalledTimes(1);
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it("redirects reparto route entry to localized login when no session exists", async () => {
+    const assign = stubWindow("/es/reparto/setup/schools", "?tab=1");
+    authClient.getToken.mockReturnValue(null);
+    authApi.refreshToken.mockResolvedValue(null);
+
+    installRepartoFaAuthBridge({ locales: ["en", "es"], loginPath: "/auth/login" });
+    await flushBridgeGuard();
+
+    expect(assign).toHaveBeenCalledWith(
+      "/es/auth/login?next=%2Fes%2Freparto%2Fsetup%2Fschools%3Ftab%3D1"
+    );
+  });
+
+  it("does not guard unrelated host routes", async () => {
+    const assign = stubWindow("/es/docs");
+    authClient.getToken.mockReturnValue(null);
+
+    installRepartoFaAuthBridge({ locales: ["es"], loginPath: "/auth/login" });
+    await flushBridgeGuard();
+
+    expect(authApi.refreshToken).not.toHaveBeenCalled();
+    expect(assign).not.toHaveBeenCalled();
+  });
+
   it("redirects to the locale login page when the adapter reports no session", async () => {
     const assign = stubWindow("/es/reparto/setup/schools", "?tab=1");
     installRepartoFaAuthBridge({ locales: ["en", "es"], loginPath: "/auth/login" });
+    await flushBridgeGuard();
 
     getRepartoAuthAdapter().onUnauthenticated?.("refresh-failed");
 

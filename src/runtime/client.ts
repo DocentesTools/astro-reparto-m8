@@ -51,8 +51,22 @@ export async function request<T>(
     ...options.headers
   });
   if (options.auth) {
-    const token = await adapter.getAccessToken();
-    if (token) headers.set("Authorization", `Bearer ${token}`);
+    let token = await adapter.getAccessToken();
+    if (!token && !options.skipRefresh) {
+      try {
+        token = adapter.refresh ? await adapter.refresh() : null;
+      } catch {
+        adapter.onUnauthenticated?.("refresh-failed");
+        throw new RepartoUnauthenticatedError();
+      }
+    }
+    if (!token) {
+      adapter.onUnauthenticated?.(
+        options.skipRefresh || !adapter.refresh ? "unauthenticated" : "refresh-failed"
+      );
+      throw new RepartoUnauthenticatedError();
+    }
+    headers.set("Authorization", `Bearer ${token}`);
   }
 
   let body: BodyInit | undefined;
@@ -71,7 +85,13 @@ export async function request<T>(
 
   let response = await execute();
   if (response.status === 401 && !options.skipRefresh) {
-    const refreshed = adapter.refresh ? await adapter.refresh() : null;
+    let refreshed: string | null;
+    try {
+      refreshed = adapter.refresh ? await adapter.refresh() : null;
+    } catch {
+      adapter.onUnauthenticated?.("refresh-failed");
+      throw new RepartoUnauthenticatedError("Session expired. Please sign in again.");
+    }
     if (!refreshed) {
       adapter.onUnauthenticated?.("refresh-failed");
       throw new RepartoUnauthenticatedError("Session expired. Please sign in again.");

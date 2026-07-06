@@ -10,7 +10,7 @@ import {
   type Dict
 } from "../shared.js";
 import { useCreateRepartoSubject } from "../../../hooks.js";
-import type { SubjectCreate } from "../../../../schemas.js";
+import type { SubjectCreateInput } from "../../../../schemas.js";
 
 export type SubjectAddProps = {
   dict: Dict;
@@ -31,7 +31,7 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
     event.preventDefault();
     if (!canSave) return;
     clearError();
-    const body: SubjectCreate = {
+    const body: SubjectCreateInput = {
       name: name.trim(),
       stage: stage.trim() || null,
       notes: notes.trim() || null

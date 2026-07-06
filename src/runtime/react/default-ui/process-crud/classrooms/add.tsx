@@ -9,7 +9,7 @@ import {
   type Dict
 } from "../shared.js";
 import { useCreateRepartoTeachingGroup } from "../../../hooks.js";
-import type { TeachingGroupCreate } from "../../../../schemas.js";
+import type { TeachingGroupCreateInput } from "../../../../schemas.js";
 
 export type ClassroomAddProps = {
   dict: Dict;
@@ -39,7 +39,7 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
     event.preventDefault();
     if (!canSave) return;
     clearError();
-    const body: TeachingGroupCreate = {
+    const body: TeachingGroupCreateInput = {
       stage: stage.trim(),
       grade: gradeNum,
       group_code: groupCode.trim(),

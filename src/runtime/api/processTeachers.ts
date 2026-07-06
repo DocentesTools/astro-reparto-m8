@@ -4,7 +4,7 @@ import {
   ProcessTeacherPublicSchema,
   ProcessTeachersPublicSchema,
   ProcessTeacherUpdateSchema,
-  type ProcessTeacherCreate,
+  type ProcessTeacherCreateInput,
   type ProcessTeacherPublic,
   type ProcessTeachersPublic,
   type ProcessTeacherUpdate
@@ -25,11 +25,14 @@ export const processTeachers = {
       schema: ProcessTeacherPublicSchema,
       auth: true
     }),
-  create: (processId: string, body: ProcessTeacherCreate) =>
+  create: (processId: string, body: ProcessTeacherCreateInput) =>
     request<ProcessTeacherPublic>({
       method: "POST",
       path: `/assignment-processes/${processId}/teachers/`,
-      body: ProcessTeacherCreateSchema.parse(body),
+      body: ProcessTeacherCreateSchema.parse({
+        ...body,
+        assignment_process_id: processId
+      }),
       schema: ProcessTeacherPublicSchema,
       auth: true
     }),

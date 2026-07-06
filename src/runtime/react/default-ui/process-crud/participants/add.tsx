@@ -15,7 +15,7 @@ import {
   useRepartoTeacherProfiles
 } from "../../../hooks.js";
 import type {
-  ProcessTeacherCreate,
+  ProcessTeacherCreateInput,
   ProcessTeacherStatus,
   TeacherProfilePublic
 } from "../../../../schemas.js";
@@ -47,7 +47,7 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
     event.preventDefault();
     if (!canSave) return;
     clearError();
-    const body: ProcessTeacherCreate = {
+    const body: ProcessTeacherCreateInput = {
       teacher_profile_id: teacherProfileId,
       available_hours: hoursNum,
       participates_in_selection: participatesInSelection,

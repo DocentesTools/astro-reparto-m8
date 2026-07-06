@@ -105,8 +105,11 @@ export const AssignmentStatusSchema = z.enum([
 ]);
 export type AssignmentStatus = z.infer<typeof AssignmentStatusSchema>;
 
-const uuidSchema = z.string().uuid();
-const dateTimeSchema = z.string().datetime({ offset: true });
+const uuidSchema = z.uuid();
+const dateTimeSchema = z.iso.datetime({
+  offset: true,
+  local: true,
+});
 const dateOnlySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be a YYYY-MM-DD string.");
@@ -155,6 +158,7 @@ export type AssignmentProcessCreate = z.infer<
 
 export const AssignmentProcessUpdateSchema = z
   .object({
+    status: AssignmentProcessStatusSchema.optional(),
     default_teacher_hours_reference: z.number().nonnegative().nullable().optional(),
     selection_order_enabled: z.boolean().optional(),
     selection_order_mode: SelectionOrderModeSchema.optional(),
@@ -232,7 +236,13 @@ export const RequirementBalanceSchema = z
     pending_hours: z.number(),
     assignment_count: z.number().int().nonnegative(),
     has_override: z.boolean(),
-    state: z.enum(["balanced", "pending", "exceeded", "warning"])
+    state: z.enum([
+      "uncovered",
+      "partial",
+      "covered",
+      "over_assigned",
+      "explicitly_shared"
+    ])
   })
   .strict();
 export type RequirementBalance = z.infer<typeof RequirementBalanceSchema>;
@@ -564,7 +574,7 @@ export const SchoolPublicSchema = z
     name: z.string().min(1).max(200),
     locality: z.string().nullable(),
     province: z.string().nullable(),
-    region: z.string().nullable(),
+    region: z.string().max(100),
     address: z.string().nullable(),
     notes: z.string().nullable(),
     created_at: dateTimeSchema,
@@ -576,11 +586,11 @@ export type SchoolPublic = z.infer<typeof SchoolPublicSchema>;
 export const SchoolCreateSchema = z
   .object({
     name: z.string().min(1).max(200),
-    locality: z.string().max(200).nullable().optional(),
-    province: z.string().max(200).nullable().optional(),
-    region: z.string().max(200).nullable().optional(),
-    address: z.string().max(500).nullable().optional(),
-    notes: z.string().max(2000).nullable().optional()
+    locality: z.string().max(100).nullable().optional(),
+    province: z.string().max(100).nullable().optional(),
+    region: z.string().max(100).optional(),
+    address: z.string().max(300).nullable().optional(),
+    notes: z.string().nullable().optional()
   })
   .strict();
 export type SchoolCreate = z.infer<typeof SchoolCreateSchema>;
@@ -588,11 +598,11 @@ export type SchoolCreate = z.infer<typeof SchoolCreateSchema>;
 export const SchoolUpdateSchema = z
   .object({
     name: z.string().min(1).max(200).optional(),
-    locality: z.string().max(200).nullable().optional(),
-    province: z.string().max(200).nullable().optional(),
-    region: z.string().max(200).nullable().optional(),
-    address: z.string().max(500).nullable().optional(),
-    notes: z.string().max(2000).nullable().optional()
+    locality: z.string().max(100).nullable().optional(),
+    province: z.string().max(100).nullable().optional(),
+    region: z.string().max(100).nullable().optional(),
+    address: z.string().max(300).nullable().optional(),
+    notes: z.string().nullable().optional()
   })
   .strict();
 export type SchoolUpdate = z.infer<typeof SchoolUpdateSchema>;
@@ -613,7 +623,7 @@ export const AcademicYearPublicSchema = z
     end_date: dateOnlySchema,
     status: AcademicYearStatusSchema,
     previous_academic_year_id: uuidSchema.nullable(),
-    school_id: uuidSchema,
+    school_id: uuidSchema.nullable(),
     created_by_user_id: uuidSchema,
     created_at: dateTimeSchema,
     updated_at: dateTimeSchema
@@ -627,7 +637,7 @@ export const AcademicYearCreateSchema = z
     start_date: dateOnlySchema,
     end_date: dateOnlySchema,
     previous_academic_year_id: uuidSchema.nullable().optional(),
-    school_id: uuidSchema.optional()
+    school_id: uuidSchema.nullable().optional()
   })
   .strict()
   .refine(
@@ -643,7 +653,7 @@ export const AcademicYearUpdateSchema = z
     end_date: dateOnlySchema.optional(),
     status: AcademicYearStatusSchema.optional(),
     previous_academic_year_id: uuidSchema.nullable().optional(),
-    school_id: uuidSchema.optional()
+    school_id: uuidSchema.nullable().optional()
   })
   .strict();
 export type AcademicYearUpdate = z.infer<typeof AcademicYearUpdateSchema>;
@@ -766,12 +776,14 @@ export type SubjectPublic = z.infer<typeof SubjectPublicSchema>;
 
 export const SubjectCreateSchema = z
   .object({
+    assignment_process_id: uuidSchema,
     name: z.string().min(1).max(150),
     stage: z.string().max(50).nullable().optional(),
     notes: z.string().max(2000).nullable().optional()
   })
   .strict();
 export type SubjectCreate = z.infer<typeof SubjectCreateSchema>;
+export type SubjectCreateInput = Omit<SubjectCreate, "assignment_process_id">;
 
 export const SubjectUpdateSchema = z
   .object({
@@ -807,6 +819,7 @@ export type TeachingGroupPublic = z.infer<typeof TeachingGroupPublicSchema>;
 
 export const TeachingGroupCreateSchema = z
   .object({
+    assignment_process_id: uuidSchema,
     stage: z.string().min(1).max(50),
     grade: z.number().int().min(0).max(20),
     group_code: z.string().min(1).max(10),
@@ -815,6 +828,10 @@ export const TeachingGroupCreateSchema = z
   })
   .strict();
 export type TeachingGroupCreate = z.infer<typeof TeachingGroupCreateSchema>;
+export type TeachingGroupCreateInput = Omit<
+  TeachingGroupCreate,
+  "assignment_process_id"
+>;
 
 export const TeachingGroupUpdateSchema = z
   .object({
@@ -853,6 +870,7 @@ export type HourRequirementPublic = z.infer<typeof HourRequirementPublicSchema>;
 
 export const HourRequirementCreateSchema = z
   .object({
+    assignment_process_id: uuidSchema,
     teaching_group_id: uuidSchema,
     subject_id: uuidSchema,
     required_hours: z.number().positive(),
@@ -863,6 +881,10 @@ export const HourRequirementCreateSchema = z
   .strict();
 export type HourRequirementCreate = z.infer<
   typeof HourRequirementCreateSchema
+>;
+export type HourRequirementCreateInput = Omit<
+  HourRequirementCreate,
+  "assignment_process_id"
 >;
 
 export const HourRequirementUpdateSchema = z
@@ -909,6 +931,7 @@ export type ProcessTeacherPublic = z.infer<typeof ProcessTeacherPublicSchema>;
 
 export const ProcessTeacherCreateSchema = z
   .object({
+    assignment_process_id: uuidSchema,
     teacher_profile_id: uuidSchema,
     available_hours: z.number().nonnegative(),
     participates_in_selection: z.boolean().optional(),
@@ -922,6 +945,10 @@ export const ProcessTeacherCreateSchema = z
   })
   .strict();
 export type ProcessTeacherCreate = z.infer<typeof ProcessTeacherCreateSchema>;
+export type ProcessTeacherCreateInput = Omit<
+  ProcessTeacherCreate,
+  "assignment_process_id"
+>;
 
 export const ProcessTeacherUpdateSchema = z
   .object({

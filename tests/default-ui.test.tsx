@@ -29,7 +29,7 @@ import type {
 
 function ContextReader() {
   const context = useRepartoContext();
-  return <span data-api-base={context.config?.apiBase} />;
+  return <span data-api-base={context.config?.apiBase} data-has-adapter={Boolean(context.adapter)} />;
 }
 
 const processSummary: ProcessSummary = {
@@ -335,6 +335,7 @@ describe("default reparto UI", () => {
       </RepartoProvider>
     );
     expect(html).toContain('data-api-base="/custom"');
+    expect(html).toContain('data-has-adapter="true"');
     expect(() => renderToStaticMarkup(<ContextReader />)).toThrow(
       "useRepartoContext must be used inside RepartoProvider"
     );

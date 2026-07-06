@@ -75,15 +75,17 @@ export function buildRepartoNav(
   routes: BuiltRepartoRoutes,
   nav: FaRepartoNav = DEFAULT_REPARTO_NAV
 ): FaRepartoNav {
+  function resolvePatternHref(pattern: string): string {
+    return pattern.replace(/\[([^\]]+)\]/g, "current");
+  }
+
   function resolveHref(entry: FaRepartoNavEntry): FaRepartoNavEntry {
     if (entry.href) return entry;
     if (!entry.route) return { ...entry, href: "#" };
     const pattern = routes[entry.route];
     return {
       ...entry,
-      href: pattern
-        ? String(pattern).replace(/\/\[[^\]]*\]/g, "")
-        : "#"
+      href: pattern ? resolvePatternHref(String(pattern)) : "#"
     };
   }
   return {

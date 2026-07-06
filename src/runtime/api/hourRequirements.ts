@@ -4,7 +4,7 @@ import {
   HourRequirementPublicSchema,
   HourRequirementsPublicSchema,
   HourRequirementUpdateSchema,
-  type HourRequirementCreate,
+  type HourRequirementCreateInput,
   type HourRequirementPublic,
   type HourRequirementsPublic,
   type HourRequirementUpdate
@@ -25,11 +25,14 @@ export const hourRequirements = {
       schema: HourRequirementPublicSchema,
       auth: true
     }),
-  create: (processId: string, body: HourRequirementCreate) =>
+  create: (processId: string, body: HourRequirementCreateInput) =>
     request<HourRequirementPublic>({
       method: "POST",
       path: `/assignment-processes/${processId}/requirements/`,
-      body: HourRequirementCreateSchema.parse(body),
+      body: HourRequirementCreateSchema.parse({
+        ...body,
+        assignment_process_id: processId
+      }),
       schema: HourRequirementPublicSchema,
       auth: true
     }),

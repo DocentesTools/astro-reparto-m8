@@ -137,7 +137,7 @@ const dashboardBody = {
       pending_hours: 3,
       assignment_count: 1,
       has_override: false,
-      state: "pending"
+      state: "partial"
     }
   ]
 };
@@ -469,7 +469,7 @@ describe("global entity API (Phase 1)", () => {
     name: "IES Almería Centro",
     locality: null,
     province: null,
-    region: null,
+    region: "Andalucia",
     address: null,
     notes: null,
     created_at: now,
@@ -741,6 +741,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     await expect(
       subjects.create(processId, { name: "Mathematics" })
     ).resolves.toMatchObject({ name: "Mathematics" });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+        .assignment_process_id
+    ).toBe(processId);
 
     fetchMock.mockResolvedValueOnce(response({ ...subjectBody, name: "Maths" }));
     await expect(
@@ -787,6 +791,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
         label: "1 ESO A"
       })
     ).resolves.toMatchObject({ group_code: "A" });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+        .assignment_process_id
+    ).toBe(processId);
 
     fetchMock.mockResolvedValueOnce(response({ ...groupBody, label: "Renamed" }));
     await expect(
@@ -838,6 +846,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
         required_hours: 4
       })
     ).resolves.toMatchObject({ requirement_type: "ordinary" });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+        .assignment_process_id
+    ).toBe(processId);
 
     fetchMock.mockResolvedValueOnce(
       response({ ...requirementBody, required_hours: 6 })
@@ -893,6 +905,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
         available_hours: 18
       })
     ).resolves.toMatchObject({ available_hours: 18 });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+        .assignment_process_id
+    ).toBe(processId);
 
     fetchMock.mockResolvedValueOnce(
       response({ ...processTeacherBody, status: "inactive" })

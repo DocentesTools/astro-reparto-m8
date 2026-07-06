@@ -121,7 +121,7 @@ describe("reparto schemas", () => {
             pending_hours: 3,
             assignment_count: 1,
             has_override: false,
-            state: "pending"
+            state: "partial"
           }
         ],
         validations: [
@@ -425,7 +425,12 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     expect(() =>
       SubjectPublicSchema.parse({ ...subjectBody, extra: true })
     ).toThrow();
-    expect(SubjectCreateSchema.parse({ name: "Maths" }).name).toBe("Maths");
+    expect(
+      SubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        name: "Maths"
+      }).name
+    ).toBe("Maths");
     expect(() => SubjectCreateSchema.parse({})).toThrow();
     expect(SubjectUpdateSchema.parse({}).notes).toBeUndefined();
     expect(SubjectUpdateSchema.parse({ stage: null }).stage).toBeNull();
@@ -443,6 +448,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toThrow();
     expect(
       TeachingGroupCreateSchema.parse({
+        assignment_process_id: processId,
         stage: "ESO",
         grade: 1,
         group_code: "A",
@@ -451,6 +457,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBe(1);
     expect(() =>
       TeachingGroupCreateSchema.parse({
+        assignment_process_id: processId,
         stage: "ESO",
         grade: 21,
         group_code: "A",
@@ -473,6 +480,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toThrow();
     expect(
       HourRequirementCreateSchema.parse({
+        assignment_process_id: processId,
         teaching_group_id: groupId,
         subject_id: subjectId,
         required_hours: 3
@@ -480,6 +488,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBeUndefined();
     expect(() =>
       HourRequirementCreateSchema.parse({
+        assignment_process_id: processId,
         teaching_group_id: groupId,
         subject_id: subjectId,
         required_hours: 0
@@ -507,12 +516,14 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toThrow();
     expect(
       ProcessTeacherCreateSchema.parse({
+        assignment_process_id: processId,
         teacher_profile_id: teacherProfileId,
         available_hours: 0
       }).available_hours
     ).toBe(0);
     expect(() =>
       ProcessTeacherCreateSchema.parse({
+        assignment_process_id: processId,
         teacher_profile_id: teacherProfileId,
         available_hours: -1
       })

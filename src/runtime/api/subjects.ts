@@ -4,7 +4,7 @@ import {
   SubjectPublicSchema,
   SubjectsPublicSchema,
   SubjectUpdateSchema,
-  type SubjectCreate,
+  type SubjectCreateInput,
   type SubjectPublic,
   type SubjectsPublic,
   type SubjectUpdate
@@ -25,11 +25,14 @@ export const subjects = {
       schema: SubjectPublicSchema,
       auth: true
     }),
-  create: (processId: string, body: SubjectCreate) =>
+  create: (processId: string, body: SubjectCreateInput) =>
     request<SubjectPublic>({
       method: "POST",
       path: `/assignment-processes/${processId}/subjects/`,
-      body: SubjectCreateSchema.parse(body),
+      body: SubjectCreateSchema.parse({
+        ...body,
+        assignment_process_id: processId
+      }),
       schema: SubjectPublicSchema,
       auth: true
     }),

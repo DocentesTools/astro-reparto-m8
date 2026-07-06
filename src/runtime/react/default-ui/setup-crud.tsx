@@ -19,6 +19,7 @@ import {
   useUpdateRepartoTeacherProfile
 } from "../hooks.js";
 import {
+  formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
   type RepartoLocale
@@ -182,21 +183,29 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
       name: name.trim(),
       locality: locality.trim() || null,
       province: province.trim() || null,
-      region: region.trim() || null,
       address: address.trim() || null,
       notes: notes.trim() || null
     };
     const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
       updateMutation.mutate(
-        { schoolId: editing.id, body },
+        {
+          schoolId: editing.id,
+          body: { ...body, region: region.trim() || null }
+        },
         { onSuccess: () => closeForm(), onError: onErr }
       );
     } else {
-      createMutation.mutate(body, {
-        onSuccess: () => closeForm(),
-        onError: onErr
-      });
+      createMutation.mutate(
+        {
+          ...body,
+          region: region.trim() || undefined
+        },
+        {
+          onSuccess: () => closeForm(),
+          onError: onErr
+        }
+      );
     }
   }
 
@@ -282,7 +291,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
                 className={repartoInputClass}
                 data-reparto-field="name"
                 id="school-name"
-                maxLength={200}
+                maxLength={100}
                 onChange={(e: InputChangeEvent) => setName(e.target.value)}
                 value={name}
               />
@@ -293,7 +302,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 className={repartoInputClass}
                 data-reparto-field="locality"
-                maxLength={200}
+                maxLength={100}
                 onChange={(e: InputChangeEvent) => setLocality(e.target.value)}
                 value={locality}
               />
@@ -303,7 +312,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 className={repartoInputClass}
                 data-reparto-field="province"
-                maxLength={200}
+                maxLength={100}
                 onChange={(e: InputChangeEvent) => setProvince(e.target.value)}
                 value={province}
               />
@@ -323,7 +332,7 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
               <input
                 className={repartoInputClass}
                 data-reparto-field="address"
-                maxLength={500}
+                maxLength={300}
                 onChange={(e: InputChangeEvent) => setAddress(e.target.value)}
                 value={address}
               />
@@ -382,6 +391,8 @@ export function RepartoAcademicYearsView({
 function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const query = useRepartoAcademicYears({ limit: 100 });
+  const schoolsQuery = useRepartoSchools({ limit: 100 });
+  const schools = schoolsQuery.data?.data ?? [];
   const rows = query.data?.data ?? [];
   const createMutation = useCreateRepartoAcademicYear();
   const updateMutation = useUpdateRepartoAcademicYear();
@@ -392,6 +403,7 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   const [label, setLabel] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [schoolId, setSchoolId] = useState("");
   const [mapped, setMapped] = useState<RepartoMappedError>(
     EMPTY_REPARTO_MAPPED_ERROR
   );
@@ -407,6 +419,7 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     setLabel("");
     setStartDate("");
     setEndDate("");
+    setSchoolId(schools[0]?.id ?? "");
     setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
@@ -416,6 +429,7 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     setLabel(year.label);
     setStartDate(year.start_date);
     setEndDate(year.end_date);
+    setSchoolId(year.school_id ?? schools[0]?.id ?? "");
     setMapped(EMPTY_REPARTO_MAPPED_ERROR);
   }
 
@@ -432,6 +446,7 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
 
   const canSave =
     label.trim().length > 0 &&
+    schoolId.trim().length > 0 &&
     datesValid &&
     !createMutation.isPending &&
     !updateMutation.isPending;
@@ -443,7 +458,8 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     const body = {
       label: label.trim(),
       start_date: startDate,
-      end_date: endDate
+      end_date: endDate,
+      school_id: schoolId
     };
     const onErr = (err: unknown) => setMapped(mapRepartoError(err));
     if (editing) {
@@ -458,6 +474,16 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
       });
     }
   }
+
+  const createDisabledReason =
+    schools.length === 0
+      ? formatRepartoMessage(
+          dict.disabled.missingPrereq,
+          { prereq: dict.entity.school.singular.toLowerCase() }
+        )
+      : null;
+  const schoolName = (id: string | null) =>
+    id ? schools.find((school) => school.id === id)?.name ?? "-" : "-";
 
   function handleArchive(year: AcademicYearPublic) {
     setArchiveMapped(EMPTY_REPARTO_MAPPED_ERROR);
@@ -479,12 +505,14 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
             <button
               className={repartoButtonClass}
               data-reparto-action="create"
-              disabled={formOpen}
+              data-disabled-reason={createDisabledReason ?? undefined}
+              disabled={formOpen || Boolean(createDisabledReason)}
               onClick={openCreate}
               type="button"
             >
               {dict.action.create}
             </button>
+            <RepartoDisabledReason reason={createDisabledReason} />
           </RowActions>
         </div>
         {archiveMapped.formError ? (
@@ -526,6 +554,9 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
                   </div>
                   <p className={repartoFieldCaptionClass}>
                     {year.start_date} → {year.end_date}
+                  </p>
+                  <p className={repartoFieldCaptionClass}>
+                    {dict.field.school}: {schoolName(year.school_id)}
                   </p>
                   <RowActions>
                     <button
@@ -579,6 +610,22 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
                 value={label}
               />
               <RepartoFieldError field="label" id="year-label-error" mapped={mapped} />
+            </label>
+            <label className={repartoFieldLabelClass}>
+              {dict.field.school}
+              <select
+                className={repartoInputClass}
+                data-reparto-field="school"
+                onChange={(e: InputChangeEvent) => setSchoolId(e.target.value)}
+                value={schoolId}
+              >
+                {schools.map((school) => (
+                  <option key={school.id} value={school.id}>
+                    {school.name}
+                  </option>
+                ))}
+              </select>
+              <RepartoFieldError field="school" mapped={mapped} />
             </label>
             <label className={repartoFieldLabelClass}>
               {dict.field.startDate}

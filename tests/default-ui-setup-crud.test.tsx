@@ -15,7 +15,7 @@ const queryState = vi.hoisted(() => ({
     end_date: string;
     status: string;
     previous_academic_year_id: string | null;
-    school_id: string;
+    school_id: string | null;
     created_by_user_id: string;
     created_at: string;
     updated_at: string;
@@ -122,6 +122,7 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
 
   it("renders academic-years list with Archive action, never Delete (archive-not-delete)", async () => {
     resetState();
+    queryState.schools = [{ id: schoolId, name: "IES Almeria Centro" }];
     queryState.years = [
       {
         id: yearId,
@@ -143,7 +144,21 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(html).toContain('data-reparto-route="academic-years"');
     expect(html).toContain('data-reparto-row-action="archive"');
     expect(html).toContain('data-year-status="active"');
+    expect(html).toContain("IES Almeria Centro");
     expect(html).not.toContain('data-reparto-row-action="delete"');
+  });
+
+  it("disables academic-year creation until a school exists", async () => {
+    resetState();
+    const { RepartoAcademicYearsView } = await import(
+      "../src/runtime/react/default-ui/setup-crud.js"
+    );
+    const html = renderToStaticMarkup(<RepartoAcademicYearsView />);
+    const createMatch = html.match(
+      /<button[^>]*data-reparto-action="create"[^>]*>/
+    );
+    expect(createMatch?.[0]).toContain("disabled");
+    expect(createMatch?.[0]).toContain("data-disabled-reason=");
   });
 
   it("disables archive button with visible reason when the year is already archived", async () => {

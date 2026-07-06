@@ -24,7 +24,11 @@
 // no auth plugin installed (see the starter fixture).
 import { getToken, configureAuth } from "@mano8/astro-auth-m8/client";
 import { refreshToken } from "@mano8/astro-auth-m8/api";
-import { createFaAuthAdapter, setRepartoAuthAdapter } from "./authAdapter.js";
+import {
+  createFaAuthAdapter,
+  getRepartoAuthAdapter,
+  setRepartoAuthAdapter
+} from "./authAdapter.js";
 
 export type RepartoFaAuthBridgeOptions = {
   /** Login route path, without the locale prefix. Defaults to `/login`. */
@@ -81,6 +85,25 @@ function redirectToLogin(options: RepartoFaAuthBridgeOptions): void {
   window.location.assign(`${loginHref}?next=${next}`);
 }
 
+async function guardCurrentRepartoRoute(
+  options: RepartoFaAuthBridgeOptions
+): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!isRepartoRoute(window.location.pathname, options)) return;
+
+  const adapter = getRepartoAuthAdapter();
+  if (await adapter.getAccessToken()) return;
+
+  try {
+    const refreshed = adapter.refresh ? await adapter.refresh() : null;
+    if (refreshed) return;
+  } catch {
+    // Treat refresh failures like a missing session and redirect below.
+  }
+
+  redirectToLogin(options);
+}
+
 /** Resolve the fa-auth API base the host configured for the auth service. */
 function resolveAuthApiBase(): string | undefined {
   return import.meta.env.PUBLIC_FA_AUTH_API_BASE;
@@ -112,6 +135,8 @@ export function installRepartoFaAuthBridge(
       onUnauthenticated: () => redirectToLogin(options)
     })
   );
+
+  void guardCurrentRepartoRoute(options);
 }
 
 /** Test-only: allow {@link installRepartoFaAuthBridge} to run again. */

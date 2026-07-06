@@ -4,7 +4,7 @@ import {
   TeachingGroupPublicSchema,
   TeachingGroupsPublicSchema,
   TeachingGroupUpdateSchema,
-  type TeachingGroupCreate,
+  type TeachingGroupCreateInput,
   type TeachingGroupPublic,
   type TeachingGroupsPublic,
   type TeachingGroupUpdate
@@ -25,11 +25,14 @@ export const teachingGroups = {
       schema: TeachingGroupPublicSchema,
       auth: true
     }),
-  create: (processId: string, body: TeachingGroupCreate) =>
+  create: (processId: string, body: TeachingGroupCreateInput) =>
     request<TeachingGroupPublic>({
       method: "POST",
       path: `/assignment-processes/${processId}/groups/`,
-      body: TeachingGroupCreateSchema.parse(body),
+      body: TeachingGroupCreateSchema.parse({
+        ...body,
+        assignment_process_id: processId
+      }),
       schema: TeachingGroupPublicSchema,
       auth: true
     }),

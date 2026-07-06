@@ -21,18 +21,18 @@ import type {
   AssignmentUpdate,
   DepartmentCreate,
   DepartmentUpdate,
-  HourRequirementCreate,
+  HourRequirementCreateInput,
   HourRequirementUpdate,
-  ProcessTeacherCreate,
+  ProcessTeacherCreateInput,
   ProcessTeacherUpdate,
   SchoolCreate,
   SchoolUpdate,
-  SubjectCreate,
+  SubjectCreateInput,
   SubjectUpdate,
   TeacherProfileCreate,
   TeacherProfileLinkUser,
   TeacherProfileUpdate,
-  TeachingGroupCreate,
+  TeachingGroupCreateInput,
   TeachingGroupUpdate
 } from "../schemas.js";
 import {
@@ -304,7 +304,7 @@ export function useRepartoSubjects(processId?: string) {
 export function useCreateRepartoSubject() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ processId, body }: { processId: string; body: SubjectCreate }) =>
+    mutationFn: ({ processId, body }: { processId: string; body: SubjectCreateInput }) =>
       subjects.create(processId, body),
     onSuccess: (_data, { processId }) => {
       queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
@@ -363,7 +363,7 @@ export function useCreateRepartoTeachingGroup() {
       body
     }: {
       processId: string;
-      body: TeachingGroupCreate;
+      body: TeachingGroupCreateInput;
     }) => teachingGroups.create(processId, body),
     onSuccess: (_data, { processId }) => {
       queryClient.invalidateQueries({
@@ -428,7 +428,7 @@ export function useCreateRepartoHourRequirement() {
       body
     }: {
       processId: string;
-      body: HourRequirementCreate;
+      body: HourRequirementCreateInput;
     }) => hourRequirements.create(processId, body),
     onSuccess: (_data, { processId }) => {
       queryClient.invalidateQueries({
@@ -493,7 +493,7 @@ export function useCreateRepartoProcessTeacher() {
       body
     }: {
       processId: string;
-      body: ProcessTeacherCreate;
+      body: ProcessTeacherCreateInput;
     }) => processTeachers.create(processId, body),
     onSuccess: (_data, { processId }) => {
       queryClient.invalidateQueries({

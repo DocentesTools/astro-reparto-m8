@@ -148,12 +148,77 @@ describe("client", () => {
     expect(init.body).toBe(JSON.stringify({ y: 2 }));
   });
 
-  it("omits authorization when auth returns no token", async () => {
-    setRepartoAuthAdapter(createInMemoryAuthAdapter(null));
+  it("refreshes before the first authenticated request when the token is missing", async () => {
+    setRepartoAuthAdapter({ getAccessToken: () => null, refresh: async () => "fresh" });
     fetchMock.mockResolvedValueOnce(makeResponse(200, { ok: true }));
     await request({ method: "GET", path: "/x", schema: okSchema, auth: true });
     const [, init] = fetchMock.mock.calls[0];
-    expect((init.headers as Headers).get("Authorization")).toBeNull();
+    expect((init.headers as Headers).get("Authorization")).toBe("Bearer fresh");
+  });
+
+  it("does not fetch authenticated resources when no token can be resolved", async () => {
+    const onUnauthenticated = vi.fn();
+    setRepartoAuthAdapter({
+      getAccessToken: () => null,
+      refresh: async () => null,
+      onUnauthenticated
+    });
+    await expect(
+      request({ method: "GET", path: "/x", schema: okSchema, auth: true })
+    ).rejects.toBeInstanceOf(RepartoUnauthenticatedError);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onUnauthenticated).toHaveBeenCalledWith("refresh-failed");
+  });
+
+  it("does not fetch authenticated resources when preflight refresh throws", async () => {
+    const onUnauthenticated = vi.fn();
+    setRepartoAuthAdapter({
+      getAccessToken: () => null,
+      refresh: async () => {
+        throw new Error("refresh failed");
+      },
+      onUnauthenticated
+    });
+    await expect(
+      request({ method: "GET", path: "/x", schema: okSchema, auth: true })
+    ).rejects.toBeInstanceOf(RepartoUnauthenticatedError);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onUnauthenticated).toHaveBeenCalledWith("refresh-failed");
+  });
+
+  it("does not fetch authenticated resources when no refresh path exists", async () => {
+    const onUnauthenticated = vi.fn();
+    setRepartoAuthAdapter({
+      getAccessToken: () => null,
+      onUnauthenticated
+    });
+    await expect(
+      request({ method: "GET", path: "/x", schema: okSchema, auth: true })
+    ).rejects.toBeInstanceOf(RepartoUnauthenticatedError);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onUnauthenticated).toHaveBeenCalledWith("unauthenticated");
+  });
+
+  it("does not refresh authenticated requests when skipRefresh is set", async () => {
+    const onUnauthenticated = vi.fn();
+    const refresh = vi.fn(async () => "fresh");
+    setRepartoAuthAdapter({
+      getAccessToken: () => null,
+      refresh,
+      onUnauthenticated
+    });
+    await expect(
+      request({
+        method: "GET",
+        path: "/x",
+        schema: okSchema,
+        auth: true,
+        skipRefresh: true
+      })
+    ).rejects.toBeInstanceOf(RepartoUnauthenticatedError);
+    expect(refresh).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(onUnauthenticated).toHaveBeenCalledWith("unauthenticated");
   });
 
   it("returns undefined for empty responses", async () => {
@@ -180,6 +245,19 @@ describe("client", () => {
     setRepartoAuthAdapter({
       getAccessToken: () => "old",
       refresh: async () => null,
+      onUnauthenticated
+    });
+    fetchMock.mockResolvedValueOnce(makeResponse(401, {}));
+    await expect(
+      request({ method: "GET", path: "/x", schema: okSchema, auth: true })
+    ).rejects.toBeInstanceOf(RepartoUnauthenticatedError);
+    expect(onUnauthenticated).toHaveBeenCalledWith("refresh-failed");
+
+    setRepartoAuthAdapter({
+      getAccessToken: () => "old",
+      refresh: async () => {
+        throw new Error("refresh failed");
+      },
       onUnauthenticated
     });
     fetchMock.mockResolvedValueOnce(makeResponse(401, {}));

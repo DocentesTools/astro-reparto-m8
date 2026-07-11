@@ -382,7 +382,6 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     selection_notes: null,
     order_locked: false,
     status: "active",
-    notes: null,
     created_at: now,
     updated_at: now
   };
@@ -533,6 +532,9 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBe("inactive");
     expect(() =>
       ProcessTeacherUpdateSchema.parse({ status: "removed" })
+    ).toThrow();
+    expect(() =>
+      ProcessTeacherUpdateSchema.parse({ notes: "Unsupported by the service model" })
     ).toThrow();
     expect(
       ProcessTeachersPublicSchema.parse({ data: [processTeacherBody], count: 1 })

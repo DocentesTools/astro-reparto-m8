@@ -35,7 +35,6 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
   const [availableHours, setAvailableHours] = useState("");
   const [participatesInSelection, setParticipatesInSelection] = useState(false);
   const [status, setStatus] = useState<ProcessTeacherStatus>("active");
-  const [notes, setNotes] = useState("");
   const [inlineCreateRoster, setInlineCreateRoster] = useState(false);
 
   const hoursNum = Number.parseFloat(availableHours);
@@ -51,8 +50,7 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
       teacher_profile_id: teacherProfileId,
       available_hours: hoursNum,
       participates_in_selection: participatesInSelection,
-      status,
-      notes: notes.trim() || null
+      status
     };
     createMutation.mutate(
       { processId, body },
@@ -108,14 +106,6 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
             { value: "inactive", label: dict.entity.processParticipant.status.inactive }
           ]}
           onChange={(value) => setStatus(value as ProcessTeacherStatus)}
-        />
-        <TextField
-          field="notes"
-          id="participant-add-notes"
-          label={dict.field.notes}
-          maxLength={2000}
-          onChange={setNotes}
-          value={notes}
         />
         {inlineCreateRoster ? (
           <InlineTeacherRosterCreate

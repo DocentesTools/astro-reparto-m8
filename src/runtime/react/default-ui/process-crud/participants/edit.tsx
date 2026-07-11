@@ -38,15 +38,13 @@ export function ParticipantEdit({
     participant.participates_in_selection
   );
   const [status, setStatus] = useState<ProcessTeacherStatus>(participant.status);
-  const [notes, setNotes] = useState(participant.notes ?? "");
 
   const hoursNum = Number.parseFloat(availableHours);
   const hoursValid = Number.isFinite(hoursNum) && hoursNum >= 0;
   const dirty =
     hoursNum !== participant.available_hours ||
     participatesInSelection !== participant.participates_in_selection ||
-    status !== participant.status ||
-    notes !== (participant.notes ?? "");
+    status !== participant.status;
   const canSave = dirty && hoursValid && !updateMutation.isPending;
 
   function handleSubmit(event: { preventDefault: () => void }) {
@@ -56,8 +54,7 @@ export function ParticipantEdit({
     const body: ProcessTeacherUpdate = {
       available_hours: hoursNum,
       participates_in_selection: participatesInSelection,
-      status,
-      notes: notes.trim() || null
+      status
     };
     updateMutation.mutate(
       { processId, processTeacherId: participant.id, body },
@@ -106,14 +103,6 @@ export function ParticipantEdit({
             { value: "inactive", label: dict.entity.processParticipant.status.inactive }
           ]}
           onChange={(value) => setStatus(value as ProcessTeacherStatus)}
-        />
-        <TextField
-          field="notes"
-          id="participant-edit-notes"
-          label={dict.field.notes}
-          maxLength={2000}
-          onChange={setNotes}
-          value={notes}
         />
         <SaveCancelRow
           canSave={canSave}

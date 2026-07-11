@@ -922,7 +922,6 @@ export const ProcessTeacherPublicSchema = z
     selection_notes: z.string().nullable(),
     order_locked: z.boolean(),
     status: ProcessTeacherStatusSchema,
-    notes: z.string().nullable(),
     created_at: dateTimeSchema,
     updated_at: dateTimeSchema
   })
@@ -941,7 +940,6 @@ export const ProcessTeacherCreateSchema = z
     selection_notes: z.string().max(2000).nullable().optional(),
     order_locked: z.boolean().optional(),
     status: ProcessTeacherStatusSchema.optional(),
-    notes: z.string().max(2000).nullable().optional()
   })
   .strict();
 export type ProcessTeacherCreate = z.infer<typeof ProcessTeacherCreateSchema>;
@@ -960,7 +958,6 @@ export const ProcessTeacherUpdateSchema = z
     selection_notes: z.string().max(2000).nullable().optional(),
     order_locked: z.boolean().optional(),
     status: ProcessTeacherStatusSchema.optional(),
-    notes: z.string().max(2000).nullable().optional()
   })
   .strict();
 export type ProcessTeacherUpdate = z.infer<typeof ProcessTeacherUpdateSchema>;

@@ -689,7 +689,6 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     selection_notes: null,
     order_locked: false,
     status: "active",
-    notes: null,
     created_at: now,
     updated_at: now
   };

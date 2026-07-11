@@ -22,5 +22,5 @@ const config = {
     tableOfContents: false
   }}
 >
-  <RepartoMyView client:load config={config} processId={processId} />
+  <RepartoMyView client:load config={config} locale={Astro.currentLocale} processId={processId} />
 </StarlightPage>

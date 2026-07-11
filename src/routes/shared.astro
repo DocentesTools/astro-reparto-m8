@@ -22,5 +22,5 @@ const config = {
     tableOfContents: false
   }}
 >
-  <RepartoSharedView client:load config={config} processId={processId} />
+  <RepartoSharedView client:load config={config} locale={Astro.currentLocale} processId={processId} />
 </StarlightPage>

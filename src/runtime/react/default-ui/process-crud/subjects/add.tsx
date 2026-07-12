@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import {
   EMPTY_REPARTO_MAPPED_ERROR,
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -43,6 +44,12 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
   }
 
   return (
+    <EntityDialogShell
+      description={dict.entity.subject.plural}
+      dialogId="subject-create"
+      onClose={onDone}
+      title={`${dict.action.create} ${dict.entity.subject.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="subject" mode="create" onSubmit={handleSubmit}>
       <FormGrid>
         <TextField
@@ -82,6 +89,7 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }
 

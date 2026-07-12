@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -81,6 +82,12 @@ export function RequirementAdd({ dict, processId, onDone }: RequirementAddProps)
   }
 
   return (
+    <EntityDialogShell
+      description={dict.entity.hourRequirement.plural}
+      dialogId="requirement-create"
+      onClose={onDone}
+      title={`${dict.action.create} ${dict.entity.hourRequirement.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="requirement" mode="create" onSubmit={handleSubmit}>
       <FormGrid>
         <SelectField
@@ -122,7 +129,7 @@ export function RequirementAdd({ dict, processId, onDone }: RequirementAddProps)
           label={dict.field.requirementType}
           value={requirementType}
           placeholder={dict.field.requirementType}
-          options={REQUIREMENT_TYPES.map((value) => ({ value, label: value }))}
+          options={REQUIREMENT_TYPES.map((value) => ({ value, label: dict.option.requirementType[value] }))}
           onChange={(value) => setRequirementType(value as RequirementType)}
         />
         <TextField
@@ -174,6 +181,7 @@ export function RequirementAdd({ dict, processId, onDone }: RequirementAddProps)
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }
 

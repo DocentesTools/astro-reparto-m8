@@ -1,5 +1,5 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
-import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
+import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoSubject } from "../../../hooks.js";
 import type { SubjectPublic } from "../../../../schemas.js";
 
@@ -30,8 +30,7 @@ export function SubjectDelete({ dict, processId, subject, onDone }: SubjectDelet
   });
 
   return (
-    <ConfirmDelete
-      deleteFormAttr="subject-delete-confirm"
+    <EntityDeleteDialog
       title={title}
       body={body}
       proceedLabel={dict.confirm.delete.proceed}
@@ -39,7 +38,7 @@ export function SubjectDelete({ dict, processId, subject, onDone }: SubjectDelet
       isPending={deleteMutation.isPending}
       mapped={mapped}
       onConfirm={handleConfirm}
-      onCancel={onDone}
+      onClose={onDone}
     />
   );
 }

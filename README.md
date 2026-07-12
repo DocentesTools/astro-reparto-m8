@@ -1,5 +1,7 @@
 # @mano8/astro-reparto-m8
 
+![CI/CD](https://github.com/DocentesTools/astro-reparto-m8/actions/workflows/CI.yaml/badge.svg?branch=main)
+
 Astro integration and headless client for `reparto-docente-m8`.
 
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,

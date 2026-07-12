@@ -67,6 +67,32 @@ export const en = {
     orderLocked: "Order locked",
     overrideReason: "Override reason"
   },
+  option: {
+    requirementType: { ordinary: "Ordinary", optional: "Optional", reinforcement: "Reinforcement", split_group: "Split group", bilingual: "Bilingual", other: "Other" },
+    assignmentType: { main: "Main", shared: "Shared", reinforcement: "Reinforcement", split_group: "Split group", other: "Other" },
+    boolean: { yes: "Yes", no: "No" }
+  },
+  view: {
+    teacherTitle: "Teacher view",
+    loading: "{entity} loading",
+    unavailable: "{entity} unavailable",
+    currentTurn: { status: "Status", turn: "Turn", teacher: "Teacher", started: "Started", waiting: "Waiting", noPosition: "No position", noActiveTurn: "No active turn", notStarted: "Not started", position: "Turn {position}", teacherValue: "Teacher {teacher}" },
+    versions: { title: "Versions", item: "Version {number}", comparison: "Comparison", noChanges: "No changes", requiredDelta: "Required delta", assignedDelta: "Assigned delta", teacherDelta: "Teachers", create: "Create version", compare: "Compare versions" },
+    exports: { title: "Export center", finalBlocked: "Final blocked", finalReady: "Final ready", closeout: "Closeout", finalExport: "Final export", leadershipWorkflow: "Leadership workflow", markReturned: "Mark returned", startRevision: "Start revision", reopenFinal: "Reopen final", type: { internal_draft: "Internal draft", school_leadership: "School leadership", final: "Final", teacher_summary: "Teacher summary", backup: "Backup" } },
+    choice: { title: "Choose group", confirmation: "Confirmation", choose: "Choose", pass: "Pass", ready: "Ready to choose.", impact: "{hours} hours will be assigned to you.", meetingClosed: "The meeting is not open.", directDisabled: "Direct selection is disabled.", otherTurn: "It is another teacher's turn.", covered: "The requirement is already covered.", alreadyCovered: "This requirement was already covered.", turnChanged: "The active turn changed. Refresh the meeting state." }
+  },
+  validation: {
+    title: { requirement: "Requirement warning", teacher: "Teacher warning", process: "Process warning" },
+    requirement: { overAssigned: "Requirement {subject} for {group} is over-assigned ({assigned} h assigned for {required} h required).", overAssignedOverridden: "Requirement {subject} for {group} is over-assigned, but an override has been recorded.", uncovered: "Requirement {subject} for {group} has no assignment yet.", partial: "Requirement {subject} for {group} is partially covered ({pending} h still pending).", covered: "Requirement {subject} for {group} is fully covered." },
+    teacher: { overloaded: "{teacher} is overloaded ({assigned} h assigned for {available} h available).", overloadedOverridden: "{teacher} is overloaded, but an override has been recorded.", balanced: "{teacher} has a balanced workload." },
+    process: { balanced: "Process hours are balanced.", pending: "{count} requirement(s) still need hours.", overage: "The process has unresolved over-assignments." }
+  },
+  audit: {
+    pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
+    action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden" },
+    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Hour requirement", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
+    role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
+  },
   action: {
     create: "Create",
     edit: "Edit",
@@ -130,6 +156,7 @@ export const en = {
     }
   },
   dashboard: {
+    balanceState: { balanced: "Balanced", pending: "Pending", exceeded: "Exceeded", warning: "Warning" },
     title: "Reparto dashboard",
     subtitleAdmin: "Follow balance, coverage, and meeting readiness before the live session.",
     subtitleReadonly: "Project a calm read-only view for the live meeting.",
@@ -193,7 +220,7 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label..." },
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name or stage...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
   picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
 };
 

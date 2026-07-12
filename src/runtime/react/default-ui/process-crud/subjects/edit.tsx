@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -47,6 +48,12 @@ export function SubjectEdit({ dict, processId, subject, onDone }: SubjectEditPro
   }
 
   return (
+    <EntityDialogShell
+      description={subject.name}
+      dialogId="subject-edit"
+      onClose={onDone}
+      title={`${dict.action.edit} ${dict.entity.subject.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="subject" mode="edit" onSubmit={handleSubmit}>
       <FormGrid>
         <TextField
@@ -86,5 +93,6 @@ export function SubjectEdit({ dict, processId, subject, onDone }: SubjectEditPro
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }

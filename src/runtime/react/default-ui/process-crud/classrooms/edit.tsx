@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -10,7 +11,6 @@ import {
 } from "../shared.js";
 import { useUpdateRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupPublic, TeachingGroupUpdate } from "../../../../schemas.js";
-import { ClassroomDialogShell } from "./dialog-shell.js";
 
 export type ClassroomEditProps = {
   dict: Dict;
@@ -56,7 +56,7 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
   }
 
   return (
-    <ClassroomDialogShell
+    <EntityDialogShell
       description={group.label}
       dialogId="classroom-edit"
       onClose={onDone}
@@ -123,6 +123,6 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
         />
         </FormGrid>
       </FormPanelShell>
-    </ClassroomDialogShell>
+    </EntityDialogShell>
   );
 }

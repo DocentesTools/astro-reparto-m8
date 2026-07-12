@@ -313,7 +313,7 @@ export function ProcessPicker({
                     onClick={() => onSelect(process.id)}
                     type="button"
                   >
-                    {process.status}
+                    {dict.entity.assignmentProcess.status[process.status]}
                   </button>
                 </li>
               ))}
@@ -516,7 +516,7 @@ export function WithSelectedProcess({
             >
               {processes.map((process) => (
                 <option key={process.id} value={process.id}>
-                  {process.status}
+                  {dict.entity.assignmentProcess.status[process.status]}
                 </option>
               ))}
             </select>

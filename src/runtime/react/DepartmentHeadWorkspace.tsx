@@ -6,10 +6,10 @@ import type {
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
+  ValidationMessage,
   VersionComparison
 } from "../schemas.js";
 import {
-  buildCurrentTurnDisplay,
   buildExportCenterState,
   buildVersionComparisonLabel,
   canCompareVersions,
@@ -71,11 +71,30 @@ const fallbackComparison: VersionComparison = {
 };
 
 export function CurrentTurnCard({
-  currentTurn
+  currentTurn,
+  locale
 }: {
   currentTurn: CurrentTurnSummary | null;
+  locale?: RepartoLocale;
 }) {
-  const display = buildCurrentTurnDisplay(currentTurn);
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const localizedDisplay = currentTurn
+    ? {
+        statusLabel: dict.entity.selectionTurn.status[currentTurn.status],
+        turnLabel: formatRepartoMessage(dict.view.currentTurn.teacherValue, {
+          teacher: currentTurn.process_teacher_id
+        }),
+        positionLabel: formatRepartoMessage(dict.view.currentTurn.position, {
+          position: currentTurn.position + 1
+        }),
+        startedLabel: currentTurn.started_at ?? dict.view.currentTurn.notStarted
+      }
+    : {
+        statusLabel: dict.view.currentTurn.waiting,
+        turnLabel: dict.view.currentTurn.noActiveTurn,
+        positionLabel: dict.view.currentTurn.noPosition,
+        startedLabel: dict.view.currentTurn.notStarted
+      };
   return (
     <div
       className={repartoTurnSummaryClass}
@@ -83,23 +102,83 @@ export function CurrentTurnCard({
       data-reparto-turn-status={currentTurn?.status ?? "none"}
     >
       <div className={repartoTurnSummaryItemClass}>
-        <span className={repartoMetricLabelClass}>Status</span>
-        <strong className={repartoMetricValueClass}>{display.statusLabel}</strong>
+        <span className={repartoMetricLabelClass}>{dict.view.currentTurn.status}</span>
+        <strong className={repartoMetricValueClass}>{localizedDisplay.statusLabel}</strong>
       </div>
       <div className={repartoTurnSummaryItemClass}>
-        <span className={repartoMetricLabelClass}>Turn</span>
-        <strong className={repartoMetricValueClass}>{display.positionLabel}</strong>
+        <span className={repartoMetricLabelClass}>{dict.view.currentTurn.turn}</span>
+        <strong className={repartoMetricValueClass}>{localizedDisplay.positionLabel}</strong>
       </div>
       <div className={repartoTurnSummaryItemClass}>
-        <span className={repartoMetricLabelClass}>Teacher</span>
-        <strong className={repartoMetricValueClass}>{display.turnLabel}</strong>
+        <span className={repartoMetricLabelClass}>{dict.view.currentTurn.teacher}</span>
+        <strong className={repartoMetricValueClass}>{localizedDisplay.turnLabel}</strong>
       </div>
       <div className={repartoTurnSummaryItemClass}>
-        <span className={repartoMetricLabelClass}>Started</span>
-        <strong className={repartoMetricValueClass}>{display.startedLabel}</strong>
+        <span className={repartoMetricLabelClass}>{dict.view.currentTurn.started}</span>
+        <strong className={repartoMetricValueClass}>{localizedDisplay.startedLabel}</strong>
       </div>
     </div>
   );
+}
+
+function localizedValidation(
+  validation: ValidationMessage,
+  dashboard: ProcessDashboard | null | undefined,
+  dict: ReturnType<typeof getRepartoDictionary>
+): { title: string; message: string } {
+  const title = dict.validation.title[
+    validation.entity_type === "teacher"
+      ? "teacher"
+      : validation.entity_type === "process"
+        ? "process"
+        : "requirement"
+  ];
+  const requirement = dashboard?.requirement_balances.find(
+    (item) => item.hour_requirement_id === validation.entity_id
+  );
+  const teacher = dashboard?.teacher_balances.find(
+    (item) => item.process_teacher_id === validation.entity_id
+  );
+  const values: Record<string, string | number> = requirement
+    ? {
+        assigned: requirement.assigned_hours,
+        group: requirement.teaching_group_label,
+        pending: requirement.pending_hours,
+        required: requirement.required_hours,
+        subject: requirement.subject_name
+      }
+    : teacher
+      ? {
+          assigned: teacher.assigned_hours,
+          available: teacher.available_hours,
+          teacher: teacher.display_name
+        }
+      : { count: dashboard?.global_balance.uncovered_requirements ?? 0 };
+  const template =
+    validation.code === "requirement.over_assigned"
+      ? dict.validation.requirement.overAssigned
+      : validation.code === "requirement.over_assigned_overridden"
+        ? dict.validation.requirement.overAssignedOverridden
+        : validation.code === "requirement.fully_assigned"
+          ? dict.validation.requirement.covered
+          : validation.code === "requirement.not_fully_assigned" && requirement?.state === "uncovered"
+            ? dict.validation.requirement.uncovered
+            : validation.code === "requirement.not_fully_assigned"
+              ? dict.validation.requirement.partial
+              : validation.code === "teacher.overloaded"
+                ? dict.validation.teacher.overloaded
+                : validation.code === "teacher.overloaded_overridden"
+                  ? dict.validation.teacher.overloadedOverridden
+                  : validation.code === "teacher.balanced"
+                    ? dict.validation.teacher.balanced
+                    : validation.code === "process.balanced"
+                      ? dict.validation.process.balanced
+                      : validation.code === "process.has_pending"
+                        ? dict.validation.process.pending
+                        : validation.code === "process.has_overage"
+                          ? dict.validation.process.overage
+                          : validation.message;
+  return { title, message: formatRepartoMessage(template, values) };
 }
 
 export function DepartmentHeadWorkspace({
@@ -226,11 +305,11 @@ export function DepartmentHeadWorkspace({
               data-reparto-slot="turn-status"
             >
               {activeSummary?.current_turn
-                ? buildCurrentTurnDisplay(activeSummary.current_turn).statusLabel
+                ? dict.entity.selectionTurn.status[activeSummary.current_turn.status]
                 : dict.dashboard.state.noDashboard}
             </span>
           </div>
-          <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} />
+          <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} locale={locale} />
           {balance ? (
             <dl className={repartoMetricsClass}>
               <div className={repartoMetricItemClass}>
@@ -296,7 +375,7 @@ export function DepartmentHeadWorkspace({
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.overview}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="overview-state">
-              {balance?.state ?? "pending"}
+              {dict.dashboard.balanceState[balance?.state ?? "pending"]}
             </span>
           </div>
           <div className="mt-3 grid gap-3">
@@ -457,18 +536,22 @@ export function DepartmentHeadWorkspace({
           </div>
           {activeSummary?.validations.length ? (
             <ul className={repartoListClass} data-reparto-slot="validations">
-              {activeSummary.validations.map((validation, index) => (
-                <li
-                  className={repartoListItemClass}
-                  data-reparto-validation-severity={validation.severity}
-                  key={`${validation.code}-${index}`}
-                >
-                  <strong className="block">{validation.code}</strong>
-                  <span className="text-sm text-muted-foreground">
-                    {validation.message}
-                  </span>
-                </li>
-              ))}
+              {activeSummary.validations.map((validation, index) => {
+                const localized = localizedValidation(validation, dashboard, dict);
+                return (
+                  <li
+                    className={repartoListItemClass}
+                    data-reparto-validation-code={validation.code}
+                    data-reparto-validation-severity={validation.severity}
+                    key={`${validation.code}-${index}`}
+                  >
+                    <strong className="block">{localized.title}</strong>
+                    <span className="text-sm text-muted-foreground">
+                      {localized.message}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="mt-3 text-sm text-muted-foreground">
@@ -518,16 +601,19 @@ export function DepartmentHeadWorkspace({
 
 export function ProcessListView({
   count = 0,
+  locale,
   processes = []
 }: {
   count?: number;
+  locale?: RepartoLocale;
   processes?: AssignmentProcessPublic[];
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   return (
     <main className={repartoShellClass} data-reparto-route="processes">
       <section className={repartoPanelClass} data-reparto-panel="process-list">
         <div className={repartoPanelHeaderClass}>
-          <h2>Processes</h2>
+          <h2>{dict.entity.assignmentProcess.plural}</h2>
           <span className="text-sm text-muted-foreground" data-reparto-slot="process-count">
             {count}
           </span>
@@ -542,14 +628,14 @@ export function ProcessListView({
                   data-process-status={process.status}
                   key={process.id}
                 >
-                  {process.status}
+                  {dict.entity.assignmentProcess.status[process.status]}
                 </li>
               ))}
             </ul>
           ) : null}
         </div>
         <button className={repartoButtonClass} type="button" data-reparto-action="create-process">
-          create process
+          {dict.action.create} {dict.entity.assignmentProcess.singular.toLowerCase()}
         </button>
       </section>
     </main>
@@ -558,19 +644,24 @@ export function ProcessListView({
 
 export function VersionsView({
   comparison = fallbackComparison,
+  locale,
   versions = []
 }: {
   comparison?: VersionComparison;
+  locale?: RepartoLocale;
   versions?: ProcessVersionPublic[];
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const comparisonEnabled = canCompareVersions(versions);
-  const comparisonLabel = buildVersionComparisonLabel(comparison);
+  const comparisonLabel = comparison.changed_sections.length === 0
+    ? dict.view.versions.noChanges
+    : buildVersionComparisonLabel(comparison);
   return (
     <main className={repartoShellClass} data-reparto-route="versions">
       <div className={repartoMainGridClass}>
         <section className={repartoPanelClass} data-reparto-panel="version-list">
           <div className={repartoPanelHeaderClass}>
-            <h2>Versions</h2>
+            <h2>{dict.view.versions.title}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="version-count">
               {versions.length}
             </span>
@@ -585,7 +676,7 @@ export function VersionsView({
                     data-process-version-status={version.status}
                     key={version.id}
                   >
-                    Version {version.version_number}
+                    {formatRepartoMessage(dict.view.versions.item, { number: version.version_number })}
                   </li>
                 ))}
               </ul>
@@ -593,7 +684,7 @@ export function VersionsView({
           </div>
           <div className={repartoActionRowClass}>
             <button className={repartoButtonClass} type="button" data-reparto-action="create-version">
-              create version
+              {dict.view.versions.create}
             </button>
             <button
               className={repartoButtonClass}
@@ -601,32 +692,32 @@ export function VersionsView({
               disabled={!comparisonEnabled}
               type="button"
             >
-              compare versions
+              {dict.view.versions.compare}
             </button>
           </div>
         </section>
         <section className={repartoPanelClass} data-reparto-panel="comparison">
           <div className={repartoPanelHeaderClass}>
-            <h2>Comparison</h2>
+            <h2>{dict.view.versions.comparison}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="comparison-state">
               {comparisonLabel}
             </span>
           </div>
           <dl className={repartoMetricsClass}>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>Required delta</dt>
+              <dt className={repartoMetricLabelClass}>{dict.view.versions.requiredDelta}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="required-hours-delta">
                 {comparison.required_hours_delta}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>Assigned delta</dt>
+              <dt className={repartoMetricLabelClass}>{dict.view.versions.assignedDelta}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-hours-delta">
                 {comparison.assigned_hours_delta}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>Teachers</dt>
+              <dt className={repartoMetricLabelClass}>{dict.view.versions.teacherDelta}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-count-delta">
                 {comparison.teacher_count_delta}
               </dd>
@@ -641,15 +732,18 @@ export function VersionsView({
 
 export function ExportCenterView({
   exports = [],
+  locale,
   processId,
   processStatus = "draft",
   summary = fallbackSummary
 }: {
   exports?: ExportArtifactPublic[];
+  locale?: RepartoLocale;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
   summary?: ProcessSummary;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const state = buildExportCenterState(summary, exports);
   const workflowAction = nextLeadershipWorkflowAction(processStatus);
   return (
@@ -662,9 +756,9 @@ export function ExportCenterView({
       <div className={repartoMainGridClass}>
         <section className={repartoPanelClass} data-reparto-panel="export-center">
           <div className={repartoPanelHeaderClass}>
-            <h2>Export center</h2>
+            <h2>{dict.view.exports.title}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="export-state">
-              {state.finalBlocked ? "Final blocked" : "Final ready"}
+              {state.finalBlocked ? dict.view.exports.finalBlocked : dict.view.exports.finalReady}
             </span>
           </div>
           <div className={repartoActionRowClass}>
@@ -676,7 +770,7 @@ export function ExportCenterView({
                 key={exportType}
                 type="button"
               >
-                {exportType.replaceAll("_", " ")}
+                {dict.view.exports.type[exportType as keyof typeof dict.view.exports.type]}
               </button>
             ))}
           </div>
@@ -690,7 +784,7 @@ export function ExportCenterView({
                     data-export-artifact-type={artifact.export_type}
                     key={artifact.id}
                   >
-                    {artifact.export_type} {artifact.format}
+                    {dict.view.exports.type[artifact.export_type]} {artifact.format.toUpperCase()}
                   </li>
                 ))}
               </ul>
@@ -699,7 +793,7 @@ export function ExportCenterView({
         </section>
         <section className={repartoPanelClass} data-reparto-panel="final-close">
           <div className={repartoPanelHeaderClass}>
-            <h2>Closeout</h2>
+            <h2>{dict.view.exports.closeout}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
               {summary.blocking_validation_count}
             </span>
@@ -711,7 +805,7 @@ export function ExportCenterView({
               disabled={state.finalBlocked}
               type="button"
             >
-              final export
+              {dict.view.exports.finalExport}
             </button>
             <button
               className={repartoButtonClass}
@@ -720,16 +814,16 @@ export function ExportCenterView({
               disabled={!state.restoreDraftEnabled}
               type="button"
             >
-              restore draft
+              {dict.action.restore}
             </button>
           </div>
           <div data-reparto-slot="restore-result" />
         </section>
         <section className={repartoPanelClass} data-reparto-panel="leadership-workflow">
           <div className={repartoPanelHeaderClass}>
-            <h2>Leadership workflow</h2>
+            <h2>{dict.view.exports.leadershipWorkflow}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="process-status">
-              {processStatus}
+              {dict.entity.assignmentProcess.status[processStatus]}
             </span>
           </div>
           <div className={repartoActionRowClass}>
@@ -739,7 +833,7 @@ export function ExportCenterView({
               data-reparto-active={workflowAction === "mark-returned"}
               type="button"
             >
-              mark returned
+              {dict.view.exports.markReturned}
             </button>
             <button
               className={repartoButtonClass}
@@ -747,7 +841,7 @@ export function ExportCenterView({
               data-reparto-active={workflowAction === "start-revision"}
               type="button"
             >
-              start revision
+              {dict.view.exports.startRevision}
             </button>
             <button
               className={repartoButtonClass}
@@ -755,7 +849,7 @@ export function ExportCenterView({
               data-reparto-active={workflowAction === "reopen-final"}
               type="button"
             >
-              reopen final
+              {dict.view.exports.reopenFinal}
             </button>
           </div>
           <div data-reparto-slot="workflow-result" />

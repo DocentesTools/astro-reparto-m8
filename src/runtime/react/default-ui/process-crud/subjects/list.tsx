@@ -1,14 +1,7 @@
-import {
-  ActionButton,
-  CrudHeader,
-  EmptyRow,
-  QueryState,
-  RowActions,
-  RowHeader,
-  RowShell
-} from "../shared.js";
+import { ActionButton, mapRepartoError, RepartoDisabledReason, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import type { SubjectPublic } from "../../../../schemas.js";
+import { DataTable, type DataTableColumn } from "../../data-table.js";
 
 export type SubjectsListProps = {
   dict: Dict;
@@ -24,68 +17,69 @@ export type SubjectsListProps = {
 };
 
 export function SubjectsList({
-  dict,
-  rows,
-  error,
-  isError,
-  isLoading,
-  hasActiveForm,
-  createReason,
-  onCreate,
-  onEdit,
-  onDelete
+  dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onEdit, onDelete
 }: SubjectsListProps) {
+  const columns: DataTableColumn<SubjectPublic>[] = [
+    { id: "name", label: dict.field.name, value: (subject) => subject.name },
+    {
+      id: "actions",
+      label: dict.table.actions,
+      value: (subject) => `${subject.name} ${dict.table.actions}`,
+      hideable: false,
+      sortable: false,
+      cell: (subject) => (
+        <RowActions>
+          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(subject)} row />
+          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(subject)} row />
+        </RowActions>
+      )
+    },
+    { id: "stage", label: dict.field.stage, value: (subject) => subject.stage ?? "" }
+  ];
+  const stages = [...new Set(rows.map((subject) => subject.stage).filter((stage): stage is string => Boolean(stage)))].sort((a, b) => a.localeCompare(b));
+
   return (
     <>
-      <CrudHeader
-        createLabel={dict.action.create}
-        canCreate={!hasActiveForm}
-        createReason={createReason}
-        entityLabel={dict.entity.subject.plural}
-        onCreate={onCreate}
+      <h2 className="sr-only">{dict.entity.subject.plural}</h2>
+      <DataTable
+        addButton={
+          <>
+            <ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />
+            <RepartoDisabledReason reason={createReason} />
+          </>
+        }
+        columns={columns}
+        data={rows}
+        emptyLabel={dict.table.noResults}
+        filter={{ label: dict.field.stage, options: stages, value: (subject) => subject.stage ?? "" }}
+        labels={{
+          columns: dict.table.columns,
+          filter: dict.table.all,
+          firstPage: dict.table.firstPage,
+          lastPage: dict.table.lastPage,
+          nextPage: dict.table.nextPage,
+          page: (current, total) => `${dict.table.page} ${current} / ${total}`,
+          previousPage: dict.table.previousPage,
+          rowsPerPage: dict.table.rowsPerPage,
+          search: dict.table.searchSubjects
+        }}
+        rowAttributes={(subject) => ({
+          "data-subject-id": subject.id,
+          "data-subject-stage": subject.stage ?? ""
+        })}
+        rowKey={(subject) => subject.id}
+        rowName="subject"
+        searchFields={[(subject) => subject.name, (subject) => subject.stage ?? ""]}
+        tableName="subjects"
       />
-      <ul className="space-y-2 text-sm text-foreground" data-reparto-table="subjects">
-        {rows.length === 0 && !isLoading && !isError ? (
-          <EmptyRow label={dict.table.noResults} />
-        ) : (
-          rows.map((subject) => (
-            <RowShell
-              rowAttr="subject"
-              idAttr="data-subject-id"
-              idValue={subject.id}
-              key={subject.id}
-            >
-              <RowHeader
-                label={subject.name}
-                labelAttr="subject-name"
-                caption={subject.stage ?? undefined}
-              />
-              <RowActions>
-                <ActionButton
-                  action="edit"
-                  disabled={hasActiveForm}
-                  label={dict.action.edit}
-                  onClick={() => onEdit(subject)}
-                  row
-                />
-                <ActionButton
-                  action="delete"
-                  disabled={hasActiveForm}
-                  label={dict.action.delete}
-                  onClick={() => onDelete(subject)}
-                  row
-                />
-              </RowActions>
-            </RowShell>
-          ))
-        )}
-      </ul>
-      <QueryState
-        error={error}
-        isError={isError}
-        isLoading={isLoading}
-        label={dict.entity.subject.plural}
-      />
+      {isLoading ? (
+        <section data-reparto-state="loading">{dict.table.loading}</section>
+      ) : null}
+      {isError ? (
+        <section data-reparto-state="error">
+          {mapRepartoError(error).formError?.message ?? dict.table.noResults}
+        </section>
+      ) : null}
     </>
   );
 }

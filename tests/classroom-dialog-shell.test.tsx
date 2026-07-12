@@ -20,14 +20,14 @@ vi.mock("radix-ui", () => {
   };
 });
 
-import { ClassroomDialogShell } from "../src/runtime/react/default-ui/process-crud/classrooms/dialog-shell.js";
+import { EntityDialogShell } from "../src/runtime/react/default-ui/process-crud/shared.js";
 
 describe("classroom CRUD dialog shell", () => {
   it("uses the shadcn Dialog structure for create and edit forms", () => {
     const html = renderToStaticMarkup(
-      <ClassroomDialogShell description="Classrooms" dialogId="classroom-edit" onClose={vi.fn()} title="Edit classroom">
+      <EntityDialogShell description="Classrooms" dialogId="classroom-edit" onClose={vi.fn()} title="Edit classroom">
         <form>Fields</form>
-      </ClassroomDialogShell>
+      </EntityDialogShell>
     );
 
     expect(html).toContain('role="dialog"');
@@ -43,8 +43,8 @@ describe("classroom CRUD dialog shell", () => {
   });
 
   it("uses the shared alert-dialog recipe for delete confirmation", () => {
-    const source = readFileSync(
-      resolve("src/runtime/react/default-ui/process-crud/classrooms/delete.tsx"),
+    const shared = readFileSync(
+      resolve("src/runtime/react/default-ui/process-crud/shared.tsx"),
       "utf8"
     );
 
@@ -57,8 +57,14 @@ describe("classroom CRUD dialog shell", () => {
       "AlertDialogCancel",
       "AlertDialogAction"
     ]) {
-      expect(source).toContain(component);
+      expect(shared).toContain(component);
     }
+
+    const source = readFileSync(
+      resolve("src/runtime/react/default-ui/process-crud/classrooms/delete.tsx"),
+      "utf8"
+    );
+    expect(source).toContain("EntityDeleteDialog");
     expect(source).not.toContain("ConfirmDelete");
   });
 });

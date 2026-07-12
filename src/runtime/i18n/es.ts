@@ -66,6 +66,32 @@ export const es: RepartoDictionary = {
     orderLocked: "Orden bloqueado",
     overrideReason: "Motivo de la excepción"
   },
+  option: {
+    requirementType: { ordinary: "Ordinaria", optional: "Optativa", reinforcement: "Refuerzo", split_group: "Desdoble", bilingual: "Bilingüe", other: "Otra" },
+    assignmentType: { main: "Principal", shared: "Compartida", reinforcement: "Refuerzo", split_group: "Desdoble", other: "Otra" },
+    boolean: { yes: "Sí", no: "No" }
+  },
+  view: {
+    teacherTitle: "Vista docente",
+    loading: "Cargando {entity}",
+    unavailable: "{entity} no disponible",
+    currentTurn: { status: "Estado", turn: "Turno", teacher: "Docente", started: "Inicio", waiting: "En espera", noPosition: "Sin posición", noActiveTurn: "Sin turno activo", notStarted: "Sin iniciar", position: "Turno {position}", teacherValue: "Docente {teacher}" },
+    versions: { title: "Versiones", item: "Versión {number}", comparison: "Comparación", noChanges: "Sin cambios", requiredDelta: "Diferencia de horas requeridas", assignedDelta: "Diferencia de horas asignadas", teacherDelta: "Docentes", create: "Crear versión", compare: "Comparar versiones" },
+    exports: { title: "Centro de exportación", finalBlocked: "Cierre bloqueado", finalReady: "Cierre listo", closeout: "Cierre", finalExport: "Exportación final", leadershipWorkflow: "Flujo de dirección", markReturned: "Marcar como devuelto", startRevision: "Iniciar revisión", reopenFinal: "Reabrir versión final", type: { internal_draft: "Borrador interno", school_leadership: "Dirección del centro", final: "Final", teacher_summary: "Resumen docente", backup: "Copia de seguridad" } },
+    choice: { title: "Elegir grupo", confirmation: "Confirmación", choose: "Elegir", pass: "Pasar", ready: "Listo para elegir.", impact: "Se te asignarán {hours} horas.", meetingClosed: "La sesión no está abierta.", directDisabled: "La selección directa está desactivada.", otherTurn: "Es el turno de otro docente.", covered: "Las horas ya están cubiertas.", alreadyCovered: "Estas horas ya estaban cubiertas.", turnChanged: "El turno activo ha cambiado. Actualiza el estado de la sesión." }
+  },
+  validation: {
+    title: { requirement: "Aviso de horas necesarias", teacher: "Aviso de docente", process: "Aviso del proceso" },
+    requirement: { overAssigned: "Las horas de {subject} para {group} están sobreasignadas ({assigned} h asignadas de {required} h requeridas).", overAssignedOverridden: "Las horas de {subject} para {group} están sobreasignadas, pero se ha registrado una excepción.", uncovered: "Las horas de {subject} para {group} todavía no tienen reparto.", partial: "Las horas de {subject} para {group} están parcialmente cubiertas (quedan {pending} h).", covered: "Las horas de {subject} para {group} están completamente cubiertas." },
+    teacher: { overloaded: "{teacher} tiene sobrecarga ({assigned} h asignadas de {available} h disponibles).", overloadedOverridden: "{teacher} tiene sobrecarga, pero se ha registrado una excepción.", balanced: "La carga de {teacher} está equilibrada." },
+    process: { balanced: "Las horas del proceso están equilibradas.", pending: "{count} necesidad(es) todavía requieren horas.", overage: "El proceso tiene sobreasignaciones sin resolver." }
+  },
+  audit: {
+    pageTitle: "Auditoría del reparto", description: "Consulta los eventos de auditoría del proceso activo.",
+    action: { created: "Creado", updated: "Modificado", deleted: "Eliminado", transitioned: "Estado modificado", reopened: "Reabierto", copied_from_previous_year: "Copiado del curso anterior", direct_choice: "Elección directa registrada", started: "Iniciado", completed: "Completado", skipped: "Omitido", overridden: "Forzado" },
+    entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Horas necesarias", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
+    role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
+  },
   action: {
     create: "Crear",
     edit: "Editar",
@@ -129,6 +155,7 @@ export const es: RepartoDictionary = {
     }
   },
   dashboard: {
+    balanceState: { balanced: "Equilibrado", pending: "Pendiente", exceeded: "Excedido", warning: "Aviso" },
     title: "Panel de reparto",
     subtitleAdmin: "Siga el equilibrio, la cobertura y el estado de la sesion antes del directo.",
     subtitleReadonly: "Proyecte una vista tranquila en solo lectura para la sesion en directo.",
@@ -192,6 +219,6 @@ export const es: RepartoDictionary = {
     noData: "Aún no hay datos disponibles.",
     noPermission: "No tiene permiso."
   },
-  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta..." },
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre o etapa...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
   picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
 };

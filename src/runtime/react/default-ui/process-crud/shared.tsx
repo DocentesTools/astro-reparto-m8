@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 
 import {
+  formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
   type RepartoLocale
@@ -34,6 +35,23 @@ import {
   ViewConfig,
   WithSelectedProcess
 } from "../process-context.js";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from "../../ui/dialog.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "../../ui/alert-dialog.js";
 
 export { Shell, WithSelectedProcess };
 export type { ViewConfig };
@@ -139,23 +157,24 @@ export function CrudHeader({
 }
 
 export type QueryStateProps = {
+  dict: Dict;
   error: unknown;
   isError: boolean;
   isLoading: boolean;
   label: string;
 };
 
-export function QueryState({ error, isError, isLoading, label }: QueryStateProps) {
+export function QueryState({ dict, error, isError, isLoading, label }: QueryStateProps) {
   if (isLoading) {
     return (
       <section className={repartoPanelClass} data-reparto-state="loading">
-        {label} loading
+        {formatRepartoMessage(dict.view.loading, { entity: label })}
       </section>
     );
   }
   if (!isError) return null;
   const mapped = mapRepartoError(error);
-  const message = mapped.formError?.message ?? `${label} unavailable`;
+  const message = mapped.formError?.message ?? formatRepartoMessage(dict.view.unavailable, { entity: label });
   return (
     <section
       className={repartoPanelClass}
@@ -520,6 +539,73 @@ export function FormPanelShell({
     >
       {children}
     </form>
+  );
+}
+
+export function EntityDialogShell({
+  children,
+  description,
+  dialogId,
+  onClose,
+  title
+}: {
+  children: ReactNode;
+  description?: string;
+  dialogId: string;
+  onClose: () => void;
+  title: string;
+}) {
+  return (
+    <Dialog onOpenChange={(open) => { if (!open) onClose(); }} open>
+      <DialogContent closeLabel={title}>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
+        </DialogHeader>
+        <div data-reparto-dialog={dialogId}>{children}</div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function EntityDeleteDialog({
+  title,
+  body,
+  proceedLabel,
+  cancelLabel,
+  confirmWarning,
+  isPending,
+  mapped,
+  onConfirm,
+  onClose
+}: {
+  title: string;
+  body: string;
+  proceedLabel: string;
+  cancelLabel: string;
+  confirmWarning?: ReactNode;
+  isPending: boolean;
+  mapped: RepartoMappedError;
+  onConfirm: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <AlertDialog onOpenChange={(open) => { if (!open) onClose(); }} open>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{body}</AlertDialogDescription>
+        </AlertDialogHeader>
+        {confirmWarning ? (
+          <div data-reparto-confirm-warning="">{confirmWarning}</div>
+        ) : null}
+        <RepartoFormError mapped={mapped} />
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>{cancelLabel}</AlertDialogCancel>
+          <AlertDialogAction disabled={isPending} onClick={onConfirm}>{proceedLabel}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

@@ -1,5 +1,5 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
-import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
+import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoProcessTeacher } from "../../../hooks.js";
 import type { ProcessTeacherPublic } from "../../../../schemas.js";
 
@@ -35,8 +35,7 @@ export function ParticipantDelete({
   const body = formatRepartoMessage(dict.confirm.delete.body, { name: teacherName });
 
   return (
-    <ConfirmDelete
-      deleteFormAttr="participant-delete-confirm"
+    <EntityDeleteDialog
       title={title}
       body={body}
       proceedLabel={dict.confirm.delete.proceed}
@@ -44,7 +43,7 @@ export function ParticipantDelete({
       isPending={deleteMutation.isPending}
       mapped={mapped}
       onConfirm={handleConfirm}
-      onCancel={onDone}
+      onClose={onDone}
     />
   );
 }

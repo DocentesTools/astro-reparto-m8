@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -79,6 +80,12 @@ export function AssignmentEdit({
   }
 
   return (
+    <EntityDialogShell
+      description={`${requirementLabel} · ${participantName}`}
+      dialogId="assignment-edit"
+      onClose={onDone}
+      title={`${dict.action.edit} ${dict.entity.assignment.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="assignment" mode="edit" onSubmit={handleSubmit}>
       <FormGrid>
         <SelectField
@@ -112,7 +119,7 @@ export function AssignmentEdit({
           label={dict.field.assignmentType}
           value={assignmentType}
           placeholder={dict.field.assignmentType}
-          options={ASSIGNMENT_TYPES.map((value) => ({ value, label: value }))}
+          options={ASSIGNMENT_TYPES.map((value) => ({ value, label: dict.option.assignmentType[value] }))}
           onChange={(value) => setAssignmentType(value as AssignmentType)}
         />
         <SelectField
@@ -151,5 +158,6 @@ export function AssignmentEdit({
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }

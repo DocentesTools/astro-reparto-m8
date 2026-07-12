@@ -7,6 +7,23 @@ import {
   type Dict
 } from "../shared.js";
 import type { AuditEventPublic } from "../../../../schemas.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
+
+function auditLabel(dict: Dict, event: AuditEventPublic) {
+  const [eventEntity = "process", eventAction = "updated"] = event.event_type.split(".");
+  const entities = dict.audit.entity as Record<string, string>;
+  const actions = dict.audit.action as Record<string, string>;
+  const roles = dict.audit.role as Record<string, string>;
+  const entityKey = event.entity_type ?? eventEntity;
+  return {
+    captionEntity: entities[entityKey] ?? entityKey.replaceAll("_", " "),
+    event: formatRepartoMessage(dict.audit.event, {
+      action: actions[eventAction] ?? eventAction.replaceAll("_", " "),
+      entity: entities[eventEntity] ?? eventEntity.replaceAll("_", " ")
+    }),
+    role: event.actor_role ? (roles[event.actor_role] ?? event.actor_role) : "—"
+  };
+}
 
 export type AuditListProps = {
   dict: Dict;
@@ -37,8 +54,9 @@ export function AuditList({
         {rows.length === 0 && !isLoading && !isError ? (
           <EmptyRow label={dict.table.noResults} />
         ) : (
-          rows.map((event) => (
-            <RowShell
+          rows.map((event) => {
+            const label = auditLabel(dict, event);
+            return <RowShell
               rowAttr="audit-event"
               idAttr="data-audit-event-id"
               idValue={event.id}
@@ -49,20 +67,21 @@ export function AuditList({
               }}
             >
               <RowHeader
-                label={event.event_type}
+                label={label.event}
                 labelAttr="audit-event-type"
-                caption={`${event.actor_role ?? "—"} · ${event.entity_type ?? "—"}`}
+                caption={`${label.role} · ${label.captionEntity}`}
               />
               {event.reason ? (
                 <p className="text-xs text-muted-foreground" data-reparto-slot="audit-reason">
                   {event.reason}
                 </p>
               ) : null}
-            </RowShell>
-          ))
+            </RowShell>;
+          })
         )}
       </ul>
       <QueryState
+        dict={dict}
         error={error}
         isError={isError}
         isLoading={isLoading}

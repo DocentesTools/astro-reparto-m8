@@ -66,6 +66,32 @@ export const fr: RepartoDictionary = {
     orderLocked: "Ordre verrouillé",
     overrideReason: "Motif de dérogation"
   },
+  option: {
+    requirementType: { ordinary: "Ordinaire", optional: "Optionnel", reinforcement: "Renforcement", split_group: "Groupe dédoublé", bilingual: "Bilingue", other: "Autre" },
+    assignmentType: { main: "Principale", shared: "Partagée", reinforcement: "Renforcement", split_group: "Groupe dédoublé", other: "Autre" },
+    boolean: { yes: "Oui", no: "Non" }
+  },
+  view: {
+    teacherTitle: "Vue enseignant",
+    loading: "Chargement de {entity}",
+    unavailable: "{entity} indisponible",
+    currentTurn: { status: "État", turn: "Tour", teacher: "Enseignant", started: "Début", waiting: "En attente", noPosition: "Aucune position", noActiveTurn: "Aucun tour actif", notStarted: "Non démarré", position: "Tour {position}", teacherValue: "Enseignant {teacher}" },
+    versions: { title: "Versions", item: "Version {number}", comparison: "Comparaison", noChanges: "Aucune modification", requiredDelta: "Écart des heures requises", assignedDelta: "Écart des heures affectées", teacherDelta: "Enseignants", create: "Créer une version", compare: "Comparer les versions" },
+    exports: { title: "Centre d'export", finalBlocked: "Finalisation bloquée", finalReady: "Finalisation prête", closeout: "Clôture", finalExport: "Export final", leadershipWorkflow: "Circuit de direction", markReturned: "Marquer comme renvoyé", startRevision: "Démarrer la révision", reopenFinal: "Rouvrir la version finale", type: { internal_draft: "Brouillon interne", school_leadership: "Direction de l'établissement", final: "Final", teacher_summary: "Récapitulatif enseignant", backup: "Sauvegarde" } },
+    choice: { title: "Choisir un groupe", confirmation: "Confirmation", choose: "Choisir", pass: "Passer", ready: "Prêt à choisir.", impact: "{hours} heures vous seront affectées.", meetingClosed: "La séance n'est pas ouverte.", directDisabled: "La sélection directe est désactivée.", otherTurn: "C'est le tour d'un autre enseignant.", covered: "Le besoin est déjà couvert.", alreadyCovered: "Ce besoin était déjà couvert.", turnChanged: "Le tour actif a changé. Actualisez l'état de la séance." }
+  },
+  validation: {
+    title: { requirement: "Alerte sur le besoin horaire", teacher: "Alerte enseignant", process: "Alerte processus" },
+    requirement: { overAssigned: "Le besoin {subject} pour {group} est suraffecté ({assigned} h affectées pour {required} h requises).", overAssignedOverridden: "Le besoin {subject} pour {group} est suraffecté, mais une dérogation a été enregistrée.", uncovered: "Le besoin {subject} pour {group} n'a encore aucune affectation.", partial: "Le besoin {subject} pour {group} est partiellement couvert ({pending} h restantes).", covered: "Le besoin {subject} pour {group} est entièrement couvert." },
+    teacher: { overloaded: "{teacher} est en surcharge ({assigned} h affectées pour {available} h disponibles).", overloadedOverridden: "{teacher} est en surcharge, mais une dérogation a été enregistrée.", balanced: "La charge de {teacher} est équilibrée." },
+    process: { balanced: "Les heures du processus sont équilibrées.", pending: "{count} besoin(s) nécessitent encore des heures.", overage: "Le processus contient des suraffectations non résolues." }
+  },
+  audit: {
+    pageTitle: "Audit de la répartition", description: "Consultez les événements d'audit du processus actif.",
+    action: { created: "Créé", updated: "Modifié", deleted: "Supprimé", transitioned: "État modifié", reopened: "Rouvert", copied_from_previous_year: "Copié depuis l'année précédente", direct_choice: "Choix direct enregistré", started: "Démarré", completed: "Terminé", skipped: "Passé", overridden: "Forcé" },
+    entity: { process: "Processus d'affectation", assignment_process: "Processus d'affectation", assignment: "Affectation", subject: "Matière", hour_requirement: "Besoin horaire", selection_turn: "Tour de sélection", teaching_group: "Classe", process_teacher: "Participant au processus" },
+    role: { superadmin: "Super-administrateur", department_head: "Chef de département", teacher: "Enseignant", school_leadership: "Direction de l'établissement" }, event: "{entity} : {action}"
+  },
   action: {
     create: "Créer",
     edit: "Modifier",
@@ -129,6 +155,7 @@ export const fr: RepartoDictionary = {
     }
   },
   dashboard: {
+    balanceState: { balanced: "Équilibré", pending: "En attente", exceeded: "Dépassé", warning: "Avertissement" },
     title: "Tableau de bord du reparto",
     subtitleAdmin: "Suivez l'equilibre, la couverture et l'etat de la seance avant le direct.",
     subtitleReadonly: "Projetez une vue calme en lecture seule pour la seance en direct.",
@@ -192,6 +219,6 @@ export const fr: RepartoDictionary = {
     noData: "Pas encore de données disponibles.",
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
-  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé..." },
+  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom ou niveau...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
   picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant" }
 };

@@ -34,7 +34,9 @@ type DataTableProps<T> = {
   labels: DataTableLabels;
   rowAttributes?: (row: T) => Record<string, string>;
   rowKey: (row: T) => string;
+  rowName: string;
   searchFields: ((row: T) => string)[];
+  tableName: string;
 };
 type ValueChangeEvent = { target: { value: string } };
 type CheckedChangeEvent = { target: { checked: boolean } };
@@ -45,7 +47,7 @@ function compareValues(left: string | number, right: string | number) {
 }
 
 export function DataTable<T>({
-  addButton, columns, data, emptyLabel, filter, labels, rowAttributes, rowKey, searchFields
+  addButton, columns, data, emptyLabel, filter, labels, rowAttributes, rowKey, rowName, searchFields, tableName
 }: DataTableProps<T>) {
   const firstSortableColumn = columns.find((column) => column.sortable !== false);
   const [query, setQuery] = useState("");
@@ -106,7 +108,7 @@ export function DataTable<T>({
   );
 
   return (
-    <div className="space-y-3" data-reparto-data-table="shared-registry" data-reparto-table="classrooms">
+    <div className="space-y-3" data-reparto-data-table="shared-registry" data-reparto-table={tableName}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-1 flex-wrap items-center gap-2">
           <input aria-label={labels.search} className={`${repartoInputClass} min-w-56`} onChange={(event: ValueChangeEvent) => { setQuery(event.target.value); resetPage(); }} placeholder={labels.search} type="search" value={query} />
@@ -155,7 +157,7 @@ export function DataTable<T>({
           </tr></thead>
           <tbody>
             {pageRows.length ? pageRows.map((row) => (
-              <tr className="border-b last:border-0" data-reparto-row="classroom" key={rowKey(row)} {...(rowAttributes?.(row) ?? {})}>
+              <tr className="border-b last:border-0" data-reparto-row={rowName} key={rowKey(row)} {...(rowAttributes?.(row) ?? {})}>
                 {visibleColumns.map((column) => <td className="px-3 py-2" key={column.id}>{column.cell?.(row) ?? column.value(row)}</td>)}
               </tr>
             )) : <tr><td className="h-24 px-3 text-center" colSpan={Math.max(visibleColumns.length, 1)} data-reparto-state="empty">{emptyLabel}</td></tr>}

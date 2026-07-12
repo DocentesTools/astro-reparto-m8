@@ -1,5 +1,5 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
-import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
+import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoHourRequirement } from "../../../hooks.js";
 import type { HourRequirementPublic } from "../../../../schemas.js";
 
@@ -38,8 +38,7 @@ export function RequirementDelete({
   const body = formatRepartoMessage(dict.confirm.delete.body, { name: recordName });
 
   return (
-    <ConfirmDelete
-      deleteFormAttr="requirement-delete-confirm"
+    <EntityDeleteDialog
       title={title}
       body={body}
       proceedLabel={dict.confirm.delete.proceed}
@@ -47,7 +46,7 @@ export function RequirementDelete({
       isPending={deleteMutation.isPending}
       mapped={mapped}
       onConfirm={handleConfirm}
-      onCancel={onDone}
+      onClose={onDone}
     />
   );
 }

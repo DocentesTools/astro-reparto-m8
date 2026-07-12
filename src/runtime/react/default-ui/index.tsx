@@ -34,29 +34,38 @@ import type {
   TeacherLanSummary,
   VersionComparison
 } from "../../schemas.js";
+import {
+  formatRepartoMessage,
+  getRepartoDictionary,
+  normalizeRepartoLocale,
+  type RepartoLocale
+} from "../../i18n/index.js";
 
 function QueryState({
   error,
   isError,
   isLoading,
-  label
+  label,
+  locale
 }: {
   error: unknown;
   isError: boolean;
   isLoading: boolean;
   label: string;
+  locale?: RepartoLocale;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   if (isLoading) {
     return (
       <section className={repartoPanelClass} data-reparto-state="loading">
-        {label} loading
+        {formatRepartoMessage(dict.view.loading, { entity: label })}
       </section>
     );
   }
   if (!isError) return null;
   return (
     <section className={repartoPanelClass} data-reparto-state="error">
-      {error instanceof Error ? error.message : `${label} unavailable`}
+      {error instanceof Error ? error.message : formatRepartoMessage(dict.view.unavailable, { entity: label })}
     </section>
   );
 }
@@ -143,7 +152,8 @@ function RepartoDashboardContent({
           !dashboard &&
           !summary
         }
-        label="Dashboard"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.dashboard}
+        locale={locale}
       />
     </>
   );
@@ -200,7 +210,8 @@ function RepartoMeetingContent({
         isLoading={
           summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
         }
-        label="Meeting"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
+        locale={locale}
       />
     </>
   );
@@ -208,29 +219,33 @@ function RepartoMeetingContent({
 
 export function RepartoProcessesView({
   config,
+  locale,
   params
 }: {
   config?: ViewConfig;
+  locale?: RepartoLocale;
   params?: RepartoListParams;
 }) {
   return (
     <Shell config={config}>
-      <RepartoProcessesContent params={params} />
+      <RepartoProcessesContent locale={locale} params={params} />
     </Shell>
   );
 }
 
-function RepartoProcessesContent({ params }: { params?: RepartoListParams }) {
+function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; params?: RepartoListParams }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses(params);
   const processes = processesQuery.data?.data ?? [];
   return (
     <>
-      <ProcessListView count={processesQuery.data?.count ?? 0} processes={processes} />
+      <ProcessListView count={processesQuery.data?.count ?? 0} locale={locale} processes={processes} />
       <QueryState
         error={processesQuery.error}
         isError={processesQuery.isError}
         isLoading={processesQuery.isLoading}
-        label="Processes"
+        label={dict.nav.item.processes}
+        locale={locale}
       />
     </>
   );
@@ -314,7 +329,8 @@ function RepartoMyContent({
             (sessionsQuery.isLoading && meetingSession === undefined)) &&
           hasProcess
         }
-        label="Teacher view"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).view.teacherTitle}
+        locale={locale}
       />
     </>
   );
@@ -365,6 +381,7 @@ function RepartoSharedContent({
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const dashboardQuery = useRepartoDashboard(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
@@ -385,7 +402,8 @@ function RepartoSharedContent({
           !dashboard &&
           !summary
         }
-        label="Shared view"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.shared}
+        locale={locale}
       />
     </>
   );
@@ -415,6 +433,7 @@ export function RepartoVersionsView({
         {(resolvedProcessId) => (
           <RepartoVersionsContent
             comparison={comparison}
+            locale={locale}
             processId={resolvedProcessId}
             versions={versions}
           />
@@ -426,10 +445,12 @@ export function RepartoVersionsView({
 
 function RepartoVersionsContent({
   comparison,
+  locale,
   processId,
   versions
 }: {
   comparison?: VersionComparison;
+  locale?: RepartoLocale;
   processId?: string;
   versions?: ProcessVersionPublic[];
 }) {
@@ -437,14 +458,15 @@ function RepartoVersionsContent({
   const activeVersions = versions ?? versionsQuery.data?.data ?? [];
   return (
     <>
-      <VersionsView comparison={comparison} versions={activeVersions} />
+      <VersionsView comparison={comparison} locale={locale} versions={activeVersions} />
       <QueryState
         error={versionsQuery.error}
         isError={versionsQuery.isError}
         isLoading={
           versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions
         }
-        label="Versions"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        locale={locale}
       />
     </>
   );
@@ -476,6 +498,7 @@ export function RepartoExportsView({
         {(resolvedProcessId) => (
           <RepartoExportsContent
             exports={exports}
+            locale={locale}
             processId={resolvedProcessId}
             processStatus={processStatus}
             summary={summary}
@@ -488,11 +511,13 @@ export function RepartoExportsView({
 
 function RepartoExportsContent({
   exports,
+  locale,
   processId,
   processStatus,
   summary
 }: {
   exports?: ExportArtifactPublic[];
+  locale?: RepartoLocale;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
   summary?: ProcessSummary;
@@ -504,6 +529,7 @@ function RepartoExportsContent({
     <>
       <ExportCenterView
         exports={exports ?? exportsQuery.data?.data ?? []}
+        locale={locale}
         processId={processId}
         processStatus={processStatus}
         summary={summary ?? summaryQuery.data}
@@ -516,7 +542,8 @@ function RepartoExportsContent({
             (summaryQuery.isLoading && !summary)) &&
           hasProcess
         }
-        label="Exports"
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        locale={locale}
       />
     </>
   );

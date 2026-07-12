@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -59,6 +60,12 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
   }
 
   return (
+    <EntityDialogShell
+      description={dict.entity.processParticipant.plural}
+      dialogId="participant-create"
+      onClose={onDone}
+      title={`${dict.action.create} ${dict.entity.processParticipant.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="participant" mode="create" onSubmit={handleSubmit}>
       <FormGrid>
         <SelectField
@@ -128,6 +135,7 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }
 

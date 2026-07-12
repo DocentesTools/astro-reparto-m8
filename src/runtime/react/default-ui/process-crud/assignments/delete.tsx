@@ -1,5 +1,5 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
-import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
+import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoAssignment } from "../../../hooks.js";
 import type { AssignmentPublic } from "../../../../schemas.js";
 
@@ -38,8 +38,7 @@ export function AssignmentDelete({
   const body = formatRepartoMessage(dict.confirm.delete.body, { name: recordName });
 
   return (
-    <ConfirmDelete
-      deleteFormAttr="assignment-delete-confirm"
+    <EntityDeleteDialog
       title={title}
       body={body}
       proceedLabel={dict.confirm.delete.proceed}
@@ -47,7 +46,7 @@ export function AssignmentDelete({
       isPending={deleteMutation.isPending}
       mapped={mapped}
       onConfirm={handleConfirm}
-      onCancel={onDone}
+      onClose={onDone}
     />
   );
 }

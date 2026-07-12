@@ -5,7 +5,7 @@ import type {
   ProcessSummary,
   TeacherLanSummary
 } from "../schemas.js";
-import { buildTeacherChoiceState, directChoiceConflictMessage } from "../ui/index.js";
+import { buildTeacherChoiceState } from "../ui/index.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -66,25 +66,37 @@ const fallbackTeacherSummary: TeacherLanSummary = {
 };
 
 function TeacherDirectChoicePanel({
+  locale,
   meetingSession = null,
   requirementAssignedHours = 0,
   requirementRequiredHours = 0,
   summary
 }: {
+  locale?: RepartoLocale;
   meetingSession?: MeetingSessionPublic | null;
   requirementAssignedHours?: number;
   requirementRequiredHours?: number;
   summary: TeacherLanSummary;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const choice = buildTeacherChoiceState({
     meetingSession,
     requirementAssignedHours,
     requirementRequiredHours,
     summary
   });
-  const conflictMessage = directChoiceConflictMessage(
-    choice.disabledReason ?? "Ready to choose."
-  );
+  const conflictMessage = choice.disabledReason === "Meeting is not open."
+    ? dict.view.choice.meetingClosed
+    : choice.disabledReason === "Direct selection is disabled."
+      ? dict.view.choice.directDisabled
+      : choice.disabledReason === "It is another teacher's turn."
+        ? dict.view.choice.otherTurn
+        : choice.disabledReason === "Requirement is already covered."
+          ? dict.view.choice.covered
+          : dict.view.choice.ready;
+  const confirmationLabel = formatRepartoMessage(dict.view.choice.impact, {
+    hours: choice.impactHours
+  });
   return (
     <section
       className={repartoPanelClass}
@@ -92,7 +104,7 @@ function TeacherDirectChoicePanel({
       data-reparto-choice-state={choice.canChoose ? "ready" : "blocked"}
     >
       <div className={repartoPanelHeaderClass}>
-        <h2>Choose group</h2>
+        <h2>{dict.view.choice.title}</h2>
         <span className="text-sm text-muted-foreground" data-reparto-slot="choice-state">
           {conflictMessage}
         </span>
@@ -100,9 +112,9 @@ function TeacherDirectChoicePanel({
       <div className={repartoChoiceLayoutClass}>
         <div data-reparto-slot="available-requirements-table" />
         <aside className={repartoConfirmationClass} data-reparto-slot="choice-confirmation">
-          <span className="block text-xs text-muted-foreground">Confirmation</span>
+          <span className="block text-xs text-muted-foreground">{dict.view.choice.confirmation}</span>
           <strong className="mt-1 block text-sm font-semibold text-foreground">
-            {choice.confirmationLabel}
+            {confirmationLabel}
           </strong>
           <p className="mt-2 text-sm text-muted-foreground" data-reparto-slot="choice-conflict">
             {conflictMessage}
@@ -117,7 +129,7 @@ function TeacherDirectChoicePanel({
           disabled={!choice.canChoose}
           type="button"
         >
-          choose
+          {dict.view.choice.choose}
         </button>
         <button
           className={repartoButtonClass}
@@ -125,7 +137,7 @@ function TeacherDirectChoicePanel({
           disabled={!choice.passTurnEnabled}
           type="button"
         >
-          pass
+          {dict.view.choice.pass}
         </button>
       </div>
       <div data-reparto-slot="choice-result" />
@@ -202,9 +214,10 @@ export function TeacherLanWorkspace({
             <h2>{dict.dashboard.section.meetingReadiness}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status" />
           </div>
-          <CurrentTurnCard currentTurn={safeSummary.current_turn ?? null} />
+          <CurrentTurnCard currentTurn={safeSummary.current_turn ?? null} locale={locale} />
         </section>
         <TeacherDirectChoicePanel
+          locale={locale}
           meetingSession={meetingSession}
           requirementAssignedHours={requirementAssignedHours}
           requirementRequiredHours={requirementRequiredHours}
@@ -288,7 +301,7 @@ export function SharedScreenWorkspace({
               {activeSummary?.blocking_validation_count ?? 0}
             </span>
           </div>
-          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} />
+          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} locale={locale} />
           <div className="mt-3 grid gap-2 text-sm" data-reparto-slot="validations">
             <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
               {formatRepartoMessage(dict.dashboard.summary.teacherLoad, {

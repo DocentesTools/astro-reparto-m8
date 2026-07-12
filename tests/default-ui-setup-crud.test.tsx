@@ -102,11 +102,18 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(html).toContain('data-reparto-route="schools"');
     expect(html).toContain('data-reparto-group="setup"');
     expect(html).toContain('data-reparto-table="schools"');
+    expect(html).toContain('data-reparto-data-table="shared-registry"');
     expect(html).toContain('data-reparto-action="create"');
     expect(html).toContain('data-reparto-row-action="edit"');
     expect(html).toContain("IES Almería Centro");
     expect(html).not.toContain('data-reparto-row-action="delete"');
     expect(html).not.toContain('data-reparto-row-action="archive"');
+    // full data table: orderable data columns, non-orderable 2nd (Actions) column
+    expect(html).toContain('data-reparto-sort-column="name"');
+    expect(html).toContain('data-reparto-sort-column="province"');
+    expect(html).not.toContain('data-reparto-sort-column="actions"');
+    expect(html).toContain('data-reparto-pagination="top"');
+    expect(html).toContain("Search name, locality, or province...");
   });
 
   it("renders the schools form shell with name field", async () => {

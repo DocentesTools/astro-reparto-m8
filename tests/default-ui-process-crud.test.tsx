@@ -81,6 +81,20 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: () => undefined })
 }));
 
+vi.mock("radix-ui", () => {
+  const Passthrough = ({ children }: { children?: ReactNode }) => <>{children}</>;
+  const Title = ({ children, className }: { children?: ReactNode; className?: string }) => <h2 className={className}>{children}</h2>;
+  const Description = ({ children, className }: { children?: ReactNode; className?: string }) => <p className={className}>{children}</p>;
+  const DialogOverlay = ({ className }: { className?: string }) => <div className={className} data-slot="dialog-overlay" />;
+  const DialogContent = ({ children, className }: { children?: ReactNode; className?: string }) => <section className={className} role="dialog">{children}</section>;
+  const AlertOverlay = ({ className }: { className?: string }) => <div className={className} data-slot="alert-dialog-overlay" />;
+  const AlertContent = ({ children, className }: { children?: ReactNode; className?: string }) => <section className={className} role="alertdialog">{children}</section>;
+  return {
+    Dialog: { Root: Passthrough, Portal: Passthrough, Close: Passthrough, Title, Description, Overlay: DialogOverlay, Content: DialogContent },
+    AlertDialog: { Root: Passthrough, Portal: Passthrough, Cancel: Passthrough, Action: Passthrough, Title, Description, Overlay: AlertOverlay, Content: AlertContent }
+  };
+});
+
 function reset() {
   queryState.processes = [{ id: processId, status: "draft" }];
   queryState.subjects = [];
@@ -103,9 +117,48 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-route="subjects"');
     expect(html).toContain('data-reparto-group="process"');
     expect(html).toContain('data-reparto-table="subjects"');
+    expect(html).toContain('data-reparto-data-table="shared-registry"');
     expect(html).toContain('data-reparto-action="create"');
     expect(html).toContain('data-reparto-row-action="edit"');
     expect(html).toContain('data-reparto-row-action="delete"');
+    expect(html).toContain("Matemáticas");
+    // full data table: every data column is orderable, the 2nd (Actions) column is not
+    expect(html).toContain('data-reparto-sort-column="name"');
+    expect(html).toContain('data-reparto-sort-column="stage"');
+    expect(html).not.toContain('data-reparto-sort-column="actions"');
+    expect(html).toMatch(/Actions<\/th><th[^>]*><button[^>]*data-reparto-sort-column="stage"/);
+    expect(html).toContain('data-reparto-pagination="top"');
+    expect(html).toContain('data-reparto-pagination="bottom"');
+    expect(html).toContain("Search name or stage...");
+  });
+
+  it("subject create + edit forms render inside a shadcn Dialog modal", async () => {
+    reset();
+    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
+    const dict = useDict("en");
+    const { SubjectAdd } = await import("../src/runtime/react/default-ui/process-crud/subjects/add.js");
+    const html = renderToStaticMarkup(
+      <SubjectAdd dict={dict} processId={processId} onDone={() => undefined} />
+    );
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('data-reparto-dialog="subject-create"');
+    expect(html).toContain('data-reparto-form="subject"');
+  });
+
+  it("subject delete confirmation renders inside a shadcn AlertDialog", async () => {
+    reset();
+    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
+    const dict = useDict("en");
+    const { SubjectDelete } = await import("../src/runtime/react/default-ui/process-crud/subjects/delete.js");
+    const html = renderToStaticMarkup(
+      <SubjectDelete
+        dict={dict}
+        processId={processId}
+        subject={{ id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }}
+        onDone={() => undefined}
+      />
+    );
+    expect(html).toContain('role="alertdialog"');
     expect(html).toContain("Matemáticas");
   });
 
@@ -266,5 +319,11 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).not.toContain('data-reparto-action="create"');
     expect(html).not.toContain('data-reparto-row-action="edit"');
     expect(html).not.toContain('data-reparto-row-action="delete"');
+
+    const spanishHtml = renderToStaticMarkup(
+      <RepartoAuditView locale="es" processId={processId} />
+    );
+    expect(spanishHtml).toContain("Reparto: Creado");
+    expect(spanishHtml).toContain("Jefatura de departamento · Reparto");
   });
 });

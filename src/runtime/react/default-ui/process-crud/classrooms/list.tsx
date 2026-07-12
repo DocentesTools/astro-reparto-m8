@@ -66,7 +66,9 @@ export function ClassroomsList({
           "data-classroom-grade": String(group.grade)
         })}
         rowKey={(group) => group.id}
+        rowName="classroom"
         searchFields={[(group) => group.stage, (group) => group.group_code, (group) => group.label]}
+        tableName="classrooms"
       />
       {isLoading ? (
         <section data-reparto-state="loading">{dict.table.loading}</section>

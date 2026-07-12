@@ -21,7 +21,7 @@ const routeCases = [
   ["requirements.astro", "RepartoHourRequirementsView", "Reparto requirements"],
   ["participants.astro", "RepartoProcessParticipantsView", "Reparto participants"],
   ["assignments.astro", "RepartoAssignmentsView", "Reparto assignments"],
-  ["audit.astro", "RepartoAuditView", "Reparto audit"]
+  ["audit.astro", "RepartoAuditView", "dict.audit.pageTitle"]
 ] as const;
 
 describe("starter route shells", () => {
@@ -34,7 +34,7 @@ describe("starter route shells", () => {
         'import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";'
       );
       expect(route).toContain(`<${islandName} client:load`);
-      expect(route).toContain(`title: "${title}"`);
+      expect(route).toContain(title.startsWith("dict.") ? `title: ${title}` : `title: "${title}"`);
       expect(route).toContain("tableOfContents: false");
       expect(route).toMatch(new RegExp(`<StarlightPage[\\s\\S]*<${islandName}[\\s\\S]*</StarlightPage>`));
     }

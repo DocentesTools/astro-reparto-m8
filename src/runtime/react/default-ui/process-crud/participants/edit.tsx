@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  EntityDialogShell,
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
@@ -63,6 +64,12 @@ export function ParticipantEdit({
   }
 
   return (
+    <EntityDialogShell
+      description={teacherName}
+      dialogId="participant-edit"
+      onClose={onDone}
+      title={`${dict.action.edit} ${dict.entity.processParticipant.singular.toLowerCase()}`}
+    >
     <FormPanelShell formAttr="participant" mode="edit" onSubmit={handleSubmit}>
       <FormGrid>
         <SelectField
@@ -115,5 +122,6 @@ export function ParticipantEdit({
         />
       </FormGrid>
     </FormPanelShell>
+    </EntityDialogShell>
   );
 }

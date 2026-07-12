@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { ClassroomStagePublic } from "../../../../schemas.js";
 import { generateClassroomLabel, generateGroupCodeRange, gradeInStageRange } from "../../../../ui/classrooms.js";
 import { useBulkCreateRepartoTeachingGroups } from "../../../hooks.js";
@@ -22,16 +23,16 @@ export function ClassroomBulk({ dict, processId, stages, onDone }: { dict: Dict;
     if (!valid) return;
     clear();
     mutation.mutate({ processId, body: { classroom_stage_id: stageId, grade: gradeNumber, group_start: start, group_end: end } }, {
-      onSuccess: (result) => { repartoToast.success(`${result.count} classrooms created`); onDone(); },
-      onError: (error) => { setError(error); repartoToast.error("Classrooms could not be created", error instanceof Error ? error.message : undefined); }
+      onSuccess: (result) => { repartoToast.success(formatRepartoMessage(dict.classroomBulk.created, { count: result.count })); onDone(); },
+      onError: (error) => { setError(error); repartoToast.error(dict.classroomBulk.createError, error instanceof Error ? error.message : undefined); }
     });
   };
-  return <EntityDialogShell description="Create an inclusive classroom range" dialogId="classroom-bulk" onClose={onDone} title="Bulk create classrooms">
+  return <EntityDialogShell description={dict.classroomBulk.description} dialogId="classroom-bulk" onClose={onDone} title={dict.classroomBulk.title}>
     <FormPanelShell formAttr="classroom-bulk" mode="create" onSubmit={submit}><FormGrid>
       <SelectField field="stage" label={dict.field.stage} value={stageId} onChange={setStageId} options={stages.map((item) => ({ value: item.id, label: `${item.stage} — ${item.label}` }))} />
       <TextField field="grade" label={dict.field.grade} value={grade} onChange={setGrade} type="number" />
-      <TextField field="group-start" label="Group start" value={start} onChange={setStart} maxLength={1} />
-      <TextField field="group-end" label="Group end" value={end} onChange={setEnd} maxLength={1} />
+      <TextField field="group-start" label={dict.classroomBulk.groupStart} value={start} onChange={setStart} maxLength={1} />
+      <TextField field="group-end" label={dict.classroomBulk.groupEnd} value={end} onChange={setEnd} maxLength={1} />
       <ul data-reparto-bulk-preview="">{labels.map((label) => <li key={label}>{label}</li>)}</ul>
       <SaveCancelRow canSave={valid} isPending={mutation.isPending} saveLabel={dict.action.save} cancelLabel={dict.action.cancel} onSubmit={() => submit({ preventDefault: () => undefined })} onCancel={onDone} mapped={mapped} />
     </FormGrid></FormPanelShell>

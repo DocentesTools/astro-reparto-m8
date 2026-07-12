@@ -221,5 +221,28 @@ export const es: RepartoDictionary = {
     noPermission: "No tiene permiso."
   },
   table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre o etapa...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
+  classroomBulk: {
+    action: "Creación masiva",
+    title: "Crear varios grupos",
+    description: "Crear un intervalo inclusivo de grupos.",
+    groupStart: "Primer grupo",
+    groupEnd: "Último grupo",
+    created: "Grupos creados: {count}",
+    createError: "No se pudieron crear los grupos"
+  },
+  classroomStages: {
+    pageTitle: "Etapas educativas",
+    pageDescription: "Gestionar las etapas educativas de referencia comunes.",
+    formDescription: "Datos de referencia comunes de los grupos.",
+    createTitle: "Crear una etapa educativa",
+    editTitle: "Editar la etapa educativa",
+    deleteTitle: "Eliminar la etapa educativa",
+    deleteBody: "¿Eliminar {name}?",
+    field: { stage: "Etapa", shortLabel: "Etiqueta corta", minGrade: "Curso mínimo", maxGrade: "Curso máximo" },
+    column: { created: "Creada", updated: "Actualizada" },
+    state: { unauthorized: "Se requiere acceso de administrador.", empty: "No se encontraron etapas educativas.", loading: "Cargando etapas educativas...", unavailable: "Las etapas educativas no están disponibles." },
+    search: "Buscar etapas educativas",
+    toast: { created: "Etapa educativa creada", updated: "Etapa educativa actualizada", saveError: "No se pudo guardar la etapa educativa", deleted: "Etapa educativa eliminada", deleteError: "No se pudo eliminar la etapa educativa" }
+  },
   picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
 };

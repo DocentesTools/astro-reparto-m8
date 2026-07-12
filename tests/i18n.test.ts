@@ -204,4 +204,19 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(fr.nav.item.shared).toBe("Écran partagé");
     expect(es.nav.item.audit).toBe("Auditoría");
   });
+
+  it("fully localizes classroom bulk and stage CRUD surfaces", () => {
+    const roots = ["classroomBulk", "classroomStages"] as const;
+    for (const root of roots) {
+      const english = collectStrings(en[root]);
+      expect(collectKeys(fr[root]).sort()).toEqual(collectKeys(en[root]).sort());
+      expect(collectKeys(es[root]).sort()).toEqual(collectKeys(en[root]).sort());
+      expect(collectStrings(fr[root])).not.toEqual(english);
+      expect(collectStrings(es[root])).not.toEqual(english);
+    }
+    expect(fr.classroomBulk.groupStart).toBe("Premier groupe");
+    expect(es.classroomBulk.groupEnd).toBe("Último grupo");
+    expect(fr.classroomStages.toast.deleteError).toContain("supprimer");
+    expect(es.classroomStages.deleteBody).toContain("{name}");
+  });
 });

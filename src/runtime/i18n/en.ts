@@ -222,6 +222,29 @@ export const en = {
     noPermission: "You do not have permission."
   },
   table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name or stage...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
+  classroomBulk: {
+    action: "Bulk create",
+    title: "Bulk create classrooms",
+    description: "Create an inclusive classroom range.",
+    groupStart: "Group start",
+    groupEnd: "Group end",
+    created: "{count} classrooms created",
+    createError: "Classrooms could not be created"
+  },
+  classroomStages: {
+    pageTitle: "Classroom stages",
+    pageDescription: "Manage global classroom stage reference data.",
+    formDescription: "Global classroom reference data.",
+    createTitle: "Create classroom stage",
+    editTitle: "Edit classroom stage",
+    deleteTitle: "Delete classroom stage",
+    deleteBody: "Delete {name}?",
+    field: { stage: "Stage", shortLabel: "Short label", minGrade: "Minimum grade", maxGrade: "Maximum grade" },
+    column: { created: "Created", updated: "Updated" },
+    state: { unauthorized: "Administrator access required.", empty: "No classroom stages found.", loading: "Loading classroom stages...", unavailable: "Classroom stages unavailable." },
+    search: "Search classroom stages",
+    toast: { created: "Classroom stage created", updated: "Classroom stage updated", saveError: "Classroom stage could not be saved", deleted: "Classroom stage deleted", deleteError: "Classroom stage could not be deleted" }
+  },
   picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
 };
 

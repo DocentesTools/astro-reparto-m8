@@ -221,5 +221,28 @@ export const fr: RepartoDictionary = {
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
   table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom ou niveau...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
+  classroomBulk: {
+    action: "Création groupée",
+    title: "Créer plusieurs classes",
+    description: "Créer une plage inclusive de classes.",
+    groupStart: "Premier groupe",
+    groupEnd: "Dernier groupe",
+    created: "Classes créées : {count}",
+    createError: "Impossible de créer les classes"
+  },
+  classroomStages: {
+    pageTitle: "Niveaux scolaires",
+    pageDescription: "Gérer les niveaux scolaires de référence communs.",
+    formDescription: "Données de référence communes des classes.",
+    createTitle: "Créer un niveau scolaire",
+    editTitle: "Modifier le niveau scolaire",
+    deleteTitle: "Supprimer le niveau scolaire",
+    deleteBody: "Supprimer {name} ?",
+    field: { stage: "Niveau", shortLabel: "Libellé court", minGrade: "Année minimale", maxGrade: "Année maximale" },
+    column: { created: "Créé le", updated: "Modifié le" },
+    state: { unauthorized: "Un accès administrateur est requis.", empty: "Aucun niveau scolaire trouvé.", loading: "Chargement des niveaux scolaires...", unavailable: "Les niveaux scolaires sont indisponibles." },
+    search: "Rechercher un niveau scolaire",
+    toast: { created: "Niveau scolaire créé", updated: "Niveau scolaire modifié", saveError: "Impossible d'enregistrer le niveau scolaire", deleted: "Niveau scolaire supprimé", deleteError: "Impossible de supprimer le niveau scolaire" }
+  },
   picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant" }
 };

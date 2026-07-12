@@ -49,7 +49,7 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
         data-reparto-panel="classrooms"
       >
         <RepartoToastHost />
-        <ActionButton action="bulk-create" disabled={hasActiveForm || stages.length === 0} label="Bulk create" onClick={() => setBulk(true)} />
+        <ActionButton action="bulk-create" disabled={hasActiveForm || stages.length === 0} label={dict.classroomBulk.action} onClick={() => setBulk(true)} />
         <ClassroomsList
           dict={dict}
           rows={rows}

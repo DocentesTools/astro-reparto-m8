@@ -1,8 +1,17 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
-import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
+import { RepartoFormError, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
-import { ClassroomDialogShell } from "./dialog-shell.js";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "../../../ui/alert-dialog.js";
 
 export type ClassroomDeleteProps = {
   dict: Dict;
@@ -31,24 +40,18 @@ export function ClassroomDelete({ dict, processId, group, onDone }: ClassroomDel
   });
 
   return (
-    <ClassroomDialogShell
-      dialogId="classroom-delete"
-      hideHeader
-      onClose={onDone}
-      title={title}
-      variant="alertdialog"
-    >
-      <ConfirmDelete
-        deleteFormAttr="classroom-delete-confirm"
-        title={title}
-        body={body}
-        proceedLabel={dict.confirm.delete.proceed}
-        cancelLabel={dict.confirm.cancel}
-        isPending={deleteMutation.isPending}
-        mapped={mapped}
-        onConfirm={handleConfirm}
-        onCancel={onDone}
-      />
-    </ClassroomDialogShell>
+    <AlertDialog onOpenChange={(open) => { if (!open) onDone(); }} open>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{body}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <RepartoFormError mapped={mapped} />
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={deleteMutation.isPending}>{dict.confirm.cancel}</AlertDialogCancel>
+          <AlertDialogAction disabled={deleteMutation.isPending} onClick={handleConfirm}>{dict.confirm.delete.proceed}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

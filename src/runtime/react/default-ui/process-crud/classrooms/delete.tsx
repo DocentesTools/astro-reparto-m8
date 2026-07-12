@@ -2,6 +2,7 @@ import { formatRepartoMessage } from "../../../../i18n/index.js";
 import { ConfirmDelete, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
+import { ClassroomDialogShell } from "./dialog-shell.js";
 
 export type ClassroomDeleteProps = {
   dict: Dict;
@@ -30,16 +31,24 @@ export function ClassroomDelete({ dict, processId, group, onDone }: ClassroomDel
   });
 
   return (
-    <ConfirmDelete
-      deleteFormAttr="classroom-delete-confirm"
+    <ClassroomDialogShell
+      dialogId="classroom-delete"
+      hideHeader
+      onClose={onDone}
       title={title}
-      body={body}
-      proceedLabel={dict.confirm.delete.proceed}
-      cancelLabel={dict.confirm.cancel}
-      isPending={deleteMutation.isPending}
-      mapped={mapped}
-      onConfirm={handleConfirm}
-      onCancel={onDone}
-    />
+      variant="alertdialog"
+    >
+      <ConfirmDelete
+        deleteFormAttr="classroom-delete-confirm"
+        title={title}
+        body={body}
+        proceedLabel={dict.confirm.delete.proceed}
+        cancelLabel={dict.confirm.cancel}
+        isPending={deleteMutation.isPending}
+        mapped={mapped}
+        onConfirm={handleConfirm}
+        onCancel={onDone}
+      />
+    </ClassroomDialogShell>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "../shared.js";
 import { useCreateRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupCreateInput } from "../../../../schemas.js";
+import { ClassroomDialogShell } from "./dialog-shell.js";
 
 export type ClassroomAddProps = {
   dict: Dict;
@@ -53,8 +54,14 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
   }
 
   return (
-    <FormPanelShell formAttr="classroom" mode="create" onSubmit={handleSubmit}>
-      <FormGrid>
+    <ClassroomDialogShell
+      description={dict.entity.classroom.plural}
+      dialogId="classroom-create"
+      onClose={onDone}
+      title={`${dict.action.create} ${dict.entity.classroom.singular.toLowerCase()}`}
+    >
+      <FormPanelShell formAttr="classroom" mode="create" onSubmit={handleSubmit}>
+        <FormGrid>
         <TextField
           field="stage"
           id="classroom-add-stage"
@@ -112,7 +119,8 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
           onCancel={onDone}
           mapped={mapped}
         />
-      </FormGrid>
-    </FormPanelShell>
+        </FormGrid>
+      </FormPanelShell>
+    </ClassroomDialogShell>
   );
 }

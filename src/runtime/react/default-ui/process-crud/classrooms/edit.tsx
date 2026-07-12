@@ -10,6 +10,7 @@ import {
 } from "../shared.js";
 import { useUpdateRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupPublic, TeachingGroupUpdate } from "../../../../schemas.js";
+import { ClassroomDialogShell } from "./dialog-shell.js";
 
 export type ClassroomEditProps = {
   dict: Dict;
@@ -55,8 +56,14 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
   }
 
   return (
-    <FormPanelShell formAttr="classroom" mode="edit" onSubmit={handleSubmit}>
-      <FormGrid>
+    <ClassroomDialogShell
+      description={group.label}
+      dialogId="classroom-edit"
+      onClose={onDone}
+      title={`${dict.action.edit} ${dict.entity.classroom.singular.toLowerCase()}`}
+    >
+      <FormPanelShell formAttr="classroom" mode="edit" onSubmit={handleSubmit}>
+        <FormGrid>
         <TextField
           field="stage"
           id="classroom-edit-stage"
@@ -114,7 +121,8 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
           onCancel={onDone}
           mapped={mapped}
         />
-      </FormGrid>
-    </FormPanelShell>
+        </FormGrid>
+      </FormPanelShell>
+    </ClassroomDialogShell>
   );
 }

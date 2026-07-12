@@ -76,6 +76,7 @@ export function normalizeTeacherProfileListParams(
 
 export const repartoKeys = {
   all: ["reparto"] as const,
+  classroomStages: () => [...repartoKeys.all, "classroom-stages"] as const,
   processes: () => [...repartoKeys.all, "processes"] as const,
   processList: (params: RepartoListParams = {}) =>
     [...repartoKeys.processes(), "list", normalizeListParams(params)] as const,

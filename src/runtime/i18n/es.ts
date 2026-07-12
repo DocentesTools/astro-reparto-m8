@@ -133,6 +133,7 @@ export const es: RepartoDictionary = {
       dashboard: "Panel",
       processes: "Procesos",
       classrooms: "Grupos",
+      classroomStages: "Etapas educativas",
       subjects: "Materias",
       requirements: "Horas necesarias",
       processParticipants: "Participantes en el proceso",

@@ -10,6 +10,8 @@ const requirementId = "55555555-5555-4555-8555-555555555555";
 const participantId = "66666666-6666-4666-8666-666666666666";
 const assignmentId = "77777777-7777-4777-8777-777777777777";
 const auditId = "88888888-8888-4888-8888-888888888888";
+const classroomStageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const classroomStage = { id: classroomStageId, stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" };
 
 const queryState = vi.hoisted(() => ({
   processes: [] as { id: string; status: string }[],
@@ -22,7 +24,8 @@ const queryState = vi.hoisted(() => ({
   teachers: [] as unknown[],
   schools: [] as unknown[],
   years: [] as unknown[],
-  departments: [] as unknown[]
+  departments: [] as unknown[],
+  stages: [] as unknown[]
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -75,11 +78,14 @@ vi.mock("@tanstack/react-query", () => ({
     if (scope === "schools" || scope === "academic-years" || scope === "departments") {
       return { data: { data: [], count: 0 }, error: null, isError: false, isLoading: false };
     }
+    if (scope === "classroom-stages") return { data: { data: queryState.stages, count: queryState.stages.length }, error: null, isError: false, isLoading: false };
     return { data: undefined, error: null, isError: false, isLoading: false };
   },
   useMutation: () => ({ isPending: false, isError: false, mutate: () => undefined }),
   useQueryClient: () => ({ invalidateQueries: () => undefined })
 }));
+
+vi.mock("sonner", () => ({ Toaster: () => null, toast: { success: vi.fn(), error: vi.fn() } }));
 
 vi.mock("radix-ui", () => {
   const Passthrough = ({ children }: { children?: ReactNode }) => <>{children}</>;
@@ -104,6 +110,7 @@ function reset() {
   queryState.assignments = [];
   queryState.audit = [];
   queryState.teachers = [];
+  queryState.stages = [classroomStage];
 }
 
 describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
@@ -165,7 +172,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
   it("classrooms view renders classroom rows with stage/grade attributes", async () => {
     reset();
     queryState.groups = [
-      { id: teachingGroupId, assignment_process_id: processId, stage: "ESO", grade: 1, group_code: "A", label: "1 ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     const { RepartoClassroomsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoClassroomsView processId={processId} />);
@@ -181,15 +188,15 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-pagination="top"');
     expect(html).toContain('data-reparto-pagination="bottom"');
     expect(html).toContain("Search stage, group code, or label...");
-    expect(html).toContain("1 ESO A");
-    expect(html).toContain('data-classroom-stage="ESO"');
+    expect(html).toContain("1° ESO A");
+    expect(html).toContain('data-classroom-stage="Secundaria"');
     expect(html).toContain('data-classroom-grade="1"');
   });
 
   it("requirements view renders classroom+subject labels per row and a create action", async () => {
     reset();
     queryState.groups = [
-      { id: teachingGroupId, assignment_process_id: processId, stage: "ESO", grade: 1, group_code: "A", label: "1 ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.subjects = [
       { id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: "ESO", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -201,7 +208,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const html = renderToStaticMarkup(<RepartoHourRequirementsView processId={processId} />);
     expect(html).toContain('data-reparto-route="requirements"');
     expect(html).toContain('data-reparto-table="requirements"');
-    expect(html).toContain("1 ESO A");
+    expect(html).toContain("1° ESO A");
     expect(html).toContain("Matemáticas");
   });
 
@@ -244,7 +251,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
   it("assignments view renders assignment rows with edit/delete actions and names joined from FK lookups", async () => {
     reset();
     queryState.groups = [
-      { id: teachingGroupId, assignment_process_id: processId, stage: "ESO", grade: 1, group_code: "A", label: "1 ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.subjects = [
       { id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: "ESO", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -265,7 +272,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const html = renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />);
     expect(html).toContain('data-reparto-route="assignments"');
     expect(html).toContain('data-reparto-table="assignments"');
-    expect(html).toContain("1 ESO A");
+    expect(html).toContain("1° ESO A");
     expect(html).toContain("Profesora Ana");
     expect(html).toContain('data-reparto-row-action="delete"');
   });

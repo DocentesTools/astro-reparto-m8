@@ -4,6 +4,7 @@ import {
   assignments,
   assignmentProcesses,
   auditEvents,
+  classroomStages,
   departments,
   history,
   hourRequirements,
@@ -28,7 +29,18 @@ const versionId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const nextVersionId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const artifactId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const now = "2026-07-04T10:00:00Z";
+const classroomStageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const fetchMock = vi.fn();
+
+const classroomStageBody = {
+  id: classroomStageId,
+  stage: "Secundaria",
+  min_grade: 1,
+  max_grade: 4,
+  label: "ESO",
+  created_at: now,
+  updated_at: now
+};
 
 const processBody = {
   id: processId,
@@ -633,10 +645,26 @@ describe("global entity API (Phase 1)", () => {
   });
 });
 
+describe("classroom stage API", () => {
+  it("lists, reads, creates, updates, and removes stages", async () => {
+    fetchMock.mockResolvedValueOnce(response({ data: [classroomStageBody], count: 1 }));
+    await expect(classroomStages.list()).resolves.toMatchObject({ count: 1 });
+    fetchMock.mockResolvedValueOnce(response(classroomStageBody));
+    await expect(classroomStages.get(classroomStageId)).resolves.toMatchObject({ label: "ESO" });
+    fetchMock.mockResolvedValueOnce(response(classroomStageBody));
+    await expect(classroomStages.create({ stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO" })).resolves.toMatchObject({ id: classroomStageId });
+    fetchMock.mockResolvedValueOnce(response({ ...classroomStageBody, max_grade: 6 }));
+    await expect(classroomStages.update(classroomStageId, { max_grade: 6 })).resolves.toMatchObject({ max_grade: 6 });
+    fetchMock.mockResolvedValueOnce(response(classroomStageBody));
+    await expect(classroomStages.remove(classroomStageId)).resolves.toMatchObject({ id: classroomStageId });
+  });
+});
+
 describe("process-scoped entity API (Phase 3 step 1)", () => {
   const processId = "11111111-1111-4111-8111-111111111111";
   const subjectId = "22222222-2222-4222-8222-222222222222";
   const groupId = "33333333-3333-4333-8333-333333333333";
+  const stageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const requirementId = "44444444-4444-4444-8444-444444444444";
   const processTeacherId = "55555555-5555-4555-8555-555555555555";
   const teacherProfileId = "66666666-6666-4666-8666-666666666666";
@@ -657,7 +685,8 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
   const groupBody = {
     id: groupId,
     assignment_process_id: processId,
-    stage: "ESO",
+    classroom_stage_id: stageId,
+    classroom_stage: { id: stageId, stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO" },
     grade: 1,
     group_code: "A",
     label: "1 ESO A",
@@ -784,7 +813,7 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     fetchMock.mockResolvedValueOnce(response(groupBody));
     await expect(
       teachingGroups.create(processId, {
-        stage: "ESO",
+        classroom_stage_id: stageId,
         grade: 1,
         group_code: "A",
         label: "1 ESO A"
@@ -808,10 +837,15 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       "DELETE"
     );
 
+    fetchMock.mockResolvedValueOnce(response({ data: [groupBody], count: 1 }));
+    await expect(teachingGroups.bulkCreate(processId, {
+      classroom_stage_id: stageId, grade: 1, group_start: "A", group_end: "A"
+    })).resolves.toMatchObject({ count: 1 });
+
     expect(() =>
       teachingGroups.create(processId, {
-        stage: "ESO",
-        grade: 21,
+        classroom_stage_id: stageId,
+        grade: 0,
         group_code: "A",
         label: "1 ESO A"
       } as never)

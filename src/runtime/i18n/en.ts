@@ -134,6 +134,7 @@ export const en = {
       dashboard: "Dashboard",
       processes: "Processes",
       classrooms: "Classrooms",
+      classroomStages: "Classroom stages",
       subjects: "Subjects",
       requirements: "Requirements",
       processParticipants: "Process participants",

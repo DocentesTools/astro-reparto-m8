@@ -5,35 +5,41 @@ import {
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
+  SelectField,
   TextField,
   useMappedError,
   type Dict
 } from "../shared.js";
 import { useCreateRepartoTeachingGroup } from "../../../hooks.js";
-import type { TeachingGroupCreateInput } from "../../../../schemas.js";
+import type { ClassroomStagePublic, TeachingGroupCreateInput } from "../../../../schemas.js";
+import { generateClassroomLabel, gradeInStageRange } from "../../../../ui/classrooms.js";
 
 export type ClassroomAddProps = {
   dict: Dict;
   processId: string;
+  stages: ClassroomStagePublic[];
   onDone: () => void;
 };
 
-export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
+export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddProps) {
   const createMutation = useCreateRepartoTeachingGroup();
   const [mapped, setError, clearError] = useMappedError();
-  const [stage, setStage] = useState("");
+  const [stageId, setStageId] = useState("");
   const [grade, setGrade] = useState("");
   const [groupCode, setGroupCode] = useState("");
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
+  const [manualLabel, setManualLabel] = useState(false);
 
   const gradeNum = Number.parseInt(grade, 10);
-  const gradeValid = Number.isInteger(gradeNum) && gradeNum >= 0 && gradeNum <= 20;
+  const stage = stages.find((item) => item.id === stageId);
+  const gradeValid = Boolean(stage && gradeInStageRange(gradeNum, stage));
+  const generated = stage && gradeValid && groupCode.trim() ? generateClassroomLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
+  const visibleLabel = manualLabel ? label : generated;
   const canSave =
-    stage.trim() !== "" &&
+    stageId !== "" &&
     gradeValid &&
     groupCode.trim() !== "" &&
-    label.trim() !== "" &&
     !createMutation.isPending;
 
   function handleSubmit(event: { preventDefault: () => void }) {
@@ -41,10 +47,10 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
     if (!canSave) return;
     clearError();
     const body: TeachingGroupCreateInput = {
-      stage: stage.trim(),
+      classroom_stage_id: stageId,
       grade: gradeNum,
       group_code: groupCode.trim(),
-      label: label.trim(),
+      label: visibleLabel.trim() || null,
       notes: notes.trim() || null
     };
     createMutation.mutate(
@@ -62,16 +68,7 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
     >
       <FormPanelShell formAttr="classroom" mode="create" onSubmit={handleSubmit}>
         <FormGrid>
-        <TextField
-          field="stage"
-          id="classroom-add-stage"
-          label={dict.field.stage}
-          maxLength={50}
-          onChange={setStage}
-          value={stage}
-          mapped={mapped}
-          fieldErrorKey="stage"
-        />
+        <SelectField field="stage" label={dict.field.stage} onChange={setStageId} value={stageId} options={stages.map((item) => ({ label: `${item.stage} — ${item.label}`, value: item.id }))} mapped={mapped} fieldErrorKey="stage" />
         <TextField
           field="grade"
           id="classroom-add-grade"
@@ -97,8 +94,8 @@ export function ClassroomAdd({ dict, processId, onDone }: ClassroomAddProps) {
           id="classroom-add-label"
           label={dict.field.label}
           maxLength={100}
-          onChange={setLabel}
-          value={label}
+          onChange={(value) => { setLabel(value); setManualLabel(value.trim() !== ""); }}
+          value={visibleLabel}
           mapped={mapped}
           fieldErrorKey="label"
         />

@@ -802,12 +802,40 @@ export const SubjectsPublicSchema = z
   .strict();
 export type SubjectsPublic = z.infer<typeof SubjectsPublicSchema>;
 
+const ClassroomStageBaseSchema = z.object({
+  id: uuidSchema,
+  stage: z.string().min(1).max(100),
+  min_grade: z.number().int().positive(),
+  max_grade: z.number().int().positive(),
+  label: z.string().min(1).max(30)
+}).strict();
+const validStageRange = (value: { min_grade: number; max_grade: number }) =>
+  value.min_grade <= value.max_grade;
+export const ClassroomStageSchema = ClassroomStageBaseSchema.refine(validStageRange, {
+  message: "Minimum grade must not exceed maximum grade",
+  path: ["max_grade"]
+});
+export const ClassroomStagePublicSchema = ClassroomStageBaseSchema.extend({
+  created_at: dateTimeSchema,
+  updated_at: dateTimeSchema
+}).strict().refine(validStageRange, { message: "Minimum grade must not exceed maximum grade", path: ["max_grade"] });
+export type ClassroomStagePublic = z.infer<typeof ClassroomStagePublicSchema>;
+export const ClassroomStageCreateSchema = ClassroomStageBaseSchema.omit({ id: true }).refine(validStageRange, { message: "Minimum grade must not exceed maximum grade", path: ["max_grade"] });
+export type ClassroomStageCreate = z.infer<typeof ClassroomStageCreateSchema>;
+export const ClassroomStageUpdateSchema = ClassroomStageBaseSchema.omit({ id: true }).partial();
+export type ClassroomStageUpdate = z.infer<typeof ClassroomStageUpdateSchema>;
+export const ClassroomStagesPublicSchema = z.object({
+  data: z.array(ClassroomStagePublicSchema), count: z.number().int().nonnegative()
+}).strict();
+export type ClassroomStagesPublic = z.infer<typeof ClassroomStagesPublicSchema>;
+
 export const TeachingGroupPublicSchema = z
   .object({
     id: uuidSchema,
     assignment_process_id: uuidSchema,
-    stage: z.string().min(1).max(50),
-    grade: z.number().int().min(0).max(20),
+    classroom_stage_id: uuidSchema,
+    classroom_stage: ClassroomStageSchema,
+    grade: z.number().int().positive(),
     group_code: z.string().min(1).max(10),
     label: z.string().min(1).max(100),
     notes: z.string().nullable(),
@@ -820,10 +848,10 @@ export type TeachingGroupPublic = z.infer<typeof TeachingGroupPublicSchema>;
 export const TeachingGroupCreateSchema = z
   .object({
     assignment_process_id: uuidSchema,
-    stage: z.string().min(1).max(50),
-    grade: z.number().int().min(0).max(20),
+    classroom_stage_id: uuidSchema,
+    grade: z.number().int().positive(),
     group_code: z.string().min(1).max(10),
-    label: z.string().min(1).max(100),
+    label: z.string().max(100).nullable().optional(),
     notes: z.string().max(2000).nullable().optional()
   })
   .strict();
@@ -835,10 +863,10 @@ export type TeachingGroupCreateInput = Omit<
 
 export const TeachingGroupUpdateSchema = z
   .object({
-    stage: z.string().min(1).max(50).optional(),
-    grade: z.number().int().min(0).max(20).optional(),
+    classroom_stage_id: uuidSchema.optional(),
+    grade: z.number().int().positive().optional(),
     group_code: z.string().min(1).max(10).optional(),
-    label: z.string().min(1).max(100).optional(),
+    label: z.string().max(100).nullable().optional(),
     notes: z.string().max(2000).nullable().optional()
   })
   .strict();
@@ -851,6 +879,14 @@ export const TeachingGroupsPublicSchema = z
   })
   .strict();
 export type TeachingGroupsPublic = z.infer<typeof TeachingGroupsPublicSchema>;
+
+export const TeachingGroupBulkCreateSchema = z.object({
+  classroom_stage_id: uuidSchema,
+  grade: z.number().int().positive(),
+  group_start: z.string().length(1).regex(/^[A-Za-z]$/),
+  group_end: z.string().length(1).regex(/^[A-Za-z]$/)
+}).strict();
+export type TeachingGroupBulkCreate = z.infer<typeof TeachingGroupBulkCreateSchema>;
 
 export const HourRequirementPublicSchema = z
   .object({

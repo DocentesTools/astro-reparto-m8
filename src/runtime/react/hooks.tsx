@@ -3,6 +3,7 @@ import { academicYears } from "../api/academicYears.js";
 import { assignmentProcesses } from "../api/assignmentProcesses.js";
 import { assignments } from "../api/assignments.js";
 import { auditEvents } from "../api/auditEvents.js";
+import { classroomStages } from "../api/classroomStages.js";
 import { departments } from "../api/departments.js";
 import { history } from "../api/history.js";
 import { hourRequirements } from "../api/hourRequirements.js";
@@ -19,6 +20,8 @@ import type {
   AssignmentDirectChoice,
   AssignmentProcessCreate,
   AssignmentUpdate,
+  ClassroomStageCreate,
+  ClassroomStageUpdate,
   DepartmentCreate,
   DepartmentUpdate,
   HourRequirementCreateInput,
@@ -33,6 +36,7 @@ import type {
   TeacherProfileLinkUser,
   TeacherProfileUpdate,
   TeachingGroupCreateInput,
+  TeachingGroupBulkCreate,
   TeachingGroupUpdate
 } from "../schemas.js";
 import {
@@ -346,6 +350,37 @@ export function useDeleteRepartoSubject() {
   });
 }
 
+export function useRepartoClassroomStages() {
+  return useQuery({
+    queryKey: repartoKeys.classroomStages(),
+    queryFn: classroomStages.list
+  });
+}
+
+export function useCreateRepartoClassroomStage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: ClassroomStageCreate) => classroomStages.create(body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: repartoKeys.classroomStages() })
+  });
+}
+
+export function useUpdateRepartoClassroomStage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ stageId, body }: { stageId: string; body: ClassroomStageUpdate }) => classroomStages.update(stageId, body),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: repartoKeys.classroomStages() })
+  });
+}
+
+export function useDeleteRepartoClassroomStage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (stageId: string) => classroomStages.remove(stageId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: repartoKeys.classroomStages() })
+  });
+}
+
 export function useRepartoTeachingGroups(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);
   return useQuery({
@@ -370,6 +405,14 @@ export function useCreateRepartoTeachingGroup() {
         queryKey: repartoKeys.teachingGroups(processId)
       });
     }
+  });
+}
+
+export function useBulkCreateRepartoTeachingGroups() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, body }: { processId: string; body: TeachingGroupBulkCreate }) => teachingGroups.bulkCreate(processId, body),
+    onSuccess: (_data, { processId }) => queryClient.invalidateQueries({ queryKey: repartoKeys.teachingGroups(processId) })
   });
 }
 

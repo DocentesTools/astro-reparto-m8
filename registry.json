@@ -4,6 +4,23 @@
   "homepage": "https://github.com/DocentesTools/astro-reparto-m8",
   "items": [
     {
+      "name": "reparto-classroom-stages-view",
+      "type": "registry:block",
+      "title": "Reparto Classroom Stages View",
+      "description": "Admin classroom-stage view using the canonical M8 data table and toast notification contracts.",
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/toast-notification.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/views/reparto-classroom-stages-view.tsx",
+          "type": "registry:block",
+          "target": "components/fa-reparto/reparto-classroom-stages-view.tsx"
+        }
+      ]
+    },
+    {
       "name": "reparto-processes-table",
       "type": "registry:component",
       "title": "Reparto Processes Table",

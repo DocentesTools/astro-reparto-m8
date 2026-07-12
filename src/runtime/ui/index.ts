@@ -15,3 +15,9 @@ export {
   type ExportCenterState,
   type LeadershipWorkflowAction
 } from "./history.js";
+export {
+  generateClassroomLabel,
+  generateGroupCodeRange,
+  gradeInStageRange,
+  normalizeGroupCode
+} from "./classrooms.js";

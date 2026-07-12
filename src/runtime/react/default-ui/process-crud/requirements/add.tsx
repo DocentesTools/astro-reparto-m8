@@ -14,6 +14,7 @@ import {
   useCreateRepartoHourRequirement,
   useCreateRepartoSubject,
   useCreateRepartoTeachingGroup,
+  useRepartoClassroomStages,
   useRepartoSubjects,
   useRepartoTeachingGroups
 } from "../../../hooks.js";
@@ -256,14 +257,16 @@ function InlineClassroomCreate({
   onCreate: (group: TeachingGroupPublic) => void;
 }) {
   const createClassroom = useCreateRepartoTeachingGroup();
-  const [stage, setStage] = useState("");
+  const stages = useRepartoClassroomStages().data?.data ?? [];
+  const [stageId, setStageId] = useState("");
   const [grade, setGrade] = useState("");
   const [groupCode, setGroupCode] = useState("");
   const [label, setLabel] = useState("");
   const gradeNum = Number.parseInt(grade, 10);
-  const gradeValid = Number.isInteger(gradeNum) && gradeNum >= 0 && gradeNum <= 20;
+  const selectedStage = stages.find((item) => item.id === stageId);
+  const gradeValid = Boolean(selectedStage && gradeNum >= selectedStage.min_grade && gradeNum <= selectedStage.max_grade);
   const canCreate =
-    stage.trim() !== "" &&
+    stageId !== "" &&
     gradeValid &&
     groupCode.trim() !== "" &&
     label.trim() !== "" &&
@@ -274,14 +277,12 @@ function InlineClassroomCreate({
       data-reparto-inline-create="classroom"
     >
       <div className="grid gap-2">
-        <input
+        <select
           className="min-h-9 rounded-md border border-input bg-background px-3 py-2 text-sm"
           data-reparto-field="classroom-stage"
-          maxLength={50}
-          onChange={(event: { target: { value: string } }) => setStage(event.target.value)}
-          placeholder={dict.field.stage}
-          value={stage}
-        />
+          onChange={(event: { target: { value: string } }) => setStageId(event.target.value)}
+          value={stageId}
+        ><option value="">{dict.field.stage}</option>{stages.map((item) => <option key={item.id} value={item.id}>{item.stage} — {item.label}</option>)}</select>
         <input
           className="min-h-9 rounded-md border border-input bg-background px-3 py-2 text-sm"
           data-reparto-field="classroom-grade"
@@ -318,7 +319,7 @@ function InlineClassroomCreate({
               {
                 processId,
                 body: {
-                  stage: stage.trim(),
+                  classroom_stage_id: stageId,
                   grade: gradeNum,
                   group_code: groupCode.trim(),
                   label: label.trim()

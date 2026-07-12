@@ -4,6 +4,20 @@
 
 Astro integration and headless client for `reparto-docente-m8`.
 
+## Classroom stages and bulk classrooms
+
+The plugin exposes global classroom-stage schemas, API helpers, React Query
+hooks, and the `/reparto/setup/classroom-stages` starter route. Stage reads are
+available to authenticated users; mutation controls and the management route
+use the auth adapter's existing `admin`/`superadmin` capability while the
+backend remains authoritative.
+
+Classroom forms submit `classroom_stage_id`, constrain grade to the selected
+stage, and generate `{grade}° {stage.label} {group_code}` until the label is
+manually changed. The bulk dialog previews an inclusive A-Z range and submits
+one atomic request to the process-scoped groups endpoint. Mutation feedback uses
+the canonical shadcn Sonner toast contract from `astro-ui-m8`.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

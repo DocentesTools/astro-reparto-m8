@@ -2,7 +2,17 @@ export type RepartoAuthAdapter = {
   getAccessToken: () => string | null | Promise<string | null>;
   refresh?: () => string | null | Promise<string | null>;
   onUnauthenticated?: (reason: "unauthenticated" | "refresh-failed") => void;
+  getCurrentUser?: () => RepartoCurrentUser | null | Promise<RepartoCurrentUser | null>;
 };
+
+export type RepartoCurrentUser = {
+  role: "superadmin" | "admin" | "writer" | "reader" | "user";
+  is_superuser: boolean;
+};
+
+export function canManageClassroomStages(user: RepartoCurrentUser | null): boolean {
+  return Boolean(user && (user.is_superuser || user.role === "admin" || user.role === "superadmin"));
+}
 
 let activeAdapter: RepartoAuthAdapter = createInMemoryAuthAdapter();
 
@@ -26,6 +36,7 @@ export function createFaAuthAdapter(options: {
     | { access_token?: unknown }
     | Promise<string | null | { access_token?: unknown }>;
   onUnauthenticated?: RepartoAuthAdapter["onUnauthenticated"];
+  getCurrentUser?: RepartoAuthAdapter["getCurrentUser"];
 }): RepartoAuthAdapter {
   return {
     getAccessToken: options.getToken,
@@ -37,7 +48,8 @@ export function createFaAuthAdapter(options: {
         ? refreshed.access_token
         : null;
     },
-    onUnauthenticated: options.onUnauthenticated
+    onUnauthenticated: options.onUnauthenticated,
+    getCurrentUser: options.getCurrentUser
   };
 }
 

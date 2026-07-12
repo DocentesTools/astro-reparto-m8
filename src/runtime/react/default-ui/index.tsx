@@ -40,6 +40,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
+export { RepartoClassroomStagesView } from "./classroom-stages.js";
 
 function QueryState({
   error,

@@ -53,6 +53,7 @@
     "./routes/teacher-roster.astro": "./src/routes/teacher-roster.astro",
     "./routes/subjects.astro": "./src/routes/subjects.astro",
     "./routes/classrooms.astro": "./src/routes/classrooms.astro",
+    "./routes/classroom-stages.astro": "./src/routes/classroom-stages.astro",
     "./routes/requirements.astro": "./src/routes/requirements.astro",
     "./routes/participants.astro": "./src/routes/participants.astro",
     "./routes/assignments.astro": "./src/routes/assignments.astro",
@@ -70,7 +71,8 @@
   },
   "dependencies": {
     "@mano8/astro-ui-m8": "^1.0.0",
-    "radix-ui": "^1.5.0"
+    "radix-ui": "^1.5.0",
+    "sonner": "^2.0.7"
   },
   "peerDependencies": {
     "@astrojs/react": "^4.0.0 || ^5.0.0",

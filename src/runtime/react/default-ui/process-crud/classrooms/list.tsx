@@ -20,7 +20,7 @@ export function ClassroomsList({
   dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onEdit, onDelete
 }: ClassroomsListProps) {
   const columns: DataTableColumn<TeachingGroupPublic>[] = [
-    { id: "stage", label: dict.field.stage, value: (group) => group.stage },
+    { id: "stage", label: dict.field.stage, value: (group) => group.classroom_stage.stage },
     {
       id: "actions",
       label: dict.table.actions,
@@ -38,7 +38,7 @@ export function ClassroomsList({
     { id: "group_code", label: dict.field.groupCode, value: (group) => group.group_code },
     { id: "label", label: dict.field.label, value: (group) => group.label }
   ];
-  const stages = [...new Set(rows.map((group) => group.stage))].sort((a, b) => a.localeCompare(b));
+  const stages = [...new Set(rows.map((group) => group.classroom_stage.stage))].sort((a, b) => a.localeCompare(b));
 
   return (
     <>
@@ -48,7 +48,7 @@ export function ClassroomsList({
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}
-        filter={{ label: dict.field.stage, options: stages, value: (group) => group.stage }}
+        filter={{ label: dict.field.stage, options: stages, value: (group) => group.classroom_stage.stage }}
         labels={{
           columns: dict.table.columns,
           filter: dict.table.all,
@@ -62,12 +62,12 @@ export function ClassroomsList({
         }}
         rowAttributes={(group) => ({
           "data-classroom-id": group.id,
-          "data-classroom-stage": group.stage,
+          "data-classroom-stage": group.classroom_stage.stage,
           "data-classroom-grade": String(group.grade)
         })}
         rowKey={(group) => group.id}
         rowName="classroom"
-        searchFields={[(group) => group.stage, (group) => group.group_code, (group) => group.label]}
+        searchFields={[(group) => group.classroom_stage.stage, (group) => group.group_code, (group) => group.label]}
         tableName="classrooms"
       />
       {isLoading ? (

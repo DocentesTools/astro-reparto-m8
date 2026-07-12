@@ -9,6 +9,7 @@ export { departments } from "./departments.js";
 export { teacherProfiles } from "./teacherProfiles.js";
 export { subjects } from "./subjects.js";
 export { teachingGroups } from "./teachingGroups.js";
+export { classroomStages } from "./classroomStages.js";
 export { hourRequirements } from "./hourRequirements.js";
 export { processTeachers } from "./processTeachers.js";
 export { auditEvents } from "./auditEvents.js";

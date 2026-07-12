@@ -1,0 +1,9 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoClassroomStagesView } from "@mano8/astro-reparto-m8/default-ui";
+import "../scaffold/styles/reparto.css";
+const config = { apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE, apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX };
+---
+<StarlightPage frontmatter={{ title: "Classroom stages", description: "Manage global classroom stage reference data.", tableOfContents: false }}>
+  <RepartoClassroomStagesView client:load config={config} />
+</StarlightPage>

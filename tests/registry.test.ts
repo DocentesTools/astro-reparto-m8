@@ -43,6 +43,7 @@ describe("reparto shadcn registry", () => {
     const itemNames = registry.items.map((item) => item.name);
 
     expect(itemNames).toEqual([
+      "reparto-classroom-stages-view",
       "reparto-processes-table",
       "reparto-state-panel",
       "reparto-starter-views",

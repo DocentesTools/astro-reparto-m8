@@ -5,33 +5,41 @@ import {
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
+  SelectField,
   TextField,
   useMappedError,
   type Dict
 } from "../shared.js";
 import { useUpdateRepartoTeachingGroup } from "../../../hooks.js";
-import type { TeachingGroupPublic, TeachingGroupUpdate } from "../../../../schemas.js";
+import type { ClassroomStagePublic, TeachingGroupPublic, TeachingGroupUpdate } from "../../../../schemas.js";
+import { generateClassroomLabel, gradeInStageRange } from "../../../../ui/classrooms.js";
 
 export type ClassroomEditProps = {
   dict: Dict;
   processId: string;
   group: TeachingGroupPublic;
+  stages: ClassroomStagePublic[];
   onDone: () => void;
 };
 
-export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditProps) {
+export function ClassroomEdit({ dict, processId, group, stages, onDone }: ClassroomEditProps) {
   const updateMutation = useUpdateRepartoTeachingGroup();
   const [mapped, setError, clearError] = useMappedError();
-  const [stage, setStage] = useState(group.stage);
+  const [stageId, setStageId] = useState(group.classroom_stage_id);
   const [grade, setGrade] = useState(String(group.grade));
   const [groupCode, setGroupCode] = useState(group.group_code);
   const [label, setLabel] = useState(group.label);
   const [notes, setNotes] = useState(group.notes ?? "");
+  const initialGenerated = generateClassroomLabel({ grade: group.grade, stageLabel: group.classroom_stage.label, groupCode: group.group_code });
+  const [manualLabel, setManualLabel] = useState(group.label !== initialGenerated);
 
   const gradeNum = Number.parseInt(grade, 10);
-  const gradeValid = Number.isInteger(gradeNum) && gradeNum >= 0 && gradeNum <= 20;
+  const stage = stages.find((item) => item.id === stageId);
+  const gradeValid = Boolean(stage && gradeInStageRange(gradeNum, stage));
+  const generated = stage && gradeValid && groupCode.trim() ? generateClassroomLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
+  const visibleLabel = manualLabel ? label : generated;
   const dirty =
-    stage !== group.stage ||
+    stageId !== group.classroom_stage_id ||
     gradeNum !== group.grade ||
     groupCode !== group.group_code ||
     label !== group.label ||
@@ -43,10 +51,10 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
     if (!canSave) return;
     clearError();
     const body: TeachingGroupUpdate = {
-      stage: stage.trim(),
+      classroom_stage_id: stageId,
       grade: gradeNum,
       group_code: groupCode.trim(),
-      label: label.trim(),
+      label: visibleLabel.trim(),
       notes: notes.trim() || null
     };
     updateMutation.mutate(
@@ -64,16 +72,7 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
     >
       <FormPanelShell formAttr="classroom" mode="edit" onSubmit={handleSubmit}>
         <FormGrid>
-        <TextField
-          field="stage"
-          id="classroom-edit-stage"
-          label={dict.field.stage}
-          maxLength={50}
-          onChange={setStage}
-          value={stage}
-          mapped={mapped}
-          fieldErrorKey="stage"
-        />
+        <SelectField field="stage" label={dict.field.stage} onChange={setStageId} value={stageId} options={stages.map((item) => ({ label: `${item.stage} — ${item.label}`, value: item.id }))} mapped={mapped} fieldErrorKey="stage" />
         <TextField
           field="grade"
           id="classroom-edit-grade"
@@ -99,8 +98,8 @@ export function ClassroomEdit({ dict, processId, group, onDone }: ClassroomEditP
           id="classroom-edit-label"
           label={dict.field.label}
           maxLength={100}
-          onChange={setLabel}
-          value={label}
+          onChange={(value) => { setLabel(value); setManualLabel(value.trim() !== ""); }}
+          value={visibleLabel}
           mapped={mapped}
           fieldErrorKey="label"
         />

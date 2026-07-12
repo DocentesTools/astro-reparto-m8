@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import {
+  canManageClassroomStages,
   createFaAuthAdapter,
   createInMemoryAuthAdapter,
   getRepartoAuthAdapter,
@@ -107,6 +108,17 @@ describe("auth adapter", () => {
       await createFaAuthAdapter({ getToken: () => null, refreshToken: () => ({}) }).refresh?.()
     ).toBeNull();
     expect(await createFaAuthAdapter({ getToken: () => null }).refresh?.()).toBeNull();
+    const profile = { role: "admin" as const, is_superuser: false };
+    const withProfile = createFaAuthAdapter({ getToken: () => null, getCurrentUser: () => profile });
+    expect(await withProfile.getCurrentUser?.()).toEqual(profile);
+  });
+
+  it("recognizes existing stage-admin roles", () => {
+    expect(canManageClassroomStages(null)).toBe(false);
+    expect(canManageClassroomStages({ role: "writer", is_superuser: false })).toBe(false);
+    expect(canManageClassroomStages({ role: "admin", is_superuser: false })).toBe(true);
+    expect(canManageClassroomStages({ role: "superadmin", is_superuser: false })).toBe(true);
+    expect(canManageClassroomStages({ role: "user", is_superuser: true })).toBe(true);
   });
 });
 

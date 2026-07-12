@@ -29,6 +29,7 @@ describe("routes", () => {
       teacherRoster: "/reparto/setup/teacher-roster",
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
+      classroomStages: "/reparto/setup/classroom-stages",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
       assignments: "/reparto/processes/[processId]/assignments",
@@ -48,6 +49,7 @@ describe("routes", () => {
       teacherRoster: "/reparto/setup/teacher-roster",
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
+      classroomStages: "/reparto/setup/classroom-stages",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
       assignments: "/reparto/processes/[processId]/assignments",
@@ -137,7 +139,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(17);
+    expect(injectRoute).toHaveBeenCalledTimes(18);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -156,7 +158,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(16);
+    expect(injectRoute).toHaveBeenCalledTimes(17);
   });
 
   it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
@@ -243,7 +245,7 @@ describe("integration", () => {
       pattern: "/es/reparto/processes/[processId]/audit",
       entrypoint: "@mano8/astro-reparto-m8/routes/audit.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(34);
+    expect(injectRoute).toHaveBeenCalledTimes(36);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -280,6 +282,7 @@ describe("integration", () => {
       "nav.item.academicYears",
       "nav.item.departments",
       "nav.item.teacherRoster"
+      ,"nav.item.classroomStages"
     ]);
     const schoolsEntry = resolved.setup.entries.find(
       (entry) => entry.labelKey === "nav.item.schools"

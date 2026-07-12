@@ -1,13 +1,15 @@
 import { useState } from "react";
 
-import { resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
-import { useRepartoTeachingGroups } from "../../../hooks.js";
+import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { useRepartoClassroomStages, useRepartoTeachingGroups } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
 
 import { ClassroomsList } from "./list.js";
 import { ClassroomAdd } from "./add.js";
 import { ClassroomEdit } from "./edit.js";
 import { ClassroomDelete } from "./delete.js";
+import { ClassroomBulk } from "./bulk.js";
+import { RepartoToastHost } from "../../../ui/toast-notification.js";
 
 export function RepartoClassroomsView({ config, locale, processId }: EntityViewProps) {
   return (
@@ -24,14 +26,17 @@ export function RepartoClassroomsView({ config, locale, processId }: EntityViewP
 function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
   const query = useRepartoTeachingGroups(processId);
+  const stagesQuery = useRepartoClassroomStages();
+  const stages = stagesQuery.data?.data ?? [];
   const rows = query.data?.data ?? [];
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<TeachingGroupPublic | null>(null);
   const [deleting, setDeleting] = useState<TeachingGroupPublic | null>(null);
+  const [bulk, setBulk] = useState(false);
 
   const hasProcess = Boolean(resolveProcessId(processId));
   const createReason = !hasProcess ? dict.disabled.noProcess : null;
-  const hasActiveForm = adding || Boolean(editing) || Boolean(deleting);
+  const hasActiveForm = adding || bulk || Boolean(editing) || Boolean(deleting);
 
   return (
     <main
@@ -43,6 +48,8 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
         data-reparto-panel="classrooms"
       >
+        <RepartoToastHost />
+        <ActionButton action="bulk-create" disabled={hasActiveForm || stages.length === 0} label="Bulk create" onClick={() => setBulk(true)} />
         <ClassroomsList
           dict={dict}
           rows={rows}
@@ -68,16 +75,18 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
           }}
         />
         {adding ? (
-          <ClassroomAdd dict={dict} processId={processId ?? ""} onDone={() => setAdding(false)} />
+          <ClassroomAdd dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setAdding(false)} />
         ) : null}
         {editing ? (
           <ClassroomEdit
             dict={dict}
             processId={processId ?? ""}
             group={editing}
+            stages={stages}
             onDone={() => setEditing(null)}
           />
         ) : null}
+        {bulk ? <ClassroomBulk dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setBulk(false)} /> : null}
         {deleting ? (
           <ClassroomDelete
             dict={dict}

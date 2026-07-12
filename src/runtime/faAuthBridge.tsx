@@ -23,7 +23,7 @@
 // path — so the plugin still builds with `auth.provider: "custom" | "none"` and
 // no auth plugin installed (see the starter fixture).
 import { getToken, configureAuth } from "@mano8/astro-auth-m8/client";
-import { refreshToken } from "@mano8/astro-auth-m8/api";
+import { getProfile, refreshToken } from "@mano8/astro-auth-m8/api";
 import {
   createFaAuthAdapter,
   getRepartoAuthAdapter,
@@ -130,6 +130,10 @@ export function installRepartoFaAuthBridge(
     createFaAuthAdapter({
       getToken,
       refreshToken,
+      getCurrentUser: async () => {
+        const user = await getProfile();
+        return { role: user.role, is_superuser: user.is_superuser };
+      },
       // Fires only after the reparto client's own 401 → refresh cycle fails,
       // i.e. the visitor has no valid session — send them to login.
       onUnauthenticated: () => redirectToLogin(options)

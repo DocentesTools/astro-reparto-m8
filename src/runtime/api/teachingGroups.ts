@@ -1,10 +1,12 @@
 import { request } from "../client.js";
 import {
   TeachingGroupCreateSchema,
+  TeachingGroupBulkCreateSchema,
   TeachingGroupPublicSchema,
   TeachingGroupsPublicSchema,
   TeachingGroupUpdateSchema,
   type TeachingGroupCreateInput,
+  type TeachingGroupBulkCreate,
   type TeachingGroupPublic,
   type TeachingGroupsPublic,
   type TeachingGroupUpdate
@@ -34,6 +36,14 @@ export const teachingGroups = {
         assignment_process_id: processId
       }),
       schema: TeachingGroupPublicSchema,
+      auth: true
+    }),
+  bulkCreate: (processId: string, body: TeachingGroupBulkCreate) =>
+    request<TeachingGroupsPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/groups/bulk`,
+      body: TeachingGroupBulkCreateSchema.parse(body),
+      schema: TeachingGroupsPublicSchema,
       auth: true
     }),
   update: (processId: string, groupId: string, body: TeachingGroupUpdate) =>

@@ -48,7 +48,8 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
       { labelKey: "nav.item.schools", route: "schools" },
       { labelKey: "nav.item.academicYears", route: "academicYears" },
       { labelKey: "nav.item.departments", route: "departments" },
-      { labelKey: "nav.item.teacherRoster", route: "teacherRoster" }
+      { labelKey: "nav.item.teacherRoster", route: "teacherRoster" },
+      { labelKey: "nav.item.classroomStages", route: "classroomStages" }
     ]
   },
   process: {
@@ -108,6 +109,7 @@ const ROUTE_ENTRYPOINTS = {
   teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro",
   subjects: "@mano8/astro-reparto-m8/routes/subjects.astro",
   classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
+  classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
   requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
   participants: "@mano8/astro-reparto-m8/routes/participants.astro",
   assignments: "@mano8/astro-reparto-m8/routes/assignments.astro",

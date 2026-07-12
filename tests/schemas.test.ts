@@ -11,6 +11,8 @@ import {
   AssignmentUpdateSchema,
   AuditEventPublicSchema,
   AuditEventsPublicSchema,
+  ClassroomStageCreateSchema,
+  ClassroomStagePublicSchema,
   DepartmentCreateSchema,
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
@@ -48,6 +50,14 @@ const teacherId = "22222222-2222-4222-8222-222222222222";
 const requirementId = "33333333-3333-4333-8333-333333333333";
 const userId = "44444444-4444-4444-8444-444444444444";
 const now = "2026-07-04T10:00:00Z";
+
+describe("classroom stage schemas", () => {
+  it("validates required text and ascending grade ranges", () => {
+    expect(ClassroomStagePublicSchema.parse({ id: processId, stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO", created_at: now, updated_at: now }).label).toBe("ESO");
+    expect(() => ClassroomStageCreateSchema.parse({ stage: "", min_grade: 1, max_grade: 4, label: "ESO" })).toThrow();
+    expect(() => ClassroomStageCreateSchema.parse({ stage: "Secundaria", min_grade: 5, max_grade: 4, label: "ESO" })).toThrow();
+  });
+});
 
 const processBody = {
   id: processId,
@@ -327,6 +337,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
   const processId = "11111111-1111-4111-8111-111111111111";
   const subjectId = "22222222-2222-4222-8222-222222222222";
   const groupId = "33333333-3333-4333-8333-333333333333";
+  const stageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const requirementId = "44444444-4444-4444-8444-444444444444";
   const processTeacherId = "55555555-5555-4555-8555-555555555555";
   const teacherProfileId = "66666666-6666-4666-8666-666666666666";
@@ -348,7 +359,8 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
   const groupBody = {
     id: groupId,
     assignment_process_id: processId,
-    stage: "ESO",
+    classroom_stage_id: stageId,
+    classroom_stage: { id: stageId, stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO" },
     grade: 1,
     group_code: "A",
     label: "1 ESO A",
@@ -448,7 +460,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     expect(
       TeachingGroupCreateSchema.parse({
         assignment_process_id: processId,
-        stage: "ESO",
+        classroom_stage_id: stageId,
         grade: 1,
         group_code: "A",
         label: "1 ESO A"
@@ -457,8 +469,8 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     expect(() =>
       TeachingGroupCreateSchema.parse({
         assignment_process_id: processId,
-        stage: "ESO",
-        grade: 21,
+        classroom_stage_id: stageId,
+        grade: 0,
         group_code: "A",
         label: "1 ESO A"
       })

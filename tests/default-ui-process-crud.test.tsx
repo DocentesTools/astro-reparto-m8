@@ -118,6 +118,16 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const html = renderToStaticMarkup(<RepartoClassroomsView processId={processId} />);
     expect(html).toContain('data-reparto-route="classrooms"');
     expect(html).toContain('data-reparto-table="classrooms"');
+    expect(html).toContain('data-reparto-data-table="shared-registry"');
+    expect(html).toContain('data-reparto-sort-column="stage"');
+    expect(html).toContain('data-reparto-sort-column="grade"');
+    expect(html).toContain('data-reparto-sort-column="group_code"');
+    expect(html).toContain('data-reparto-sort-column="label"');
+    expect(html).not.toContain('data-reparto-sort-column="actions"');
+    expect(html).toMatch(/Actions<\/th><th[^>]*><button[^>]*data-reparto-sort-column="grade"/);
+    expect(html).toContain('data-reparto-pagination="top"');
+    expect(html).toContain('data-reparto-pagination="bottom"');
+    expect(html).toContain("Search stage, group code, or label...");
     expect(html).toContain("1 ESO A");
     expect(html).toContain('data-classroom-stage="ESO"');
     expect(html).toContain('data-classroom-grade="1"');

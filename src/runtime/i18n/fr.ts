@@ -192,6 +192,6 @@ export const fr: RepartoDictionary = {
     noData: "Pas encore de données disponibles.",
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
-  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement..." },
+  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé..." },
   picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant" }
 };

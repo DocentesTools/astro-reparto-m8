@@ -193,7 +193,7 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading..." },
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label..." },
   picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
 };
 

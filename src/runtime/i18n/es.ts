@@ -192,6 +192,6 @@ export const es: RepartoDictionary = {
     noData: "Aún no hay datos disponibles.",
     noPermission: "No tiene permiso."
   },
-  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando..." },
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta..." },
   picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
 };

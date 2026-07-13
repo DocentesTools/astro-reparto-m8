@@ -3,7 +3,7 @@
 import { Toaster, toast } from "sonner";
 
 export function RepartoToastHost() {
-  return <Toaster closeButton richColors position="top-right" />;
+  return <Toaster closeButton richColors position="bottom-right" />;
 }
 
 export const repartoToast = {

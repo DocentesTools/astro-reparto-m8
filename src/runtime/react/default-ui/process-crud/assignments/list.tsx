@@ -1,5 +1,6 @@
-import { ActionButton, mapRepartoError, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type {
   AssignmentPublic,
   HourRequirementPublic,
@@ -9,6 +10,7 @@ import type {
   TeachingGroupPublic
 } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type AssignmentsListProps = {
   dict: Dict;
@@ -21,14 +23,21 @@ export type AssignmentsListProps = {
   requirementLabel: (id: string) => string;
   participantName: (id: string) => string;
   onCreate: () => void;
+  onDeleteSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (assignment: AssignmentPublic) => void;
   onDelete: (assignment: AssignmentPublic) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 export function AssignmentsList({
   dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  requirementLabel, participantName, onCreate, onEdit, onDelete
+  requirementLabel, participantName, onCreate, onDeleteSelected, onSelectedIdsChange,
+  onEdit, onDelete, selectedIds
 }: AssignmentsListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.assignment.plural} />;
+  }
   const statusLabel = (assignment: AssignmentPublic) =>
     assignment.status ? dict.entity.assignment.status[assignment.status] : "";
   const typeLabel = (assignment: AssignmentPublic) =>
@@ -54,6 +63,18 @@ export function AssignmentsList({
     { id: "status", label: dict.field.status, value: statusLabel }
   ];
   const statuses = [...new Set(rows.map(statusLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const selectedCount = selectedIds.size;
+  const deleteSelectedAction = selectedCount > 0 ? (
+    <button
+      className={repartoBulkDeleteButtonClass}
+      data-reparto-action="delete-selected"
+      disabled={hasActiveForm}
+      onClick={onDeleteSelected}
+      type="button"
+    >
+      {formatRepartoMessage(dict.assignmentSelection.deleteSelected, { count: selectedCount })}
+    </button>
+  ) : undefined;
 
   return (
     <>
@@ -90,6 +111,15 @@ export function AssignmentsList({
           (assignment) => requirementLabel(assignment.hour_requirement_id),
           (assignment) => participantName(assignment.process_teacher_id)
         ]}
+        selection={{
+          actions: deleteSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.assignmentSelection.selectAllVisible,
+          selectRowLabel: (assignment) => formatRepartoMessage(dict.assignmentSelection.selectRow, {
+            name: `${requirementLabel(assignment.hour_requirement_id)} · ${participantName(assignment.process_teacher_id)}`
+          })
+        }}
         tableName="assignments"
       />
       {isLoading ? (

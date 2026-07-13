@@ -1,5 +1,14 @@
 export const repartoShellClass =
-  "not-content mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 text-foreground";
+  "not-content flex w-full max-w-none flex-col gap-4 text-foreground";
+
+export const repartoRouteLoaderClass =
+  "w-full max-w-none [&[hidden]]:hidden";
+
+export const repartoRouteTransitionLoaderClass =
+  "fixed inset-0 z-[100] grid min-h-screen w-screen max-w-none place-items-center bg-background/90 p-6 backdrop-blur-sm";
+
+export const repartoRouteContainerClasses =
+  "w-full! max-w-none! mx-0!";
 
 export const repartoHeaderClass = "space-y-1";
 
@@ -50,6 +59,12 @@ export const repartoActionRowClass = "flex flex-wrap items-center gap-2";
 
 export const repartoButtonClass =
   "inline-flex min-h-8 items-center justify-center rounded-md border border-primary/40 bg-background px-3 py-1.5 text-sm font-medium capitalize text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:border-border disabled:text-muted-foreground";
+
+export const repartoButtonDeleteClass =
+  "inline-flex min-h-8 items-center justify-center rounded-md bg-destructive px-3 py-1.5 text-sm font-medium capitalize text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50";
+
+export const repartoBulkDeleteButtonClass =
+  "inline-flex min-h-9 items-center justify-center rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-50";
 
 export const repartoChoiceLayoutClass =
   "grid gap-3 py-3 [grid-template-columns:minmax(0,1fr)] md:[grid-template-columns:minmax(0,1.4fr)_minmax(12rem,0.6fr)]";

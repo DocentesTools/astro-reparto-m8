@@ -237,7 +237,7 @@ function ClassroomStagesContent({
 
   return (
     <main
-      className="not-content mx-auto max-w-6xl p-4"
+      className="not-content w-full max-w-none"
       data-reparto-route="classroom-stages"
     >
       <RepartoToastHost />

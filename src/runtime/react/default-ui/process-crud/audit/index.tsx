@@ -23,7 +23,7 @@ function RepartoAuditContent({ locale, processId }: EntityViewProps) {
 
   return (
     <main
-      className="not-content mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 text-foreground"
+      className="not-content flex w-full max-w-none flex-col gap-4 text-foreground"
       data-reparto-route="audit"
       data-reparto-group="process"
     >

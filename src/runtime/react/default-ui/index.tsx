@@ -40,6 +40,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
+import { RepartoLoadingState } from "./loading-state.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
 
 function QueryState({
@@ -58,9 +59,10 @@ function QueryState({
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   if (isLoading) {
     return (
-      <section className={repartoPanelClass} data-reparto-state="loading">
-        {formatRepartoMessage(dict.view.loading, { entity: label })}
-      </section>
+      <RepartoLoadingState
+        description={formatRepartoMessage(dict.view.loading, { entity: label })}
+        title={formatRepartoMessage(dict.view.loading, { entity: label })}
+      />
     );
   }
   if (!isError) return null;
@@ -136,6 +138,22 @@ function RepartoDashboardContent({
   const dashboardQuery = useRepartoDashboard(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
+  const isLoading =
+    dashboardQuery.isLoading &&
+    Boolean(resolveProcessId(processId)) &&
+    !dashboard &&
+    !summary;
+  if (isLoading || dashboardQuery.isError) {
+    return (
+      <QueryState
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
+        isLoading={isLoading}
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.dashboard}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <DepartmentHeadWorkspace
@@ -202,6 +220,19 @@ function RepartoMeetingContent({
 }) {
   const summaryQuery = useRepartoSummary(processId);
   const activeSummary = summary ?? summaryQuery.data ?? null;
+  const isLoading =
+    summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary;
+  if (isLoading || summaryQuery.isError) {
+    return (
+      <QueryState
+        error={summaryQuery.error}
+        isError={summaryQuery.isError}
+        isLoading={isLoading}
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <DepartmentHeadWorkspace locale={locale} mode="admin" summary={activeSummary} />
@@ -238,6 +269,17 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses(params);
   const processes = processesQuery.data?.data ?? [];
+  if (processesQuery.isLoading || processesQuery.isError) {
+    return (
+      <QueryState
+        error={processesQuery.error}
+        isError={processesQuery.isError}
+        isLoading={processesQuery.isLoading}
+        label={dict.nav.item.processes}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <ProcessListView count={processesQuery.data?.count ?? 0} locale={locale} processes={processes} />
@@ -312,6 +354,21 @@ function RepartoMyContent({
   const activeSummary = summary ?? summaryQuery.data ?? null;
   const activeSession = meetingSession ?? latestMeetingSession(sessionsQuery.data);
   const hasProcess = Boolean(resolveProcessId(processId));
+  const isLoading =
+    ((summaryQuery.isLoading && !summary) ||
+      (sessionsQuery.isLoading && meetingSession === undefined)) &&
+    hasProcess;
+  if (isLoading || summaryQuery.isError || sessionsQuery.isError) {
+    return (
+      <QueryState
+        error={summaryQuery.error ?? sessionsQuery.error}
+        isError={summaryQuery.isError || sessionsQuery.isError}
+        isLoading={isLoading}
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).view.teacherTitle}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <TeacherLanWorkspace
@@ -386,6 +443,22 @@ function RepartoSharedContent({
   const dashboardQuery = useRepartoDashboard(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
+  const isLoading =
+    dashboardQuery.isLoading &&
+    Boolean(resolveProcessId(processId)) &&
+    !dashboard &&
+    !summary;
+  if (isLoading || dashboardQuery.isError) {
+    return (
+      <QueryState
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
+        isLoading={isLoading}
+        label={dict.nav.item.shared}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <SharedScreenWorkspace
@@ -457,6 +530,19 @@ function RepartoVersionsContent({
 }) {
   const versionsQuery = useRepartoVersions(processId);
   const activeVersions = versions ?? versionsQuery.data?.data ?? [];
+  const isLoading =
+    versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions;
+  if (isLoading || versionsQuery.isError) {
+    return (
+      <QueryState
+        error={versionsQuery.error}
+        isError={versionsQuery.isError}
+        isLoading={isLoading}
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <VersionsView comparison={comparison} locale={locale} versions={activeVersions} />
@@ -526,6 +612,21 @@ function RepartoExportsContent({
   const exportsQuery = useRepartoExports(processId);
   const summaryQuery = useRepartoSummary(processId);
   const hasProcess = Boolean(resolveProcessId(processId));
+  const isLoading =
+    ((exportsQuery.isLoading && !exports) ||
+      (summaryQuery.isLoading && !summary)) &&
+    hasProcess;
+  if (isLoading || exportsQuery.isError || summaryQuery.isError) {
+    return (
+      <QueryState
+        error={exportsQuery.error ?? summaryQuery.error}
+        isError={exportsQuery.isError || summaryQuery.isError}
+        isLoading={isLoading}
+        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        locale={locale}
+      />
+    );
+  }
   return (
     <>
       <ExportCenterView
@@ -571,6 +672,8 @@ export {
   RepartoFieldError,
   RepartoFormError
 } from "./feedback.js";
+
+export { RepartoLoadingState } from "./loading-state.js";
 
 export {
   ProcessPicker,

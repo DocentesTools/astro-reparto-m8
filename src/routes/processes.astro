@@ -1,6 +1,7 @@
 ---
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoProcessesView } from "@mano8/astro-reparto-m8/default-ui";
+import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
 import "../scaffold/styles/reparto.css";
 
 const config = {
@@ -16,5 +17,8 @@ const config = {
     tableOfContents: false
   }}
 >
-  <RepartoProcessesView client:load config={config} locale={Astro.currentLocale} />
+  <RepartoRouteLoading />
+  <RepartoProcessesView client:only="react" config={config} locale={Astro.currentLocale}>
+    <RepartoRouteLoading fallback slot="fallback" />
+  </RepartoProcessesView>
 </StarlightPage>

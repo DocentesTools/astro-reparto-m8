@@ -463,12 +463,15 @@ export function WithSelectedProcess({
   mode?: "admin" | "readonly";
   processId?: string;
 }) {
-  const [selected, setSelected] = useState<string | undefined>(undefined);
+  const routeProcessId = resolveProcessId(processId);
+  const [selected, setSelected] = useState<string | undefined>(() => {
+    if (routeProcessId || typeof window === "undefined") return undefined;
+    return window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim() || undefined;
+  });
   const effective = selected ?? resolveProcessId(processId);
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses();
   const processes = processesQuery.data?.data ?? [];
-  const routeProcessId = resolveProcessId(processId);
 
   useEffect(() => {
     if (routeProcessId || selected || typeof window === "undefined") return;

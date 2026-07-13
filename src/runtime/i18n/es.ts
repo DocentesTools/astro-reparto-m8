@@ -74,6 +74,10 @@ export const es: RepartoDictionary = {
   view: {
     teacherTitle: "Vista docente",
     loading: "Cargando {entity}",
+    pageLoading: {
+      title: "Cargando página de reparto",
+      description: "Preparando el contenido más reciente de la página."
+    },
     unavailable: "{entity} no disponible",
     currentTurn: { status: "Estado", turn: "Turno", teacher: "Docente", started: "Inicio", waiting: "En espera", noPosition: "Sin posición", noActiveTurn: "Sin turno activo", notStarted: "Sin iniciar", position: "Turno {position}", teacherValue: "Docente {teacher}" },
     versions: { title: "Versiones", item: "Versión {number}", comparison: "Comparación", noChanges: "Sin cambios", requiredDelta: "Diferencia de horas requeridas", assignedDelta: "Diferencia de horas asignadas", teacherDelta: "Docentes", create: "Crear versión", compare: "Comparar versiones" },
@@ -222,13 +226,58 @@ export const es: RepartoDictionary = {
   },
   table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre o etapa...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
   classroomBulk: {
-    action: "Creación masiva",
+    action: "Crear grupos",
     title: "Crear varios grupos",
     description: "Crear un intervalo inclusivo de grupos.",
     groupStart: "Primer grupo",
     groupEnd: "Último grupo",
     created: "Grupos creados: {count}",
     createError: "No se pudieron crear los grupos"
+  },
+  classroomSelection: {
+    selectAllVisible: "Seleccionar todos los grupos visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionados ({count})",
+    deleteTitle: "Eliminar los grupos seleccionados",
+    deleteBody: "Grupos seleccionados para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Grupos eliminados: {count}",
+    deleteError: "No se pudieron eliminar los grupos seleccionados"
+  },
+  subjectSelection: {
+    selectAllVisible: "Seleccionar todas las materias visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las materias seleccionadas",
+    deleteBody: "Materias seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Materias eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las materias seleccionadas"
+  },
+  requirementSelection: {
+    selectAllVisible: "Seleccionar todas las necesidades visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las necesidades seleccionadas",
+    deleteBody: "Necesidades seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Necesidades eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las necesidades seleccionadas"
+  },
+  participantSelection: {
+    selectAllVisible: "Seleccionar todos los participantes visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionados ({count})",
+    deleteTitle: "Eliminar los participantes seleccionados",
+    deleteBody: "Participantes seleccionados para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Participantes eliminados: {count}",
+    deleteError: "No se pudieron eliminar los participantes seleccionados"
+  },
+  assignmentSelection: {
+    selectAllVisible: "Seleccionar todas las asignaciones visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las asignaciones seleccionadas",
+    deleteBody: "Asignaciones seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Asignaciones eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las asignaciones seleccionadas"
   },
   classroomStages: {
     pageTitle: "Etapas educativas",

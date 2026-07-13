@@ -75,6 +75,10 @@ export const en = {
   view: {
     teacherTitle: "Teacher view",
     loading: "{entity} loading",
+    pageLoading: {
+      title: "Loading reparto page",
+      description: "Preparing the latest page content."
+    },
     unavailable: "{entity} unavailable",
     currentTurn: { status: "Status", turn: "Turn", teacher: "Teacher", started: "Started", waiting: "Waiting", noPosition: "No position", noActiveTurn: "No active turn", notStarted: "Not started", position: "Turn {position}", teacherValue: "Teacher {teacher}" },
     versions: { title: "Versions", item: "Version {number}", comparison: "Comparison", noChanges: "No changes", requiredDelta: "Required delta", assignedDelta: "Assigned delta", teacherDelta: "Teachers", create: "Create version", compare: "Compare versions" },
@@ -223,13 +227,58 @@ export const en = {
   },
   table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name or stage...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
   classroomBulk: {
-    action: "Bulk create",
+    action: "Create groups",
     title: "Bulk create classrooms",
     description: "Create an inclusive classroom range.",
     groupStart: "Group start",
     groupEnd: "Group end",
     created: "{count} classrooms created",
     createError: "Classrooms could not be created"
+  },
+  classroomSelection: {
+    selectAllVisible: "Select all visible classrooms",
+    selectRow: "Select {name}",
+    deleteSelected: "Delete selected ({count})",
+    deleteTitle: "Delete selected classrooms",
+    deleteBody: "Selected classrooms to delete: {count}. This action cannot be undone.",
+    deleted: "Classrooms deleted: {count}",
+    deleteError: "The selected classrooms could not be deleted"
+  },
+  subjectSelection: {
+    selectAllVisible: "Select all visible subjects",
+    selectRow: "Select {name}",
+    deleteSelected: "Delete selected ({count})",
+    deleteTitle: "Delete selected subjects",
+    deleteBody: "Selected subjects to delete: {count}. This action cannot be undone.",
+    deleted: "Subjects deleted: {count}",
+    deleteError: "The selected subjects could not be deleted"
+  },
+  requirementSelection: {
+    selectAllVisible: "Select all visible requirements",
+    selectRow: "Select {name}",
+    deleteSelected: "Delete selected ({count})",
+    deleteTitle: "Delete selected requirements",
+    deleteBody: "Selected requirements to delete: {count}. This action cannot be undone.",
+    deleted: "Requirements deleted: {count}",
+    deleteError: "The selected requirements could not be deleted"
+  },
+  participantSelection: {
+    selectAllVisible: "Select all visible participants",
+    selectRow: "Select {name}",
+    deleteSelected: "Delete selected ({count})",
+    deleteTitle: "Delete selected participants",
+    deleteBody: "Selected participants to delete: {count}. This action cannot be undone.",
+    deleted: "Participants deleted: {count}",
+    deleteError: "The selected participants could not be deleted"
+  },
+  assignmentSelection: {
+    selectAllVisible: "Select all visible assignments",
+    selectRow: "Select {name}",
+    deleteSelected: "Delete selected ({count})",
+    deleteTitle: "Delete selected assignments",
+    deleteBody: "Selected assignments to delete: {count}. This action cannot be undone.",
+    deleted: "Assignments deleted: {count}",
+    deleteError: "The selected assignments could not be deleted"
   },
   classroomStages: {
     pageTitle: "Classroom stages",

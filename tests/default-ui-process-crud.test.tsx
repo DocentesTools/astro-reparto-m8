@@ -177,8 +177,16 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const { RepartoClassroomsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoClassroomsView processId={processId} />);
     expect(html).toContain('data-reparto-route="classrooms"');
+    expect(html).toContain('data-reparto-actions="classrooms"');
+    expect(html).toContain('class="flex justify-end gap-2 pb-4"');
+    expect(html).toContain("Create groups");
+    expect(html).toMatch(/data-reparto-actions="classrooms"[\s\S]*data-reparto-panel="classrooms"/);
     expect(html).toContain('data-reparto-table="classrooms"');
     expect(html).toContain('data-reparto-data-table="shared-registry"');
+    expect(html).toContain('data-data-table-select-all="visible"');
+    expect(html).toContain(`data-data-table-row-selection="${teachingGroupId}"`);
+    expect(html).toContain("Select all visible classrooms");
+    expect(html).toContain("Select 1° ESO A");
     expect(html).toContain('data-reparto-sort-column="stage"');
     expect(html).toContain('data-reparto-sort-column="grade"');
     expect(html).toContain('data-reparto-sort-column="group_code"');
@@ -191,6 +199,26 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain("1° ESO A");
     expect(html).toContain('data-classroom-stage="Secundaria"');
     expect(html).toContain('data-classroom-grade="1"');
+  });
+
+  it("renders the selected-classroom destructive confirmation with the selected count", async () => {
+    reset();
+    const { ClassroomBulkDelete } = await import(
+      "../src/runtime/react/default-ui/process-crud/classrooms/bulk-delete.js"
+    );
+    const { en } = await import("../src/runtime/i18n/en.js");
+    const html = renderToStaticMarkup(
+      <ClassroomBulkDelete
+        dict={en}
+        groups={[
+          { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+        ]}
+        processId={processId}
+        onDone={() => undefined}
+      />
+    );
+    expect(html).toContain("Delete selected classrooms");
+    expect(html).toContain("Selected classrooms to delete: 1.");
   });
 
   it("requirements view renders classroom+subject labels per row and a create action", async () => {

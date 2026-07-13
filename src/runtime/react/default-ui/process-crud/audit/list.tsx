@@ -40,6 +40,9 @@ export function AuditList({
   isError,
   isLoading
 }: AuditListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.auditEvent.plural} />;
+  }
   return (
     <>
       <CrudHeader

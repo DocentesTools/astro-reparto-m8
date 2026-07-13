@@ -1,7 +1,9 @@
-import { ActionButton, mapRepartoError, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { ProcessTeacherPublic, TeacherProfilePublic } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type ParticipantsListProps = {
   dict: Dict;
@@ -13,14 +15,20 @@ export type ParticipantsListProps = {
   createReason: string | null;
   teacherName: (id: string) => string;
   onCreate: () => void;
+  onDeleteSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (participant: ProcessTeacherPublic) => void;
   onDelete: (participant: ProcessTeacherPublic) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 export function ParticipantsList({
   dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  teacherName, onCreate, onEdit, onDelete
+  teacherName, onCreate, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: ParticipantsListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.processParticipant.plural} />;
+  }
   const statusLabel = (participant: ProcessTeacherPublic) =>
     dict.entity.processParticipant.status[participant.status];
   const columns: DataTableColumn<ProcessTeacherPublic>[] = [
@@ -42,6 +50,18 @@ export function ParticipantsList({
     { id: "status", label: dict.field.status, value: statusLabel }
   ];
   const statuses = [...new Set(rows.map(statusLabel))].sort((a, b) => a.localeCompare(b));
+  const selectedCount = selectedIds.size;
+  const deleteSelectedAction = selectedCount > 0 ? (
+    <button
+      className={repartoBulkDeleteButtonClass}
+      data-reparto-action="delete-selected"
+      disabled={hasActiveForm}
+      onClick={onDeleteSelected}
+      type="button"
+    >
+      {formatRepartoMessage(dict.participantSelection.deleteSelected, { count: selectedCount })}
+    </button>
+  ) : undefined;
 
   return (
     <>
@@ -76,6 +96,13 @@ export function ParticipantsList({
         rowKey={(participant) => participant.id}
         rowName="participant"
         searchFields={[(participant) => teacherName(participant.teacher_profile_id)]}
+        selection={{
+          actions: deleteSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.participantSelection.selectAllVisible,
+          selectRowLabel: (participant) => formatRepartoMessage(dict.participantSelection.selectRow, { name: teacherName(participant.teacher_profile_id) })
+        }}
         tableName="participants"
       />
       {isLoading ? (

@@ -1,7 +1,9 @@
-import { ActionButton, mapRepartoError, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type ClassroomsListProps = {
   dict: Dict;
@@ -10,15 +12,19 @@ export type ClassroomsListProps = {
   isError: boolean;
   isLoading: boolean;
   hasActiveForm: boolean;
-  createReason: string | null;
-  onCreate: () => void;
+  onDeleteSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (group: TeachingGroupPublic) => void;
   onDelete: (group: TeachingGroupPublic) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 export function ClassroomsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onEdit, onDelete
+  dict, rows, error, isError, isLoading, hasActiveForm, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: ClassroomsListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.classroom.plural} />;
+  }
   const columns: DataTableColumn<TeachingGroupPublic>[] = [
     { id: "stage", label: dict.field.stage, value: (group) => group.classroom_stage.stage },
     {
@@ -39,12 +45,23 @@ export function ClassroomsList({
     { id: "label", label: dict.field.label, value: (group) => group.label }
   ];
   const stages = [...new Set(rows.map((group) => group.classroom_stage.stage))].sort((a, b) => a.localeCompare(b));
+  const selectedCount = selectedIds.size;
+  const deleteSelectedAction = selectedCount > 0 ? (
+    <button
+      className={repartoBulkDeleteButtonClass}
+      data-reparto-action="delete-selected"
+      disabled={hasActiveForm}
+      onClick={onDeleteSelected}
+      type="button"
+    >
+      {formatRepartoMessage(dict.classroomSelection.deleteSelected, { count: selectedCount })}
+    </button>
+  ) : undefined;
 
   return (
     <>
       <h2 className="sr-only">{dict.entity.classroom.plural}</h2>
       <DataTable
-        addButton={<ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />}
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}
@@ -68,6 +85,13 @@ export function ClassroomsList({
         rowKey={(group) => group.id}
         rowName="classroom"
         searchFields={[(group) => group.classroom_stage.stage, (group) => group.group_code, (group) => group.label]}
+        selection={{
+          actions: deleteSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.classroomSelection.selectAllVisible,
+          selectRowLabel: (group) => formatRepartoMessage(dict.classroomSelection.selectRow, { name: group.label })
+        }}
         tableName="classrooms"
       />
       {isLoading ? (

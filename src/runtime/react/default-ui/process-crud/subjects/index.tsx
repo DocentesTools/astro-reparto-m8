@@ -8,6 +8,7 @@ import { SubjectsList } from "./list.js";
 import { SubjectAdd } from "./add.js";
 import { SubjectEdit } from "./edit.js";
 import { SubjectDelete } from "./delete.js";
+import { SubjectBulkDelete } from "./bulk-delete.js";
 
 export function RepartoSubjectsView({ config, locale, processId }: EntityViewProps) {
   return (
@@ -34,14 +35,18 @@ function RepartoSubjectsContent({
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<SubjectPublic | null>(null);
   const [deleting, setDeleting] = useState<SubjectPublic | null>(null);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   const hasProcess = Boolean(resolveProcessId(processId));
   const createReason = !hasProcess ? dict.disabled.noProcess : null;
-  const hasActiveForm = adding || Boolean(editing) || Boolean(deleting);
+  const selectedSubjects = rows.filter((subject) => selectedIds.has(subject.id));
+  const currentSelectedIds = new Set(selectedSubjects.map((subject) => subject.id));
+  const hasActiveForm = adding || deletingSelected || Boolean(editing) || Boolean(deleting);
 
   return (
     <main
-      className="not-content mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 text-foreground"
+      className="not-content flex w-full max-w-none flex-col gap-4 text-foreground"
       data-reparto-route="subjects"
       data-reparto-group="process"
     >
@@ -57,6 +62,9 @@ function RepartoSubjectsContent({
           isLoading={query.isLoading}
           hasActiveForm={hasActiveForm}
           createReason={createReason}
+          onDeleteSelected={() => setDeletingSelected(true)}
+          onSelectedIdsChange={setSelectedIds}
+          selectedIds={currentSelectedIds}
           onCreate={() => {
             setEditing(null);
             setDeleting(null);
@@ -82,6 +90,17 @@ function RepartoSubjectsContent({
             processId={processId ?? ""}
             subject={editing}
             onDone={() => setEditing(null)}
+          />
+        ) : null}
+        {deletingSelected ? (
+          <SubjectBulkDelete
+            dict={dict}
+            subjects={selectedSubjects}
+            processId={processId ?? ""}
+            onDone={() => {
+              setDeletingSelected(false);
+              setSelectedIds(new Set());
+            }}
           />
         ) : null}
         {deleting ? (

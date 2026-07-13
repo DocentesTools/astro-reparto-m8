@@ -1,7 +1,9 @@
-import { ActionButton, mapRepartoError, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { SubjectPublic } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type SubjectsListProps = {
   dict: Dict;
@@ -12,13 +14,20 @@ export type SubjectsListProps = {
   hasActiveForm: boolean;
   createReason: string | null;
   onCreate: () => void;
+  onDeleteSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (subject: SubjectPublic) => void;
   onDelete: (subject: SubjectPublic) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 export function SubjectsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onEdit, onDelete
+  dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onDeleteSelected,
+  onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: SubjectsListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.subject.plural} />;
+  }
   const columns: DataTableColumn<SubjectPublic>[] = [
     { id: "name", label: dict.field.name, value: (subject) => subject.name },
     {
@@ -37,6 +46,18 @@ export function SubjectsList({
     { id: "stage", label: dict.field.stage, value: (subject) => subject.stage ?? "" }
   ];
   const stages = [...new Set(rows.map((subject) => subject.stage).filter((stage): stage is string => Boolean(stage)))].sort((a, b) => a.localeCompare(b));
+  const selectedCount = selectedIds.size;
+  const deleteSelectedAction = selectedCount > 0 ? (
+    <button
+      className={repartoBulkDeleteButtonClass}
+      data-reparto-action="delete-selected"
+      disabled={hasActiveForm}
+      onClick={onDeleteSelected}
+      type="button"
+    >
+      {formatRepartoMessage(dict.subjectSelection.deleteSelected, { count: selectedCount })}
+    </button>
+  ) : undefined;
 
   return (
     <>
@@ -70,6 +91,13 @@ export function SubjectsList({
         rowKey={(subject) => subject.id}
         rowName="subject"
         searchFields={[(subject) => subject.name, (subject) => subject.stage ?? ""]}
+        selection={{
+          actions: deleteSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.subjectSelection.selectAllVisible,
+          selectRowLabel: (subject) => formatRepartoMessage(dict.subjectSelection.selectRow, { name: subject.name })
+        }}
         tableName="subjects"
       />
       {isLoading ? (

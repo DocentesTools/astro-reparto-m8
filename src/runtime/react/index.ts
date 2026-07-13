@@ -58,3 +58,8 @@ export {
 } from "./hooks.js";
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";
+export {
+  repartoRouteContainerClasses,
+  repartoRouteLoaderClass,
+  repartoRouteTransitionLoaderClass
+} from "./styles.js";

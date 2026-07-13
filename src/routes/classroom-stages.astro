@@ -2,11 +2,15 @@
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoClassroomStagesView } from "@mano8/astro-reparto-m8/default-ui";
 import { getRepartoDictionary, normalizeRepartoLocale } from "@mano8/astro-reparto-m8/i18n";
+import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
 import "../scaffold/styles/reparto.css";
 const config = { apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE, apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX };
 const locale = normalizeRepartoLocale(Astro.currentLocale);
 const dict = getRepartoDictionary(locale);
 ---
 <StarlightPage frontmatter={{ title: dict.classroomStages.pageTitle, description: dict.classroomStages.pageDescription, tableOfContents: false }}>
-  <RepartoClassroomStagesView client:load config={config} locale={locale} />
+  <RepartoRouteLoading />
+  <RepartoClassroomStagesView client:only="react" config={config} locale={locale}>
+    <RepartoRouteLoading fallback slot="fallback" />
+  </RepartoClassroomStagesView>
 </StarlightPage>

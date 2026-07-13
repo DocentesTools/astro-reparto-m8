@@ -19,6 +19,7 @@ import {
 import {
   repartoActionRowClass,
   repartoButtonClass,
+  repartoButtonDeleteClass,
   repartoFieldCaptionClass,
   repartoFieldGridClass,
   repartoFieldLabelClass,
@@ -52,6 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from "../../ui/alert-dialog.js";
+import { RepartoLoadingState } from "../loading-state.js";
 
 export { Shell, WithSelectedProcess };
 export type { ViewConfig };
@@ -100,9 +102,10 @@ export function ActionButton({
   row?: boolean;
   type?: "button" | "submit";
 }) {
+  const isDelete = action === "delete" || action === "delete-selected";
   return (
     <button
-      className={repartoButtonClass}
+      className={isDelete ? repartoButtonDeleteClass : repartoButtonClass}
       data-reparto-action={action}
       data-reparto-row-action={row ? action : undefined}
       data-disabled-reason={disabledReason ?? undefined}
@@ -167,9 +170,10 @@ export type QueryStateProps = {
 export function QueryState({ dict, error, isError, isLoading, label }: QueryStateProps) {
   if (isLoading) {
     return (
-      <section className={repartoPanelClass} data-reparto-state="loading">
-        {formatRepartoMessage(dict.view.loading, { entity: label })}
-      </section>
+      <RepartoLoadingState
+        description={formatRepartoMessage(dict.view.loading, { entity: label })}
+        title={formatRepartoMessage(dict.view.loading, { entity: label })}
+      />
     );
   }
   if (!isError) return null;

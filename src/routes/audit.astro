@@ -2,6 +2,7 @@
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
 import { RepartoAuditView } from "@mano8/astro-reparto-m8/default-ui";
 import { getRepartoDictionary, normalizeRepartoLocale } from "@mano8/astro-reparto-m8/i18n";
+import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
 import "../scaffold/styles/reparto.css";
 
 export function getStaticPaths() {
@@ -23,5 +24,8 @@ const config = {
     tableOfContents: false
   }}
 >
-  <RepartoAuditView client:load config={config} locale={Astro.currentLocale} processId={processId} />
+  <RepartoRouteLoading />
+  <RepartoAuditView client:only="react" config={config} locale={Astro.currentLocale} processId={processId}>
+    <RepartoRouteLoading fallback slot="fallback" />
+  </RepartoAuditView>
 </StarlightPage>

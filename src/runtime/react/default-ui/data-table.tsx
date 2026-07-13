@@ -25,6 +25,13 @@ export type DataTableLabels = {
   rowsPerPage: string;
   search: string;
 };
+export type DataTableSelection<T> = {
+  actions?: ReactNode;
+  onSelectedKeysChange: (selectedKeys: Set<string>) => void;
+  selectedKeys: ReadonlySet<string>;
+  selectAllVisibleLabel: string;
+  selectRowLabel: (row: T) => string;
+};
 type DataTableProps<T> = {
   addButton?: ReactNode;
   columns: DataTableColumn<T>[];
@@ -36,6 +43,7 @@ type DataTableProps<T> = {
   rowKey: (row: T) => string;
   rowName: string;
   searchFields: ((row: T) => string)[];
+  selection?: DataTableSelection<T>;
   tableName: string;
 };
 type ValueChangeEvent = { target: { value: string } };
@@ -47,7 +55,7 @@ function compareValues(left: string | number, right: string | number) {
 }
 
 export function DataTable<T>({
-  addButton, columns, data, emptyLabel, filter, labels, rowAttributes, rowKey, rowName, searchFields, tableName
+  addButton, columns, data, emptyLabel, filter, labels, rowAttributes, rowKey, rowName, searchFields, selection, tableName
 }: DataTableProps<T>) {
   const firstSortableColumn = columns.find((column) => column.sortable !== false);
   const [query, setQuery] = useState("");
@@ -82,6 +90,26 @@ export function DataTable<T>({
     (currentPage - 1) * normalized.pageSize,
     currentPage * normalized.pageSize
   );
+  const visibleRowKeys = pageRows.map(rowKey);
+  const allVisibleRowsSelected = visibleRowKeys.length > 0
+    && visibleRowKeys.every((key) => selection?.selectedKeys.has(key));
+  const someVisibleRowsSelected = visibleRowKeys.some((key) => selection?.selectedKeys.has(key));
+  const updateVisibleSelection = (checked: boolean) => {
+    if (!selection) return;
+    const next = new Set(selection.selectedKeys);
+    for (const key of visibleRowKeys) {
+      if (checked) next.add(key);
+      else next.delete(key);
+    }
+    selection.onSelectedKeysChange(next);
+  };
+  const updateRowSelection = (key: string, checked: boolean) => {
+    if (!selection) return;
+    const next = new Set(selection.selectedKeys);
+    if (checked) next.add(key);
+    else next.delete(key);
+    selection.onSelectedKeysChange(next);
+  };
   const resetPage = () => setPage(1);
   const toggleSort = (column: DataTableColumn<T>) => {
     if (column.sortable === false) return;
@@ -106,6 +134,15 @@ export function DataTable<T>({
       </div>
     </div>
   );
+  // Registry-copy adaptation of astro-ui-m8's canonical selection-action slots.
+  const selectionActions = (position: "top" | "bottom") => selection?.actions ? (
+    <div
+      className="flex justify-end py-3"
+      data-data-table-selection-actions={position}
+    >
+      {selection.actions}
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-3" data-reparto-data-table="shared-registry" data-reparto-table={tableName}>
@@ -142,9 +179,24 @@ export function DataTable<T>({
         </div>
       </div>
       {pagination("top")}
+      {selectionActions("top")}
       <div className="overflow-x-auto rounded-md border">
         <table className="w-full border-collapse text-sm">
           <thead><tr className="border-b bg-muted/40">
+            {selection ? (
+              <th className="w-10 px-3 py-2 text-left font-medium">
+                <input
+                  aria-checked={someVisibleRowsSelected && !allVisibleRowsSelected ? "mixed" : allVisibleRowsSelected}
+                  aria-label={selection.selectAllVisibleLabel}
+                  checked={allVisibleRowsSelected}
+                  className="size-4 rounded border-input accent-primary"
+                  data-data-table-select-all="visible"
+                  disabled={visibleRowKeys.length === 0}
+                  onChange={(event: CheckedChangeEvent) => updateVisibleSelection(event.target.checked)}
+                  type="checkbox"
+                />
+              </th>
+            ) : null}
             {visibleColumns.map((column) => (
               <th className="px-3 py-2 text-left font-medium" key={column.id}>
                 {column.sortable === false ? column.label : (
@@ -158,12 +210,25 @@ export function DataTable<T>({
           <tbody>
             {pageRows.length ? pageRows.map((row) => (
               <tr className="border-b last:border-0" data-reparto-row={rowName} key={rowKey(row)} {...(rowAttributes?.(row) ?? {})}>
+                {selection ? (
+                  <td className="w-10 px-3 py-2">
+                    <input
+                      aria-label={selection.selectRowLabel(row)}
+                      checked={selection.selectedKeys.has(rowKey(row))}
+                      className="size-4 rounded border-input accent-primary"
+                      data-data-table-row-selection={rowKey(row)}
+                      onChange={(event: CheckedChangeEvent) => updateRowSelection(rowKey(row), event.target.checked)}
+                      type="checkbox"
+                    />
+                  </td>
+                ) : null}
                 {visibleColumns.map((column) => <td className="px-3 py-2" key={column.id}>{column.cell?.(row) ?? column.value(row)}</td>)}
               </tr>
-            )) : <tr><td className="h-24 px-3 text-center" colSpan={Math.max(visibleColumns.length, 1)} data-reparto-state="empty">{emptyLabel}</td></tr>}
+            )) : <tr><td className="h-24 px-3 text-center" colSpan={Math.max(visibleColumns.length + (selection ? 1 : 0), 1)} data-reparto-state="empty">{emptyLabel}</td></tr>}
           </tbody>
         </table>
       </div>
+      {selectionActions("bottom")}
       {pagination("bottom")}
     </div>
   );

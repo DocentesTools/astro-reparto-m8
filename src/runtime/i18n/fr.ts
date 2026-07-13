@@ -74,6 +74,10 @@ export const fr: RepartoDictionary = {
   view: {
     teacherTitle: "Vue enseignant",
     loading: "Chargement de {entity}",
+    pageLoading: {
+      title: "Chargement de la page de répartition",
+      description: "Préparation du contenu le plus récent de la page."
+    },
     unavailable: "{entity} indisponible",
     currentTurn: { status: "État", turn: "Tour", teacher: "Enseignant", started: "Début", waiting: "En attente", noPosition: "Aucune position", noActiveTurn: "Aucun tour actif", notStarted: "Non démarré", position: "Tour {position}", teacherValue: "Enseignant {teacher}" },
     versions: { title: "Versions", item: "Version {number}", comparison: "Comparaison", noChanges: "Aucune modification", requiredDelta: "Écart des heures requises", assignedDelta: "Écart des heures affectées", teacherDelta: "Enseignants", create: "Créer une version", compare: "Comparer les versions" },
@@ -222,13 +226,58 @@ export const fr: RepartoDictionary = {
   },
   table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom ou niveau...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
   classroomBulk: {
-    action: "Création groupée",
+    action: "Créer des groupes",
     title: "Créer plusieurs classes",
     description: "Créer une plage inclusive de classes.",
     groupStart: "Premier groupe",
     groupEnd: "Dernier groupe",
     created: "Classes créées : {count}",
     createError: "Impossible de créer les classes"
+  },
+  classroomSelection: {
+    selectAllVisible: "Sélectionner toutes les classes visibles",
+    selectRow: "Sélectionner {name}",
+    deleteSelected: "Supprimer la sélection ({count})",
+    deleteTitle: "Supprimer les classes sélectionnées",
+    deleteBody: "Classes sélectionnées à supprimer : {count}. Cette action est irréversible.",
+    deleted: "Classes supprimées : {count}",
+    deleteError: "Impossible de supprimer les classes sélectionnées"
+  },
+  subjectSelection: {
+    selectAllVisible: "Sélectionner toutes les matières visibles",
+    selectRow: "Sélectionner {name}",
+    deleteSelected: "Supprimer la sélection ({count})",
+    deleteTitle: "Supprimer les matières sélectionnées",
+    deleteBody: "Matières sélectionnées à supprimer : {count}. Cette action est irréversible.",
+    deleted: "Matières supprimées : {count}",
+    deleteError: "Impossible de supprimer les matières sélectionnées"
+  },
+  requirementSelection: {
+    selectAllVisible: "Sélectionner tous les besoins visibles",
+    selectRow: "Sélectionner {name}",
+    deleteSelected: "Supprimer la sélection ({count})",
+    deleteTitle: "Supprimer les besoins sélectionnés",
+    deleteBody: "Besoins sélectionnés à supprimer : {count}. Cette action est irréversible.",
+    deleted: "Besoins supprimés : {count}",
+    deleteError: "Impossible de supprimer les besoins sélectionnés"
+  },
+  participantSelection: {
+    selectAllVisible: "Sélectionner tous les participants visibles",
+    selectRow: "Sélectionner {name}",
+    deleteSelected: "Supprimer la sélection ({count})",
+    deleteTitle: "Supprimer les participants sélectionnés",
+    deleteBody: "Participants sélectionnés à supprimer : {count}. Cette action est irréversible.",
+    deleted: "Participants supprimés : {count}",
+    deleteError: "Impossible de supprimer les participants sélectionnés"
+  },
+  assignmentSelection: {
+    selectAllVisible: "Sélectionner toutes les affectations visibles",
+    selectRow: "Sélectionner {name}",
+    deleteSelected: "Supprimer la sélection ({count})",
+    deleteTitle: "Supprimer les affectations sélectionnées",
+    deleteBody: "Affectations sélectionnées à supprimer : {count}. Cette action est irréversible.",
+    deleted: "Affectations supprimées : {count}",
+    deleteError: "Impossible de supprimer les affectations sélectionnées"
   },
   classroomStages: {
     pageTitle: "Niveaux scolaires",

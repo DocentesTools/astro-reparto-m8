@@ -186,7 +186,9 @@ describe("default reparto UI", () => {
     const teacherHtml = renderToStaticMarkup(
       <TeacherLanView
         config={{ apiBase: "/api", apiPrefix: "/reparto" }}
+        meetingSession={meetingSession}
         processId="11111111-1111-4111-8111-111111111111"
+        summary={teacherSummary}
       />
     );
     expect(teacherHtml).toContain('data-reparto-route="my-view"');
@@ -239,10 +241,10 @@ describe("default reparto UI", () => {
 
   it("renders prompt-style starter views for process and version routes", () => {
     expect(renderToStaticMarkup(<ProcessesView />)).toContain(
-      'data-reparto-action="create-process"'
+      'data-reparto-state="loading"'
     );
     expect(renderToStaticMarkup(<RepartoProcessesView />)).toContain(
-      'data-reparto-slot="process-count"'
+      'data-slot="skeleton"'
     );
     const versions = renderToStaticMarkup(<RepartoVersionsView versions={[]} />);
     expect(versions).toContain('data-reparto-action="create-version"');

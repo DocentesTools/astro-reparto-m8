@@ -226,10 +226,16 @@ describe("default UI query states", () => {
   it("renders loading states for process-rooted islands", async () => {
     queryState.mode = "loading";
     const {
+      RepartoAssignmentsView,
+      RepartoAuditView,
+      RepartoClassroomsView,
       RepartoDashboardView,
       RepartoExportsView,
+      RepartoHourRequirementsView,
       RepartoMeetingView,
       RepartoMyView,
+      RepartoProcessParticipantsView,
+      RepartoSubjectsView,
       RepartoVersionsView
     } = await import("../src/runtime/react/default-ui/index.js");
 
@@ -248,6 +254,19 @@ describe("default UI query states", () => {
     expect(renderToStaticMarkup(<RepartoExportsView processId={processId} />)).toContain(
       "Exports loading"
     );
+
+    for (const html of [
+      renderToStaticMarkup(<RepartoSubjectsView processId={processId} />),
+      renderToStaticMarkup(<RepartoClassroomsView processId={processId} />),
+      renderToStaticMarkup(<RepartoHourRequirementsView processId={processId} />),
+      renderToStaticMarkup(<RepartoProcessParticipantsView processId={processId} />),
+      renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />),
+      renderToStaticMarkup(<RepartoAuditView processId={processId} />)
+    ]) {
+      expect(html).toContain('data-reparto-state="loading"');
+      expect(html).toContain('data-slot="skeleton"');
+      expect(html).not.toContain("data-reparto-table=");
+    }
   });
 
   it("renders query data in island roots", async () => {

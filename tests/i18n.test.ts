@@ -205,6 +205,23 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(es.nav.item.audit).toBe("Auditoría");
   });
 
+  it("localizes route-loading copy in every supported locale", () => {
+    expect(en.view.pageLoading).toEqual({
+      title: "Loading reparto page",
+      description: "Preparing the latest page content."
+    });
+    expect(fr.view.pageLoading.title).toBe(
+      "Chargement de la page de répartition"
+    );
+    expect(es.view.pageLoading.title).toBe("Cargando página de reparto");
+    expect(fr.view.pageLoading.description).not.toBe(
+      en.view.pageLoading.description
+    );
+    expect(es.view.pageLoading.description).not.toBe(
+      en.view.pageLoading.description
+    );
+  });
+
   it("fully localizes classroom bulk and stage CRUD surfaces", () => {
     const roots = ["classroomBulk", "classroomStages"] as const;
     for (const root of roots) {
@@ -216,6 +233,12 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     }
     expect(fr.classroomBulk.groupStart).toBe("Premier groupe");
     expect(es.classroomBulk.groupEnd).toBe("Último grupo");
+    expect(en.classroomBulk.action).toBe("Create groups");
+    expect(es.classroomBulk.action).toBe("Crear grupos");
+    expect(fr.classroomBulk.action).toBe("Créer des groupes");
+    expect(en.classroomSelection.deleteSelected).toBe("Delete selected ({count})");
+    expect(es.classroomSelection.selectAllVisible).toBe("Seleccionar todos los grupos visibles");
+    expect(fr.classroomSelection.deleteTitle).toBe("Supprimer les classes sélectionnées");
     expect(fr.classroomStages.toast.deleteError).toContain("supprimer");
     expect(es.classroomStages.deleteBody).toContain("{name}");
   });

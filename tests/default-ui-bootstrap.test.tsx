@@ -122,4 +122,31 @@ describe("empty-DB bootstrap — create-process dialog (Phase 1 component gate)"
     expect(html).toContain('data-reparto-action="select-process"');
     expect(html).toContain('data-reparto-form="create-process"');
   });
+
+  it("uses the remembered process on the first client-only render", async () => {
+    const { WithSelectedProcess } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: () => processId,
+        setItem: () => undefined
+      }
+    });
+
+    try {
+      const html = renderToStaticMarkup(
+        <WithSelectedProcess>
+          {(resolvedProcessId) => (
+            <div data-resolved-process-id={resolvedProcessId} />
+          )}
+        </WithSelectedProcess>
+      );
+
+      expect(html).not.toContain('data-reparto-route="process-picker"');
+      expect(html).toContain(`data-resolved-process-id="${processId}"`);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

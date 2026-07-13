@@ -1,0 +1,72 @@
+---
+import { RepartoLoadingState } from "@mano8/astro-reparto-m8/default-ui";
+import {
+  formatRepartoMessage,
+  getRepartoDictionary,
+  normalizeRepartoLocale
+} from "@mano8/astro-reparto-m8/i18n";
+import {
+  repartoRouteContainerClasses,
+  repartoRouteLoaderClass,
+  repartoRouteTransitionLoaderClass
+} from "@mano8/astro-reparto-m8/react";
+
+interface Props {
+  fallback?: boolean;
+}
+
+const {
+  fallback = false
+} = Astro.props;
+const dict = getRepartoDictionary(normalizeRepartoLocale(Astro.currentLocale));
+const view = dict.view as typeof dict.view & {
+  pageLoading?: { title: string; description: string };
+};
+const pageLoading = view.pageLoading ?? {
+  title: formatRepartoMessage(dict.view.loading, { entity: "Reparto" }),
+  description: formatRepartoMessage(dict.view.loading, { entity: "Reparto" })
+};
+---
+
+<div
+  class:list={[
+    repartoRouteLoaderClass,
+    !fallback && repartoRouteTransitionLoaderClass
+  ]}
+  data-reparto-route-container-classes={repartoRouteContainerClasses}
+  data-reparto-route-loader=""
+  data-reparto-route-loader-fallback={fallback ? "" : undefined}
+  hidden={!fallback}
+>
+  <RepartoLoadingState
+    description={pageLoading.description}
+    rows={3}
+    title={pageLoading.title}
+  />
+</div>
+
+<script>
+  const applyRouteContainerClasses = () => {
+    document.querySelectorAll<HTMLElement>("[data-reparto-route-loader]").forEach((loader) => {
+      const classes = loader.dataset.repartoRouteContainerClasses?.split(" ") ?? [];
+      loader.closest(".sl-container")?.classList.add(...classes);
+    });
+  };
+
+  applyRouteContainerClasses();
+  document.addEventListener("astro:page-load", applyRouteContainerClasses);
+
+  const loaderBinding = window as Window & {
+    __repartoRouteLoaderBound?: boolean;
+  };
+
+  if (!loaderBinding.__repartoRouteLoaderBound) {
+    loaderBinding.__repartoRouteLoaderBound = true;
+    document.addEventListener("astro:before-preparation", () => {
+      const loader = document.querySelector<HTMLElement>(
+        '[data-reparto-route-loader]:not([data-reparto-route-loader-fallback])'
+      );
+      loader?.removeAttribute("hidden");
+    });
+  }
+</script>

@@ -1,11 +1,13 @@
-import { ActionButton, mapRepartoError, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type {
   HourRequirementPublic,
   SubjectPublic,
   TeachingGroupPublic
 } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type RequirementsListProps = {
   dict: Dict;
@@ -18,14 +20,21 @@ export type RequirementsListProps = {
   classroomLabel: (id: string) => string;
   subjectName: (id: string) => string;
   onCreate: () => void;
+  onDeleteSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (requirement: HourRequirementPublic) => void;
   onDelete: (requirement: HourRequirementPublic) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 export function RequirementsList({
   dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  classroomLabel, subjectName, onCreate, onEdit, onDelete
+  classroomLabel, subjectName, onCreate, onDeleteSelected, onSelectedIdsChange,
+  onEdit, onDelete, selectedIds
 }: RequirementsListProps) {
+  if (isLoading || isError) {
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.hourRequirement.plural} />;
+  }
   const typeLabel = (requirement: HourRequirementPublic) =>
     dict.option.requirementType[requirement.requirement_type];
   const columns: DataTableColumn<HourRequirementPublic>[] = [
@@ -48,6 +57,18 @@ export function RequirementsList({
     { id: "requirement_type", label: dict.field.requirementType, value: typeLabel }
   ];
   const types = [...new Set(rows.map(typeLabel))].sort((a, b) => a.localeCompare(b));
+  const selectedCount = selectedIds.size;
+  const deleteSelectedAction = selectedCount > 0 ? (
+    <button
+      className={repartoBulkDeleteButtonClass}
+      data-reparto-action="delete-selected"
+      disabled={hasActiveForm}
+      onClick={onDeleteSelected}
+      type="button"
+    >
+      {formatRepartoMessage(dict.requirementSelection.deleteSelected, { count: selectedCount })}
+    </button>
+  ) : undefined;
 
   return (
     <>
@@ -85,6 +106,15 @@ export function RequirementsList({
           (requirement) => classroomLabel(requirement.teaching_group_id),
           (requirement) => subjectName(requirement.subject_id)
         ]}
+        selection={{
+          actions: deleteSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.requirementSelection.selectAllVisible,
+          selectRowLabel: (requirement) => formatRepartoMessage(dict.requirementSelection.selectRow, {
+            name: `${classroomLabel(requirement.teaching_group_id)} · ${subjectName(requirement.subject_id)}`
+          })
+        }}
         tableName="requirements"
       />
       {isLoading ? (

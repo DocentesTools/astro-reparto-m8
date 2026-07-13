@@ -16,6 +16,7 @@ import { RequirementsList } from "./list.js";
 import { RequirementAdd } from "./add.js";
 import { RequirementEdit } from "./edit.js";
 import { RequirementDelete } from "./delete.js";
+import { RequirementBulkDelete } from "./bulk-delete.js";
 
 export function RepartoHourRequirementsView({ config, locale, processId }: EntityViewProps) {
   return (
@@ -46,6 +47,8 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<HourRequirementPublic | null>(null);
   const [deleting, setDeleting] = useState<HourRequirementPublic | null>(null);
+  const [deletingSelected, setDeletingSelected] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
   const hasProcess = Boolean(resolveProcessId(processId));
   const noClassrooms = classrooms.length === 0 && subjects.length === 0;
@@ -57,11 +60,13 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
           `${dict.entity.classroom.singular.toLowerCase()} / ${dict.entity.subject.singular.toLowerCase()}`
         )
       : null;
-  const hasActiveForm = adding || Boolean(editing) || Boolean(deleting);
+  const selectedRequirements = rows.filter((requirement) => selectedIds.has(requirement.id));
+  const currentSelectedIds = new Set(selectedRequirements.map((requirement) => requirement.id));
+  const hasActiveForm = adding || deletingSelected || Boolean(editing) || Boolean(deleting);
 
   return (
     <main
-      className="not-content mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 text-foreground"
+      className="not-content flex w-full max-w-none flex-col gap-4 text-foreground"
       data-reparto-route="requirements"
       data-reparto-group="process"
     >
@@ -79,6 +84,9 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
           createReason={createReason}
           classroomLabel={classroomLabel}
           subjectName={subjectName}
+          onDeleteSelected={() => setDeletingSelected(true)}
+          onSelectedIdsChange={setSelectedIds}
+          selectedIds={currentSelectedIds}
           onCreate={() => {
             setEditing(null);
             setDeleting(null);
@@ -106,6 +114,17 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
             classroomLabel={classroomLabel(editing.teaching_group_id)}
             subjectName={subjectName(editing.subject_id)}
             onDone={() => setEditing(null)}
+          />
+        ) : null}
+        {deletingSelected ? (
+          <RequirementBulkDelete
+            dict={dict}
+            requirements={selectedRequirements}
+            processId={processId ?? ""}
+            onDone={() => {
+              setDeletingSelected(false);
+              setSelectedIds(new Set());
+            }}
           />
         ) : null}
         {deleting ? (

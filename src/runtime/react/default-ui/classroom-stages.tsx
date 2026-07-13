@@ -241,16 +241,16 @@ function ClassroomStagesContent({
       data-reparto-route="classroom-stages"
     >
       <RepartoToastHost />
+      {allowed ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="classroom-stages">
+          <ActionButton
+            action="create"
+            label={dict.action.create}
+            onClick={() => setCreating(true)}
+          />
+        </div>
+      ) : null}
       <DataTable
-        addButton={
-          allowed ? (
-            <ActionButton
-              action="create"
-              label={dict.action.create}
-              onClick={() => setCreating(true)}
-            />
-          ) : undefined
-        }
         columns={columns}
         data={rows}
         emptyLabel={dict.classroomStages.state.empty}

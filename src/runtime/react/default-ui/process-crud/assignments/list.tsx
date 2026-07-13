@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type {
@@ -19,10 +19,8 @@ export type AssignmentsListProps = {
   isError: boolean;
   isLoading: boolean;
   hasActiveForm: boolean;
-  createReason: string | null;
   requirementLabel: (id: string) => string;
   participantName: (id: string) => string;
-  onCreate: () => void;
   onDeleteSelected: () => void;
   onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (assignment: AssignmentPublic) => void;
@@ -31,8 +29,8 @@ export type AssignmentsListProps = {
 };
 
 export function AssignmentsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  requirementLabel, participantName, onCreate, onDeleteSelected, onSelectedIdsChange,
+  dict, rows, error, isError, isLoading, hasActiveForm,
+  requirementLabel, participantName, onDeleteSelected, onSelectedIdsChange,
   onEdit, onDelete, selectedIds
 }: AssignmentsListProps) {
   if (isLoading || isError) {
@@ -80,12 +78,6 @@ export function AssignmentsList({
     <>
       <h2 className="sr-only">{dict.entity.assignment.plural}</h2>
       <DataTable
-        addButton={
-          <>
-            <ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />
-            <RepartoDisabledReason reason={createReason} />
-          </>
-        }
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}

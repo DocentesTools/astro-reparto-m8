@@ -98,7 +98,7 @@ export const en = {
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
   },
   action: {
-    create: "Create",
+    create: "Add",
     edit: "Edit",
     delete: "Delete",
     archive: "Archive",

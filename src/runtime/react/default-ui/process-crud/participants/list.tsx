@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { ProcessTeacherPublic, TeacherProfilePublic } from "../../../../schemas.js";
@@ -12,9 +12,7 @@ export type ParticipantsListProps = {
   isError: boolean;
   isLoading: boolean;
   hasActiveForm: boolean;
-  createReason: string | null;
   teacherName: (id: string) => string;
-  onCreate: () => void;
   onDeleteSelected: () => void;
   onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (participant: ProcessTeacherPublic) => void;
@@ -23,8 +21,8 @@ export type ParticipantsListProps = {
 };
 
 export function ParticipantsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  teacherName, onCreate, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
+  dict, rows, error, isError, isLoading, hasActiveForm,
+  teacherName, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: ParticipantsListProps) {
   if (isLoading || isError) {
     return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.processParticipant.plural} />;
@@ -67,12 +65,6 @@ export function ParticipantsList({
     <>
       <h2 className="sr-only">{dict.entity.processParticipant.plural}</h2>
       <DataTable
-        addButton={
-          <>
-            <ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />
-            <RepartoDisabledReason reason={createReason} />
-          </>
-        }
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}

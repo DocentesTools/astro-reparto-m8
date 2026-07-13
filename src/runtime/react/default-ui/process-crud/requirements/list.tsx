@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type {
@@ -16,10 +16,8 @@ export type RequirementsListProps = {
   isError: boolean;
   isLoading: boolean;
   hasActiveForm: boolean;
-  createReason: string | null;
   classroomLabel: (id: string) => string;
   subjectName: (id: string) => string;
-  onCreate: () => void;
   onDeleteSelected: () => void;
   onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (requirement: HourRequirementPublic) => void;
@@ -28,8 +26,8 @@ export type RequirementsListProps = {
 };
 
 export function RequirementsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason,
-  classroomLabel, subjectName, onCreate, onDeleteSelected, onSelectedIdsChange,
+  dict, rows, error, isError, isLoading, hasActiveForm,
+  classroomLabel, subjectName, onDeleteSelected, onSelectedIdsChange,
   onEdit, onDelete, selectedIds
 }: RequirementsListProps) {
   if (isLoading || isError) {
@@ -74,12 +72,6 @@ export function RequirementsList({
     <>
       <h2 className="sr-only">{dict.entity.hourRequirement.plural}</h2>
       <DataTable
-        addButton={
-          <>
-            <ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />
-            <RepartoDisabledReason reason={createReason} />
-          </>
-        }
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}

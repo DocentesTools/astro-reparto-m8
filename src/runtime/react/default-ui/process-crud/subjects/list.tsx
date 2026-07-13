@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RepartoDisabledReason, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { SubjectPublic } from "../../../../schemas.js";
@@ -12,8 +12,6 @@ export type SubjectsListProps = {
   isError: boolean;
   isLoading: boolean;
   hasActiveForm: boolean;
-  createReason: string | null;
-  onCreate: () => void;
   onDeleteSelected: () => void;
   onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (subject: SubjectPublic) => void;
@@ -22,7 +20,7 @@ export type SubjectsListProps = {
 };
 
 export function SubjectsList({
-  dict, rows, error, isError, isLoading, hasActiveForm, createReason, onCreate, onDeleteSelected,
+  dict, rows, error, isError, isLoading, hasActiveForm, onDeleteSelected,
   onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: SubjectsListProps) {
   if (isLoading || isError) {
@@ -63,12 +61,6 @@ export function SubjectsList({
     <>
       <h2 className="sr-only">{dict.entity.subject.plural}</h2>
       <DataTable
-        addButton={
-          <>
-            <ActionButton action="create" disabled={hasActiveForm} disabledReason={createReason ?? undefined} label={dict.action.create} onClick={onCreate} />
-            <RepartoDisabledReason reason={createReason} />
-          </>
-        }
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}

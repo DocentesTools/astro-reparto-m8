@@ -97,7 +97,7 @@ export const es: RepartoDictionary = {
     role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
   },
   action: {
-    create: "Crear",
+    create: "Añadir",
     edit: "Editar",
     delete: "Eliminar",
     archive: "Archivar",

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import {
   useRepartoHourRequirements,
   useRepartoSubjects,
@@ -70,6 +70,22 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
       data-reparto-route="requirements"
       data-reparto-group="process"
     >
+      <div
+        className="flex justify-end gap-2 pb-4"
+        data-reparto-actions="requirements"
+      >
+        <ActionButton
+          action="create"
+          disabled={hasActiveForm}
+          disabledReason={createReason ?? undefined}
+          label={dict.action.create}
+          onClick={() => {
+            setEditing(null);
+            setDeleting(null);
+            setAdding(true);
+          }}
+        />
+      </div>
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
         data-reparto-panel="requirements"
@@ -81,17 +97,11 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
           isError={query.isError}
           isLoading={query.isLoading}
           hasActiveForm={hasActiveForm}
-          createReason={createReason}
           classroomLabel={classroomLabel}
           subjectName={subjectName}
           onDeleteSelected={() => setDeletingSelected(true)}
           onSelectedIdsChange={setSelectedIds}
           selectedIds={currentSelectedIds}
-          onCreate={() => {
-            setEditing(null);
-            setDeleting(null);
-            setAdding(true);
-          }}
           onEdit={(requirement) => {
             setAdding(false);
             setDeleting(null);

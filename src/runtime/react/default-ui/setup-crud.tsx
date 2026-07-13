@@ -253,12 +253,12 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="schools"
       data-reparto-group="setup"
     >
+      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="schools">
+        <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
+      </div>
       <section className={repartoPanelClass} data-reparto-panel="schools">
         <h2 className="sr-only">{dict.entity.school.plural}</h2>
         <DataTable
-          addButton={
-            <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
-          }
           columns={columns}
           data={rows}
           emptyLabel={dict.table.noResults}
@@ -534,6 +534,16 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="academic-years"
       data-reparto-group="setup"
     >
+      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="academic-years">
+        <ActionButton
+          action="create"
+          disabled={formOpen || Boolean(createDisabledReason)}
+          disabledReason={createDisabledReason}
+          label={dict.action.create}
+          onClick={openCreate}
+        />
+        <RepartoDisabledReason reason={createDisabledReason} />
+      </div>
       <section className={repartoPanelClass} data-reparto-panel="academic-years">
         <h2 className="sr-only">{dict.entity.academicYear.plural}</h2>
         {archiveMapped.formError ? (
@@ -546,18 +556,6 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
           </p>
         ) : null}
         <DataTable
-          addButton={
-            <>
-              <ActionButton
-                action="create"
-                disabled={formOpen || Boolean(createDisabledReason)}
-                disabledReason={createDisabledReason}
-                label={dict.action.create}
-                onClick={openCreate}
-              />
-              <RepartoDisabledReason reason={createDisabledReason} />
-            </>
-          }
           columns={columns}
           data={rows}
           emptyLabel={dict.table.noResults}
@@ -782,21 +780,19 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="departments"
       data-reparto-group="setup"
     >
+      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="departments">
+        <ActionButton
+          action="create"
+          disabled={formOpen || schoolsMissing}
+          disabledReason={createReason}
+          label={dict.action.create}
+          onClick={openCreate}
+        />
+        <RepartoDisabledReason reason={createReason} />
+      </div>
       <section className={repartoPanelClass} data-reparto-panel="departments">
         <h2 className="sr-only">{dict.entity.department.plural}</h2>
         <DataTable
-          addButton={
-            <>
-              <ActionButton
-                action="create"
-                disabled={formOpen || schoolsMissing}
-                disabledReason={createReason}
-                label={dict.action.create}
-                onClick={openCreate}
-              />
-              <RepartoDisabledReason reason={createReason} />
-            </>
-          }
           columns={columns}
           data={rows}
           emptyLabel={dict.table.noResults}
@@ -1055,12 +1051,12 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="teacher-roster"
       data-reparto-group="setup"
     >
+      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="teacher-roster">
+        <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
+      </div>
       <section className={repartoPanelClass} data-reparto-panel="teacher-roster">
         <h2 className="sr-only">{dict.entity.teacherRoster.plural}</h2>
         <DataTable
-          addButton={
-            <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
-          }
           columns={columns}
           data={rows}
           emptyLabel={dict.table.noResults}

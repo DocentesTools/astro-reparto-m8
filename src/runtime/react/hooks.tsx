@@ -69,7 +69,7 @@ export function useCreateRepartoProcess() {
     mutationFn: (body: AssignmentProcessCreate) =>
       assignmentProcesses.create(body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.processes() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.processes() });
     }
   });
 }
@@ -141,7 +141,7 @@ export function useCreateRepartoSchool() {
   return useMutation({
     mutationFn: (body: SchoolCreate) => schools.create(body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.schools() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.schools() });
     }
   });
 }
@@ -152,7 +152,7 @@ export function useUpdateRepartoSchool() {
     mutationFn: ({ schoolId, body }: { schoolId: string; body: SchoolUpdate }) =>
       schools.update(schoolId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.schools() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.schools() });
     }
   });
 }
@@ -172,7 +172,7 @@ export function useCreateRepartoAcademicYear() {
   return useMutation({
     mutationFn: (body: AcademicYearCreate) => academicYears.create(body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
     }
   });
 }
@@ -183,7 +183,7 @@ export function useUpdateRepartoAcademicYear() {
     mutationFn: ({ yearId, body }: { yearId: string; body: AcademicYearUpdate }) =>
       academicYears.update(yearId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
     }
   });
 }
@@ -193,7 +193,7 @@ export function useArchiveRepartoAcademicYear() {
   return useMutation({
     mutationFn: (yearId: string) => academicYears.archive(yearId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.academicYears() });
     }
   });
 }
@@ -213,7 +213,7 @@ export function useCreateRepartoDepartment() {
   return useMutation({
     mutationFn: (body: DepartmentCreate) => departments.create(body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.departments() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.departments() });
     }
   });
 }
@@ -229,7 +229,7 @@ export function useUpdateRepartoDepartment() {
       body: DepartmentUpdate;
     }) => departments.update(departmentId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.departments() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.departments() });
     }
   });
 }
@@ -249,7 +249,7 @@ export function useCreateRepartoTeacherProfile() {
   return useMutation({
     mutationFn: (body: TeacherProfileCreate) => teacherProfiles.create(body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
     }
   });
 }
@@ -265,7 +265,7 @@ export function useUpdateRepartoTeacherProfile() {
       body: TeacherProfileUpdate;
     }) => teacherProfiles.update(profileId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
     }
   });
 }
@@ -281,7 +281,7 @@ export function useLinkRepartoTeacherProfileUser() {
       body: TeacherProfileLinkUser;
     }) => teacherProfiles.linkUser(profileId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
     }
   });
 }
@@ -291,7 +291,7 @@ export function useDeleteRepartoTeacherProfile() {
   return useMutation({
     mutationFn: (profileId: string) => teacherProfiles.remove(profileId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
     }
   });
 }
@@ -311,7 +311,7 @@ export function useCreateRepartoSubject() {
     mutationFn: ({ processId, body }: { processId: string; body: SubjectCreateInput }) =>
       subjects.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
     }
   });
 }
@@ -329,7 +329,7 @@ export function useUpdateRepartoSubject() {
       body: SubjectUpdate;
     }) => subjects.update(processId, subjectId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
     }
   });
 }
@@ -345,7 +345,7 @@ export function useDeleteRepartoSubject() {
       subjectId: string;
     }) => subjects.remove(processId, subjectId),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
     }
   });
 }
@@ -401,7 +401,7 @@ export function useCreateRepartoTeachingGroup() {
       body: TeachingGroupCreateInput;
     }) => teachingGroups.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.teachingGroups(processId)
       });
     }
@@ -429,7 +429,7 @@ export function useUpdateRepartoTeachingGroup() {
       body: TeachingGroupUpdate;
     }) => teachingGroups.update(processId, groupId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.teachingGroups(processId)
       });
     }
@@ -447,7 +447,7 @@ export function useDeleteRepartoTeachingGroup() {
       groupId: string;
     }) => teachingGroups.remove(processId, groupId),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.teachingGroups(processId)
       });
     }
@@ -474,7 +474,7 @@ export function useCreateRepartoHourRequirement() {
       body: HourRequirementCreateInput;
     }) => hourRequirements.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.hourRequirements(processId)
       });
     }
@@ -494,7 +494,7 @@ export function useUpdateRepartoHourRequirement() {
       body: HourRequirementUpdate;
     }) => hourRequirements.update(processId, requirementId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.hourRequirements(processId)
       });
     }
@@ -512,7 +512,7 @@ export function useDeleteRepartoHourRequirement() {
       requirementId: string;
     }) => hourRequirements.remove(processId, requirementId),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.hourRequirements(processId)
       });
     }
@@ -539,7 +539,7 @@ export function useCreateRepartoProcessTeacher() {
       body: ProcessTeacherCreateInput;
     }) => processTeachers.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.processTeachers(processId)
       });
     }
@@ -559,7 +559,7 @@ export function useUpdateRepartoProcessTeacher() {
       body: ProcessTeacherUpdate;
     }) => processTeachers.update(processId, processTeacherId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.processTeachers(processId)
       });
     }
@@ -577,7 +577,7 @@ export function useDeleteRepartoProcessTeacher() {
       processTeacherId: string;
     }) => processTeachers.remove(processId, processTeacherId),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.processTeachers(processId)
       });
     }
@@ -599,7 +599,7 @@ export function useCreateRepartoAssignment() {
     mutationFn: ({ processId, body }: { processId: string; body: AssignmentCreate }) =>
       assignments.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.assignments(processId)
       });
     }
@@ -619,7 +619,7 @@ export function useUpdateRepartoAssignment() {
       body: AssignmentUpdate;
     }) => assignments.update(processId, assignmentId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.assignments(processId)
       });
     }
@@ -637,7 +637,7 @@ export function useDeleteRepartoAssignment() {
       assignmentId: string;
     }) => assignments.remove(processId, assignmentId),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.assignments(processId)
       });
     }
@@ -650,7 +650,7 @@ export function useRepartoDirectChoiceAssignment() {
     mutationFn: ({ processId, body }: { processId: string; body: AssignmentDirectChoice }) =>
       assignments.directChoice(processId, body),
     onSuccess: (_data, { processId }) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: repartoKeys.assignments(processId)
       });
     }

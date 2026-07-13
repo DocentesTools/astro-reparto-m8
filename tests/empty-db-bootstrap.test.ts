@@ -68,10 +68,6 @@ function section(text: string, headingPrefix: string): string {
   return result.join("\n");
 }
 
-function escape(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 describe("empty-DB bootstrap spec — gate definition (Phase 0.5, step 3)", () => {
   it("lives at docs/empty-db-bootstrap-spec.md and is non-empty", () => {
     expect(spec.length).toBeGreaterThan(0);

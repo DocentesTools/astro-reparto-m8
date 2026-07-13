@@ -138,7 +138,7 @@ export function RepartoDepartmentDialog({
               disabledReason={editing ? undefined : undefined}
               renderInlineCreate={
                 onOpenSchoolCreate
-                  ? (done) => {
+                  ? () => {
                       return (
                         <p className="text-sm text-muted-foreground" data-reparto-slot="missing-school">
                           {labels.missingSchool}

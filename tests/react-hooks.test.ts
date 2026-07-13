@@ -1,0 +1,504 @@
+import { describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  useQuery: vi.fn((options: { enabled?: boolean; queryFn: () => unknown }) => {
+    if (options.enabled !== false) {
+      options.queryFn();
+    }
+    return options;
+  }),
+  useMutation: vi.fn((options: { mutationFn: (vars: unknown) => unknown }) => ({
+    isPending: false,
+    mutate: (vars: unknown) => options.mutationFn(vars)
+  })),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: () => undefined })),
+  assignmentProcesses: {
+    list: vi.fn(),
+    dashboard: vi.fn(),
+    summary: vi.fn(),
+    myLanSummary: vi.fn()
+  },
+  history: {
+    listVersions: vi.fn(),
+    listExports: vi.fn()
+  },
+  meetingSessions: {
+    list: vi.fn()
+  },
+  schools: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn()
+  },
+  academicYears: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    archive: vi.fn()
+  },
+  departments: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn()
+  },
+  teacherProfiles: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    linkUser: vi.fn(),
+    remove: vi.fn()
+  },
+  subjects: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+  },
+  teachingGroups: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+  },
+  hourRequirements: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+  },
+  processTeachers: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
+  },
+  assignments: {
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    directChoice: vi.fn()
+  },
+  auditEvents: {
+    list: vi.fn()
+  }
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: mocks.useQuery,
+  useMutation: mocks.useMutation,
+  useQueryClient: mocks.useQueryClient
+}));
+
+vi.mock("../src/runtime/api/assignmentProcesses.js", () => ({
+  assignmentProcesses: mocks.assignmentProcesses
+}));
+vi.mock("../src/runtime/api/history.js", () => ({
+  history: mocks.history
+}));
+vi.mock("../src/runtime/api/meetingSessions.js", () => ({
+  meetingSessions: mocks.meetingSessions
+}));
+vi.mock("../src/runtime/api/schools.js", () => ({
+  schools: mocks.schools
+}));
+vi.mock("../src/runtime/api/academicYears.js", () => ({
+  academicYears: mocks.academicYears
+}));
+vi.mock("../src/runtime/api/departments.js", () => ({
+  departments: mocks.departments
+}));
+vi.mock("../src/runtime/api/teacherProfiles.js", () => ({
+  teacherProfiles: mocks.teacherProfiles
+}));
+vi.mock("../src/runtime/api/subjects.js", () => ({
+  subjects: mocks.subjects
+}));
+vi.mock("../src/runtime/api/teachingGroups.js", () => ({
+  teachingGroups: mocks.teachingGroups
+}));
+vi.mock("../src/runtime/api/hourRequirements.js", () => ({
+  hourRequirements: mocks.hourRequirements
+}));
+vi.mock("../src/runtime/api/processTeachers.js", () => ({
+  processTeachers: mocks.processTeachers
+}));
+vi.mock("../src/runtime/api/assignments.js", () => ({
+  assignments: mocks.assignments
+}));
+vi.mock("../src/runtime/api/auditEvents.js", () => ({
+  auditEvents: mocks.auditEvents
+}));
+
+describe("reparto React hooks", () => {
+  beforeEach(() => {
+    mocks.useQuery.mockClear();
+    mocks.useMutation.mockClear();
+    mocks.useQueryClient.mockClear();
+    mocks.assignmentProcesses.list.mockClear();
+    mocks.assignmentProcesses.dashboard.mockClear();
+    mocks.assignmentProcesses.summary.mockClear();
+    mocks.assignmentProcesses.myLanSummary.mockClear();
+    mocks.history.listVersions.mockClear();
+    mocks.history.listExports.mockClear();
+    mocks.meetingSessions.list.mockClear();
+    mocks.schools.list.mockClear();
+    mocks.academicYears.list.mockClear();
+    mocks.departments.list.mockClear();
+    mocks.teacherProfiles.list.mockClear();
+    mocks.subjects.list.mockClear();
+    mocks.subjects.create.mockClear();
+    mocks.subjects.update.mockClear();
+    mocks.subjects.remove.mockClear();
+    mocks.teachingGroups.list.mockClear();
+    mocks.teachingGroups.create.mockClear();
+    mocks.teachingGroups.update.mockClear();
+    mocks.teachingGroups.remove.mockClear();
+    mocks.hourRequirements.list.mockClear();
+    mocks.hourRequirements.create.mockClear();
+    mocks.hourRequirements.update.mockClear();
+    mocks.hourRequirements.remove.mockClear();
+    mocks.processTeachers.list.mockClear();
+    mocks.processTeachers.create.mockClear();
+    mocks.processTeachers.update.mockClear();
+    mocks.processTeachers.remove.mockClear();
+    mocks.assignments.list.mockClear();
+    mocks.assignments.create.mockClear();
+    mocks.assignments.update.mockClear();
+    mocks.assignments.remove.mockClear();
+    mocks.assignments.directChoice.mockClear();
+    mocks.auditEvents.list.mockClear();
+  });
+
+  it("wires query keys to typed API wrappers", async () => {
+    const {
+      useRepartoDashboard,
+      useRepartoExports,
+      useRepartoMeetingSessions,
+      useRepartoProcesses,
+      useRepartoSummary,
+      useRepartoTeacherLan,
+      useRepartoVersions
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoProcesses({ skip: 5, limit: 10 });
+    useRepartoDashboard("process-1");
+    useRepartoSummary("process-1");
+    useRepartoMeetingSessions("process-1");
+    useRepartoTeacherLan("process-1");
+    useRepartoVersions("process-1");
+    useRepartoExports("process-1");
+
+    expect(mocks.assignmentProcesses.list).toHaveBeenCalledWith({
+      skip: 5,
+      limit: 10
+    });
+    expect(mocks.assignmentProcesses.dashboard).toHaveBeenCalledWith("process-1");
+    expect(mocks.assignmentProcesses.summary).toHaveBeenCalledWith("process-1");
+    expect(mocks.meetingSessions.list).toHaveBeenCalledWith("process-1");
+    expect(mocks.assignmentProcesses.myLanSummary).toHaveBeenCalledWith("process-1");
+    expect(mocks.history.listVersions).toHaveBeenCalledWith("process-1");
+    expect(mocks.history.listExports).toHaveBeenCalledWith("process-1");
+    expect(mocks.useQuery).toHaveBeenCalledTimes(7);
+  });
+
+  it("disables process-rooted queries until a process is selected", async () => {
+    const {
+      useRepartoDashboard,
+      useRepartoExports,
+      useRepartoMeetingSessions,
+      useRepartoSummary,
+      useRepartoTeacherLan,
+      useRepartoVersions
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoDashboard();
+    useRepartoSummary();
+    useRepartoMeetingSessions();
+    useRepartoTeacherLan();
+    useRepartoVersions();
+    useRepartoExports();
+
+    expect(mocks.assignmentProcesses.dashboard).not.toHaveBeenCalled();
+    expect(mocks.assignmentProcesses.summary).not.toHaveBeenCalled();
+    expect(mocks.assignmentProcesses.myLanSummary).not.toHaveBeenCalled();
+    expect(mocks.meetingSessions.list).not.toHaveBeenCalled();
+    expect(mocks.history.listVersions).not.toHaveBeenCalled();
+    expect(mocks.history.listExports).not.toHaveBeenCalled();
+    expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]);
+  });
+
+  it("wires global entity list hooks and CRUD mutation hooks (Phase 1)", async () => {
+    const {
+      useArchiveRepartoAcademicYear,
+      useCreateRepartoAcademicYear,
+      useCreateRepartoDepartment,
+      useCreateRepartoSchool,
+      useCreateRepartoTeacherProfile,
+      useDeleteRepartoTeacherProfile,
+      useLinkRepartoTeacherProfileUser,
+      useRepartoAcademicYears,
+      useRepartoDepartments,
+      useRepartoSchools,
+      useRepartoTeacherProfiles,
+      useUpdateRepartoAcademicYear,
+      useUpdateRepartoDepartment,
+      useUpdateRepartoSchool,
+      useUpdateRepartoTeacherProfile
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoSchools();
+    useRepartoAcademicYears({ skip: 1 });
+    useRepartoDepartments({ schoolId: "s1" });
+    useRepartoTeacherProfiles({ active: true });
+
+    expect(mocks.schools.list).toHaveBeenCalledWith({ skip: 0, limit: 25 });
+    expect(mocks.academicYears.list).toHaveBeenCalledWith({ skip: 1, limit: 25 });
+    expect(mocks.departments.list).toHaveBeenCalledWith({
+      skip: 0,
+      limit: 25,
+      schoolId: "s1"
+    });
+    expect(mocks.teacherProfiles.list).toHaveBeenCalledWith({
+      skip: 0,
+      limit: 25,
+      active: true
+    });
+
+    const createSchool = useCreateRepartoSchool();
+    createSchool.mutate({ name: "S" });
+    const updateSchool = useUpdateRepartoSchool();
+    updateSchool.mutate({ schoolId: "s1", body: { name: "S2" } });
+    const createYear = useCreateRepartoAcademicYear();
+    createYear.mutate({
+      label: "2025-2026",
+      start_date: "2025-09-01",
+      end_date: "2026-06-30"
+    });
+    const updateYear = useUpdateRepartoAcademicYear();
+    updateYear.mutate({ yearId: "y1", body: { status: "archived" } });
+    const archiveYear = useArchiveRepartoAcademicYear();
+    archiveYear.mutate("y1");
+    const createDepartment = useCreateRepartoDepartment();
+    createDepartment.mutate({ school_id: "s1", name: "Matemáticas" });
+    const updateDepartment = useUpdateRepartoDepartment();
+    updateDepartment.mutate({ departmentId: "d1", body: { name: "Lengua" } });
+    const createProfile = useCreateRepartoTeacherProfile();
+    createProfile.mutate({ display_name: "Ana" });
+    const updateProfile = useUpdateRepartoTeacherProfile();
+    updateProfile.mutate({ profileId: "p1", body: { active: false } });
+    const linkUser = useLinkRepartoTeacherProfileUser();
+    linkUser.mutate({ profileId: "p1", body: { user_id: "u1" } });
+    const deleteProfile = useDeleteRepartoTeacherProfile();
+    deleteProfile.mutate("p1");
+
+    expect(mocks.useMutation).toHaveBeenCalledTimes(11);
+    expect(mocks.useQueryClient).toHaveBeenCalled();
+  });
+
+  it("wires process-scoped entity list + CRUD hooks (Phase 3 step 1)", async () => {
+    const {
+      useRepartoSubjects,
+      useCreateRepartoSubject,
+      useUpdateRepartoSubject,
+      useDeleteRepartoSubject,
+      useRepartoTeachingGroups,
+      useCreateRepartoTeachingGroup,
+      useUpdateRepartoTeachingGroup,
+      useDeleteRepartoTeachingGroup,
+      useRepartoHourRequirements,
+      useCreateRepartoHourRequirement,
+      useUpdateRepartoHourRequirement,
+      useDeleteRepartoHourRequirement,
+      useRepartoProcessTeachers,
+      useCreateRepartoProcessTeacher,
+      useUpdateRepartoProcessTeacher,
+      useDeleteRepartoProcessTeacher,
+      useRepartoAssignments,
+      useCreateRepartoAssignment,
+      useUpdateRepartoAssignment,
+      useDeleteRepartoAssignment,
+      useRepartoDirectChoiceAssignment,
+      useRepartoAuditEvents
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoSubjects("p1");
+    useRepartoTeachingGroups("p1");
+    useRepartoHourRequirements("p1");
+    useRepartoProcessTeachers("p1");
+    useRepartoAssignments("p1");
+    useRepartoAuditEvents("p1");
+
+    expect(mocks.subjects.list).toHaveBeenCalledWith("p1");
+    expect(mocks.teachingGroups.list).toHaveBeenCalledWith("p1");
+    expect(mocks.hourRequirements.list).toHaveBeenCalledWith("p1");
+    expect(mocks.processTeachers.list).toHaveBeenCalledWith("p1");
+    expect(mocks.assignments.list).toHaveBeenCalledWith("p1");
+    expect(mocks.auditEvents.list).toHaveBeenCalledWith("p1");
+    expect(mocks.useQuery).toHaveBeenCalledTimes(6);
+
+    const createSubject = useCreateRepartoSubject();
+    createSubject.mutate({ processId: "p1", body: { name: "Maths" } });
+    const updateSubject = useUpdateRepartoSubject();
+    updateSubject.mutate({ processId: "p1", subjectId: "s1", body: { name: "Math" } });
+    const deleteSubject = useDeleteRepartoSubject();
+    deleteSubject.mutate({ processId: "p1", subjectId: "s1" });
+
+    const createGroup = useCreateRepartoTeachingGroup();
+    createGroup.mutate({
+      processId: "p1",
+      body: { stage: "ESO", grade: 1, group_code: "A", label: "1 ESO A" }
+    });
+    const updateGroup = useUpdateRepartoTeachingGroup();
+    updateGroup.mutate({ processId: "p1", groupId: "g1", body: { label: "X" } });
+    const deleteGroup = useDeleteRepartoTeachingGroup();
+    deleteGroup.mutate({ processId: "p1", groupId: "g1" });
+
+    const createRequirement = useCreateRepartoHourRequirement();
+    createRequirement.mutate({
+      processId: "p1",
+      body: {
+        teaching_group_id: "g1",
+        subject_id: "s1",
+        required_hours: 4
+      }
+    });
+    const updateRequirement = useUpdateRepartoHourRequirement();
+    updateRequirement.mutate({
+      processId: "p1",
+      requirementId: "r1",
+      body: { required_hours: 6 }
+    });
+    const deleteRequirement = useDeleteRepartoHourRequirement();
+    deleteRequirement.mutate({ processId: "p1", requirementId: "r1" });
+
+    const createParticipant = useCreateRepartoProcessTeacher();
+    createParticipant.mutate({
+      processId: "p1",
+      body: { teacher_profile_id: "t1", available_hours: 18 }
+    });
+    const updateParticipant = useUpdateRepartoProcessTeacher();
+    updateParticipant.mutate({
+      processId: "p1",
+      processTeacherId: "pt1",
+      body: { status: "inactive" }
+    });
+    const deleteParticipant = useDeleteRepartoProcessTeacher();
+    deleteParticipant.mutate({ processId: "p1", processTeacherId: "pt1" });
+
+    const createAssignment = useCreateRepartoAssignment();
+    createAssignment.mutate({
+      processId: "p1",
+      body: {
+        assignment_process_id: "p1",
+        hour_requirement_id: "r1",
+        process_teacher_id: "pt1",
+        assigned_hours: 4
+      }
+    });
+    const updateAssignment = useUpdateRepartoAssignment();
+    updateAssignment.mutate({
+      processId: "p1",
+      assignmentId: "a1",
+      body: { assigned_hours: 5 }
+    });
+    const deleteAssignment = useDeleteRepartoAssignment();
+    deleteAssignment.mutate({ processId: "p1", assignmentId: "a1" });
+    const directChoice = useRepartoDirectChoiceAssignment();
+    directChoice.mutate({
+      processId: "p1",
+      body: {
+        meeting_session_id: "ms1",
+        hour_requirement_id: "r1",
+        assigned_hours: 3
+      }
+    });
+
+    expect(mocks.subjects.create).toHaveBeenCalledWith("p1", { name: "Maths" });
+    expect(mocks.subjects.update).toHaveBeenCalledWith("p1", "s1", { name: "Math" });
+    expect(mocks.subjects.remove).toHaveBeenCalledWith("p1", "s1");
+    expect(mocks.teachingGroups.create).toHaveBeenCalledWith("p1", {
+      stage: "ESO",
+      grade: 1,
+      group_code: "A",
+      label: "1 ESO A"
+    });
+    expect(mocks.teachingGroups.update).toHaveBeenCalledWith("p1", "g1", {
+      label: "X"
+    });
+    expect(mocks.teachingGroups.remove).toHaveBeenCalledWith("p1", "g1");
+    expect(mocks.hourRequirements.create).toHaveBeenCalledWith("p1", {
+      teaching_group_id: "g1",
+      subject_id: "s1",
+      required_hours: 4
+    });
+    expect(mocks.hourRequirements.update).toHaveBeenCalledWith("p1", "r1", {
+      required_hours: 6
+    });
+    expect(mocks.hourRequirements.remove).toHaveBeenCalledWith("p1", "r1");
+    expect(mocks.processTeachers.create).toHaveBeenCalledWith("p1", {
+      teacher_profile_id: "t1",
+      available_hours: 18
+    });
+    expect(mocks.processTeachers.update).toHaveBeenCalledWith("p1", "pt1", {
+      status: "inactive"
+    });
+    expect(mocks.processTeachers.remove).toHaveBeenCalledWith("p1", "pt1");
+    expect(mocks.assignments.create).toHaveBeenCalledWith("p1", {
+      assignment_process_id: "p1",
+      hour_requirement_id: "r1",
+      process_teacher_id: "pt1",
+      assigned_hours: 4
+    });
+    expect(mocks.assignments.update).toHaveBeenCalledWith("p1", "a1", {
+      assigned_hours: 5
+    });
+    expect(mocks.assignments.remove).toHaveBeenCalledWith("p1", "a1");
+    expect(mocks.assignments.directChoice).toHaveBeenCalledWith("p1", {
+      meeting_session_id: "ms1",
+      hour_requirement_id: "r1",
+      assigned_hours: 3
+    });
+    expect(mocks.useMutation).toHaveBeenCalledTimes(16);
+  });
+
+  it("disables process-scoped list queries when no process is selected", async () => {
+    const {
+      useRepartoSubjects,
+      useRepartoTeachingGroups,
+      useRepartoHourRequirements,
+      useRepartoProcessTeachers,
+      useRepartoAssignments,
+      useRepartoAuditEvents
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoSubjects();
+    useRepartoTeachingGroups();
+    useRepartoHourRequirements();
+    useRepartoProcessTeachers();
+    useRepartoAssignments();
+    useRepartoAuditEvents();
+
+    expect(mocks.subjects.list).not.toHaveBeenCalled();
+    expect(mocks.teachingGroups.list).not.toHaveBeenCalled();
+    expect(mocks.hourRequirements.list).not.toHaveBeenCalled();
+    expect(mocks.processTeachers.list).not.toHaveBeenCalled();
+    expect(mocks.assignments.list).not.toHaveBeenCalled();
+    expect(mocks.auditEvents.list).not.toHaveBeenCalled();
+    expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]);
+  });
+});

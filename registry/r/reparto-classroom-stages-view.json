@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "reparto-classroom-stages-view",
+  "type": "registry:block",
+  "title": "Reparto Classroom Stages View",
+  "description": "Admin classroom-stage view using the canonical M8 data table and toast notification contracts.",
+  "registryDependencies": [
+    "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json",
+    "./node_modules/@mano8/astro-ui-m8/registry/r/toast-notification.json"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/views/reparto-classroom-stages-view.tsx",
+      "content": "\"use client\";\n\nimport { RepartoClassroomStagesView } from \"@mano8/astro-reparto-m8/default-ui\";\nimport { ToastNotificationHost } from \"@/components/m8-ui/toast-notification\";\n\nexport function RepartoClassroomStagesRegistryView(\n  props: Parameters<typeof RepartoClassroomStagesView>[0]\n) {\n  return (\n    <>\n      <ToastNotificationHost />\n      <RepartoClassroomStagesView {...props} />\n    </>\n  );\n}\n",
+      "type": "registry:block",
+      "target": "components/fa-reparto/reparto-classroom-stages-view.tsx"
+    }
+  ]
+}

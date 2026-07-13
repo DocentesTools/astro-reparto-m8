@@ -1,0 +1,24 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoTeacherRosterView } from "@mano8/astro-reparto-m8/default-ui";
+import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
+import "../scaffold/styles/reparto.css";
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Reparto teacher roster",
+    description: "Create, edit, link, and delete reparto teacher roster entries.",
+    tableOfContents: false
+  }}
+>
+  <RepartoRouteLoading />
+  <RepartoTeacherRosterView client:only="react" config={config} locale={Astro.currentLocale}>
+    <RepartoRouteLoading fallback slot="fallback" />
+  </RepartoTeacherRosterView>
+</StarlightPage>

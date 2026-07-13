@@ -1,0 +1,200 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "fa-m8-reparto",
+  "homepage": "https://github.com/DocentesTools/astro-reparto-m8",
+  "items": [
+    {
+      "name": "reparto-classroom-stages-view",
+      "type": "registry:block",
+      "title": "Reparto Classroom Stages View",
+      "description": "Admin classroom-stage view using the canonical M8 data table and toast notification contracts.",
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/toast-notification.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/views/reparto-classroom-stages-view.tsx",
+          "type": "registry:block",
+          "target": "components/fa-reparto/reparto-classroom-stages-view.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-processes-table",
+      "type": "registry:component",
+      "title": "Reparto Processes Table",
+      "description": "Editable reparto process list skin using the canonical @mano8/astro-ui-m8 controlled data-table block.",
+      "dependencies": ["@tanstack/react-table", "lucide-react"],
+      "registryDependencies": [
+        "badge",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/processes/reparto-processes-table.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-processes-table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-state-panel",
+      "type": "registry:component",
+      "title": "Reparto State Panel",
+      "description": "Reparto loading, empty, error, and unauthorized state adapter backed by the canonical @mano8/astro-ui-m8 state blocks.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-loading.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-empty.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-error.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-unauthorized.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/state/reparto-state-panel.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-state-panel.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-starter-views",
+      "type": "registry:component",
+      "title": "Reparto Starter Views",
+      "description": "Starter copied skins for the reparto dashboard, meeting, processes, teacher, shared, versions, and exports islands. Requires @mano8/astro-reparto-m8 installed.",
+      "dependencies": ["@tanstack/react-table", "lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-processes-table.json",
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-state-panel.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/views/reparto-starter-views.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-starter-views.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-crud-table",
+      "type": "registry:component",
+      "title": "Reparto CRUD Table",
+      "description": "Generic admin CRUD table skin composing the canonical @mano8/astro-ui-m8 data-table and state blocks, with create action and loading/empty/error adapters.",
+      "dependencies": ["@tanstack/react-table", "lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-loading.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-empty.json",
+        "./node_modules/@mano8/astro-ui-m8/registry/r/state-error.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/crud/reparto-crud-table.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-crud-table.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-fk-select",
+      "type": "registry:component",
+      "title": "Reparto FK Select",
+      "description": "Cascading select skin populated from a reparto list hook, with one-level inline create. Honours the freeze rule (D-7): no nested modals beyond one level.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-ui-m8/registry/r/data-table.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/fk/reparto-fk-select.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-fk-select.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-delete-confirm",
+      "type": "registry:component",
+      "title": "Reparto Delete Confirm",
+      "description": "Relationship-aware destructive confirmation skin (AlertDialog) for hard-delete entities. Includes the entity label and record name per the freeze.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [],
+      "files": [
+        {
+          "path": "registry/blocks/dialogs/reparto-delete-confirm.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-delete-confirm.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-school-dialog",
+      "type": "registry:component",
+      "title": "Reparto School Dialog",
+      "description": "Create/edit dialog for schools (edit-only, no delete). Composes reparto hooks and the i18n dictionary.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-fk-select.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/dialogs/reparto-school-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-school-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-academic-year-dialog",
+      "type": "registry:component",
+      "title": "Reparto Academic Year Dialog",
+      "description": "Create/edit/archive dialog for academic years. Date-only inputs (no timezone round-trip). Honours the archive-not-delete freeze rule.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-fk-select.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/dialogs/reparto-academic-year-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-academic-year-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-department-dialog",
+      "type": "registry:component",
+      "title": "Reparto Department Dialog",
+      "description": "Create/edit dialog for departments with a cascading School FK select and one-level inline create link. Edit-only (no delete).",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-fk-select.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/dialogs/reparto-department-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-department-dialog.tsx"
+        }
+      ]
+    },
+    {
+      "name": "reparto-teacher-roster-dialog",
+      "type": "registry:component",
+      "title": "Reparto Teacher Roster Dialog",
+      "description": "Create/edit/delete dialog for teacher roster entries. Hard delete with relationship-aware confirm.",
+      "dependencies": ["lucide-react"],
+      "registryDependencies": [
+        "./node_modules/@mano8/astro-reparto-m8/registry/r/reparto-delete-confirm.json"
+      ],
+      "files": [
+        {
+          "path": "registry/blocks/dialogs/reparto-teacher-roster-dialog.tsx",
+          "type": "registry:component",
+          "target": "components/fa-reparto/reparto-teacher-roster-dialog.tsx"
+        }
+      ]
+    }
+  ]
+}

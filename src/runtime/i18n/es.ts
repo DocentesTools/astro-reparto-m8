@@ -1,0 +1,308 @@
+import type { RepartoDictionary } from "./types.js";
+
+export const es: RepartoDictionary = {
+  locale: "es",  entity: {
+    school: { singular: "Centro", plural: "Centros", status: {} },
+    academicYear: { singular: "Curso académico", plural: "Cursos académicos", status: { active: "Activo", archived: "Archivado" } },
+    department: { singular: "Departamento", plural: "Departamentos", status: {} },
+    teacherRoster: { singular: "Docente", plural: "Docentes", status: {} },
+    assignmentProcess: { singular: "Proceso de reparto", plural: "Procesos de reparto", status: { draft: "Borrador", ready_for_meeting: "Listo para la sesión", meeting_open: "Sesión abierta", assigning: "Asignación en curso", department_proposal: "Propuesta del departamento", sent_to_school_leadership: "Enviado a la dirección", returned_by_school_leadership: "Devuelto por la dirección", internal_revision: "Revisión interna", final: "Final", reopened: "Reabierto", archived: "Archivado" } },
+    subject: { singular: "Materia", plural: "Materias", status: {} },
+    classroom: { singular: "Grupo", plural: "Grupos", status: {} },
+    hourRequirement: { singular: "Horas necesarias", plural: "Horas necesarias", status: {} },
+    processParticipant: { singular: "Participante en el proceso", plural: "Participantes en el proceso", status: { active: "Activo", inactive: "Inactivo" } },
+    assignment: { singular: "Reparto", plural: "Repartos", status: { draft: "Borrador", confirmed: "Confirmado", overridden: "Forzado", cancelled: "Cancelado" } },
+    meetingSession: { singular: "Sesión de reparto", plural: "Sesiones de reparto", status: { prepared: "Preparado", open: "Abierto", selecting: "Seleccionando", paused: "En pausa", closed: "Cerrado", reopened: "Reabierta" } },
+    selectionTurn: { singular: "Turno de selección", plural: "Turnos de selección", status: { pending: "Pendiente", active: "Activo", completed: "Completado", skipped: "Saltado", overridden: "Forzado" } },
+    auditEvent: { singular: "Evento de auditoría", plural: "Eventos de auditoría", status: {} },
+    version: { singular: "Versión", plural: "Versiones", status: {} },
+    exportArtifact: { singular: "Exportación", plural: "Exportaciones", status: {} }
+  },
+  field: {
+    name: "Nombre",
+    label: "Etiqueta",
+    slug: "Slug",
+    stage: "Etapa",
+    grade: "Curso",
+    groupCode: "Código de grupo",
+    locality: "Localidad",
+    province: "Provincia",
+    region: "Comunidad autónoma",
+    address: "Dirección",
+    notes: "Notas",
+    displayName: "Nombre a mostrar",
+    linkedUser: "Usuario vinculado",
+    active: "Activo",
+    startDate: "Fecha de inicio",
+    endDate: "Fecha de fin",
+    status: "Estado",
+    previousAcademicYear: "Curso académico anterior",
+    school: "Centro",
+    academicYear: "Curso académico",
+    department: "Departamento",
+    departmentHead: "Jefe de departamento",
+    requiredHours: "Horas necesarias",
+    availableHours: "Horas disponibles",
+    assignedHours: "Horas asignadas",
+    defaultTeacherHoursReference: "Horas de referencia",
+    selectionOrderEnabled: "Orden de selección activado",
+    selectionOrderMode: "Modo de orden",
+    directTeacherSelectionEnabled: "Selección directa del docente",
+    lanAccessEnabled: "Acceso LAN",
+    subject: "Materia",
+    classroom: "Grupo",
+    teacher: "Docente",
+    hourRequirement: "Horas necesarias",
+    processParticipant: "Participante",
+    requirementType: "Tipo",
+    assignmentType: "Tipo",
+    source: "Origen",
+    flags: "Indicadores",
+    participatesInSelection: "Participa en la selección",
+    selectionPosition: "Posición",
+    selectionPoints: "Puntos de selección",
+    selectionCriteria: "Criterio de selección",
+    selectionNotes: "Notas de selección",
+    orderLocked: "Orden bloqueado",
+    overrideReason: "Motivo de la excepción"
+  },
+  option: {
+    requirementType: { ordinary: "Ordinaria", optional: "Optativa", reinforcement: "Refuerzo", split_group: "Desdoble", bilingual: "Bilingüe", other: "Otra" },
+    assignmentType: { main: "Principal", shared: "Compartida", reinforcement: "Refuerzo", split_group: "Desdoble", other: "Otra" },
+    boolean: { yes: "Sí", no: "No" }
+  },
+  view: {
+    teacherTitle: "Vista docente",
+    loading: "Cargando {entity}",
+    pageLoading: {
+      title: "Cargando página de reparto",
+      description: "Preparando el contenido más reciente de la página."
+    },
+    unavailable: "{entity} no disponible",
+    currentTurn: { status: "Estado", turn: "Turno", teacher: "Docente", started: "Inicio", waiting: "En espera", noPosition: "Sin posición", noActiveTurn: "Sin turno activo", notStarted: "Sin iniciar", position: "Turno {position}", teacherValue: "Docente {teacher}" },
+    versions: { title: "Versiones", item: "Versión {number}", comparison: "Comparación", noChanges: "Sin cambios", requiredDelta: "Diferencia de horas requeridas", assignedDelta: "Diferencia de horas asignadas", teacherDelta: "Docentes", create: "Crear versión", compare: "Comparar versiones" },
+    exports: { title: "Centro de exportación", finalBlocked: "Cierre bloqueado", finalReady: "Cierre listo", closeout: "Cierre", finalExport: "Exportación final", leadershipWorkflow: "Flujo de dirección", markReturned: "Marcar como devuelto", startRevision: "Iniciar revisión", reopenFinal: "Reabrir versión final", type: { internal_draft: "Borrador interno", school_leadership: "Dirección del centro", final: "Final", teacher_summary: "Resumen docente", backup: "Copia de seguridad" } },
+    choice: { title: "Elegir grupo", confirmation: "Confirmación", choose: "Elegir", pass: "Pasar", ready: "Listo para elegir.", impact: "Se te asignarán {hours} horas.", meetingClosed: "La sesión no está abierta.", directDisabled: "La selección directa está desactivada.", otherTurn: "Es el turno de otro docente.", covered: "Las horas ya están cubiertas.", alreadyCovered: "Estas horas ya estaban cubiertas.", turnChanged: "El turno activo ha cambiado. Actualiza el estado de la sesión." }
+  },
+  validation: {
+    title: { requirement: "Aviso de horas necesarias", teacher: "Aviso de docente", process: "Aviso del proceso" },
+    requirement: { overAssigned: "Las horas de {subject} para {group} están sobreasignadas ({assigned} h asignadas de {required} h requeridas).", overAssignedOverridden: "Las horas de {subject} para {group} están sobreasignadas, pero se ha registrado una excepción.", uncovered: "Las horas de {subject} para {group} todavía no tienen reparto.", partial: "Las horas de {subject} para {group} están parcialmente cubiertas (quedan {pending} h).", covered: "Las horas de {subject} para {group} están completamente cubiertas." },
+    teacher: { overloaded: "{teacher} tiene sobrecarga ({assigned} h asignadas de {available} h disponibles).", overloadedOverridden: "{teacher} tiene sobrecarga, pero se ha registrado una excepción.", balanced: "La carga de {teacher} está equilibrada." },
+    process: { balanced: "Las horas del proceso están equilibradas.", pending: "{count} necesidad(es) todavía requieren horas.", overage: "El proceso tiene sobreasignaciones sin resolver." }
+  },
+  audit: {
+    pageTitle: "Auditoría del reparto", description: "Consulta los eventos de auditoría del proceso activo.",
+    action: { created: "Creado", updated: "Modificado", deleted: "Eliminado", transitioned: "Estado modificado", reopened: "Reabierto", copied_from_previous_year: "Copiado del curso anterior", direct_choice: "Elección directa registrada", started: "Iniciado", completed: "Completado", skipped: "Omitido", overridden: "Forzado" },
+    entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Horas necesarias", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
+    role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
+  },
+  action: {
+    create: "Añadir",
+    edit: "Editar",
+    delete: "Eliminar",
+    archive: "Archivar",
+    unarchive: "Desarchivar",
+    close: "Cerrar",
+    reopen: "Reabrir",
+    transition: "Cambiar de estado",
+    save: "Guardar cambios",
+    cancel: "Cancelar",
+    confirm: "Confirmar",
+    search: "Buscar",
+    filter: "Filtrar",
+    refresh: "Actualizar",
+    linkUser: "Vincular usuario",
+    unlinkUser: "Desvincular usuario",
+    export: "Exportar",
+    restore: "Restaurar borrador",
+    copyFrom: "Copiar del curso anterior",
+    startTurn: "Iniciar turno",
+    completeTurn: "Completar turno",
+    skipTurn: "Saltar turno",
+    overrideTurn: "Forzar turno",
+    initializeTurns: "Inicializar turnos"
+  },
+  confirm: {
+    delete: { title: "¿Eliminar {entity}?", body: "Esta acción eliminará permanentemente **{name}**. No se puede deshacer.", proceed: "Eliminar permanentemente" },
+    archive: { title: "¿Archivar {entity}?", body: "**{name}** dejará de aparecer en las listas activas. Los datos existentes se conservan y pueden consultarse desde la vista de archivo.", proceed: "Archivar" },
+    cancel: "Cancelar"
+  },
+  nav: {
+    group: { setup: "Configuración", process: "Proceso" },
+    item: {
+      schools: "Centros",
+      academicYears: "Cursos académicos",
+      departments: "Departamentos",
+      teacherRoster: "Listado del profesorado",
+      dashboard: "Panel",
+      processes: "Procesos",
+      classrooms: "Grupos",
+      classroomStages: "Etapas educativas",
+      subjects: "Materias",
+      requirements: "Horas necesarias",
+      processParticipants: "Participantes en el proceso",
+      assignments: "Repartos",
+      meeting: "Sesión",
+      myView: "Mi vista",
+      shared: "Pantalla compartida",
+      versions: "Versiones",
+      exports: "Exportaciones",
+      audit: "Auditoría"
+    }
+  },
+  flow: {
+    bootstrap: {
+      title: "Configurar el reparto",
+      subtitle: "Algunos pasos antes de iniciar la sesión.",
+      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso", subjects: "Añadir materias", classrooms: "Añadir grupos", teacherRoster: "Añadir docentes", requirements: "Añadir horas necesarias", participants: "Añadir participantes" },
+      done: "Hecho",
+      open: "Abrir"
+    }
+  },
+  dashboard: {
+    balanceState: { balanced: "Equilibrado", pending: "Pendiente", exceeded: "Excedido", warning: "Aviso" },
+    title: "Panel de reparto",
+    subtitleAdmin: "Siga el equilibrio, la cobertura y el estado de la sesion antes del directo.",
+    subtitleReadonly: "Proyecte una vista tranquila en solo lectura para la sesion en directo.",
+    pickerLabel: "Proceso actual",
+    pickerHint: "Cambie de proceso cuando la ruta no este bloqueada a un id concreto.",
+    mode: { admin: "Modo admin", readonly: "Modo solo lectura" },
+    section: {
+      overview: "Resumen",
+      teacherLoad: "Carga docente",
+      classroomCoverage: "Cobertura por grupos",
+      validations: "Validaciones",
+      checklist: "Checklist de configuracion",
+      meetingReadiness: "Preparacion de la sesion"
+    },
+    metric: {
+      required: "Necesarias",
+      assigned: "Asignadas",
+      available: "Disponibles",
+      pending: "Pendientes",
+      blocking: "Bloqueantes",
+      participants: "Participantes",
+      requirements: "Necesidades"
+    },
+    state: {
+      noDashboard: "Los datos del panel apareceran cuando el proceso este listo.",
+      noTeachers: "Anada participantes al proceso para ver la carga docente.",
+      noRequirements: "Anada necesidades horarias para ver la cobertura por grupos.",
+      noValidations: "No hay validaciones bloqueantes.",
+      lockedToRoute: "Esta ruta queda fijada al proceso de la URL actual."
+    },
+    summary: {
+      balance: "{assigned} horas asignadas de {required}. Quedan {pending} horas pendientes.",
+      teacherLoad: "{count} participante(s) seguidos; {overloaded} con sobrecarga.",
+      classroomCoverage: "{count} necesidad(es), {uncovered} sin cubrir.",
+      validations: "{blocking} validacion(es) bloqueante(s) y {total} mensaje(s) en total.",
+      checklist: "{done} paso(s) completado(s) de {total}."
+    }
+  },
+  error: {
+    required: "Este campo es obligatorio.",
+    requiredNamed: "{field} es obligatorio.",
+    duplicate: "Ya existe un registro con este nombre.",
+    duplicateScoped: "Ya existe un registro con este nombre en {scope}.",
+    fkMissing: "El {field} seleccionado ya no existe. Elija otro.",
+    fkViolation: "No se puede eliminar: {count} elemento(s) siguen dependiendo de este registro.",
+    hoursInvalid: "Las horas deben ser un número positivo.",
+    hoursExceed: "Las horas asignadas ({assigned}) superan las horas necesarias ({required}). Indique un motivo de excepción.",
+    processState: "El proceso está en {status}; esta acción no está permitida en ese estado.",
+    permission: "No tiene permiso para realizar esta acción.",
+    unauthorized: "Su sesión ha caducado. Inicie sesión de nuevo.",
+    network: "No se puede contactar con el servidor. Inténtelo de nuevo.",
+    server: "Se ha producido un error en el servidor. Inténtelo de nuevo.",
+    invalidDate: "La fecha de inicio debe ser anterior o igual a la fecha de fin.",
+    conflict: "Esta acción entra en conflicto con el estado actual."
+  },
+  disabled: {
+    noProcess: "Seleccione o cree primero un proceso.",
+    processClosed: "El proceso está en {status}; esta acción está desactivada.",
+    missingPrereq: "Cree primero el {prereq}.",
+    invalidHours: "Las horas no son válidas.",
+    noData: "Aún no hay datos disponibles.",
+    noPermission: "No tiene permiso."
+  },
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre o etapa...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
+  classroomBulk: {
+    action: "Crear grupos",
+    title: "Crear varios grupos",
+    description: "Crear un intervalo inclusivo de grupos.",
+    groupStart: "Primer grupo",
+    groupEnd: "Último grupo",
+    created: "Grupos creados: {count}",
+    createError: "No se pudieron crear los grupos"
+  },
+  requirementBulk: {
+    action: "Añadir horas en masa",
+    title: "Añadir horas necesarias en masa",
+    description: "Crear la misma necesidad horaria para todos los grupos de una etapa e intervalo de cursos.",
+    gradeStart: "Curso inicial",
+    gradeEnd: "Curso final",
+    noMatches: "Ningún grupo coincide con la etapa e intervalo de cursos seleccionados.",
+    created: "Horas necesarias creadas: {count}",
+    createError: "Algunas horas necesarias no se pudieron crear",
+    createErrorCount: "{count} fallo(s)"
+  },
+  classroomSelection: {
+    selectAllVisible: "Seleccionar todos los grupos visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionados ({count})",
+    deleteTitle: "Eliminar los grupos seleccionados",
+    deleteBody: "Grupos seleccionados para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Grupos eliminados: {count}",
+    deleteError: "No se pudieron eliminar los grupos seleccionados"
+  },
+  subjectSelection: {
+    selectAllVisible: "Seleccionar todas las materias visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las materias seleccionadas",
+    deleteBody: "Materias seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Materias eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las materias seleccionadas"
+  },
+  requirementSelection: {
+    selectAllVisible: "Seleccionar todas las necesidades visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las necesidades seleccionadas",
+    deleteBody: "Necesidades seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Necesidades eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las necesidades seleccionadas"
+  },
+  participantSelection: {
+    selectAllVisible: "Seleccionar todos los participantes visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionados ({count})",
+    deleteTitle: "Eliminar los participantes seleccionados",
+    deleteBody: "Participantes seleccionados para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Participantes eliminados: {count}",
+    deleteError: "No se pudieron eliminar los participantes seleccionados"
+  },
+  assignmentSelection: {
+    selectAllVisible: "Seleccionar todas las asignaciones visibles",
+    selectRow: "Seleccionar {name}",
+    deleteSelected: "Eliminar seleccionadas ({count})",
+    deleteTitle: "Eliminar las asignaciones seleccionadas",
+    deleteBody: "Asignaciones seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
+    deleted: "Asignaciones eliminadas: {count}",
+    deleteError: "No se pudieron eliminar las asignaciones seleccionadas"
+  },
+  classroomStages: {
+    pageTitle: "Etapas educativas",
+    pageDescription: "Gestionar las etapas educativas de referencia comunes.",
+    formDescription: "Datos de referencia comunes de los grupos.",
+    createTitle: "Crear una etapa educativa",
+    editTitle: "Editar la etapa educativa",
+    deleteTitle: "Eliminar la etapa educativa",
+    deleteBody: "¿Eliminar {name}?",
+    field: { stage: "Etapa", shortLabel: "Etiqueta corta", minGrade: "Curso mínimo", maxGrade: "Curso máximo" },
+    column: { created: "Creada", updated: "Actualizada" },
+    state: { unauthorized: "Se requiere acceso de administrador.", empty: "No se encontraron etapas educativas.", loading: "Cargando etapas educativas...", unavailable: "Las etapas educativas no están disponibles." },
+    search: "Buscar etapas educativas",
+    toast: { created: "Etapa educativa creada", updated: "Etapa educativa actualizada", saveError: "No se pudo guardar la etapa educativa", deleted: "Etapa educativa eliminada", deleteError: "No se pudo eliminar la etapa educativa" }
+  },
+  picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
+};

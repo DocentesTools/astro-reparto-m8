@@ -1,0 +1,24 @@
+---
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoDashboardView } from "@mano8/astro-reparto-m8/default-ui";
+import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
+import "../scaffold/styles/reparto.css";
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Reparto dashboard",
+    description: "Monitor assignment progress and current turn state.",
+    tableOfContents: false
+  }}
+>
+  <RepartoRouteLoading />
+  <RepartoDashboardView client:only="react" config={config} locale={Astro.currentLocale}>
+    <RepartoRouteLoading fallback slot="fallback" />
+  </RepartoDashboardView>
+</StarlightPage>

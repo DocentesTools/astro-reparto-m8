@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
+import { getRepartoAuthAdapter } from "../../authAdapter.js";
 import {
   useArchiveRepartoAcademicYear,
   useCreateRepartoAcademicYear,
@@ -902,12 +903,12 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const updateMutation = useUpdateRepartoTeacherProfile();
   const deleteMutation = useDeleteRepartoTeacherProfile();
   const linkMutation = useLinkRepartoTeacherProfileUser();
+  const unlinkMutation = useUpdateRepartoTeacherProfile();
 
   const [editing, setEditing] = useState<TeacherProfilePublic | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<TeacherProfilePublic | null>(null);
-  const [linkTarget, setLinkTarget] = useState<TeacherProfilePublic | null>(null);
-  const [linkUserId, setLinkUserId] = useState("");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [active, setActive] = useState(true);
   const [notes, setNotes] = useState("");
@@ -920,6 +921,12 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const [deleteMapped, setDeleteMapped] = useState<RepartoMappedError>(
     EMPTY_REPARTO_MAPPED_ERROR
   );
+
+  useEffect(() => {
+    void Promise.resolve(getRepartoAuthAdapter().getCurrentUser?.() ?? null).then(
+      (user) => setCurrentUserId(user?.id ?? null)
+    );
+  }, []);
 
   const formOpen = creating || Boolean(editing);
 
@@ -984,31 +991,38 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     });
   }
 
-  function handleLink(event: FormEvent) {
-    event.preventDefault();
-    if (!linkTarget || linkUserId.trim() === "") return;
+  function handleLinkToMe(profile: TeacherProfilePublic) {
+    if (!currentUserId || profile.user_id === currentUserId) return;
     setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
-    linkMutation.mutate(
-      { profileId: linkTarget.id, body: { user_id: linkUserId.trim() } },
-      {
-        onSuccess: () => {
-          setLinkTarget(null);
-          setLinkUserId("");
-        },
-        onError: (err: unknown) => setLinkMapped(mapRepartoError(err))
-      }
+    const onErr = (err: unknown) => setLinkMapped(mapRepartoError(err));
+    const linkToProfile = () =>
+      linkMutation.mutate(
+        { profileId: profile.id, body: { user_id: currentUserId } },
+        { onError: onErr }
+      );
+    const previouslyLinked = rows.find(
+      (row) => row.user_id === currentUserId && row.id !== profile.id
+    );
+    if (previouslyLinked) {
+      unlinkMutation.mutate(
+        { profileId: previouslyLinked.id, body: { user_id: null } },
+        { onSuccess: linkToProfile, onError: onErr }
+      );
+    } else {
+      linkToProfile();
+    }
+  }
+
+  function handleUnlink(profile: TeacherProfilePublic) {
+    setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
+    unlinkMutation.mutate(
+      { profileId: profile.id, body: { user_id: null } },
+      { onError: (err: unknown) => setLinkMapped(mapRepartoError(err)) }
     );
   }
 
-  function closeLink() {
-    setLinkTarget(null);
-    setLinkUserId("");
-    setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
-  }
-
-  const linkReason =
-    linkUserId.trim() === "" ? dict.error.required : null;
-  const anyFormOpen = formOpen || Boolean(linkTarget) || Boolean(confirmDelete);
+  const linking = linkMutation.isPending || unlinkMutation.isPending;
+  const anyFormOpen = formOpen || Boolean(confirmDelete);
 
   const columns: DataTableColumn<TeacherProfilePublic>[] = [
     { id: "display_name", label: dict.field.displayName, value: (profile) => profile.display_name },
@@ -1021,16 +1035,23 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
       cell: (profile) => (
         <RowActions>
           <ActionButton action="edit" disabled={anyFormOpen} label={dict.action.edit} onClick={() => openEdit(profile)} row />
-          <ActionButton
-            action="link-user"
-            disabled={anyFormOpen}
-            label={dict.action.linkUser}
-            onClick={() => {
-              setLinkTarget(profile);
-              setLinkUserId(profile.user_id ?? "");
-            }}
-            row
-          />
+          {currentUserId && profile.user_id === currentUserId ? (
+            <ActionButton
+              action="unlink-user"
+              disabled={anyFormOpen || linking}
+              label={dict.action.unlinkUser}
+              onClick={() => handleUnlink(profile)}
+              row
+            />
+          ) : (
+            <ActionButton
+              action="link-user"
+              disabled={anyFormOpen || linking || !currentUserId}
+              label={dict.action.linkUser}
+              onClick={() => handleLinkToMe(profile)}
+              row
+            />
+          )}
           <ActionButton
             action="delete"
             disabled={anyFormOpen || deleteMutation.isPending}
@@ -1078,6 +1099,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
           isLoading={query.isLoading}
           label={dict.entity.teacherRoster.plural}
         />
+        <RepartoFormError mapped={linkMapped} />
         {formOpen ? (
           <EntityDialogShell
             description={dict.entity.teacherRoster.plural}
@@ -1130,50 +1152,6 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
               <RowActions>
                 <ActionButton action="save" disabled={!canSave} label={dict.action.save} type="submit" />
                 <ActionButton action="cancel" label={dict.action.cancel} onClick={closeForm} />
-              </RowActions>
-            </form>
-          </EntityDialogShell>
-        ) : null}
-        {linkTarget ? (
-          <EntityDialogShell
-            description={linkTarget.display_name}
-            dialogId="teacher-link-user"
-            onClose={closeLink}
-            title={dict.action.linkUser}
-          >
-            <form
-              className={repartoFieldGridClass}
-              data-reparto-form="teacher-link-user"
-              onSubmit={handleLink}
-            >
-              <label className={repartoFieldLabelClass}>
-                {dict.field.linkedUser}
-                <input
-                  aria-invalid={linkReason ? true : undefined}
-                  className={repartoInputClass}
-                  data-reparto-field="user-id"
-                  id="teacher-link-user"
-                  onChange={(e: InputChangeEvent) => setLinkUserId(e.target.value)}
-                  placeholder={dict.field.linkedUser}
-                  value={linkUserId}
-                />
-                <RepartoFieldError
-                  field="userId"
-                  id="teacher-link-user-error"
-                  mapped={linkMapped}
-                />
-              </label>
-              <RepartoFormError mapped={linkMapped} />
-              <RowActions>
-                <ActionButton
-                  action="link-user"
-                  disabled={linkUserId.trim() === "" || linkMutation.isPending}
-                  disabledReason={linkReason}
-                  label={dict.action.linkUser}
-                  type="submit"
-                />
-                <RepartoDisabledReason reason={linkReason} />
-                <ActionButton action="cancel" label={dict.action.cancel} onClick={closeLink} />
               </RowActions>
             </form>
           </EntityDialogShell>

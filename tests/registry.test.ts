@@ -31,7 +31,7 @@ describe("reparto shadcn registry", () => {
       scripts?: Record<string, string>;
     }>("package.json");
 
-    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toBe("^1.0.0");
+    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toBe("^1.3.0");
     expect(pkg.files).toEqual(expect.arrayContaining(["registry.json", "registry/r"]));
     expect(pkg.scripts?.["build:registry"]).toBe("node scripts/build-registry.mjs");
     expect(pkg.scripts?.build).toContain("npm run build:registry");

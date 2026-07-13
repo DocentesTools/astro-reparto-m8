@@ -6,6 +6,7 @@ export type RepartoAuthAdapter = {
 };
 
 export type RepartoCurrentUser = {
+  id: string;
   role: "superadmin" | "admin" | "writer" | "reader" | "user";
   is_superuser: boolean;
 };

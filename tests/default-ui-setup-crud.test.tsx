@@ -236,7 +236,7 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(html).toContain("IES Almería Centro");
   });
 
-  it("renders teacher roster with Edit, Link user, and Delete (hard delete + link-user)", async () => {
+  it("renders teacher roster with Edit, Link user (one-click, no id input), and Delete", async () => {
     resetState();
     queryState.teachers = [
       {
@@ -258,6 +258,9 @@ describe("Phase 2 setup CRUD islands (default-ui)", () => {
     expect(html).toContain('data-reparto-row-action="link-user"');
     expect(html).toContain('data-reparto-row-action="delete"');
     expect(html).toContain("Profesora Ana");
+    // No more free-text user-id input: linking is a single click, not a form.
+    expect(html).not.toContain('data-reparto-form="teacher-link-user"');
+    expect(html).not.toContain('data-reparto-field="user-id"');
   });
 
   it("renders the four setup islands labelled as the Setup sidebar group", async () => {

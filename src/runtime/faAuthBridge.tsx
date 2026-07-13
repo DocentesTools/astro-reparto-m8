@@ -132,7 +132,7 @@ export function installRepartoFaAuthBridge(
       refreshToken,
       getCurrentUser: async () => {
         const user = await getProfile();
-        return { role: user.role, is_superuser: user.is_superuser };
+        return { id: user.id, role: user.role, is_superuser: user.is_superuser };
       },
       // Fires only after the reparto client's own 401 → refresh cycle fails,
       // i.e. the visitor has no valid session — send them to login.

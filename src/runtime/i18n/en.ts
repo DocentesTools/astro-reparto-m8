@@ -235,6 +235,17 @@ export const en = {
     created: "{count} classrooms created",
     createError: "Classrooms could not be created"
   },
+  requirementBulk: {
+    action: "Bulk add hours",
+    title: "Bulk add hour requirements",
+    description: "Create the same hour requirement for every classroom in a stage and grade range.",
+    gradeStart: "Grade start",
+    gradeEnd: "Grade end",
+    noMatches: "No classrooms match the selected stage and grade range.",
+    created: "{count} hour requirements created",
+    createError: "Some hour requirements could not be created",
+    createErrorCount: "{count} failed"
+  },
   classroomSelection: {
     selectAllVisible: "Select all visible classrooms",
     selectRow: "Select {name}",

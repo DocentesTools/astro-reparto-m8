@@ -234,6 +234,17 @@ export const es: RepartoDictionary = {
     created: "Grupos creados: {count}",
     createError: "No se pudieron crear los grupos"
   },
+  requirementBulk: {
+    action: "Añadir horas en masa",
+    title: "Añadir horas necesarias en masa",
+    description: "Crear la misma necesidad horaria para todos los grupos de una etapa e intervalo de cursos.",
+    gradeStart: "Curso inicial",
+    gradeEnd: "Curso final",
+    noMatches: "Ningún grupo coincide con la etapa e intervalo de cursos seleccionados.",
+    created: "Horas necesarias creadas: {count}",
+    createError: "Algunas horas necesarias no se pudieron crear",
+    createErrorCount: "{count} fallo(s)"
+  },
   classroomSelection: {
     selectAllVisible: "Seleccionar todos los grupos visibles",
     selectRow: "Seleccionar {name}",

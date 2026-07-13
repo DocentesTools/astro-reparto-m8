@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import {
+  useRepartoClassroomStages,
   useRepartoHourRequirements,
   useRepartoSubjects,
   useRepartoTeachingGroups
@@ -14,9 +15,11 @@ import type {
 
 import { RequirementsList } from "./list.js";
 import { RequirementAdd } from "./add.js";
+import { RequirementBulk } from "./bulk.js";
 import { RequirementEdit } from "./edit.js";
 import { RequirementDelete } from "./delete.js";
 import { RequirementBulkDelete } from "./bulk-delete.js";
+import { RepartoToastHost } from "../../../ui/toast-notification.js";
 
 export function RepartoHourRequirementsView({ config, locale, processId }: EntityViewProps) {
   return (
@@ -35,9 +38,11 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
   const query = useRepartoHourRequirements(processId);
   const classroomsQuery = useRepartoTeachingGroups(processId);
   const subjectsQuery = useRepartoSubjects(processId);
+  const stagesQuery = useRepartoClassroomStages();
   const rows = query.data?.data ?? [];
   const classrooms = classroomsQuery.data?.data ?? [];
   const subjects = subjectsQuery.data?.data ?? [];
+  const stages = stagesQuery.data?.data ?? [];
 
   const classroomLabel = (id: string) =>
     classrooms.find((c: TeachingGroupPublic) => c.id === id)?.label ?? dict.entity.classroom.singular.toLowerCase();
@@ -45,6 +50,7 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
     subjects.find((s: SubjectPublic) => s.id === id)?.name ?? dict.entity.subject.singular.toLowerCase();
 
   const [adding, setAdding] = useState(false);
+  const [bulk, setBulk] = useState(false);
   const [editing, setEditing] = useState<HourRequirementPublic | null>(null);
   const [deleting, setDeleting] = useState<HourRequirementPublic | null>(null);
   const [deletingSelected, setDeletingSelected] = useState(false);
@@ -62,7 +68,7 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
       : null;
   const selectedRequirements = rows.filter((requirement) => selectedIds.has(requirement.id));
   const currentSelectedIds = new Set(selectedRequirements.map((requirement) => requirement.id));
-  const hasActiveForm = adding || deletingSelected || Boolean(editing) || Boolean(deleting);
+  const hasActiveForm = adding || bulk || deletingSelected || Boolean(editing) || Boolean(deleting);
 
   return (
     <main
@@ -70,10 +76,22 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
       data-reparto-route="requirements"
       data-reparto-group="process"
     >
+      <RepartoToastHost />
       <div
         className="flex justify-end gap-2 pb-4"
         data-reparto-actions="requirements"
       >
+        <ActionButton
+          action="bulk-create"
+          disabled={hasActiveForm || stages.length === 0 || subjects.length === 0}
+          disabledReason={createReason ?? undefined}
+          label={dict.requirementBulk.action}
+          onClick={() => {
+            setEditing(null);
+            setDeleting(null);
+            setBulk(true);
+          }}
+        />
         <ActionButton
           action="create"
           disabled={hasActiveForm}
@@ -115,6 +133,16 @@ function RepartoRequirementsContent({ locale, processId }: EntityViewProps) {
         />
         {adding ? (
           <RequirementAdd dict={dict} processId={processId ?? ""} onDone={() => setAdding(false)} />
+        ) : null}
+        {bulk ? (
+          <RequirementBulk
+            dict={dict}
+            processId={processId ?? ""}
+            subjects={subjects}
+            stages={stages}
+            classrooms={classrooms}
+            onDone={() => setBulk(false)}
+          />
         ) : null}
         {editing ? (
           <RequirementEdit

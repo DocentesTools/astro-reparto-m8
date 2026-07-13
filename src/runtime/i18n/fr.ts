@@ -234,6 +234,17 @@ export const fr: RepartoDictionary = {
     created: "Classes créées : {count}",
     createError: "Impossible de créer les classes"
   },
+  requirementBulk: {
+    action: "Ajouter des besoins en masse",
+    title: "Ajouter des besoins horaires en masse",
+    description: "Créer le même besoin horaire pour toutes les classes d'un niveau et d'une plage d'années.",
+    gradeStart: "Première année",
+    gradeEnd: "Dernière année",
+    noMatches: "Aucune classe ne correspond au niveau et à la plage d'années sélectionnés.",
+    created: "Besoins horaires créés : {count}",
+    createError: "Certains besoins horaires n'ont pas pu être créés",
+    createErrorCount: "{count} échec(s)"
+  },
   classroomSelection: {
     selectAllVisible: "Sélectionner toutes les classes visibles",
     selectRow: "Sélectionner {name}",

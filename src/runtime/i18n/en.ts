@@ -106,7 +106,15 @@ export const en = {
   },
   planning: {
     pageTitle: "Reparto planning",
-    description: "Build and review the teaching plan for the active process."
+    description: "Build and review the teaching plan for the active process.",
+    balanceTitle: "Planning balance",
+    group: "Group hours",
+    teacher: "Teacher hours",
+    target: "Target",
+    planned: "Planned",
+    difference: "Difference",
+    loading: "Loading planning balance.",
+    unavailable: "Planning balance is unavailable."
   },
   action: {
     create: "Add",

@@ -105,7 +105,15 @@ export const fr: RepartoDictionary = {
   },
   planning: {
     pageTitle: "Planification de la répartition",
-    description: "Construisez et vérifiez le plan d'enseignement du processus actif."
+    description: "Construisez et vérifiez le plan d'enseignement du processus actif.",
+    balanceTitle: "Équilibre de planification",
+    group: "Heures des groupes",
+    teacher: "Heures des enseignants",
+    target: "Objectif",
+    planned: "Planifié",
+    difference: "Différence",
+    loading: "Chargement de l'équilibre de planification.",
+    unavailable: "L'équilibre de planification est indisponible."
   },
   action: {
     create: "Ajouter",

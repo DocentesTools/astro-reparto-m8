@@ -42,7 +42,10 @@ import {
 } from "../../i18n/index.js";
 import { RepartoLoadingState } from "./loading-state.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
-export { RepartoPlanningView } from "./planning/index.js";
+export {
+  PlanningBalanceHeader,
+  RepartoPlanningView
+} from "./planning/index.js";
 
 function QueryState({
   error,

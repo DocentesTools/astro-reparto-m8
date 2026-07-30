@@ -33,6 +33,7 @@ export {
   useUpdateRepartoSubject,
   useDeleteRepartoSubject,
   useRepartoGroupSubjects,
+  useRepartoTeachingPlanSummary,
   usePreviewRepartoGroupSubjects,
   useApplyRepartoGroupSubjects,
   useRepartoTeachingGroups,

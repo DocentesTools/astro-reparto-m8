@@ -105,7 +105,15 @@ export const es: RepartoDictionary = {
   },
   planning: {
     pageTitle: "Planificación del reparto",
-    description: "Crea y revisa el plan docente del proceso activo."
+    description: "Crea y revisa el plan docente del proceso activo.",
+    balanceTitle: "Balance de planificación",
+    group: "Horas de grupos",
+    teacher: "Horas de docentes",
+    target: "Objetivo",
+    planned: "Planificado",
+    difference: "Diferencia",
+    loading: "Cargando el balance de planificación.",
+    unavailable: "El balance de planificación no está disponible."
   },
   action: {
     create: "Añadir",

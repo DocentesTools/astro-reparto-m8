@@ -14,6 +14,7 @@ import { schools } from "../api/schools.js";
 import { subjects } from "../api/subjects.js";
 import { teacherProfiles } from "../api/teacherProfiles.js";
 import { teachingGroups } from "../api/teachingGroups.js";
+import { teachingPlans } from "../api/teachingPlans.js";
 import type {
   AcademicYearCreate,
   AcademicYearUpdate,
@@ -358,6 +359,15 @@ export function useRepartoGroupSubjects(processId?: string) {
   return useQuery({
     queryKey: repartoKeys.groupSubjects(processId),
     queryFn: () => groupSubjects.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useRepartoTeachingPlanSummary(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingPlanSummary(processId),
+    queryFn: () => teachingPlans.summary(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
   });
 }

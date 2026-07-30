@@ -59,6 +59,9 @@ const mocks = vi.hoisted(() => ({
     bulkPreview: vi.fn(),
     bulkApply: vi.fn()
   },
+  teachingPlans: {
+    summary: vi.fn()
+  },
   teachingGroups: {
     list: vi.fn(),
     create: vi.fn(),
@@ -122,6 +125,9 @@ vi.mock("../src/runtime/api/subjects.js", () => ({
 vi.mock("../src/runtime/api/groupSubjects.js", () => ({
   groupSubjects: mocks.groupSubjects
 }));
+vi.mock("../src/runtime/api/teachingPlans.js", () => ({
+  teachingPlans: mocks.teachingPlans
+}));
 vi.mock("../src/runtime/api/teachingGroups.js", () => ({
   teachingGroups: mocks.teachingGroups
 }));
@@ -161,6 +167,7 @@ describe("reparto React hooks", () => {
     mocks.groupSubjects.list.mockClear();
     mocks.groupSubjects.bulkPreview.mockClear();
     mocks.groupSubjects.bulkApply.mockClear();
+    mocks.teachingPlans.summary.mockClear();
     mocks.teachingGroups.list.mockClear();
     mocks.teachingGroups.create.mockClear();
     mocks.teachingGroups.update.mockClear();
@@ -321,6 +328,7 @@ describe("reparto React hooks", () => {
       useUpdateRepartoSubject,
       useDeleteRepartoSubject,
       useRepartoGroupSubjects,
+      useRepartoTeachingPlanSummary,
       usePreviewRepartoGroupSubjects,
       useApplyRepartoGroupSubjects,
       useRepartoTeachingGroups,
@@ -345,6 +353,7 @@ describe("reparto React hooks", () => {
 
     useRepartoSubjects("p1");
     useRepartoGroupSubjects("p1");
+    useRepartoTeachingPlanSummary("p1");
     useRepartoTeachingGroups("p1");
     useRepartoHourRequirements("p1");
     useRepartoProcessTeachers("p1");
@@ -353,12 +362,13 @@ describe("reparto React hooks", () => {
 
     expect(mocks.subjects.list).toHaveBeenCalledWith("p1");
     expect(mocks.groupSubjects.list).toHaveBeenCalledWith("p1");
+    expect(mocks.teachingPlans.summary).toHaveBeenCalledWith("p1");
     expect(mocks.teachingGroups.list).toHaveBeenCalledWith("p1");
     expect(mocks.hourRequirements.list).toHaveBeenCalledWith("p1");
     expect(mocks.processTeachers.list).toHaveBeenCalledWith("p1");
     expect(mocks.assignments.list).toHaveBeenCalledWith("p1");
     expect(mocks.auditEvents.list).toHaveBeenCalledWith("p1");
-    expect(mocks.useQuery).toHaveBeenCalledTimes(7);
+    expect(mocks.useQuery).toHaveBeenCalledTimes(8);
 
     const createSubject = useCreateRepartoSubject();
     createSubject.mutate({ processId: "p1", body: { name: "Maths" } });
@@ -527,6 +537,7 @@ describe("reparto React hooks", () => {
     const {
       useRepartoSubjects,
       useRepartoGroupSubjects,
+      useRepartoTeachingPlanSummary,
       useRepartoTeachingGroups,
       useRepartoHourRequirements,
       useRepartoProcessTeachers,
@@ -536,6 +547,7 @@ describe("reparto React hooks", () => {
 
     useRepartoSubjects();
     useRepartoGroupSubjects();
+    useRepartoTeachingPlanSummary();
     useRepartoTeachingGroups();
     useRepartoHourRequirements();
     useRepartoProcessTeachers();
@@ -544,12 +556,14 @@ describe("reparto React hooks", () => {
 
     expect(mocks.subjects.list).not.toHaveBeenCalled();
     expect(mocks.groupSubjects.list).not.toHaveBeenCalled();
+    expect(mocks.teachingPlans.summary).not.toHaveBeenCalled();
     expect(mocks.teachingGroups.list).not.toHaveBeenCalled();
     expect(mocks.hourRequirements.list).not.toHaveBeenCalled();
     expect(mocks.processTeachers.list).not.toHaveBeenCalled();
     expect(mocks.assignments.list).not.toHaveBeenCalled();
     expect(mocks.auditEvents.list).not.toHaveBeenCalled();
     expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
+      false,
       false,
       false,
       false,

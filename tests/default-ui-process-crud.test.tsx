@@ -25,7 +25,8 @@ const queryState = vi.hoisted(() => ({
   schools: [] as unknown[],
   years: [] as unknown[],
   departments: [] as unknown[],
-  stages: [] as unknown[]
+  stages: [] as unknown[],
+  planBalance: null as unknown
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -45,6 +46,14 @@ vi.mock("@tanstack/react-query", () => ({
       }
       if (subkey === "detail") {
         const entityScope = queryKey[4];
+        if (entityScope === "teaching-plan" && queryKey[5] === "summary") {
+          return {
+            data: queryState.planBalance,
+            error: null,
+            isError: false,
+            isLoading: false
+          };
+        }
         const rows =
           entityScope === "subjects"
             ? queryState.subjects
@@ -111,11 +120,29 @@ function reset() {
   queryState.audit = [];
   queryState.teachers = [];
   queryState.stages = [classroomStage];
+  queryState.planBalance = null;
 }
 
 describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
   it("renders the package-owned planning starter view", async () => {
     reset();
+    queryState.planBalance = {
+      teaching_plan_id: "99999999-9999-4999-8999-999999999999",
+      assignment_process_id: processId,
+      group: {
+        total_group_load: "120.00",
+        allocated_group_weekly_hours: "116.00",
+        allocation_difference: "4.00",
+        is_balanced: false
+      },
+      teacher: {
+        total_teacher_load: "124.00",
+        participant_target_total: "124.00",
+        teacher_load_difference: "0.00",
+        is_balanced: true
+      },
+      is_exact: false
+    };
     const { RepartoPlanningView } = await import(
       "../src/runtime/react/default-ui/index.js"
     );
@@ -128,6 +155,60 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-panel="planning"');
     expect(html).toContain(`data-process-id="${processId}"`);
     expect(html).toContain("Reparto planning");
+    expect(html).toContain('data-reparto-slot="planning-balance-header"');
+    expect(html).toContain('data-reparto-balance-axis="group"');
+    expect(html).toContain('data-reparto-balance-axis="teacher"');
+    for (const value of ["116.00 h", "120.00 h", "4.00 h", "124.00 h", "0.00 h"]) {
+      expect(html).toContain(value);
+    }
+  });
+
+  it("keeps all planning balance metrics visible while data is unavailable", async () => {
+    reset();
+    const { PlanningBalanceHeader } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const { getRepartoDictionary } = await import(
+      "../src/runtime/i18n/index.js"
+    );
+    const html = renderToStaticMarkup(
+      <PlanningBalanceHeader
+        balance={null}
+        dict={getRepartoDictionary("en")}
+        error={{ status: 404 }}
+        isLoading
+      />
+    );
+
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain("Loading planning balance.");
+    expect(html).toContain("Planning balance is unavailable.");
+    expect(html.match(/<dt[^>]*>Target<\/dt>/g)).toHaveLength(2);
+    expect(html.match(/<dt[^>]*>Planned<\/dt>/g)).toHaveLength(2);
+    expect(html.match(/<dt[^>]*>Difference<\/dt>/g)).toHaveLength(2);
+    expect(html.match(/<dd[^>]*>—<\/dd>/g)).toHaveLength(6);
+  });
+
+  it("surfaces a planning balance query error without hiding the metrics", async () => {
+    reset();
+    const { PlanningBalanceHeader } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const { getRepartoDictionary } = await import(
+      "../src/runtime/i18n/index.js"
+    );
+    const html = renderToStaticMarkup(
+      <PlanningBalanceHeader
+        balance={null}
+        dict={getRepartoDictionary("en")}
+        error={new Error("Balance request failed")}
+        isLoading={false}
+      />
+    );
+
+    expect(html).toContain("Balance request failed");
+    expect(html).toContain('data-reparto-balance-axis="group"');
+    expect(html).toContain('data-reparto-balance-axis="teacher"');
   });
 
   it("subjects view renders the list with Create + Edit + Delete row actions", async () => {

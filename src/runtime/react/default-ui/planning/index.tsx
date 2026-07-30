@@ -12,38 +12,58 @@ import {
   WithSelectedProcess,
   type EntityViewProps
 } from "../process-crud/shared.js";
+import { useRepartoTeachingPlanSummary } from "../../hooks.js";
+import { PlanningBalanceHeader } from "./balance-header.js";
+
+function PlanningContent({
+  locale,
+  processId
+}: {
+  locale: EntityViewProps["locale"];
+  processId: EntityViewProps["processId"];
+}) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const balanceQuery = useRepartoTeachingPlanSummary(processId);
+
+  return (
+    <main
+      className={repartoShellClass}
+      data-process-id={processId}
+      data-reparto-group="process"
+      data-reparto-route="planning"
+    >
+      <section className={repartoPanelClass} data-reparto-panel="planning">
+        <header className={repartoHeaderClass}>
+          <h1>{dict.planning.pageTitle}</h1>
+          <p className="text-sm text-muted-foreground">
+            {dict.planning.description}
+          </p>
+        </header>
+      </section>
+      <PlanningBalanceHeader
+        balance={balanceQuery.data ?? null}
+        dict={dict}
+        error={balanceQuery.isError ? balanceQuery.error : null}
+        isLoading={balanceQuery.isLoading}
+      />
+    </main>
+  );
+}
 
 export function RepartoPlanningView({
   config,
   locale,
   processId
 }: EntityViewProps) {
-  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-
   return (
     <Shell config={config}>
       <WithSelectedProcess locale={locale} mode="admin" processId={processId}>
         {(resolvedProcessId) => (
-          <main
-            className={repartoShellClass}
-            data-process-id={resolvedProcessId}
-            data-reparto-group="process"
-            data-reparto-route="planning"
-          >
-            <section
-              className={repartoPanelClass}
-              data-reparto-panel="planning"
-            >
-              <header className={repartoHeaderClass}>
-                <h1>{dict.planning.pageTitle}</h1>
-                <p className="text-sm text-muted-foreground">
-                  {dict.planning.description}
-                </p>
-              </header>
-            </section>
-          </main>
+          <PlanningContent locale={locale} processId={resolvedProcessId} />
         )}
       </WithSelectedProcess>
     </Shell>
   );
 }
+
+export { PlanningBalanceHeader } from "./balance-header.js";

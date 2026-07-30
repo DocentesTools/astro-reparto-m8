@@ -34,6 +34,11 @@ absent, and never forces host source edits outside documented registration point
   backend-error-to-field/form mapping source. `src/runtime/i18n/**` owns the
   English-first `en`/`fr`/`es` dictionary and rejects missing keys, bare
   `common.teachers`, and UUIDs in dictionary values.
+- `src/runtime/decimals.ts` owns the canonical two-decimal hour representation:
+  the hour Zod schemas (also re-exported from `schemas.ts`), integer-hundredths
+  arithmetic, and the hour-input parser that keeps "unset" distinct from zero.
+  No hour value may be validated, compared or calculated in binary floating
+  point anywhere else in the package.
 - `src/runtime/react/**` owns providers and default UI. Its process picker uses
   academic year, school, and department selects with one-level inline creation;
   it never exposes raw UUID inputs. `src/runtime/ui/**` owns framework-neutral

@@ -18,6 +18,26 @@ manually changed. The bulk dialog previews an inclusive A-Z range and submits
 one atomic request to the process-scoped groups endpoint. Mutation feedback uses
 the canonical shadcn Sonner toast contract from `astro-ui-m8`.
 
+## Decimal hours
+
+Every weekly hour value in the backend contract is a two-decimal quantity
+exchanged as a canonical string such as `"2.50"`, and hour differences are
+signed (`"-4.00"`). `@mano8/astro-reparto-m8/decimals` owns that representation:
+
+- `HoursSchema` / `SignedHoursSchema` read what the backend sends — a canonical
+  string on computed schemas, a JSON number on entity schemas whose column sweep
+  is still open — and normalize both to a canonical string. Compose with
+  `.nullable()` for an hour column whose `NULL` means "inherit the default".
+- `CanonicalHoursSchema` / `CanonicalSignedHoursSchema` validate the canonical
+  string form strictly, for payloads the UI builds.
+- `addHours`, `subtractHours`, `sumHours`, `multiplyHours`, `compareHours` and
+  `hoursEqual` run every calculation through integer hundredths, so no balance,
+  target or difference is ever computed in binary floating point.
+- `parseHoursField` / `formatHoursField` back hour inputs, keeping an empty
+  field ("inherit the default") distinct from a typed `0`.
+
+The schemas are also re-exported from `@mano8/astro-reparto-m8/schemas`.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

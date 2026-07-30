@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+// Canonical decimal-hour schemas live with the arithmetic helpers they share a
+// contract with (`./decimals.ts`) and are re-exported here so every contract
+// schema stays reachable from the `./schemas` entry point.
+export {
+  CanonicalHoursSchema,
+  CanonicalSignedHoursSchema,
+  HoursSchema,
+  SignedHoursSchema,
+  type CanonicalHours,
+  type CanonicalSignedHours,
+  type Hours,
+  type SignedHours
+} from "./decimals.js";
+
 export const AssignmentProcessStatusSchema = z.enum([
   "draft",
   "ready_for_meeting",

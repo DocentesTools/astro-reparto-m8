@@ -32,6 +32,7 @@
     "./api": "./dist/src/runtime/api/index.js",
     "./client": "./dist/src/runtime/client.js",
     "./schemas": "./dist/src/runtime/schemas.js",
+    "./decimals": "./dist/src/runtime/decimals.js",
     "./auth-adapter": "./dist/src/runtime/authAdapter.js",
     "./fa-auth-bridge": "./dist/src/runtime/faAuthBridge.js",
     "./react": "./dist/src/runtime/react/index.js",

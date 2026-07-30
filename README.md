@@ -82,6 +82,14 @@ is left untouched, an explicit `null` hour clears an override back to "inherit",
 and `required_teacher_count` takes only a positive integer because its column is
 `NOT NULL`.
 
+`GroupSubjectBulkEditor` is exported from
+`@mano8/astro-reparto-m8/default-ui`. It loads the process subjects and
+classrooms through the package hooks, exposes the three backend modes and the
+stage/grade filters, and renders the complete create/update/unchanged/conflict
+preview before enabling apply. Apply is a separate confirmation step. A 409
+clears the preview and requires a fresh preview; the component never retries a
+stale selection.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

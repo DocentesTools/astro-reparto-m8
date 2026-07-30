@@ -67,7 +67,10 @@ export const en = {
     orderLocked: "Order locked",
     overrideReason: "Override reason",
     allocationCategory: "Allocation category",
-    activityType: "Activity type"
+    activityType: "Activity type",
+    groupWeeklyHours: "Group hours",
+    teacherWeeklyHoursPerPosition: "Teacher hours per position",
+    requiredTeacherCount: "Teacher positions"
   },
   option: {
     requirementType: { ordinary: "Ordinary", optional: "Optional", reinforcement: "Reinforcement", split_group: "Split group", bilingual: "Bilingual", other: "Other" },
@@ -249,6 +252,59 @@ export const en = {
     created: "{count} hour requirements created",
     createError: "Some hour requirements could not be created",
     createErrorCount: "{count} failed"
+  },
+  groupSubjectBulk: {
+    title: "Group-subject bulk editor",
+    description: "Preview and confirm one subject across the classrooms matched by stage and grade.",
+    modeLabel: "Operation mode",
+    mode: {
+      create_missing: "Create missing",
+      update_existing: "Update existing",
+      upsert: "Create or update"
+    },
+    allStages: "All stages",
+    minimumGrade: "Minimum grade",
+    maximumGrade: "Maximum grade",
+    groupHours: "Group hours",
+    teacherHours: "Teacher hours per position",
+    teacherCount: "Teacher positions",
+    inheritHint: "Leave an hours field empty to inherit the subject default. Enter 0 for a real zero.",
+    previewAction: "Preview changes",
+    confirmAction: "Confirm and apply",
+    confirmTitle: "Apply group-subject changes?",
+    confirmBody: "Apply {count} change(s) from this preview. The server will reject the apply if the matched selection changed.",
+    previewTitle: "Bulk preview",
+    noMatches: "No classrooms matched these filters.",
+    noChanges: "The preview contains no changes to apply.",
+    validationTitle: "Preview validation errors",
+    stale: "This preview is stale because the matched classrooms changed. Preview again before applying.",
+    applied: "Created {created} and updated {updated} group-subject row(s).",
+    previewError: "The group-subject preview could not be generated.",
+    applyError: "The group-subject changes could not be applied.",
+    gradeError: "Grades must be positive whole numbers.",
+    gradeRangeError: "Minimum grade must be less than or equal to maximum grade.",
+    teacherCountError: "Teacher positions must be a positive whole number.",
+    hoursError: {
+      not_a_number: "Enter a decimal hour value.",
+      too_many_decimals: "Use at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "Hours exceed the supported range."
+    },
+    summary: "{create} to create, {update} to update, {unchanged} unchanged, {conflicts} conflict(s).",
+    column: {
+      action: "Result",
+      classroom: "Classroom",
+      groupHours: "Group hours",
+      teacherHours: "Teacher hours",
+      teacherCount: "Teacher positions",
+      reason: "Details"
+    },
+    rowAction: {
+      create: "Create",
+      update: "Update",
+      unchanged: "Unchanged",
+      conflict: "Conflict"
+    }
   },
   classroomSelection: {
     selectAllVisible: "Select all visible classrooms",

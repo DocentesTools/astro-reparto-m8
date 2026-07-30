@@ -5,6 +5,7 @@ import { assignments } from "../api/assignments.js";
 import { auditEvents } from "../api/auditEvents.js";
 import { classroomStages } from "../api/classroomStages.js";
 import { departments } from "../api/departments.js";
+import { groupSubjects } from "../api/groupSubjects.js";
 import { history } from "../api/history.js";
 import { hourRequirements } from "../api/hourRequirements.js";
 import { meetingSessions } from "../api/meetingSessions.js";
@@ -24,6 +25,8 @@ import type {
   ClassroomStageUpdate,
   DepartmentCreate,
   DepartmentUpdate,
+  GroupSubjectBulkApplyRequestInput,
+  GroupSubjectBulkRequestInput,
   HourRequirementCreateInput,
   HourRequirementUpdate,
   ProcessTeacherCreateInput,
@@ -346,6 +349,45 @@ export function useDeleteRepartoSubject() {
     }) => subjects.remove(processId, subjectId),
     onSuccess: (_data, { processId }) => {
       void queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });
+    }
+  });
+}
+
+export function useRepartoGroupSubjects(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.groupSubjects(processId),
+    queryFn: () => groupSubjects.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function usePreviewRepartoGroupSubjects() {
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: GroupSubjectBulkRequestInput;
+    }) => groupSubjects.bulkPreview(processId, body)
+  });
+}
+
+export function useApplyRepartoGroupSubjects() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: GroupSubjectBulkApplyRequestInput;
+    }) => groupSubjects.bulkApply(processId, body),
+    onSuccess: (_data, { processId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.groupSubjects(processId)
+      });
     }
   });
 }

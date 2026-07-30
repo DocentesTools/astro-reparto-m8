@@ -659,6 +659,17 @@ export {
 } from "./setup-crud.js";
 
 export {
+  GroupSubjectBulkConfirmation,
+  GroupSubjectBulkEditor,
+  GroupSubjectBulkPreviewTable,
+  buildGroupSubjectBulkRequest,
+  groupSubjectBulkPreviewRows,
+  isStaleGroupSubjectPreviewError,
+  type GroupSubjectBulkEditorProps,
+  type GroupSubjectBulkFormResult
+} from "./process-crud/group-subjects/bulk.js";
+
+export {
   RepartoAssignmentsView,
   RepartoAuditView,
   RepartoClassroomsView,

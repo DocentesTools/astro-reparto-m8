@@ -66,7 +66,10 @@ export const es: RepartoDictionary = {
     orderLocked: "Orden bloqueado",
     overrideReason: "Motivo de la excepción",
     allocationCategory: "Categoría de asignación",
-    activityType: "Tipo de actividad"
+    activityType: "Tipo de actividad",
+    groupWeeklyHours: "Horas de grupo",
+    teacherWeeklyHoursPerPosition: "Horas por puesto docente",
+    requiredTeacherCount: "Puestos docentes"
   },
   option: {
     requirementType: { ordinary: "Ordinaria", optional: "Optativa", reinforcement: "Refuerzo", split_group: "Desdoble", bilingual: "Bilingüe", other: "Otra" },
@@ -248,6 +251,59 @@ export const es: RepartoDictionary = {
     created: "Horas necesarias creadas: {count}",
     createError: "Algunas horas necesarias no se pudieron crear",
     createErrorCount: "{count} fallo(s)"
+  },
+  groupSubjectBulk: {
+    title: "Editor masivo de materias por grupo",
+    description: "Previsualiza y confirma una materia para los grupos que coinciden con la etapa y el intervalo de cursos.",
+    modeLabel: "Modo de operación",
+    mode: {
+      create_missing: "Crear los que faltan",
+      update_existing: "Actualizar los existentes",
+      upsert: "Crear o actualizar"
+    },
+    allStages: "Todas las etapas",
+    minimumGrade: "Curso mínimo",
+    maximumGrade: "Curso máximo",
+    groupHours: "Horas de grupo",
+    teacherHours: "Horas por puesto docente",
+    teacherCount: "Puestos docentes",
+    inheritHint: "Deja vacío un campo de horas para heredar el valor predeterminado. Escribe 0 para un cero real.",
+    previewAction: "Previsualizar cambios",
+    confirmAction: "Confirmar y aplicar",
+    confirmTitle: "¿Aplicar los cambios de materia por grupo?",
+    confirmBody: "Aplicar {count} cambio(s) de esta previsualización. El servidor rechazará la operación si la selección ha cambiado.",
+    previewTitle: "Previsualización masiva",
+    noMatches: "Ningún grupo coincide con estos filtros.",
+    noChanges: "La previsualización no contiene cambios que aplicar.",
+    validationTitle: "Errores de validación de la previsualización",
+    stale: "Esta previsualización está obsoleta porque han cambiado los grupos coincidentes. Previsualiza de nuevo antes de aplicar.",
+    applied: "Se crearon {created} y se actualizaron {updated} fila(s) de materia por grupo.",
+    previewError: "No se pudo generar la previsualización de materias por grupo.",
+    applyError: "No se pudieron aplicar los cambios de materias por grupo.",
+    gradeError: "Los cursos deben ser números enteros positivos.",
+    gradeRangeError: "El curso mínimo debe ser menor o igual que el curso máximo.",
+    teacherCountError: "Los puestos docentes deben ser un número entero positivo.",
+    hoursError: {
+      not_a_number: "Introduce un valor decimal de horas.",
+      too_many_decimals: "Usa como máximo dos decimales.",
+      negative: "Las horas no pueden ser negativas.",
+      out_of_range: "Las horas superan el intervalo admitido."
+    },
+    summary: "{create} para crear, {update} para actualizar, {unchanged} sin cambios, {conflicts} conflicto(s).",
+    column: {
+      action: "Resultado",
+      classroom: "Grupo",
+      groupHours: "Horas de grupo",
+      teacherHours: "Horas docentes",
+      teacherCount: "Puestos docentes",
+      reason: "Detalles"
+    },
+    rowAction: {
+      create: "Crear",
+      update: "Actualizar",
+      unchanged: "Sin cambios",
+      conflict: "Conflicto"
+    }
   },
   classroomSelection: {
     selectAllVisible: "Seleccionar todos los grupos visibles",

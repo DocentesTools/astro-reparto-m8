@@ -40,6 +40,12 @@ export type RepartoFieldKey =
   | "flags"
   | "allocationCategory"
   | "activityType"
+  | "mode"
+  | "minimumGrade"
+  | "maximumGrade"
+  | "groupWeeklyHours"
+  | "teacherWeeklyHoursPerPosition"
+  | "requiredTeacherCount"
   | "previousAcademicYear";
 
 export type RepartoErrorKey =
@@ -117,6 +123,12 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   flags: "flags",
   allocation_category: "allocationCategory",
   activity_type: "activityType",
+  mode: "mode",
+  minimum_grade: "minimumGrade",
+  maximum_grade: "maximumGrade",
+  group_weekly_hours: "groupWeeklyHours",
+  teacher_weekly_hours_per_position: "teacherWeeklyHoursPerPosition",
+  required_teacher_count: "requiredTeacherCount",
   previous_academic_year_id: "previousAcademicYear"
 };
 

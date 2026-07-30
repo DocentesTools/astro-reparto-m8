@@ -66,7 +66,10 @@ export const fr: RepartoDictionary = {
     orderLocked: "Ordre verrouillé",
     overrideReason: "Motif de dérogation",
     allocationCategory: "Catégorie d'attribution",
-    activityType: "Type d'activité"
+    activityType: "Type d'activité",
+    groupWeeklyHours: "Heures groupe",
+    teacherWeeklyHoursPerPosition: "Heures enseignant par poste",
+    requiredTeacherCount: "Postes enseignants"
   },
   option: {
     requirementType: { ordinary: "Ordinaire", optional: "Optionnel", reinforcement: "Renforcement", split_group: "Groupe dédoublé", bilingual: "Bilingue", other: "Autre" },
@@ -248,6 +251,59 @@ export const fr: RepartoDictionary = {
     created: "Besoins horaires créés : {count}",
     createError: "Certains besoins horaires n'ont pas pu être créés",
     createErrorCount: "{count} échec(s)"
+  },
+  groupSubjectBulk: {
+    title: "Éditeur groupé des matières par classe",
+    description: "Prévisualisez et confirmez une matière pour les classes correspondant à l'étape et aux niveaux.",
+    modeLabel: "Mode d'opération",
+    mode: {
+      create_missing: "Créer les éléments manquants",
+      update_existing: "Mettre à jour les éléments existants",
+      upsert: "Créer ou mettre à jour"
+    },
+    allStages: "Toutes les étapes",
+    minimumGrade: "Niveau minimum",
+    maximumGrade: "Niveau maximum",
+    groupHours: "Heures groupe",
+    teacherHours: "Heures enseignant par poste",
+    teacherCount: "Postes enseignants",
+    inheritHint: "Laissez un champ d'heures vide pour hériter de la valeur par défaut. Saisissez 0 pour un vrai zéro.",
+    previewAction: "Prévisualiser les modifications",
+    confirmAction: "Confirmer et appliquer",
+    confirmTitle: "Appliquer les modifications matière-classe ?",
+    confirmBody: "Appliquer {count} modification(s) de cette prévisualisation. Le serveur refusera l'opération si la sélection a changé.",
+    previewTitle: "Prévisualisation groupée",
+    noMatches: "Aucune classe ne correspond à ces filtres.",
+    noChanges: "La prévisualisation ne contient aucune modification à appliquer.",
+    validationTitle: "Erreurs de validation de la prévisualisation",
+    stale: "Cette prévisualisation est obsolète car les classes correspondantes ont changé. Prévisualisez de nouveau avant d'appliquer.",
+    applied: "{created} ligne(s) matière-classe créée(s) et {updated} mise(s) à jour.",
+    previewError: "La prévisualisation des matières par classe n'a pas pu être générée.",
+    applyError: "Les modifications des matières par classe n'ont pas pu être appliquées.",
+    gradeError: "Les niveaux doivent être des nombres entiers positifs.",
+    gradeRangeError: "Le niveau minimum doit être inférieur ou égal au niveau maximum.",
+    teacherCountError: "Le nombre de postes enseignants doit être un entier positif.",
+    hoursError: {
+      not_a_number: "Saisissez une valeur d'heures décimale.",
+      too_many_decimals: "Utilisez au maximum deux décimales.",
+      negative: "Les heures ne peuvent pas être négatives.",
+      out_of_range: "Les heures dépassent la plage prise en charge."
+    },
+    summary: "{create} à créer, {update} à mettre à jour, {unchanged} inchangé(s), {conflicts} conflit(s).",
+    column: {
+      action: "Résultat",
+      classroom: "Classe",
+      groupHours: "Heures groupe",
+      teacherHours: "Heures enseignant",
+      teacherCount: "Postes enseignants",
+      reason: "Détails"
+    },
+    rowAction: {
+      create: "Créer",
+      update: "Mettre à jour",
+      unchanged: "Inchangé",
+      conflict: "Conflit"
+    }
   },
   classroomSelection: {
     selectAllVisible: "Sélectionner toutes les classes visibles",

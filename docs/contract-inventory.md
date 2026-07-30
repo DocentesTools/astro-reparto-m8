@@ -356,6 +356,14 @@ resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
 `expected_affected_count` (`len(to_create) + len(to_update)`). Result shape:
 `created_count`, `updated_count`, `data` (the affected cells), `count`.
 
+Frontend coverage: `useRepartoGroupSubjects`,
+`usePreviewRepartoGroupSubjects` and `useApplyRepartoGroupSubjects` isolate the
+HTTP calls and cache invalidation. `GroupSubjectBulkEditor` owns the default UI
+surface: it maps blank hour inputs to explicit `null`, canonicalizes typed zero
+to `"0.00"`, renders every preview outcome in a table, disables apply before a
+valid preview, requires a separate confirmation and discards the preview on
+409.
+
 ---
 
 ## 3. Additional surface area not in plan §2

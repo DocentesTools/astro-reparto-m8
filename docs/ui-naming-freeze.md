@@ -255,6 +255,21 @@ ids, etc.) stay internal — no UI label.
 | `active` | Active | Actif | Activa | no | bool; an inactive cell is not a planning candidate |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
+The bulk editor added on 2026-07-30 freezes these surface slots:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Subject filter | `data-reparto-field="group-subject-subject"` | required FK select |
+| Operation mode | `data-reparto-field="group-subject-mode"` | `create_missing` / `update_existing` / `upsert` |
+| Stage filter | `data-reparto-field="group-subject-stage"` | optional backend stage value |
+| Grade range | `data-reparto-field="group-subject-minimum-grade"` / `group-subject-maximum-grade` | optional positive integers; minimum must not exceed maximum |
+| Actual group hours | `data-reparto-field="group-subject-group-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Actual teacher hours | `data-reparto-field="group-subject-teacher-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Teacher positions | `data-reparto-field="group-subject-teacher-count"` | positive integer, blank defaults to 1 |
+| Preview | `data-reparto-table="group-subject-bulk-preview"` | create/update/unchanged/conflict rows |
+| Apply confirmation | `data-reparto-dialog="group-subject-bulk-confirmation"` | separate confirmation after preview |
+| Stale preview | `data-group-subject-bulk-stale` | 409 clears the preview and requires re-preview |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

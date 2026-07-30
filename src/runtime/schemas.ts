@@ -1443,7 +1443,7 @@ export type DepartmentHourAllocationRevisionsPublic = z.infer<
   typeof DepartmentHourAllocationRevisionsPublicSchema
 >;
 
-// â”€â”€ Teaching plans and activities (backend plan Â§5.2, Â§5.6, Â§5.7, Â§7.3, Â§7.4) â”€â”€
+// ── Teaching plans and activities (backend plan §5.2, §5.6, §5.7, §7.3, §7.4) ──
 
 /** Operational stage of the intermediate department teaching plan. */
 export const TeachingPlanStatusSchema = z.enum([

@@ -364,21 +364,21 @@ to `"0.00"`, renders every preview outcome in a table, disables apply before a
 valid preview, requires a separate confirmation and discards the preview on
 409.
 
-### 2.12 Teaching plan â€” `prefix=/â€¦/teaching-plan`
+### 2.12 Teaching plan — `prefix=/…/teaching-plan`
 
-> Added **2026-07-30** for the three-stage adaptation (backend plan Â§5.2,
-> Â§6.1, Â§6.3, Â§7.3, Â§20.1). Verified against `reparto-docente-m8` branch
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.2,
+> §6.1, §6.3, §7.3, §20.1). Verified against `reparto-docente-m8` branch
 > `feat/reparto-three-stage-enums-lifecycle`: `app/routes/teaching_plans.py`,
 > `controllers/teaching_plans.py`, `db_models/teaching_plans.py`,
 > `schemas/planning.py`.
 
 | Aspect | Verified value |
 | --- | --- |
-| Get | `GET ""` â†’ `TeachingPlanPublic`; **404** while the process has no plan |
-| Create | `POST ""` â†’ `201` `TeachingPlanPublic` (process writer); no request body; **409** when a plan already exists |
-| Summary | `GET /summary` â†’ `PlanBalance` |
-| Validations | `GET /validations` â†’ `PlanValidationReport` |
-| Materialize main | `POST /materialize-main` â†’ `MainMaterializationResult` (process writer); no request body; idempotent |
+| Get | `GET ""` → `TeachingPlanPublic`; **404** while the process has no plan |
+| Create | `POST ""` → `201` `TeachingPlanPublic` (process writer); no request body; **409** when a plan already exists |
+| Summary | `GET /summary` → `PlanBalance` |
+| Validations | `GET /validations` → `PlanValidationReport` |
+| Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
 | Patch / delete | **not exposed** |
 | Public shape | `id, assignment_process_id, allocation_revision_id, status, current_generation_number, locked_at, locked_by_user_id, requirements_generated_at, stale_reason, feasibility_status, feasibility_generation, feasibility_checked_at, feasibility_input_fingerprint, feasibility_solver_version, feasibility_diagnostics_ref, created_at, updated_at` |
 
@@ -401,21 +401,21 @@ summed or collapsed.
 entity_type, entity_id`. `code` is the stable machine key. Reading validations
 does not trigger the feasibility solver.
 
-### 2.13 Teaching activity â€” `prefix=/â€¦/teaching-activities`
+### 2.13 Teaching activity — `prefix=/…/teaching-activities`
 
-> Added **2026-07-30** for the three-stage adaptation (backend plan Â§5.6,
-> Â§5.7, Â§7.4, Â§20.9â€“Â§20.11). Verified against
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.6,
+> §5.7, §7.4, §20.9–§20.11). Verified against
 > `reparto-docente-m8` branch `feat/reparto-three-stage-enums-lifecycle`:
 > `app/routes/teaching_activities.py`, `controllers/teaching_activities.py`,
 > `db_models/teaching_activities.py`.
 
 | Aspect | Verified value |
 | --- | --- |
-| List | `GET /` â†’ `TeachingActivitiesPublic` |
-| Create | `POST /` â†’ `201` `TeachingActivityPublic` (process writer) |
-| Get | `GET /{activity_id}` â†’ `TeachingActivityPublic` |
-| Patch | `PATCH /{activity_id}` â†’ `TeachingActivityPublic` (process writer) |
-| Delete | `DELETE /{activity_id}` â†’ `TeachingActivityPublic` (process writer; retirement/downstream rules remain backend-authoritative) |
+| List | `GET /` → `TeachingActivitiesPublic` |
+| Create | `POST /` → `201` `TeachingActivityPublic` (process writer) |
+| Get | `GET /{activity_id}` → `TeachingActivityPublic` |
+| Patch | `PATCH /{activity_id}` → `TeachingActivityPublic` (process writer) |
+| Delete | `DELETE /{activity_id}` → `TeachingActivityPublic` (process writer; retirement/downstream rules remain backend-authoritative) |
 | Create required | `subject_id`, `group_weekly_hours_per_group: float>=0`, `teacher_weekly_hours_per_position: float>=0` |
 | Create optional | `allocation_category` (default `secondary`), `activity_type` (default `ordinary`), `required_teacher_count: int>=1` (default 1), `notes`, `source` (only `secondary_manual` accepted), `group_subject_ids` (default empty) |
 | Patch fields | `allocation_category, activity_type, group_weekly_hours_per_group, teacher_weekly_hours_per_position, required_teacher_count, notes, group_subject_ids` |

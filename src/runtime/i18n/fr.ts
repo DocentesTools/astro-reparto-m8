@@ -142,6 +142,58 @@ export const fr: RepartoDictionary = {
         teacherCount: "Postes enseignants",
         state: "État"
       }
+    },
+    secondary: {
+      title: "Activités secondaires",
+      description: "Ajoutez le tutorat, la co-intervention et d'autres activités facultatives tout en séparant les heures groupe de la charge enseignante.",
+      createAction: "Ajouter une activité secondaire",
+      createTitle: "Ajouter une activité secondaire",
+      editTitle: "Modifier l'activité secondaire",
+      formDescription: "Choisissez une matière secondaire, ses groupes liés et les valeurs réelles utilisées par les deux équilibres.",
+      subject: "Matière secondaire",
+      activityType: "Type d'activité",
+      groupHours: "Heures par groupe",
+      teacherHours: "Heures enseignant par poste",
+      teacherCount: "Postes enseignants",
+      groups: "Groupes liés",
+      notes: "Notes",
+      balanceHint: "Impact groupe = heures groupe × groupes liés. Impact enseignant = heures enseignant × postes.",
+      multipleGroupsHint: "Sélectionnez un ou plusieurs groupes. Tous reçoivent la même valeur d'heures groupe.",
+      singleGroupHint: "Cette matière exige exactement un groupe lié.",
+      optionalGroupHint: "Cette matière autorise zéro ou un groupe lié.",
+      noGroups: "Aucune cellule groupe-matière active n'est disponible pour cette matière.",
+      noLinkedGroups: "Activité de département",
+      noSubjects: "Créez une matière secondaire et ses cellules groupe-matière avant d'ajouter une activité.",
+      empty: "Aucune activité secondaire active n'a été ajoutée.",
+      loading: "Chargement des activités secondaires.",
+      unavailable: "Les activités secondaires sont indisponibles.",
+      created: "Activité secondaire créée",
+      updated: "Activité secondaire modifiée",
+      deleted: "Activité secondaire supprimée",
+      saveError: "L'activité secondaire n'a pas pu être enregistrée.",
+      deleteError: "L'activité secondaire n'a pas pu être supprimée.",
+      deleteTitle: "Supprimer l'activité secondaire ?",
+      deleteBody: "Supprimer l'activité secondaire de {subject} ? Cette action est irréversible.",
+      groupRequiredError: "Sélectionnez un groupe pour cette matière.",
+      multipleGroupsError: "Cette matière n'autorise pas plusieurs groupes liés.",
+      duplicateGroupsError: "Un groupe ne peut pas être lié plusieurs fois.",
+      invalidGroupsError: "Chaque groupe lié doit être une cellule active de la matière sélectionnée.",
+      teacherCountError: "Le nombre de postes enseignants doit être un entier positif.",
+      notesError: "Les notes ne peuvent pas dépasser 2000 caractères.",
+      hoursError: {
+        not_a_number: "Saisissez une valeur horaire décimale.",
+        too_many_decimals: "Utilisez au maximum deux décimales.",
+        negative: "Les heures ne peuvent pas être négatives.",
+        out_of_range: "Les heures dépassent la plage prise en charge."
+      },
+      type: {
+        ordinary: "Ordinaire",
+        tutoring: "Tutorat",
+        co_teaching: "Co-intervention",
+        support: "Soutien",
+        department_level: "Niveau département",
+        other: "Autre"
+      }
     }
   },
   action: {

@@ -15,6 +15,7 @@ import {
 import { useRepartoTeachingPlanSummary } from "../../hooks.js";
 import { PlanningBalanceHeader } from "./balance-header.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
+import { SecondaryActivityEditor } from "./secondary-activities.js";
 
 function PlanningContent({
   locale,
@@ -48,6 +49,7 @@ function PlanningContent({
         isLoading={balanceQuery.isLoading}
       />
       <MainSubjectMaterialization locale={locale} processId={processId} />
+      <SecondaryActivityEditor locale={locale} processId={processId} />
     </main>
   );
 }
@@ -76,3 +78,14 @@ export {
   buildMainSubjectMaterializationRows,
   type MainSubjectMaterializationRow
 } from "./main-materialization.js";
+export {
+  SecondaryActivityEditor,
+  SecondaryActivityForm,
+  SecondaryActivityTable,
+  buildSecondaryActivityRequests,
+  buildSecondaryActivityRows,
+  secondaryActivityFormValues,
+  type SecondaryActivityFormResult,
+  type SecondaryActivityFormValues,
+  type SecondaryActivityRow
+} from "./secondary-activities.js";

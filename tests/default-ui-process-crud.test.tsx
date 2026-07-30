@@ -169,6 +169,10 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain(
       'data-reparto-component="main-subject-materialization"'
     );
+    expect(html).toContain(
+      'data-reparto-component="secondary-activity-editor"'
+    );
+    expect(html).toContain("No live secondary activities have been added.");
     for (const value of ["116.00 h", "120.00 h", "4.00 h", "124.00 h", "0.00 h"]) {
       expect(html).toContain(value);
     }

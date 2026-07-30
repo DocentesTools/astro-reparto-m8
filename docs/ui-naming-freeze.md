@@ -270,6 +270,37 @@ The bulk editor added on 2026-07-30 freezes these surface slots:
 | Apply confirmation | `data-reparto-dialog="group-subject-bulk-confirmation"` | separate confirmation after preview |
 | Stale preview | `data-group-subject-bulk-stale` | 409 clears the preview and requires re-preview |
 
+### 3.14 Secondary teaching activity
+
+> Added **2026-07-30** by the three-stage adaptation. The activity type is
+> descriptive only; behavior comes from the two hour values, teacher-position
+> count, linked groups, and the selected subject's group-link policy.
+
+| Field | en | fr | es | Required? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `subject_id` | Secondary subject | Matière secondaire | Materia secundaria | yes (create) | immutable on edit; only `SECONDARY` subjects are offered |
+| `activity_type` | Activity type | Type d'activité | Tipo de actividad | yes | descriptive enum; never a behavior switch |
+| `group_weekly_hours_per_group` | Group hours per group | Heures par groupe | Horas por grupo | yes | canonical two-place hours; counted once per linked group |
+| `teacher_weekly_hours_per_position` | Teacher hours per position | Heures enseignant par poste | Horas por puesto docente | yes | canonical two-place hours; independent from group hours |
+| `required_teacher_count` | Teacher positions | Postes enseignants | Puestos docentes | yes | positive integer; co-teaching commonly uses 2+ |
+| `group_subject_ids` | Linked groups | Groupes liés | Grupos vinculados | subject policy | complete replacement set on edit; multi-group only when the subject allows it |
+| `notes` | Notes | Notes | Notas | no | textarea, max 2000 |
+
+The editor freezes these surface slots:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Editor | `data-reparto-component="secondary-activity-editor"` | package-owned planning panel |
+| Activity list | `data-reparto-table="secondary-activities"` | live, non-retired secondary rows |
+| Subject | `data-reparto-field="secondary-activity-subject"` | secondary-subject FK; disabled on edit |
+| Descriptive type | `data-reparto-field="secondary-activity-type"` | ordinary/tutoring/co-teaching/support/department-level/other |
+| Group hours | `data-reparto-field="secondary-activity-group-hours"` | required, decimal-safe, zero permitted |
+| Teacher hours | `data-reparto-field="secondary-activity-teacher-hours"` | required, decimal-safe, zero permitted |
+| Teacher positions | `data-reparto-field="secondary-activity-teacher-count"` | positive integer |
+| Linked groups | `data-reparto-field="secondary-activity-groups"` | checkboxes over active same-subject `GroupSubject` cells |
+| Notes | `data-reparto-field="secondary-activity-notes"` | optional textarea |
+| Dialog | `data-reparto-dialog="secondary-activity-editor"` | create/edit surface |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

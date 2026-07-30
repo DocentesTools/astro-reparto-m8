@@ -48,8 +48,17 @@ export {
   MainSubjectMaterializationTable,
   PlanningBalanceHeader,
   RepartoPlanningView,
+  SecondaryActivityEditor,
+  SecondaryActivityForm,
+  SecondaryActivityTable,
   buildMainSubjectMaterializationRows,
-  type MainSubjectMaterializationRow
+  buildSecondaryActivityRequests,
+  buildSecondaryActivityRows,
+  secondaryActivityFormValues,
+  type MainSubjectMaterializationRow,
+  type SecondaryActivityFormResult,
+  type SecondaryActivityFormValues,
+  type SecondaryActivityRow
 } from "./planning/index.js";
 
 function QueryState({

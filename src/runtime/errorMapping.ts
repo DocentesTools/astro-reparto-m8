@@ -46,6 +46,7 @@ export type RepartoFieldKey =
   | "groupWeeklyHours"
   | "teacherWeeklyHoursPerPosition"
   | "requiredTeacherCount"
+  | "groupSubjects"
   | "previousAcademicYear";
 
 export type RepartoErrorKey =
@@ -127,8 +128,10 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   minimum_grade: "minimumGrade",
   maximum_grade: "maximumGrade",
   group_weekly_hours: "groupWeeklyHours",
+  group_weekly_hours_per_group: "groupWeeklyHours",
   teacher_weekly_hours_per_position: "teacherWeeklyHoursPerPosition",
   required_teacher_count: "requiredTeacherCount",
+  group_subject_ids: "groupSubjects",
   previous_academic_year_id: "previousAcademicYear"
 };
 

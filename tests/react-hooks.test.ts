@@ -7,11 +7,23 @@ const mocks = vi.hoisted(() => ({
     }
     return options;
   }),
-  useMutation: vi.fn((options: { mutationFn: (vars: unknown) => unknown }) => ({
-    isPending: false,
-    mutate: (vars: unknown) => options.mutationFn(vars)
+  useMutation: vi.fn(
+    (options: {
+      mutationFn: (vars: unknown) => unknown;
+      onSuccess?: (data: unknown, vars: unknown) => unknown;
+    }) => ({
+      isPending: false,
+      mutate: (vars: unknown) => {
+        const result = options.mutationFn(vars);
+        options.onSuccess?.(undefined, vars);
+        return result;
+      }
+    })
+  ),
+  invalidateQueries: vi.fn(),
+  useQueryClient: vi.fn(() => ({
+    invalidateQueries: mocks.invalidateQueries
   })),
-  useQueryClient: vi.fn(() => ({ invalidateQueries: () => undefined })),
   assignmentProcesses: {
     list: vi.fn(),
     dashboard: vi.fn(),
@@ -64,7 +76,10 @@ const mocks = vi.hoisted(() => ({
     materializeMain: vi.fn()
   },
   teachingActivities: {
-    list: vi.fn()
+    list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn()
   },
   teachingGroups: {
     list: vi.fn(),
@@ -156,6 +171,7 @@ describe("reparto React hooks", () => {
     mocks.useQuery.mockClear();
     mocks.useMutation.mockClear();
     mocks.useQueryClient.mockClear();
+    mocks.invalidateQueries.mockClear();
     mocks.assignmentProcesses.list.mockClear();
     mocks.assignmentProcesses.dashboard.mockClear();
     mocks.assignmentProcesses.summary.mockClear();
@@ -177,6 +193,9 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.summary.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
+    mocks.teachingActivities.create.mockClear();
+    mocks.teachingActivities.update.mockClear();
+    mocks.teachingActivities.remove.mockClear();
     mocks.teachingGroups.list.mockClear();
     mocks.teachingGroups.create.mockClear();
     mocks.teachingGroups.update.mockClear();
@@ -338,6 +357,9 @@ describe("reparto React hooks", () => {
       useDeleteRepartoSubject,
       useRepartoGroupSubjects,
       useRepartoTeachingActivities,
+      useCreateRepartoTeachingActivity,
+      useUpdateRepartoTeachingActivity,
+      useDeleteRepartoTeachingActivity,
       useRepartoTeachingPlanSummary,
       useMaterializeRepartoMainActivities,
       usePreviewRepartoGroupSubjects,
@@ -414,6 +436,42 @@ describe("reparto React hooks", () => {
     });
     const materializeMain = useMaterializeRepartoMainActivities();
     materializeMain.mutate("p1");
+    mocks.invalidateQueries.mockClear();
+    const createActivity = useCreateRepartoTeachingActivity();
+    createActivity.mutate({
+      processId: "p1",
+      body: {
+        subject_id: "s1",
+        activity_type: "tutoring",
+        group_weekly_hours_per_group: "1.00",
+        teacher_weekly_hours_per_position: "2.00",
+        required_teacher_count: 1,
+        group_subject_ids: ["gs1"]
+      }
+    });
+    const updateActivity = useUpdateRepartoTeachingActivity();
+    updateActivity.mutate({
+      processId: "p1",
+      activityId: "ta1",
+      body: {
+        activity_type: "co_teaching",
+        required_teacher_count: 2,
+        group_subject_ids: ["gs1", "gs2"]
+      }
+    });
+    const deleteActivity = useDeleteRepartoTeachingActivity();
+    deleteActivity.mutate({ processId: "p1", activityId: "ta1" });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual(
+      Array.from({ length: 3 }, () => [
+        ["reparto", "processes", "detail", "p1", "teaching-activities"],
+        ["reparto", "processes", "detail", "p1", "teaching-plan"],
+        ["reparto", "processes", "detail", "p1", "requirements"],
+        ["reparto", "processes", "detail", "p1", "dashboard"],
+        ["reparto", "processes", "detail", "p1", "summary"]
+      ]).flat()
+    );
 
     const createGroup = useCreateRepartoTeachingGroup();
     createGroup.mutate({
@@ -546,7 +604,21 @@ describe("reparto React hooks", () => {
       hour_requirement_id: "r1",
       assigned_hours: 3
     });
-    expect(mocks.useMutation).toHaveBeenCalledTimes(19);
+    expect(mocks.teachingActivities.create).toHaveBeenCalledWith("p1", {
+      subject_id: "s1",
+      activity_type: "tutoring",
+      group_weekly_hours_per_group: "1.00",
+      teacher_weekly_hours_per_position: "2.00",
+      required_teacher_count: 1,
+      group_subject_ids: ["gs1"]
+    });
+    expect(mocks.teachingActivities.update).toHaveBeenCalledWith("p1", "ta1", {
+      activity_type: "co_teaching",
+      required_teacher_count: 2,
+      group_subject_ids: ["gs1", "gs2"]
+    });
+    expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
+    expect(mocks.useMutation).toHaveBeenCalledTimes(22);
   });
 
   it("disables process-scoped list queries when no process is selected", async () => {

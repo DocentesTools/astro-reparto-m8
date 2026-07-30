@@ -143,6 +143,58 @@ export const en = {
         teacherCount: "Teacher positions",
         state: "State"
       }
+    },
+    secondary: {
+      title: "Secondary activities",
+      description: "Add optional tutoring, co-teaching and other activities while keeping group hours and teacher workload independent.",
+      createAction: "Add secondary activity",
+      createTitle: "Add secondary activity",
+      editTitle: "Edit secondary activity",
+      formDescription: "Choose one secondary subject, its linked groups, and the actual values used by both planning balances.",
+      subject: "Secondary subject",
+      activityType: "Activity type",
+      groupHours: "Group hours per group",
+      teacherHours: "Teacher hours per position",
+      teacherCount: "Teacher positions",
+      groups: "Linked groups",
+      notes: "Notes",
+      balanceHint: "Group impact is group hours × linked groups. Teacher impact is teacher hours × teacher positions.",
+      multipleGroupsHint: "Select one or more groups. Every selected group receives the same group-hour value.",
+      singleGroupHint: "This subject requires exactly one linked group.",
+      optionalGroupHint: "This subject permits zero or one linked group.",
+      noGroups: "No active group-subject cells are available for this subject.",
+      noLinkedGroups: "Department-level activity",
+      noSubjects: "Create a secondary subject and its group-subject cells before adding an activity.",
+      empty: "No live secondary activities have been added.",
+      loading: "Loading secondary activities.",
+      unavailable: "Secondary activities are unavailable.",
+      created: "Secondary activity created",
+      updated: "Secondary activity updated",
+      deleted: "Secondary activity deleted",
+      saveError: "The secondary activity could not be saved.",
+      deleteError: "The secondary activity could not be deleted.",
+      deleteTitle: "Delete secondary activity?",
+      deleteBody: "Delete the secondary activity for {subject}? This action cannot be undone.",
+      groupRequiredError: "Select a group for this subject.",
+      multipleGroupsError: "This subject does not allow multiple linked groups.",
+      duplicateGroupsError: "A group cannot be linked more than once.",
+      invalidGroupsError: "Every linked group must be an active cell for the selected subject.",
+      teacherCountError: "Teacher positions must be a positive whole number.",
+      notesError: "Notes cannot exceed 2000 characters.",
+      hoursError: {
+        not_a_number: "Enter a decimal hour value.",
+        too_many_decimals: "Use at most two decimal places.",
+        negative: "Hours cannot be negative.",
+        out_of_range: "Hours exceed the supported range."
+      },
+      type: {
+        ordinary: "Ordinary",
+        tutoring: "Tutoring",
+        co_teaching: "Co-teaching",
+        support: "Support",
+        department_level: "Department level",
+        other: "Other"
+      }
     }
   },
   action: {

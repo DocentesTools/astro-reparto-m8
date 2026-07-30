@@ -223,6 +223,19 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.planning.materialization.confirmBody).toContain(
       "{materialized}"
     );
+    expect(collectKeys(fr.planning.secondary).sort()).toEqual(
+      collectKeys(en.planning.secondary).sort()
+    );
+    expect(collectKeys(es.planning.secondary).sort()).toEqual(
+      collectKeys(en.planning.secondary).sort()
+    );
+    expect(fr.planning.secondary.deleteBody).not.toBe(
+      en.planning.secondary.deleteBody
+    );
+    expect(es.planning.secondary.deleteBody).not.toBe(
+      en.planning.secondary.deleteBody
+    );
+    expect(en.planning.secondary.deleteBody).toContain("{subject}");
   });
 
   it("localizes route-loading copy in every supported locale", () => {

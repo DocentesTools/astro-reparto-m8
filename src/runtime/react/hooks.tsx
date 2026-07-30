@@ -40,6 +40,8 @@ import type {
   TeacherProfileCreate,
   TeacherProfileLinkUser,
   TeacherProfileUpdate,
+  TeachingActivityCreateInput,
+  TeachingActivityUpdateInput,
   TeachingGroupCreateInput,
   TeachingGroupBulkCreate,
   TeachingGroupUpdate
@@ -379,6 +381,77 @@ export function useRepartoTeachingActivities(processId?: string) {
     queryKey: repartoKeys.teachingActivities(processId),
     queryFn: () => teachingActivities.list(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+function invalidateTeachingActivityProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string
+) {
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.teachingActivities(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.teachingPlan(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.hourRequirements(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.dashboard(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.summary(processId)
+  });
+}
+
+export function useCreateRepartoTeachingActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: TeachingActivityCreateInput;
+    }) => teachingActivities.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateTeachingActivityProjections(queryClient, processId);
+    }
+  });
+}
+
+export function useUpdateRepartoTeachingActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      activityId,
+      body
+    }: {
+      processId: string;
+      activityId: string;
+      body: TeachingActivityUpdateInput;
+    }) => teachingActivities.update(processId, activityId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateTeachingActivityProjections(queryClient, processId);
+    }
+  });
+}
+
+export function useDeleteRepartoTeachingActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      activityId
+    }: {
+      processId: string;
+      activityId: string;
+    }) => teachingActivities.remove(processId, activityId),
+    onSuccess: (_data, { processId }) => {
+      invalidateTeachingActivityProjections(queryClient, processId);
+    }
   });
 }
 

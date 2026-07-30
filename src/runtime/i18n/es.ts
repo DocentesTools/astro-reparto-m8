@@ -142,6 +142,58 @@ export const es: RepartoDictionary = {
         teacherCount: "Puestos docentes",
         state: "Estado"
       }
+    },
+    secondary: {
+      title: "Actividades secundarias",
+      description: "Añade tutoría, docencia compartida y otras actividades opcionales manteniendo separadas las horas de grupo y la carga docente.",
+      createAction: "Añadir actividad secundaria",
+      createTitle: "Añadir actividad secundaria",
+      editTitle: "Editar actividad secundaria",
+      formDescription: "Elige una materia secundaria, sus grupos vinculados y los valores reales utilizados por los dos balances.",
+      subject: "Materia secundaria",
+      activityType: "Tipo de actividad",
+      groupHours: "Horas por grupo",
+      teacherHours: "Horas por puesto docente",
+      teacherCount: "Puestos docentes",
+      groups: "Grupos vinculados",
+      notes: "Notas",
+      balanceHint: "Impacto de grupo = horas de grupo × grupos vinculados. Impacto docente = horas por puesto × puestos.",
+      multipleGroupsHint: "Selecciona uno o varios grupos. Todos reciben el mismo valor de horas de grupo.",
+      singleGroupHint: "Esta materia requiere exactamente un grupo vinculado.",
+      optionalGroupHint: "Esta materia permite cero o un grupo vinculado.",
+      noGroups: "No hay celdas grupo-materia activas para esta materia.",
+      noLinkedGroups: "Actividad de departamento",
+      noSubjects: "Crea una materia secundaria y sus celdas grupo-materia antes de añadir una actividad.",
+      empty: "No se han añadido actividades secundarias activas.",
+      loading: "Cargando actividades secundarias.",
+      unavailable: "Las actividades secundarias no están disponibles.",
+      created: "Actividad secundaria creada",
+      updated: "Actividad secundaria actualizada",
+      deleted: "Actividad secundaria eliminada",
+      saveError: "No se pudo guardar la actividad secundaria.",
+      deleteError: "No se pudo eliminar la actividad secundaria.",
+      deleteTitle: "¿Eliminar la actividad secundaria?",
+      deleteBody: "¿Eliminar la actividad secundaria de {subject}? Esta acción no se puede deshacer.",
+      groupRequiredError: "Selecciona un grupo para esta materia.",
+      multipleGroupsError: "Esta materia no permite varios grupos vinculados.",
+      duplicateGroupsError: "Un grupo no se puede vincular más de una vez.",
+      invalidGroupsError: "Cada grupo vinculado debe ser una celda activa de la materia seleccionada.",
+      teacherCountError: "Los puestos docentes deben ser un número entero positivo.",
+      notesError: "Las notas no pueden superar los 2000 caracteres.",
+      hoursError: {
+        not_a_number: "Introduce un valor decimal de horas.",
+        too_many_decimals: "Usa como máximo dos decimales.",
+        negative: "Las horas no pueden ser negativas.",
+        out_of_range: "Las horas superan el intervalo admitido."
+      },
+      type: {
+        ordinary: "Ordinaria",
+        tutoring: "Tutoría",
+        co_teaching: "Docencia compartida",
+        support: "Apoyo",
+        department_level: "Nivel de departamento",
+        other: "Otra"
+      }
     }
   },
   action: {

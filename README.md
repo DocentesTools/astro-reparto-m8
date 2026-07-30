@@ -118,6 +118,16 @@ only while rows are missing and requires a separate missing-only confirmation;
 the backend's idempotent endpoint remains the concurrency barrier, so an
 already-materialized row is skipped rather than duplicated.
 
+`SecondaryActivityEditor` is also exported from
+`@mano8/astro-reparto-m8/default-ui` and mounted by `/planning`. It creates,
+updates and deletes live secondary activities through the package hooks. The
+form supports descriptive tutoring/co-teaching labels, subject-policy-aware
+zero/single/multi-group selection, independent group and teacher hours, and a
+positive teacher-position count. Hour inputs use the decimal-safe parser and
+are sent as canonical two-place strings; activity type remains descriptive and
+never drives domain behavior. Every mutation refreshes the activity list,
+planning balance, requirement, dashboard and summary projections.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

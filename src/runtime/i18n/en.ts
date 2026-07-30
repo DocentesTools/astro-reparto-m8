@@ -104,6 +104,10 @@ export const en = {
     entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Hour requirement", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
   },
+  planning: {
+    pageTitle: "Reparto planning",
+    description: "Build and review the teaching plan for the active process."
+  },
   action: {
     create: "Add",
     edit: "Edit",
@@ -147,6 +151,7 @@ export const en = {
       classrooms: "Classrooms",
       classroomStages: "Classroom stages",
       subjects: "Subjects",
+      planning: "Planning",
       requirements: "Requirements",
       processParticipants: "Process participants",
       assignments: "Assignments",

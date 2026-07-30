@@ -103,6 +103,10 @@ export const es: RepartoDictionary = {
     entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Horas necesarias", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
     role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
   },
+  planning: {
+    pageTitle: "Planificación del reparto",
+    description: "Crea y revisa el plan docente del proceso activo."
+  },
   action: {
     create: "Añadir",
     edit: "Editar",
@@ -146,6 +150,7 @@ export const es: RepartoDictionary = {
       classrooms: "Grupos",
       classroomStages: "Etapas educativas",
       subjects: "Materias",
+      planning: "Planificación",
       requirements: "Horas necesarias",
       processParticipants: "Participantes en el proceso",
       assignments: "Repartos",

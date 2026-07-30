@@ -201,6 +201,7 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.nav.group.process).toBe("Process");
     expect(en.nav.item.teacherRoster).toBe("Teacher roster");
     expect(en.nav.item.processParticipants).toBe("Process participants");
+    expect(en.nav.item.planning).toBe("Planning");
     expect(fr.nav.item.shared).toBe("Écran partagé");
     expect(es.nav.item.audit).toBe("Auditoría");
   });

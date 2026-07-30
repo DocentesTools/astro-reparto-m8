@@ -55,6 +55,7 @@
     "./routes/subjects.astro": "./src/routes/subjects.astro",
     "./routes/classrooms.astro": "./src/routes/classrooms.astro",
     "./routes/classroom-stages.astro": "./src/routes/classroom-stages.astro",
+    "./routes/planning.astro": "./src/routes/planning.astro",
     "./routes/requirements.astro": "./src/routes/requirements.astro",
     "./routes/participants.astro": "./src/routes/participants.astro",
     "./routes/assignments.astro": "./src/routes/assignments.astro",

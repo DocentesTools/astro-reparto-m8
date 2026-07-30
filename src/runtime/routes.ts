@@ -13,6 +13,7 @@ export type RepartoRouteFragments = {
   subjects?: string | false;
   classrooms?: string | false;
   classroomStages?: string | false;
+  planning?: string | false;
   requirements?: string | false;
   participants?: string | false;
   assignments?: string | false;
@@ -34,6 +35,7 @@ export type BuiltRepartoRoutes = {
   subjects: string | false;
   classrooms: string | false;
   classroomStages: string | false;
+  planning: string | false;
   requirements: string | false;
   participants: string | false;
   assignments: string | false;
@@ -58,6 +60,7 @@ export function buildRepartoRoutes(
     subjects: routes.subjects ?? "/reparto/processes/[processId]/subjects",
     classrooms: routes.classrooms ?? "/reparto/processes/[processId]/classrooms",
     classroomStages: routes.classroomStages ?? "/reparto/setup/classroom-stages",
+    planning: routes.planning ?? "/reparto/processes/[processId]/planning",
     requirements: routes.requirements ?? "/reparto/processes/[processId]/requirements",
     participants: routes.participants ?? "/reparto/processes/[processId]/participants",
     assignments: routes.assignments ?? "/reparto/processes/[processId]/assignments",

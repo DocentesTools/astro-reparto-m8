@@ -114,6 +114,22 @@ function reset() {
 }
 
 describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
+  it("renders the package-owned planning starter view", async () => {
+    reset();
+    const { RepartoPlanningView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    const html = renderToStaticMarkup(
+      <RepartoPlanningView locale="en" processId={processId} />
+    );
+
+    expect(html).toContain('data-reparto-route="planning"');
+    expect(html).toContain('data-reparto-group="process"');
+    expect(html).toContain('data-reparto-panel="planning"');
+    expect(html).toContain(`data-process-id="${processId}"`);
+    expect(html).toContain("Reparto planning");
+  });
+
   it("subjects view renders the list with Create + Edit + Delete row actions", async () => {
     reset();
     queryState.subjects = [

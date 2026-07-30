@@ -30,6 +30,7 @@ describe("routes", () => {
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
+      planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
       assignments: "/reparto/processes/[processId]/assignments",
@@ -50,6 +51,7 @@ describe("routes", () => {
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
+      planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
       assignments: "/reparto/processes/[processId]/assignments",
@@ -170,7 +172,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(18);
+    expect(injectRoute).toHaveBeenCalledTimes(19);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -189,7 +191,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(17);
+    expect(injectRoute).toHaveBeenCalledTimes(18);
   });
 
   it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
@@ -276,7 +278,11 @@ describe("integration", () => {
       pattern: "/es/reparto/processes/[processId]/audit",
       entrypoint: "@mano8/astro-reparto-m8/routes/audit.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(36);
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/en/reparto/processes/[processId]/planning",
+      entrypoint: "@mano8/astro-reparto-m8/routes/planning.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(38);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -327,6 +333,10 @@ describe("integration", () => {
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
     expect(classroomsEntry?.href).toBe("/reparto/processes/current/classrooms");
+    const planningEntry = resolved.process.entries.find(
+      (entry) => entry.labelKey === "nav.item.planning"
+    );
+    expect(planningEntry?.href).toBe("/reparto/processes/current/planning");
     const auditEntry = resolved.process.entries.find(
       (entry) => entry.labelKey === "nav.item.audit"
     );

@@ -103,6 +103,10 @@ export const fr: RepartoDictionary = {
     entity: { process: "Processus d'affectation", assignment_process: "Processus d'affectation", assignment: "Affectation", subject: "Matière", hour_requirement: "Besoin horaire", selection_turn: "Tour de sélection", teaching_group: "Classe", process_teacher: "Participant au processus" },
     role: { superadmin: "Super-administrateur", department_head: "Chef de département", teacher: "Enseignant", school_leadership: "Direction de l'établissement" }, event: "{entity} : {action}"
   },
+  planning: {
+    pageTitle: "Planification de la répartition",
+    description: "Construisez et vérifiez le plan d'enseignement du processus actif."
+  },
   action: {
     create: "Ajouter",
     edit: "Modifier",
@@ -146,6 +150,7 @@ export const fr: RepartoDictionary = {
       classrooms: "Classes",
       classroomStages: "Niveaux scolaires",
       subjects: "Matières",
+      planning: "Planification",
       requirements: "Besoins horaires",
       processParticipants: "Participants au processus",
       assignments: "Affectations",

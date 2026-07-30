@@ -14,6 +14,10 @@ import {
   ClassroomStageCreateSchema,
   ClassroomStagePublicSchema,
   DepartmentCreateSchema,
+  DepartmentHourAllocationRevisionCreateSchema,
+  DepartmentHourAllocationRevisionPublicSchema,
+  DepartmentHourAllocationRevisionsPublicSchema,
+  DepartmentHourAllocationSourceSchema,
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
@@ -608,5 +612,174 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     expect(() =>
       AuditEventsPublicSchema.parse({ data: [], count: -1 })
     ).toThrow();
+  });
+});
+
+describe("allocation revision schemas", () => {
+  const revisionId = "88888888-8888-4888-8888-888888888888";
+  const revisionBody = {
+    id: revisionId,
+    assignment_process_id: processId,
+    revision_number: 2,
+    allocated_group_weekly_hours: 120,
+    reason: "Leadership raised the allocation",
+    source: "manual_transcription",
+    source_reference: "Email 2026-07-30",
+    received_at: now,
+    created_by_user_id: userId,
+    superseded_at: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("normalizes read hours to canonical strings and rejects drift", () => {
+    const parsed = DepartmentHourAllocationRevisionPublicSchema.parse(revisionBody);
+    expect(parsed.allocated_group_weekly_hours).toBe("120.00");
+    expect(parsed.superseded_at).toBeNull();
+    // The entity schema still serializes a JSON float today, so a binary
+    // artifact must round rather than blank the view.
+    expect(
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        allocated_group_weekly_hours: 119.99999999
+      }).allocated_group_weekly_hours
+    ).toBe("120.00");
+    // …and once the NUMERIC(8, 2) sweep lands, the string form parses too.
+    expect(
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        allocated_group_weekly_hours: "120.50"
+      }).allocated_group_weekly_hours
+    ).toBe("120.50");
+    expect(
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        source: "file_import",
+        source_reference: null,
+        received_at: null,
+        superseded_at: now
+      }).source
+    ).toBe("file_import");
+    expect(() =>
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        surprise: 1
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        source: "leadership_meeting"
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        revision_number: 0
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionPublicSchema.parse({
+        ...revisionBody,
+        allocated_group_weekly_hours: -1
+      })
+    ).toThrow();
+  });
+
+  it("builds an audited create payload with canonical hours", () => {
+    expect(
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: 120,
+        reason: "Initial allocation"
+      })
+    ).toEqual({
+      allocated_group_weekly_hours: "120.00",
+      reason: "Initial allocation"
+    });
+    expect(
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: "120.5",
+        reason: "Half hour added",
+        source: "copied_draft",
+        source_reference: null,
+        received_at: null
+      }).allocated_group_weekly_hours
+    ).toBe("120.50");
+    // Strict on the way out: a third decimal place is a bad payload, not
+    // something to round silently.
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: "120.005",
+        reason: "Too precise"
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: "not-a-number",
+        reason: "Nonsense"
+      })
+    ).toThrow();
+    // The backend requires a strictly positive allocation (plan §5.1).
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: 0,
+        reason: "Zero"
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: -5,
+        reason: "Negative"
+      })
+    ).toThrow();
+    // The reason is mandatory: every allocation change is audited (plan §3.11).
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: 120,
+        reason: ""
+      })
+    ).toThrow();
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: 120,
+        reason: "x".repeat(501)
+      })
+    ).toThrow();
+    // Server-owned fields are never sent.
+    expect(() =>
+      DepartmentHourAllocationRevisionCreateSchema.parse({
+        allocated_group_weekly_hours: 120,
+        reason: "Forged",
+        revision_number: 9
+      })
+    ).toThrow();
+  });
+
+  it("parses the revision history wrapper", () => {
+    expect(
+      DepartmentHourAllocationRevisionsPublicSchema.parse({
+        data: [revisionBody],
+        count: 1
+      }).count
+    ).toBe(1);
+    expect(
+      DepartmentHourAllocationRevisionsPublicSchema.parse({ data: [], count: 0 })
+        .data
+    ).toEqual([]);
+    expect(() =>
+      DepartmentHourAllocationRevisionsPublicSchema.parse({
+        data: [revisionBody],
+        count: -1
+      })
+    ).toThrow();
+  });
+
+  it("freezes the allocation source enum", () => {
+    expect(DepartmentHourAllocationSourceSchema.options).toEqual([
+      "manual_transcription",
+      "file_import",
+      "copied_draft",
+      "other"
+    ]);
   });
 });

@@ -170,6 +170,21 @@ describe("reparto query keys", () => {
       "p1",
       "requirements"
     ]);
+    expect(repartoKeys.allocationRevisions("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "allocation-revisions"
+    ]);
+    expect(repartoKeys.currentAllocationRevision("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "allocation-revisions",
+      "current"
+    ]);
     expect(repartoKeys.processTeachers("p1")).toEqual([
       "reparto",
       "processes",

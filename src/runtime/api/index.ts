@@ -1,3 +1,4 @@
+export { allocationRevisions } from "./allocationRevisions.js";
 export { assignmentProcesses } from "./assignmentProcesses.js";
 export { assignments } from "./assignments.js";
 export { history } from "./history.js";

@@ -92,7 +92,12 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/restore-draft",
       response: "AssignmentProcessPublic"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(28);
+    expect(REPARTO_CONTRACT_OPERATIONS["allocationRevisions.current"]).toEqual({
+      method: "GET",
+      path: "/assignment-processes/{process_id}/allocation-revisions/current",
+      response: "DepartmentHourAllocationRevisionPublic"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(31);
   });
 });
 

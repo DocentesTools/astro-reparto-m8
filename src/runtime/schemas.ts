@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HoursSchema, hoursToHundredths, hundredthsToHours } from "./decimals.js";
 
 // Canonical decimal-hour schemas live with the arithmetic helpers they share a
 // contract with (`./decimals.ts`) and are re-exported here so every contract
@@ -1047,3 +1048,107 @@ export const AuditEventsPublicSchema = z
   })
   .strict();
 export type AuditEventsPublic = z.infer<typeof AuditEventsPublicSchema>;
+
+// ── Department hour allocation revisions (backend plan §5.1, §3.11, §7.1) ────
+//
+// School leadership communicates a weekly group-hour allocation to the
+// department; that figure is never overwritten. Every value is an immutable
+// revision, exactly one of which is current (`superseded_at === null`), and a
+// new revision supersedes the previous one transactionally. There is
+// deliberately no update or delete schema: the backend exposes list, current
+// and create only.
+
+/** How an allocation revision entered the system (backend plan §20.16). */
+export const DepartmentHourAllocationSourceSchema = z.enum([
+  "manual_transcription",
+  "file_import",
+  "copied_draft",
+  "other"
+]);
+export type DepartmentHourAllocationSource = z.infer<
+  typeof DepartmentHourAllocationSourceSchema
+>;
+
+/**
+ * An hour value the UI *sends*, as opposed to one it reads.
+ *
+ * Strict on the way out (a third decimal place is rejected rather than rounded,
+ * so a bad payload fails here instead of at the backend) and normalized to the
+ * canonical `"120.00"` string of plan §3.9. A number is accepted too, which
+ * keeps form code out of the representation question: the backend hour columns
+ * are `float` today and `NUMERIC(8, 2)` after the §3.9 sweep, and a canonical
+ * decimal string is exact for both.
+ */
+const positiveHoursRequestSchema = z
+  .union([z.string(), z.number()])
+  .transform((value, ctx) => {
+    let hundredths: number;
+    try {
+      hundredths = hoursToHundredths(value);
+    } catch (error) {
+      ctx.addIssue((error as Error).message);
+      return z.NEVER;
+    }
+    if (hundredths <= 0) {
+      ctx.addIssue(
+        `Allocated group weekly hours must be greater than zero: ${hundredthsToHours(hundredths)}.`
+      );
+      return z.NEVER;
+    }
+    return hundredthsToHours(hundredths);
+  });
+
+export const DepartmentHourAllocationRevisionPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    revision_number: z.number().int().positive(),
+    // Tolerant on the way in: entity schemas still serialize a JSON number
+    // until the backend's `NUMERIC(8, 2)` column sweep lands.
+    allocated_group_weekly_hours: HoursSchema,
+    reason: z.string(),
+    source: DepartmentHourAllocationSourceSchema,
+    source_reference: z.string().nullable(),
+    received_at: dateTimeSchema.nullable(),
+    created_by_user_id: uuidSchema,
+    // NULL while this revision is the current one.
+    superseded_at: dateTimeSchema.nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type DepartmentHourAllocationRevisionPublic = z.infer<
+  typeof DepartmentHourAllocationRevisionPublicSchema
+>;
+
+/**
+ * Create payload. `assignment_process_id`, `revision_number`,
+ * `created_by_user_id` and `superseded_at` are server-owned and are never sent:
+ * a client cannot forge a revision number or resurrect a superseded revision.
+ * `reason` is mandatory — every allocation change is audited (plan §3.11).
+ */
+export const DepartmentHourAllocationRevisionCreateSchema = z
+  .object({
+    allocated_group_weekly_hours: positiveHoursRequestSchema,
+    reason: z.string().min(1).max(500),
+    source: DepartmentHourAllocationSourceSchema.optional(),
+    source_reference: z.string().max(500).nullable().optional(),
+    received_at: dateTimeSchema.nullable().optional()
+  })
+  .strict();
+export type DepartmentHourAllocationRevisionCreate = z.infer<
+  typeof DepartmentHourAllocationRevisionCreateSchema
+>;
+export type DepartmentHourAllocationRevisionCreateInput = z.input<
+  typeof DepartmentHourAllocationRevisionCreateSchema
+>;
+
+export const DepartmentHourAllocationRevisionsPublicSchema = z
+  .object({
+    data: z.array(DepartmentHourAllocationRevisionPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type DepartmentHourAllocationRevisionsPublic = z.infer<
+  typeof DepartmentHourAllocationRevisionsPublicSchema
+>;

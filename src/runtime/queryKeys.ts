@@ -132,6 +132,12 @@ export const repartoKeys = {
     [...repartoKeys.process(processId), "groups"] as const,
   hourRequirements: (processId?: string) =>
     [...repartoKeys.process(processId), "requirements"] as const,
+  // Allocation-revision history; the current revision is nested under it so
+  // that recording a revision can invalidate both with one prefix.
+  allocationRevisions: (processId?: string) =>
+    [...repartoKeys.process(processId), "allocation-revisions"] as const,
+  currentAllocationRevision: (processId?: string) =>
+    [...repartoKeys.allocationRevisions(processId), "current"] as const,
   processTeachers: (processId?: string) =>
     [...repartoKeys.process(processId), "teachers"] as const,
   assignments: (processId?: string) =>

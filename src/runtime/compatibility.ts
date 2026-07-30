@@ -162,6 +162,21 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "POST",
     path: "/assignment-processes/{process_id}/restore-draft",
     response: "AssignmentProcessPublic"
+  },
+  "allocationRevisions.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/allocation-revisions/",
+    response: "DepartmentHourAllocationRevisionsPublic"
+  },
+  "allocationRevisions.current": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/allocation-revisions/current",
+    response: "DepartmentHourAllocationRevisionPublic"
+  },
+  "allocationRevisions.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/allocation-revisions/",
+    response: "DepartmentHourAllocationRevisionPublic"
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 

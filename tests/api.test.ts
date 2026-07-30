@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   academicYears,
+  allocationRevisions,
   assignments,
   assignmentProcesses,
   auditEvents,
@@ -1029,6 +1030,72 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
         assigned_hours: 0
       } as never)
     ).toThrow();
+  });
+
+  it("allocation revisions list/current/create only", async () => {
+    const revisionBody = {
+      id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      assignment_process_id: processId,
+      revision_number: 1,
+      allocated_group_weekly_hours: 120,
+      reason: "Initial allocation",
+      source: "manual_transcription",
+      source_reference: null,
+      received_at: null,
+      created_by_user_id: userId,
+      superseded_at: null,
+      created_at: now,
+      updated_at: now
+    };
+
+    fetchMock.mockResolvedValueOnce(response({ data: [revisionBody], count: 1 }));
+    await expect(allocationRevisions.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/allocation-revisions/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(revisionBody));
+    await expect(allocationRevisions.current(processId)).resolves.toMatchObject({
+      allocated_group_weekly_hours: "120.00"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/allocation-revisions/current`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(revisionBody));
+    await expect(
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 120,
+        reason: "Initial allocation"
+      })
+    ).resolves.toMatchObject({ revision_number: 1 });
+    const sent = JSON.parse(
+      (fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string
+    );
+    expect(sent).toEqual({
+      allocated_group_weekly_hours: "120.00",
+      reason: "Initial allocation"
+    });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    expect(() =>
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 0,
+        reason: "Zero allocation"
+      })
+    ).toThrow();
+    expect(() =>
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 120,
+        reason: ""
+      })
+    ).toThrow();
+
+    // Revisions are immutable by contract: no update, no delete.
+    expect(allocationRevisions).not.toHaveProperty("update");
+    expect(allocationRevisions).not.toHaveProperty("remove");
   });
 
   it("audit events list only", async () => {

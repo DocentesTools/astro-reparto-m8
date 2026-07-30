@@ -257,6 +257,36 @@ skipped, overridden`.
 Notes: list-only by design (plan §8.14, post-MVP writer). UI must show
 read-only rows with no row actions.
 
+### 2.10 Allocation revision — `prefix=/…/allocation-revisions`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.1,
+> §3.11, §7.1, §20.16). Verified against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`:
+> `app/routes/department_hour_allocation_revisions.py`,
+> `controllers/department_hour_allocation_revisions.py`,
+> `db_models/department_hour_allocation_revisions.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| List | `GET /` → `DepartmentHourAllocationRevisionsPublic` (oldest revision first) |
+| Current | `GET /current` → `DepartmentHourAllocationRevisionPublic`, **404** when the process has no allocation yet |
+| Create | `POST /` → `201` `DepartmentHourAllocationRevisionPublic` (process writer) |
+| Patch / delete | **not exposed** — revisions are immutable |
+| Create required | `allocated_group_weekly_hours: float>0`, `reason: str[1..500]` |
+| Create optional | `source` (default `manual_transcription`), `source_reference: str[..500]`, `received_at: datetime` |
+| Public shape | create fields + `id, assignment_process_id, revision_number, created_by_user_id, superseded_at, created_at, updated_at` |
+
+Notes: `source` enum: `manual_transcription, file_import, copied_draft,
+other`. Exactly one revision per process is current (`superseded_at is
+null`); creating one supersedes the previous revision transactionally,
+increments the per-process `revision_number` and records an
+`allocation.revised` audit event, so the reason is mandatory. A `final` or
+`archived` process must be reopened before its allocation can change
+(`400` otherwise). `allocated_group_weekly_hours` is serialized as a JSON
+number today and becomes a canonical two-decimal string when the backend's
+`NUMERIC(8, 2)` column sweep lands (backend plan §3.9) — the runtime reads
+both through `HoursSchema` and always **sends** the canonical string.
+
 ---
 
 ## 3. Additional surface area not in plan §2

@@ -38,6 +38,22 @@ signed (`"-4.00"`). `@mano8/astro-reparto-m8/decimals` owns that representation:
 
 The schemas are also re-exported from `@mano8/astro-reparto-m8/schemas`.
 
+## Allocation revisions
+
+School leadership communicates a weekly group-hour allocation to the department,
+and may revise it at any time. The value is never overwritten: every figure is an
+immutable revision, exactly one of which is current. `allocationRevisions.list`
+returns the history oldest-first, `allocationRevisions.current` returns the
+single non-superseded revision (**404** while no allocation has been communicated
+yet — a normal state for a new process), and `allocationRevisions.create` records
+a new one, superseding the previous revision and emitting an audit event. There
+is no update or delete wrapper, by contract.
+
+`reason` is mandatory on create, `allocated_group_weekly_hours` must be greater
+than zero, and the create schema normalizes it to the canonical `"120.00"` string
+(rejecting a third decimal place rather than rounding it). A `final` or
+`archived` process must be reopened before its allocation can change.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

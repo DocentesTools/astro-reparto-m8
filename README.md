@@ -109,6 +109,15 @@ counts, and manual attempts to create `main_generated` activities are rejected
 before fetch; subject-specific zero/multiple-group policy remains
 backend-authoritative.
 
+`MainSubjectMaterialization` is exported from
+`@mano8/astro-reparto-m8/default-ui` and is mounted by the package-owned
+`/planning` view. It compares active main-subject matrix rows with live
+`main_generated` activities, labels every row as missing or materialized, and
+shows the values that will be or were materialized. The create action is enabled
+only while rows are missing and requires a separate missing-only confirmation;
+the backend's idempotent endpoint remains the concurrency barrier, so an
+already-materialized row is skipped rather than duplicated.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

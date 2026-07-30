@@ -13,6 +13,7 @@ import { processTeachers } from "../api/processTeachers.js";
 import { schools } from "../api/schools.js";
 import { subjects } from "../api/subjects.js";
 import { teacherProfiles } from "../api/teacherProfiles.js";
+import { teachingActivities } from "../api/teachingActivities.js";
 import { teachingGroups } from "../api/teachingGroups.js";
 import { teachingPlans } from "../api/teachingPlans.js";
 import type {
@@ -369,6 +370,39 @@ export function useRepartoTeachingPlanSummary(processId?: string) {
     queryKey: repartoKeys.teachingPlanSummary(processId),
     queryFn: () => teachingPlans.summary(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useRepartoTeachingActivities(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingActivities(processId),
+    queryFn: () => teachingActivities.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useMaterializeRepartoMainActivities() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => teachingPlans.materializeMain(processId),
+    onSuccess: (_data, processId) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingActivities(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlan(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.hourRequirements(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.dashboard(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.summary(processId)
+      });
+    }
   });
 }
 

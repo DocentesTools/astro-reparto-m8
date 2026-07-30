@@ -43,8 +43,13 @@ import {
 import { RepartoLoadingState } from "./loading-state.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
 export {
+  MainSubjectMaterialization,
+  MainSubjectMaterializationConfirmation,
+  MainSubjectMaterializationTable,
   PlanningBalanceHeader,
-  RepartoPlanningView
+  RepartoPlanningView,
+  buildMainSubjectMaterializationRows,
+  type MainSubjectMaterializationRow
 } from "./planning/index.js";
 
 function QueryState({

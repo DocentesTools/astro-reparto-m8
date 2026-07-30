@@ -114,7 +114,36 @@ export const en = {
     planned: "Planned",
     difference: "Difference",
     loading: "Loading planning balance.",
-    unavailable: "Planning balance is unavailable."
+    unavailable: "Planning balance is unavailable.",
+    materialization: {
+      title: "Main-subject activities",
+      description: "Review every active main-subject matrix row before creating only the activities that are still missing.",
+      missing: "Missing",
+      materialized: "Materialized",
+      empty: "No active main-subject matrix rows are available.",
+      loading: "Loading main-subject materialization state.",
+      unavailable: "Main-subject materialization state is unavailable.",
+      inherited: "Inherited",
+      complete: "All main activities are materialized",
+      reviewAction: "Review {count} missing activities",
+      confirmTitle: "Materialize missing main activities?",
+      confirmBody: "Create {missing} missing activities. The {materialized} activities already materialized are shown for review and will not be duplicated.",
+      confirmAction: "Materialize missing activities",
+      success: "Created {created} main activities; {skipped} already-materialized rows were skipped.",
+      error: "Main activities could not be materialized.",
+      state: {
+        missing: "Missing",
+        materialized: "Materialized"
+      },
+      column: {
+        subject: "Subject",
+        classroom: "Classroom",
+        groupHours: "Group hours",
+        teacherHours: "Teacher hours per position",
+        teacherCount: "Teacher positions",
+        state: "State"
+      }
+    }
   },
   action: {
     create: "Add",

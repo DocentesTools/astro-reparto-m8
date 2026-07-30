@@ -206,6 +206,25 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(es.nav.item.audit).toBe("Auditoría");
   });
 
+  it("fully localizes the main-subject materialization workflow", () => {
+    expect(collectKeys(fr.planning.materialization).sort()).toEqual(
+      collectKeys(en.planning.materialization).sort()
+    );
+    expect(collectKeys(es.planning.materialization).sort()).toEqual(
+      collectKeys(en.planning.materialization).sort()
+    );
+    expect(fr.planning.materialization.confirmBody).not.toBe(
+      en.planning.materialization.confirmBody
+    );
+    expect(es.planning.materialization.confirmBody).not.toBe(
+      en.planning.materialization.confirmBody
+    );
+    expect(en.planning.materialization.confirmBody).toContain("{missing}");
+    expect(en.planning.materialization.confirmBody).toContain(
+      "{materialized}"
+    );
+  });
+
   it("localizes route-loading copy in every supported locale", () => {
     expect(en.view.pageLoading).toEqual({
       title: "Loading reparto page",

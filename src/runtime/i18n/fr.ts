@@ -113,7 +113,36 @@ export const fr: RepartoDictionary = {
     planned: "Planifié",
     difference: "Différence",
     loading: "Chargement de l'équilibre de planification.",
-    unavailable: "L'équilibre de planification est indisponible."
+    unavailable: "L'équilibre de planification est indisponible.",
+    materialization: {
+      title: "Activités des matières principales",
+      description: "Vérifiez chaque ligne active de matière principale avant de créer uniquement les activités encore manquantes.",
+      missing: "Manquantes",
+      materialized: "Matérialisées",
+      empty: "Aucune ligne active de matière principale n'est disponible.",
+      loading: "Chargement de l'état de matérialisation des matières principales.",
+      unavailable: "L'état de matérialisation des matières principales est indisponible.",
+      inherited: "Hérité",
+      complete: "Toutes les activités principales sont matérialisées",
+      reviewAction: "Vérifier {count} activités manquantes",
+      confirmTitle: "Matérialiser les activités principales manquantes ?",
+      confirmBody: "Créer {missing} activités manquantes. Les {materialized} activités déjà matérialisées sont affichées pour vérification et ne seront pas dupliquées.",
+      confirmAction: "Matérialiser les activités manquantes",
+      success: "{created} activités principales créées ; {skipped} lignes déjà matérialisées ignorées.",
+      error: "Les activités principales n'ont pas pu être matérialisées.",
+      state: {
+        missing: "Manquante",
+        materialized: "Matérialisée"
+      },
+      column: {
+        subject: "Matière",
+        classroom: "Classe",
+        groupHours: "Heures groupe",
+        teacherHours: "Heures enseignant par poste",
+        teacherCount: "Postes enseignants",
+        state: "État"
+      }
+    }
   },
   action: {
     create: "Ajouter",

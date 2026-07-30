@@ -113,7 +113,36 @@ export const es: RepartoDictionary = {
     planned: "Planificado",
     difference: "Diferencia",
     loading: "Cargando el balance de planificación.",
-    unavailable: "El balance de planificación no está disponible."
+    unavailable: "El balance de planificación no está disponible.",
+    materialization: {
+      title: "Actividades de materias principales",
+      description: "Revisa cada fila activa de materia principal antes de crear únicamente las actividades que faltan.",
+      missing: "Pendientes",
+      materialized: "Materializadas",
+      empty: "No hay filas activas de materias principales disponibles.",
+      loading: "Cargando el estado de materialización de materias principales.",
+      unavailable: "El estado de materialización de materias principales no está disponible.",
+      inherited: "Heredado",
+      complete: "Todas las actividades principales están materializadas",
+      reviewAction: "Revisar {count} actividades pendientes",
+      confirmTitle: "¿Materializar las actividades principales pendientes?",
+      confirmBody: "Crear {missing} actividades pendientes. Las {materialized} actividades ya materializadas se muestran para revisión y no se duplicarán.",
+      confirmAction: "Materializar actividades pendientes",
+      success: "Se crearon {created} actividades principales; se omitieron {skipped} filas ya materializadas.",
+      error: "No se pudieron materializar las actividades principales.",
+      state: {
+        missing: "Pendiente",
+        materialized: "Materializada"
+      },
+      column: {
+        subject: "Materia",
+        classroom: "Grupo",
+        groupHours: "Horas de grupo",
+        teacherHours: "Horas por puesto docente",
+        teacherCount: "Puestos docentes",
+        state: "Estado"
+      }
+    }
   },
   action: {
     create: "Añadir",

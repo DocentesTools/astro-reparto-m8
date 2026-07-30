@@ -14,6 +14,7 @@ import {
 } from "../process-crud/shared.js";
 import { useRepartoTeachingPlanSummary } from "../../hooks.js";
 import { PlanningBalanceHeader } from "./balance-header.js";
+import { MainSubjectMaterialization } from "./main-materialization.js";
 
 function PlanningContent({
   locale,
@@ -46,6 +47,7 @@ function PlanningContent({
         error={balanceQuery.isError ? balanceQuery.error : null}
         isLoading={balanceQuery.isLoading}
       />
+      <MainSubjectMaterialization locale={locale} processId={processId} />
     </main>
   );
 }
@@ -67,3 +69,10 @@ export function RepartoPlanningView({
 }
 
 export { PlanningBalanceHeader } from "./balance-header.js";
+export {
+  MainSubjectMaterialization,
+  MainSubjectMaterializationConfirmation,
+  MainSubjectMaterializationTable,
+  buildMainSubjectMaterializationRows,
+  type MainSubjectMaterializationRow
+} from "./main-materialization.js";

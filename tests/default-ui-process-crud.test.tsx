@@ -26,7 +26,9 @@ const queryState = vi.hoisted(() => ({
   years: [] as unknown[],
   departments: [] as unknown[],
   stages: [] as unknown[],
-  planBalance: null as unknown
+  planBalance: null as unknown,
+  groupSubjects: [] as unknown[],
+  teachingActivities: [] as unknown[]
 }));
 
 vi.mock("@tanstack/react-query", () => ({
@@ -57,6 +59,10 @@ vi.mock("@tanstack/react-query", () => ({
         const rows =
           entityScope === "subjects"
             ? queryState.subjects
+            : entityScope === "group-subjects"
+              ? queryState.groupSubjects
+              : entityScope === "teaching-activities"
+                ? queryState.teachingActivities
             : entityScope === "groups"
               ? queryState.groups
               : entityScope === "requirements"
@@ -121,6 +127,8 @@ function reset() {
   queryState.teachers = [];
   queryState.stages = [classroomStage];
   queryState.planBalance = null;
+  queryState.groupSubjects = [];
+  queryState.teachingActivities = [];
 }
 
 describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
@@ -158,6 +166,9 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-slot="planning-balance-header"');
     expect(html).toContain('data-reparto-balance-axis="group"');
     expect(html).toContain('data-reparto-balance-axis="teacher"');
+    expect(html).toContain(
+      'data-reparto-component="main-subject-materialization"'
+    );
     for (const value of ["116.00 h", "120.00 h", "4.00 h", "124.00 h", "0.00 h"]) {
       expect(html).toContain(value);
     }

@@ -128,6 +128,17 @@ are sent as canonical two-place strings; activity type remains descriptive and
 never drives domain behavior. Every mutation refreshes the activity list,
 planning balance, requirement, dashboard and summary projections.
 
+`PlanLockAndRequirementGeneration` completes the contract-safe part of the next
+planning step. It reads the service-owned validation report and teaching-plan
+status, confirms only a lock state observed from the backend, previews the
+deterministic create/preserve/retire/conflict diff, and requires a separate
+confirmation before generation. The applied result shows the generation number
+and authoritative live-slot count. If conflicts exist, apply is disabled and
+the user is directed to reconciliation. The backend currently exposes no
+`lock`/`unlock` endpoint, so the component deliberately does not simulate a
+client-side lock; generation becomes available only for a backend-observed
+`locked` or `stale` plan.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

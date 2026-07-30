@@ -72,7 +72,9 @@ const mocks = vi.hoisted(() => ({
     bulkApply: vi.fn()
   },
   teachingPlans: {
+    get: vi.fn(),
     summary: vi.fn(),
+    validations: vi.fn(),
     materializeMain: vi.fn()
   },
   teachingActivities: {
@@ -89,6 +91,8 @@ const mocks = vi.hoisted(() => ({
   },
   hourRequirements: {
     list: vi.fn(),
+    generationPreview: vi.fn(),
+    generate: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn()
@@ -191,6 +195,8 @@ describe("reparto React hooks", () => {
     mocks.groupSubjects.bulkPreview.mockClear();
     mocks.groupSubjects.bulkApply.mockClear();
     mocks.teachingPlans.summary.mockClear();
+    mocks.teachingPlans.get.mockClear();
+    mocks.teachingPlans.validations.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
     mocks.teachingActivities.create.mockClear();
@@ -201,6 +207,8 @@ describe("reparto React hooks", () => {
     mocks.teachingGroups.update.mockClear();
     mocks.teachingGroups.remove.mockClear();
     mocks.hourRequirements.list.mockClear();
+    mocks.hourRequirements.generationPreview.mockClear();
+    mocks.hourRequirements.generate.mockClear();
     mocks.hourRequirements.create.mockClear();
     mocks.hourRequirements.update.mockClear();
     mocks.hourRequirements.remove.mockClear();
@@ -619,6 +627,37 @@ describe("reparto React hooks", () => {
     });
     expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
     expect(mocks.useMutation).toHaveBeenCalledTimes(22);
+  });
+
+  it("wires plan validation and requirement-generation workflow hooks", async () => {
+    const {
+      useGenerateRepartoRequirements,
+      usePreviewRepartoRequirementGeneration,
+      useRepartoTeachingPlan,
+      useRepartoTeachingPlanValidations
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoTeachingPlan("p1");
+    useRepartoTeachingPlanValidations("p1");
+    expect(mocks.teachingPlans.get).toHaveBeenCalledWith("p1");
+    expect(mocks.teachingPlans.validations).toHaveBeenCalledWith("p1");
+
+    const preview = usePreviewRepartoRequirementGeneration();
+    preview.mutate("p1");
+    expect(mocks.hourRequirements.generationPreview).toHaveBeenCalledWith("p1");
+
+    mocks.invalidateQueries.mockClear();
+    const generate = useGenerateRepartoRequirements();
+    generate.mutate("p1");
+    expect(mocks.hourRequirements.generate).toHaveBeenCalledWith("p1");
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "requirements"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
   });
 
   it("disables process-scoped list queries when no process is selected", async () => {

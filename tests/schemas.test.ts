@@ -48,6 +48,11 @@ import {
   ProcessTeacherPublicSchema,
   ProcessTeachersPublicSchema,
   ProcessTeacherUpdateSchema,
+  RequirementGenerationPreviewSchema,
+  RequirementGenerationResultSchema,
+  RequirementGenerationSlotSchema,
+  RequirementGenerationSlotStatusSchema,
+  RequirementSlotPlanSchema,
   SchoolCreateSchema,
   SchoolPublicSchema,
   SchoolsPublicSchema,
@@ -1383,6 +1388,86 @@ describe("teaching-plan and activity schemas", () => {
     ).toThrow();
     expect(() =>
       TeachingPlansPublicSchema.parse({ data: [planBody], count: -1 })
+    ).toThrow();
+  });
+
+  it("validates requirement-generation previews and applied slot results", () => {
+    const slot = {
+      id: requirementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: 2.9000000000000004,
+      status: "available",
+      created_generation: 3,
+      last_validated_generation: 3,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+    const planned = {
+      teaching_activity_id: activityId,
+      position_index: 1,
+      required_teacher_hours: "2.50"
+    };
+
+    expect(RequirementGenerationSlotStatusSchema.options).toEqual([
+      "available",
+      "assigned",
+      "stale",
+      "reconciliation_required"
+    ]);
+    expect(
+      RequirementGenerationSlotSchema.parse(slot).required_teacher_hours
+    ).toBe("2.90");
+    expect(
+      RequirementSlotPlanSchema.parse(planned).required_teacher_hours
+    ).toBe("2.50");
+
+    const preview = RequirementGenerationPreviewSchema.parse({
+      next_generation_number: 3,
+      to_create: [planned],
+      create_count: 1,
+      preserve_ids: [requirementId],
+      preserve_count: 1,
+      retire_ids: [],
+      retire_count: 0,
+      conflict_ids: [],
+      conflict_count: 0,
+      requires_reconciliation: false,
+      is_noop: false
+    });
+    expect(preview).toMatchObject({
+      next_generation_number: 3,
+      create_count: 1,
+      preserve_count: 1
+    });
+
+    const result = RequirementGenerationResultSchema.parse({
+      generation_number: 3,
+      created: [slot],
+      created_count: 1,
+      preserved_count: 1,
+      retired_count: 0,
+      data: [slot],
+      count: 1
+    });
+    expect(result.created[0]?.required_teacher_hours).toBe("2.90");
+    expect(() =>
+      RequirementGenerationPreviewSchema.parse({
+        ...preview,
+        conflict_count: -1
+      })
+    ).toThrow();
+    expect(() =>
+      RequirementGenerationResultSchema.parse({
+        ...result,
+        generation_number: 0
+      })
+    ).toThrow();
+    expect(() =>
+      RequirementGenerationSlotSchema.parse({ ...slot, private_witness: "x" })
     ).toThrow();
   });
 

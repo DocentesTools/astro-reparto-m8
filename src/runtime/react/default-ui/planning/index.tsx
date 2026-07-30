@@ -16,6 +16,7 @@ import { useRepartoTeachingPlanSummary } from "../../hooks.js";
 import { PlanningBalanceHeader } from "./balance-header.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
 import { SecondaryActivityEditor } from "./secondary-activities.js";
+import { PlanLockAndRequirementGeneration } from "./plan-generation.js";
 
 function PlanningContent({
   locale,
@@ -50,6 +51,7 @@ function PlanningContent({
       />
       <MainSubjectMaterialization locale={locale} processId={processId} />
       <SecondaryActivityEditor locale={locale} processId={processId} />
+      <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
     </main>
   );
 }
@@ -89,3 +91,11 @@ export {
   type SecondaryActivityFormValues,
   type SecondaryActivityRow
 } from "./secondary-activities.js";
+export {
+  PlanLockAndRequirementGeneration,
+  PlanLockConfirmation,
+  PlanValidationSummary,
+  RequirementGenerationPreviewCard,
+  RequirementGenerationResultCard,
+  isRequirementGenerationAvailable
+} from "./plan-generation.js";

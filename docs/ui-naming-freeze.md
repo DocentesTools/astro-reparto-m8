@@ -301,6 +301,26 @@ The editor freezes these surface slots:
 | Notes | `data-reparto-field="secondary-activity-notes"` | optional textarea |
 | Dialog | `data-reparto-dialog="secondary-activity-editor"` | create/edit surface |
 
+### 3.15 Plan lock and requirement generation
+
+> Added **2026-07-30** by the three-stage adaptation. Lock state is
+> service-owned; because the current backend has no lock endpoint, this surface
+> confirms only a lock state returned by `GET /teaching-plan`.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Workflow | `data-reparto-component="plan-lock-requirement-generation"` | package-owned planning panel |
+| Validations | `data-reparto-slot="plan-lock-validations"` | service `PlanValidationReport`; stable code remains visible |
+| Validation count | `data-plan-validation-count="blocking\|warning"` | non-negative authoritative counts |
+| Lock confirmation | `data-reparto-slot="plan-lock-confirmation"` | `data-plan-lock-confirmed` reflects server lifecycle state only |
+| Plan status | `data-teaching-plan-status` | raw service status; never a client-invented state |
+| Preview action | `data-reparto-action="preview-requirement-generation"` | enabled only for `locked` or `stale` |
+| Preview confirmation | `data-reparto-dialog="requirement-generation-confirmation"` | separate preview/apply boundary |
+| Preview counts | `data-generation-preview-count="create\|preserve\|retire\|conflict"` | deterministic server diff |
+| Apply action | `data-reparto-action="generate-requirements"` | disabled when reconciliation is required |
+| Apply result | `data-reparto-slot="requirement-generation-result"` | server generation number and counts |
+| Live-slot count | `data-generated-slot-count` | authoritative `RequirementGenerationResult.count` |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

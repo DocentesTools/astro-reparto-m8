@@ -262,6 +262,16 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "DELETE",
     path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
     response: "TeachingActivityPublic"
+  },
+  "hourRequirements.generationPreview": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/requirements/generation-preview",
+    response: "RequirementGenerationPreview"
+  },
+  "hourRequirements.generate": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/requirements/generate",
+    response: "RequirementGenerationResult"
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 

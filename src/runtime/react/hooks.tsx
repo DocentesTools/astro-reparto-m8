@@ -375,6 +375,24 @@ export function useRepartoTeachingPlanSummary(processId?: string) {
   });
 }
 
+export function useRepartoTeachingPlan(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingPlan(processId),
+    queryFn: () => teachingPlans.get(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useRepartoTeachingPlanValidations(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingPlanValidations(processId),
+    queryFn: () => teachingPlans.validations(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
 export function useRepartoTeachingActivities(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);
   return useQuery({
@@ -619,6 +637,34 @@ export function useRepartoHourRequirements(processId?: string) {
     queryKey: repartoKeys.hourRequirements(processId),
     queryFn: () => hourRequirements.list(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function usePreviewRepartoRequirementGeneration() {
+  return useMutation({
+    mutationFn: (processId: string) =>
+      hourRequirements.generationPreview(processId)
+  });
+}
+
+export function useGenerateRepartoRequirements() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => hourRequirements.generate(processId),
+    onSuccess: (_data, processId) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlan(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.hourRequirements(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.dashboard(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.summary(processId)
+      });
+    }
   });
 }
 

@@ -194,6 +194,42 @@ export const fr: RepartoDictionary = {
         department_level: "Niveau département",
         other: "Autre"
       }
+    },
+    generation: {
+      title: "Verrouillage du plan et génération des besoins",
+      description: "Vérifiez les validations et l'état de verrouillage officiels avant de prévisualiser et générer les postes enseignants indivisibles.",
+      planLoading: "Chargement du plan d'enseignement.",
+      planUnavailable: "Le plan d'enseignement est indisponible.",
+      validationsTitle: "Validations du plan",
+      validationsDescription: "Les erreurs bloquantes et avertissements proviennent directement du service et ne sont jamais déduits du texte affiché.",
+      validationsLoading: "Chargement des validations du plan.",
+      validationsUnavailable: "Les validations du plan sont indisponibles.",
+      blocking: "Bloquantes",
+      warnings: "Avertissements",
+      noValidations: "Aucune validation à signaler.",
+      lockTitle: "Confirmation du verrouillage",
+      lockConfirmed: "Le service confirme que ce plan est passé par l'état verrouillé du cycle de vie.",
+      lockUnavailable: "Ce plan n'est pas verrouillé. Le service n'expose pas encore d'action de verrouillage ; le client ne peut donc ni l'avancer ni simuler un verrouillage local.",
+      planStatus: "État du plan : {status}. Génération actuelle : {generation}.",
+      previewAction: "Prévisualiser la génération des besoins",
+      previewDisabled: "La génération est disponible uniquement pour un plan verrouillé par le service ou obsolète.",
+      previewTitle: "Confirmer la génération des besoins",
+      previewSummary: "Génération {generation} : créer {create}, conserver {preserve}, retirer {retire}, conflits {conflicts}.",
+      previewMetric: {
+        create: "Créer",
+        preserve: "Conserver",
+        retire: "Retirer",
+        conflict: "Conflits"
+      },
+      reconciliationRequired: "Des postes affectés seraient modifiés. Utilisez la réconciliation ; la génération ne peut pas être appliquée.",
+      noChanges: "La prévisualisation ne change rien. L'application enregistre tout de même la prochaine génération de validation déterministe.",
+      confirmAction: "Générer les postes requis",
+      previewError: "La prévisualisation de la génération n'a pas pu être créée.",
+      generateError: "Les postes requis n'ont pas pu être générés.",
+      success: "Génération appliquée. {count} postes actifs sont disponibles.",
+      resultTitle: "Génération appliquée",
+      resultSummary: "La génération {generation} a créé {created}, conservé {preserved}, retiré {retired} et compte maintenant {count} postes actifs.",
+      totalSlots: "Nombre de postes actifs générés"
     }
   },
   action: {

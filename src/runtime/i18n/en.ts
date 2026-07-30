@@ -195,6 +195,42 @@ export const en = {
         department_level: "Department level",
         other: "Other"
       }
+    },
+    generation: {
+      title: "Plan lock and requirement generation",
+      description: "Review the authoritative validations and lock state before previewing and generating indivisible teacher-position slots.",
+      planLoading: "Loading the teaching plan.",
+      planUnavailable: "The teaching plan is unavailable.",
+      validationsTitle: "Plan validations",
+      validationsDescription: "Blocking and warning findings are read directly from the service and are never inferred from display text.",
+      validationsLoading: "Loading plan validations.",
+      validationsUnavailable: "Plan validations are unavailable.",
+      blocking: "Blocking",
+      warnings: "Warnings",
+      noValidations: "No plan validation findings.",
+      lockTitle: "Lock confirmation",
+      lockConfirmed: "The service confirms that this plan passed through the locked lifecycle state.",
+      lockUnavailable: "This plan is not locked. The service does not expose a lock action yet, so the client cannot advance it or pretend that a local confirmation locks it.",
+      planStatus: "Plan status: {status}. Current generation: {generation}.",
+      previewAction: "Preview requirement generation",
+      previewDisabled: "Requirement generation is available only for a service-locked or stale plan.",
+      previewTitle: "Confirm requirement generation",
+      previewSummary: "Generation {generation}: create {create}, preserve {preserve}, retire {retire}, conflicts {conflicts}.",
+      previewMetric: {
+        create: "Create",
+        preserve: "Preserve",
+        retire: "Retire",
+        conflict: "Conflicts"
+      },
+      reconciliationRequired: "Assigned slots would change. Use the reconciliation workflow instead; generation cannot be applied.",
+      noChanges: "The preview is a no-op. Applying it still records the next deterministic validation generation.",
+      confirmAction: "Generate requirement slots",
+      previewError: "The requirement-generation preview could not be created.",
+      generateError: "Requirement slots could not be generated.",
+      success: "Requirement generation applied. {count} live slots are available.",
+      resultTitle: "Generation applied",
+      resultSummary: "Generation {generation} created {created}, preserved {preserved}, retired {retired}, and now has {count} live slots.",
+      totalSlots: "Generated live-slot count"
     }
   },
   action: {

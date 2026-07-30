@@ -125,7 +125,19 @@ describe("compatibility", () => {
         "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
       response: "TeachingActivityPublic"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(48);
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["hourRequirements.generationPreview"]
+    ).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/requirements/generation-preview",
+      response: "RequirementGenerationPreview"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["hourRequirements.generate"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/requirements/generate",
+      response: "RequirementGenerationResult"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(50);
   });
 });
 

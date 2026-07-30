@@ -4,10 +4,14 @@ import {
   HourRequirementPublicSchema,
   HourRequirementsPublicSchema,
   HourRequirementUpdateSchema,
+  RequirementGenerationPreviewSchema,
+  RequirementGenerationResultSchema,
   type HourRequirementCreateInput,
   type HourRequirementPublic,
   type HourRequirementsPublic,
-  type HourRequirementUpdate
+  type HourRequirementUpdate,
+  type RequirementGenerationPreview,
+  type RequirementGenerationResult
 } from "../schemas.js";
 
 export const hourRequirements = {
@@ -23,6 +27,26 @@ export const hourRequirements = {
       method: "GET",
       path: `/assignment-processes/${processId}/requirements/${requirementId}`,
       schema: HourRequirementPublicSchema,
+      auth: true
+    }),
+  /**
+   * Dry-run the next deterministic slot generation. This is deliberately a
+   * POST: it performs the same guarded planning computation as `generate` but
+   * never mutates rows.
+   */
+  generationPreview: (processId: string) =>
+    request<RequirementGenerationPreview>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/requirements/generation-preview`,
+      schema: RequirementGenerationPreviewSchema,
+      auth: true
+    }),
+  /** Apply the previewed create/preserve/retire plan. */
+  generate: (processId: string) =>
+    request<RequirementGenerationResult>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/requirements/generate`,
+      schema: RequirementGenerationResultSchema,
       auth: true
     }),
   create: (processId: string, body: HourRequirementCreateInput) =>

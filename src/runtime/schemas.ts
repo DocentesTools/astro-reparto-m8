@@ -1582,6 +1582,87 @@ export type PlanValidationReport = z.infer<
   typeof PlanValidationReportSchema
 >;
 
+// ── Requirement generation (backend plan §7.5, §20.8) ──────────────────────
+//
+// The package's legacy HourRequirementPublic contract is replaced by the
+// dedicated generated-slot contract in the requirements-view adaptation. Keep
+// this workflow schema self-contained until that breaking rewrite lands so the
+// generation response is still fully validated instead of accepting unknown
+// rows or reviving manual requirement writes.
+
+export const RequirementGenerationSlotStatusSchema = z.enum([
+  "available",
+  "assigned",
+  "stale",
+  "reconciliation_required"
+]);
+export type RequirementGenerationSlotStatus = z.infer<
+  typeof RequirementGenerationSlotStatusSchema
+>;
+
+export const RequirementGenerationSlotSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    teaching_activity_id: uuidSchema,
+    position_index: z.number().int().nonnegative(),
+    required_teacher_hours: HoursSchema,
+    status: RequirementGenerationSlotStatusSchema,
+    created_generation: z.number().int().nonnegative(),
+    last_validated_generation: z.number().int().nonnegative(),
+    retired_generation: z.number().int().nonnegative().nullable(),
+    superseded_by_requirement_id: uuidSchema.nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type RequirementGenerationSlot = z.infer<
+  typeof RequirementGenerationSlotSchema
+>;
+
+export const RequirementSlotPlanSchema = z
+  .object({
+    teaching_activity_id: uuidSchema,
+    position_index: z.number().int().nonnegative(),
+    required_teacher_hours: HoursSchema
+  })
+  .strict();
+export type RequirementSlotPlan = z.infer<typeof RequirementSlotPlanSchema>;
+
+export const RequirementGenerationPreviewSchema = z
+  .object({
+    next_generation_number: z.number().int().positive(),
+    to_create: z.array(RequirementSlotPlanSchema),
+    create_count: z.number().int().nonnegative(),
+    preserve_ids: z.array(uuidSchema),
+    preserve_count: z.number().int().nonnegative(),
+    retire_ids: z.array(uuidSchema),
+    retire_count: z.number().int().nonnegative(),
+    conflict_ids: z.array(uuidSchema),
+    conflict_count: z.number().int().nonnegative(),
+    requires_reconciliation: z.boolean(),
+    is_noop: z.boolean()
+  })
+  .strict();
+export type RequirementGenerationPreview = z.infer<
+  typeof RequirementGenerationPreviewSchema
+>;
+
+export const RequirementGenerationResultSchema = z
+  .object({
+    generation_number: z.number().int().positive(),
+    created: z.array(RequirementGenerationSlotSchema),
+    created_count: z.number().int().nonnegative(),
+    preserved_count: z.number().int().nonnegative(),
+    retired_count: z.number().int().nonnegative(),
+    data: z.array(RequirementGenerationSlotSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type RequirementGenerationResult = z.infer<
+  typeof RequirementGenerationResultSchema
+>;
+
 const activityHoursRequestSchema = hoursRequestSchema(
   "Teaching-activity hours",
   "zero"

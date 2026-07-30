@@ -436,6 +436,36 @@ then canonical strings. `HoursSchema` accepts both on read and always normalizes
 to a canonical string; create/update wrappers always send the exact canonical
 string and reject a third decimal place rather than round user input.
 
+### 2.14 Requirement generation — `prefix=/…/requirements`
+
+> Added **2026-07-30** for the §13.2 plan-lock/generation workflow. Verified
+> against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`:
+> `app/routes/hour_requirements.py`,
+> `controllers/hour_requirements.py`, and
+> `db_models/hour_requirements.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| Preview | `POST /generation-preview` → `RequirementGenerationPreview`; dry-run, no request body |
+| Apply | `POST /generate` → `RequirementGenerationResult`; no request body |
+| Generatable status | `locked` or `stale`; other plan states return 400 |
+| Conflict | Preview sets `requires_reconciliation`; apply refuses an assigned-slot change with 409 |
+| Preview shape | `next_generation_number`, `to_create`, create/preserve/retire/conflict ids and counts, `requires_reconciliation`, `is_noop` |
+| Apply shape | `generation_number`, `created`, created/preserved/retired counts, complete live `data`, authoritative live `count` |
+
+A planned slot is `(teaching_activity_id, position_index,
+required_teacher_hours)`. Applied rows additionally carry stable row identity,
+process/activity ids, status, generation lineage, supersession identity and
+timestamps. Hour fields accept the backend's current JSON numbers and future
+decimal strings, then normalize to canonical two-place strings.
+
+The live contract has **no plan lock/unlock endpoint**. `GET /teaching-plan`
+may report a plan already `locked` (including a restored plan), but the frontend
+must not invent a mutation or treat a local checkbox as a lock. The default UI
+therefore confirms only backend-observed lifecycle state and disables
+generation until the service reports `locked` or `stale`.
+
 ---
 
 ## 3. Additional surface area not in plan §2

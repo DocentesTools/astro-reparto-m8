@@ -194,6 +194,42 @@ export const es: RepartoDictionary = {
         department_level: "Nivel de departamento",
         other: "Otra"
       }
+    },
+    generation: {
+      title: "Bloqueo del plan y generación de necesidades",
+      description: "Revisa las validaciones y el estado de bloqueo oficiales antes de previsualizar y generar puestos docentes indivisibles.",
+      planLoading: "Cargando el plan docente.",
+      planUnavailable: "El plan docente no está disponible.",
+      validationsTitle: "Validaciones del plan",
+      validationsDescription: "Los errores bloqueantes y avisos proceden directamente del servicio y nunca se deducen del texto mostrado.",
+      validationsLoading: "Cargando las validaciones del plan.",
+      validationsUnavailable: "Las validaciones del plan no están disponibles.",
+      blocking: "Bloqueantes",
+      warnings: "Avisos",
+      noValidations: "No hay validaciones del plan.",
+      lockTitle: "Confirmación del bloqueo",
+      lockConfirmed: "El servicio confirma que este plan ha pasado por el estado bloqueado del ciclo de vida.",
+      lockUnavailable: "Este plan no está bloqueado. El servicio todavía no expone una acción de bloqueo, por lo que el cliente no puede avanzarlo ni fingir que una confirmación local lo bloquea.",
+      planStatus: "Estado del plan: {status}. Generación actual: {generation}.",
+      previewAction: "Previsualizar la generación de necesidades",
+      previewDisabled: "La generación solo está disponible para un plan bloqueado por el servicio u obsoleto.",
+      previewTitle: "Confirmar la generación de necesidades",
+      previewSummary: "Generación {generation}: crear {create}, conservar {preserve}, retirar {retire}, conflictos {conflicts}.",
+      previewMetric: {
+        create: "Crear",
+        preserve: "Conservar",
+        retire: "Retirar",
+        conflict: "Conflictos"
+      },
+      reconciliationRequired: "Cambiarían puestos ya asignados. Usa el flujo de conciliación; la generación no puede aplicarse.",
+      noChanges: "La previsualización no contiene cambios. Al aplicarla se registra igualmente la siguiente generación de validación determinista.",
+      confirmAction: "Generar puestos necesarios",
+      previewError: "No se pudo crear la previsualización de generación.",
+      generateError: "No se pudieron generar los puestos necesarios.",
+      success: "Generación aplicada. Hay {count} puestos activos disponibles.",
+      resultTitle: "Generación aplicada",
+      resultSummary: "La generación {generation} creó {created}, conservó {preserved}, retiró {retired} y ahora tiene {count} puestos activos.",
+      totalSlots: "Número de puestos activos generados"
     }
   },
   action: {

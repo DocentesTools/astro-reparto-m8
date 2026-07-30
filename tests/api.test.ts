@@ -1419,6 +1419,75 @@ describe("teaching-plan and activity API wrappers", () => {
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
   });
 
+  it("previews and applies deterministic requirement generation", async () => {
+    const generatedSlot = {
+      id: requirementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: 2.9000000000000004,
+      status: "available",
+      created_generation: 1,
+      last_validated_generation: 1,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        next_generation_number: 1,
+        to_create: [
+          {
+            teaching_activity_id: activityId,
+            position_index: 0,
+            required_teacher_hours: 2.5
+          }
+        ],
+        create_count: 1,
+        preserve_ids: [],
+        preserve_count: 0,
+        retire_ids: [],
+        retire_count: 0,
+        conflict_ids: [],
+        conflict_count: 0,
+        requires_reconciliation: false,
+        is_noop: false
+      })
+    );
+    await expect(
+      hourRequirements.generationPreview(processId)
+    ).resolves.toMatchObject({
+      next_generation_number: 1,
+      to_create: [{ required_teacher_hours: "2.50" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/generation-preview`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        generation_number: 1,
+        created: [generatedSlot],
+        created_count: 1,
+        preserved_count: 0,
+        retired_count: 0,
+        data: [generatedSlot],
+        count: 1
+      })
+    );
+    await expect(hourRequirements.generate(processId)).resolves.toMatchObject({
+      generation_number: 1,
+      count: 1,
+      data: [{ required_teacher_hours: "2.90" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/generate`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+  });
+
   it("wraps activity CRUD and canonicalizes outgoing hours", async () => {
     fetchMock.mockResolvedValueOnce(
       response({ data: [activityBody], count: 1 })

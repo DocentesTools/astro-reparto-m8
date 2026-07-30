@@ -27,6 +27,8 @@ const queryState = vi.hoisted(() => ({
   departments: [] as unknown[],
   stages: [] as unknown[],
   planBalance: null as unknown,
+  teachingPlan: null as unknown,
+  planValidations: null as unknown,
   groupSubjects: [] as unknown[],
   teachingActivities: [] as unknown[]
 }));
@@ -51,6 +53,22 @@ vi.mock("@tanstack/react-query", () => ({
         if (entityScope === "teaching-plan" && queryKey[5] === "summary") {
           return {
             data: queryState.planBalance,
+            error: null,
+            isError: false,
+            isLoading: false
+          };
+        }
+        if (entityScope === "teaching-plan" && queryKey[5] === "validations") {
+          return {
+            data: queryState.planValidations,
+            error: null,
+            isError: false,
+            isLoading: false
+          };
+        }
+        if (entityScope === "teaching-plan") {
+          return {
+            data: queryState.teachingPlan,
             error: null,
             isError: false,
             isLoading: false
@@ -127,6 +145,8 @@ function reset() {
   queryState.teachers = [];
   queryState.stages = [classroomStage];
   queryState.planBalance = null;
+  queryState.teachingPlan = null;
+  queryState.planValidations = null;
   queryState.groupSubjects = [];
   queryState.teachingActivities = [];
 }
@@ -151,6 +171,33 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       },
       is_exact: false
     };
+    queryState.teachingPlan = {
+      id: "99999999-9999-4999-8999-999999999999",
+      assignment_process_id: processId,
+      allocation_revision_id: null,
+      status: "locked",
+      current_generation_number: 0,
+      locked_at: "2026-07-30T10:00:00Z",
+      locked_by_user_id: "12121212-1212-4121-8121-121212121212",
+      requirements_generated_at: null,
+      stale_reason: null,
+      feasibility_status: "feasible",
+      feasibility_generation: 0,
+      feasibility_checked_at: "2026-07-30T10:00:00Z",
+      feasibility_input_fingerprint: "fingerprint",
+      feasibility_solver_version: "solver-v1",
+      feasibility_diagnostics_ref: null,
+      created_at: "2026-07-30T09:00:00Z",
+      updated_at: "2026-07-30T10:00:00Z"
+    };
+    queryState.planValidations = {
+      teaching_plan_id: "99999999-9999-4999-8999-999999999999",
+      assignment_process_id: processId,
+      is_assignment_ready: true,
+      blocking_count: 0,
+      warning_count: 0,
+      messages: []
+    };
     const { RepartoPlanningView } = await import(
       "../src/runtime/react/default-ui/index.js"
     );
@@ -172,6 +219,11 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain(
       'data-reparto-component="secondary-activity-editor"'
     );
+    expect(html).toContain(
+      'data-reparto-component="plan-lock-requirement-generation"'
+    );
+    expect(html).toContain('data-plan-lock-confirmed="true"');
+    expect(html).toContain('data-reparto-slot="plan-lock-validations"');
     expect(html).toContain("No live secondary activities have been added.");
     for (const value of ["116.00 h", "120.00 h", "4.00 h", "124.00 h", "0.00 h"]) {
       expect(html).toContain(value);

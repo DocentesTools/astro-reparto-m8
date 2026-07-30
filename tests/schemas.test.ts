@@ -22,6 +22,8 @@ import {
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
+  FeasibilityStatusSchema,
+  GroupBalanceSchema,
   GroupSubjectBulkApplyRequestSchema,
   GroupSubjectBulkChangeSchema,
   GroupSubjectBulkConflictSchema,
@@ -38,6 +40,9 @@ import {
   HourRequirementsPublicSchema,
   HourRequirementUpdateSchema,
   MeetingSessionCreateSchema,
+  MainMaterializationResultSchema,
+  PlanBalanceSchema,
+  PlanValidationReportSchema,
   ProcessDashboardSchema,
   ProcessTeacherCreateSchema,
   ProcessTeacherPublicSchema,
@@ -56,10 +61,21 @@ import {
   TeacherProfileLinkUserSchema,
   TeacherProfilePublicSchema,
   TeacherProfilesPublicSchema,
+  TeacherLoadBalanceSchema,
+  TeachingActivitiesPublicSchema,
+  TeachingActivityCreateSchema,
+  TeachingActivityGroupPublicSchema,
+  TeachingActivityPublicSchema,
+  TeachingActivitySourceSchema,
+  TeachingActivitySyncStateSchema,
+  TeachingActivityUpdateSchema,
   TeachingGroupCreateSchema,
   TeachingGroupPublicSchema,
   TeachingGroupsPublicSchema,
-  TeachingGroupUpdateSchema
+  TeachingGroupUpdateSchema,
+  TeachingPlanPublicSchema,
+  TeachingPlansPublicSchema,
+  TeachingPlanStatusSchema
 } from "../src/runtime/schemas.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
@@ -1263,6 +1279,320 @@ describe("group-subject schemas", () => {
         updated_count: 0,
         data: [],
         count: 0
+      })
+    ).toThrow();
+  });
+});
+
+describe("teaching-plan and activity schemas", () => {
+  const planId = "17171717-1717-4171-8171-171717171717";
+  const activityId = "18181818-1818-4181-8181-181818181818";
+  const subjectId = "19191919-1919-4191-8191-191919191919";
+  const groupSubjectId = "20202020-2020-4020-8020-202020202020";
+  const linkId = "21212121-2121-4121-8121-212121212121";
+  const allocationRevisionId = "23232323-2323-4323-8323-232323232323";
+
+  const planBody = {
+    id: planId,
+    assignment_process_id: processId,
+    allocation_revision_id: allocationRevisionId,
+    status: "balanced",
+    current_generation_number: 2,
+    locked_at: null,
+    locked_by_user_id: null,
+    requirements_generated_at: null,
+    stale_reason: null,
+    feasibility_status: "feasible",
+    feasibility_generation: 2,
+    feasibility_checked_at: now,
+    feasibility_input_fingerprint: "abc123",
+    feasibility_solver_version: "solver-v1",
+    feasibility_diagnostics_ref: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const activityBody = {
+    id: activityId,
+    teaching_plan_id: planId,
+    subject_id: subjectId,
+    allocation_category: "secondary",
+    activity_type: "co_teaching",
+    group_weekly_hours_per_group: 2.9000000000000004,
+    teacher_weekly_hours_per_position: "2.50",
+    required_teacher_count: 2,
+    notes: "Two-teacher support",
+    source: "secondary_manual",
+    source_group_subject_id: null,
+    sync_state: "in_sync",
+    retired_at: null,
+    group_subject_ids: [groupSubjectId],
+    linked_group_count: 1,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("freezes plan, feasibility, source and sync statuses", () => {
+    expect(TeachingPlanStatusSchema.options).toEqual([
+      "draft",
+      "unbalanced",
+      "balanced",
+      "locked",
+      "requirements_generated",
+      "stale",
+      "reconciliation_required"
+    ]);
+    expect(FeasibilityStatusSchema.options).toEqual([
+      "not_evaluated",
+      "feasible",
+      "infeasible",
+      "unknown"
+    ]);
+    expect(TeachingActivitySourceSchema.options).toEqual([
+      "main_generated",
+      "secondary_manual",
+      "copied_from_previous_year",
+      "imported"
+    ]);
+    expect(TeachingActivitySyncStateSchema.options).toEqual([
+      "in_sync",
+      "out_of_sync"
+    ]);
+  });
+
+  it("parses the complete teaching plan and one-item wrapper", () => {
+    expect(TeachingPlanPublicSchema.parse(planBody)).toMatchObject({
+      status: "balanced",
+      feasibility_status: "feasible",
+      current_generation_number: 2
+    });
+    expect(
+      TeachingPlansPublicSchema.parse({ data: [planBody], count: 1 }).count
+    ).toBe(1);
+    expect(() =>
+      TeachingPlanPublicSchema.parse({ ...planBody, status: "ready" })
+    ).toThrow();
+    expect(() =>
+      TeachingPlanPublicSchema.parse({
+        ...planBody,
+        current_generation_number: -1
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingPlanPublicSchema.parse({ ...planBody, witness: "secret" })
+    ).toThrow();
+    expect(() =>
+      TeachingPlansPublicSchema.parse({ data: [planBody], count: -1 })
+    ).toThrow();
+  });
+
+  it("validates both independent planning balances and signed differences", () => {
+    const group = {
+      total_group_load: "120.00",
+      allocated_group_weekly_hours: "124.00",
+      allocation_difference: "-4.00",
+      is_balanced: false
+    };
+    const teacher = {
+      total_teacher_load: "124.00",
+      participant_target_total: "124.00",
+      teacher_load_difference: "0.00",
+      is_balanced: true
+    };
+    expect(GroupBalanceSchema.parse(group).allocation_difference).toBe("-4.00");
+    expect(TeacherLoadBalanceSchema.parse(teacher).total_teacher_load).toBe(
+      "124.00"
+    );
+    expect(
+      PlanBalanceSchema.parse({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        group,
+        teacher,
+        is_exact: false
+      }).group.total_group_load
+    ).toBe("120.00");
+    expect(
+      GroupBalanceSchema.parse({
+        total_group_load: "0.00",
+        allocated_group_weekly_hours: null,
+        allocation_difference: null,
+        is_balanced: false
+      }).allocated_group_weekly_hours
+    ).toBeNull();
+    expect(() =>
+      GroupBalanceSchema.parse({ ...group, allocation_difference: "not-hours" })
+    ).toThrow();
+    expect(() =>
+      TeacherLoadBalanceSchema.parse({
+        ...teacher,
+        participant_target_total: -1
+      })
+    ).toThrow();
+  });
+
+  it("parses structured planning validations", () => {
+    const report = PlanValidationReportSchema.parse({
+      teaching_plan_id: planId,
+      assignment_process_id: processId,
+      is_assignment_ready: false,
+      blocking_count: 1,
+      warning_count: 1,
+      messages: [
+        {
+          severity: "blocking",
+          code: "activity.missing_groups",
+          message: "The activity requires at least one group.",
+          entity_type: "teaching_activity",
+          entity_id: activityId
+        },
+        {
+          severity: "warning",
+          code: "participant.extra_hours_authorized",
+          message: "Extra hours are authorized.",
+          entity_type: "process_teacher",
+          entity_id: null
+        }
+      ]
+    });
+    expect(report.messages).toHaveLength(2);
+    expect(report.messages[0]?.entity_id).toBe(activityId);
+    expect(() =>
+      PlanValidationReportSchema.parse({
+        ...report,
+        blocking_count: -1
+      })
+    ).toThrow();
+    expect(() =>
+      PlanValidationReportSchema.parse({
+        ...report,
+        messages: [{ ...report.messages[0], code: "" }]
+      })
+    ).toThrow();
+  });
+
+  it("reads every activity field and enforces linked-group integrity", () => {
+    const parsed = TeachingActivityPublicSchema.parse(activityBody);
+    expect(parsed.group_weekly_hours_per_group).toBe("2.90");
+    expect(parsed.teacher_weekly_hours_per_position).toBe("2.50");
+    expect(parsed.group_subject_ids).toEqual([groupSubjectId]);
+    expect(
+      TeachingActivitiesPublicSchema.parse({
+        data: [activityBody],
+        count: 1
+      }).count
+    ).toBe(1);
+    expect(
+      TeachingActivityGroupPublicSchema.parse({
+        id: linkId,
+        teaching_activity_id: activityId,
+        group_subject_id: groupSubjectId
+      }).group_subject_id
+    ).toBe(groupSubjectId);
+    expect(() =>
+      TeachingActivityPublicSchema.parse({
+        ...activityBody,
+        linked_group_count: 2
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityPublicSchema.parse({
+        ...activityBody,
+        group_subject_ids: [groupSubjectId, groupSubjectId],
+        linked_group_count: 2
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityPublicSchema.parse({
+        ...activityBody,
+        required_teacher_count: 0
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityPublicSchema.parse({ ...activityBody, extra: true })
+    ).toThrow();
+  });
+
+  it("builds canonical manual create and partial update payloads", () => {
+    expect(
+      TeachingActivityCreateSchema.parse({
+        subject_id: subjectId,
+        group_weekly_hours_per_group: 3,
+        teacher_weekly_hours_per_position: "2.5",
+        required_teacher_count: 2,
+        group_subject_ids: [groupSubjectId]
+      })
+    ).toEqual({
+      subject_id: subjectId,
+      group_weekly_hours_per_group: "3.00",
+      teacher_weekly_hours_per_position: "2.50",
+      required_teacher_count: 2,
+      group_subject_ids: [groupSubjectId]
+    });
+    expect(
+      TeachingActivityCreateSchema.parse({
+        subject_id: subjectId,
+        group_weekly_hours_per_group: 0,
+        teacher_weekly_hours_per_position: 0
+      })
+    ).toMatchObject({
+      group_weekly_hours_per_group: "0.00",
+      teacher_weekly_hours_per_position: "0.00"
+    });
+    expect(
+      TeachingActivityUpdateSchema.parse({
+        notes: null,
+        group_subject_ids: []
+      })
+    ).toEqual({ notes: null, group_subject_ids: [] });
+    expect(() =>
+      TeachingActivityCreateSchema.parse({
+        subject_id: subjectId,
+        group_weekly_hours_per_group: "1.005",
+        teacher_weekly_hours_per_position: 1
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityCreateSchema.parse({
+        subject_id: subjectId,
+        group_weekly_hours_per_group: 1,
+        teacher_weekly_hours_per_position: 1,
+        source: "main_generated"
+      })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityUpdateSchema.parse({ subject_id: subjectId })
+    ).toThrow();
+    expect(() =>
+      TeachingActivityUpdateSchema.parse({
+        group_subject_ids: [groupSubjectId, groupSubjectId]
+      })
+    ).toThrow();
+  });
+
+  it("validates idempotent main-materialization counts", () => {
+    expect(
+      MainMaterializationResultSchema.parse({
+        created: [activityBody],
+        created_count: 1,
+        skipped_source_ids: [groupSubjectId],
+        skipped_count: 1
+      }).created_count
+    ).toBe(1);
+    expect(() =>
+      MainMaterializationResultSchema.parse({
+        created: [activityBody],
+        created_count: 0,
+        skipped_source_ids: [],
+        skipped_count: 0
+      })
+    ).toThrow();
+    expect(() =>
+      MainMaterializationResultSchema.parse({
+        created: [],
+        created_count: 0,
+        skipped_source_ids: [groupSubjectId],
+        skipped_count: 0
       })
     ).toThrow();
   });

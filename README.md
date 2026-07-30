@@ -90,6 +90,25 @@ preview before enabling apply. Apply is a separate confirmation step. A 409
 clears the preview and requires a fresh preview; the component never retries a
 stale selection.
 
+## Teaching plans and activities
+
+`teachingPlans` wraps the process's single intermediate plan: get/create, the
+dual planning summary, structured validations, and idempotent main-activity
+materialization. Plan lifecycle status and assignment feasibility remain
+separate axes. The summary likewise keeps group teaching hours and teacher
+workload independent; signed differences are canonical decimal strings, and
+the validation report exposes stable codes plus entity references rather than
+requiring consumers to parse display text.
+
+`teachingActivities` exposes the live activity list and CRUD contract. An
+activity carries its complete planning values, source and sync state,
+materialization lineage, retirement timestamp, and the full
+`group_subject_ids` link set. Outgoing hours are canonicalized to two-place
+strings. Duplicate links, immutable identity fields, non-positive teacher
+counts, and manual attempts to create `main_generated` activities are rejected
+before fetch; subject-specific zero/multiple-group policy remains
+backend-authoritative.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

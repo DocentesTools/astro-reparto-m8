@@ -107,7 +107,23 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
       response: "GroupSubjectPublic"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(38);
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingPlans.summary"]).toEqual({
+      method: "GET",
+      path: "/assignment-processes/{process_id}/teaching-plan/summary",
+      response: "PlanBalance"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingPlans.materializeMain"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",
+      response: "MainMaterializationResult"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingActivities.update"]).toEqual({
+      method: "PATCH",
+      path:
+        "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
+      response: "TeachingActivityPublic"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(48);
   });
 });
 

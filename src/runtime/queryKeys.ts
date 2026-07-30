@@ -133,6 +133,20 @@ export const repartoKeys = {
   // per-cell key to keep partially-stale rows from surviving a bulk operation.
   groupSubjects: (processId?: string) =>
     [...repartoKeys.process(processId), "group-subjects"] as const,
+  teachingPlan: (processId?: string) =>
+    [...repartoKeys.process(processId), "teaching-plan"] as const,
+  teachingPlanSummary: (processId?: string) =>
+    [...repartoKeys.teachingPlan(processId), "summary"] as const,
+  teachingPlanValidations: (processId?: string) =>
+    [...repartoKeys.teachingPlan(processId), "validations"] as const,
+  teachingActivities: (processId?: string) =>
+    [...repartoKeys.process(processId), "teaching-activities"] as const,
+  teachingActivity: (processId?: string, activityId?: string) =>
+    [
+      ...repartoKeys.teachingActivities(processId),
+      "detail",
+      activityId ?? null
+    ] as const,
   teachingGroups: (processId?: string) =>
     [...repartoKeys.process(processId), "groups"] as const,
   hourRequirements: (processId?: string) =>

@@ -10,6 +10,8 @@ export { departments } from "./departments.js";
 export { teacherProfiles } from "./teacherProfiles.js";
 export { subjects } from "./subjects.js";
 export { groupSubjects } from "./groupSubjects.js";
+export { teachingPlans } from "./teachingPlans.js";
+export { teachingActivities } from "./teachingActivities.js";
 export { teachingGroups } from "./teachingGroups.js";
 export { classroomStages } from "./classroomStages.js";
 export { hourRequirements } from "./hourRequirements.js";

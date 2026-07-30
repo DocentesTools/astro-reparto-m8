@@ -212,6 +212,56 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "POST",
     path: "/assignment-processes/{process_id}/group-subjects/bulk-apply",
     response: "GroupSubjectBulkResult"
+  },
+  "teachingPlans.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teaching-plan",
+    response: "TeachingPlanPublic"
+  },
+  "teachingPlans.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-plan",
+    response: "TeachingPlanPublic"
+  },
+  "teachingPlans.summary": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teaching-plan/summary",
+    response: "PlanBalance"
+  },
+  "teachingPlans.validations": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teaching-plan/validations",
+    response: "PlanValidationReport"
+  },
+  "teachingPlans.materializeMain": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",
+    response: "MainMaterializationResult"
+  },
+  "teachingActivities.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teaching-activities/",
+    response: "TeachingActivitiesPublic"
+  },
+  "teachingActivities.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
+    response: "TeachingActivityPublic"
+  },
+  "teachingActivities.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-activities/",
+    response: "TeachingActivityPublic"
+  },
+  "teachingActivities.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
+    response: "TeachingActivityPublic"
+  },
+  "teachingActivities.remove": {
+    method: "DELETE",
+    path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
+    response: "TeachingActivityPublic"
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 

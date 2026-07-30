@@ -177,6 +177,54 @@ describe("reparto query keys", () => {
       "p1",
       "group-subjects"
     ]);
+    expect(repartoKeys.teachingPlan("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan"
+    ]);
+    expect(repartoKeys.teachingPlanSummary("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "summary"
+    ]);
+    expect(repartoKeys.teachingPlanValidations("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "validations"
+    ]);
+    expect(repartoKeys.teachingActivities("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-activities"
+    ]);
+    expect(repartoKeys.teachingActivity("p1", "a1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-activities",
+      "detail",
+      "a1"
+    ]);
+    expect(repartoKeys.teachingActivity("current")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      null,
+      "teaching-activities",
+      "detail",
+      null
+    ]);
     expect(repartoKeys.allocationRevisions("p1")).toEqual([
       "reparto",
       "processes",

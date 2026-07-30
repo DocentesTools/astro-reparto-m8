@@ -117,7 +117,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
   it("subjects view renders the list with Create + Edit + Delete row actions", async () => {
     reset();
     queryState.subjects = [
-      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: "ESO", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", allocation_category: "main", activity_type: "ordinary", default_group_weekly_hours: 4, default_teacher_weekly_hours_per_position: 4, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     const { RepartoSubjectsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoSubjectsView processId={processId} />);
@@ -131,12 +131,17 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain("Matemáticas");
     // full data table: every data column is orderable, the 2nd (Actions) column is not
     expect(html).toContain('data-reparto-sort-column="name"');
-    expect(html).toContain('data-reparto-sort-column="stage"');
+    expect(html).toContain('data-reparto-sort-column="allocation-category"');
+    expect(html).toContain('data-reparto-sort-column="activity-type"');
     expect(html).not.toContain('data-reparto-sort-column="actions"');
-    expect(html).toMatch(/Actions<\/th><th[^>]*><button[^>]*data-reparto-sort-column="stage"/);
+    expect(html).toMatch(/Actions<\/th><th[^>]*><button[^>]*data-reparto-sort-column="allocation-category"/);
     expect(html).toContain('data-reparto-pagination="top"');
     expect(html).toContain('data-reparto-pagination="bottom"');
-    expect(html).toContain("Search name or stage...");
+    expect(html).toContain("Search name...");
+    // The two-stage `stage` slot is retired, not reused (ui-naming-freeze §12).
+    expect(html).not.toContain("data-subject-stage");
+    expect(html).toContain('data-subject-allocation-category="main"');
+    expect(html).toContain('data-subject-activity-type="ordinary"');
   });
 
   it("subject create + edit forms render inside a shadcn Dialog modal", async () => {
@@ -150,6 +155,25 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('role="dialog"');
     expect(html).toContain('data-reparto-dialog="subject-create"');
     expect(html).toContain('data-reparto-form="subject"');
+    // §3.5 classification replaces the deleted two-stage text field.
+    expect(html).toContain('data-reparto-field="allocation-category"');
+    expect(html).toContain('data-reparto-field="activity-type"');
+    expect(html).not.toContain('data-reparto-field="stage"');
+    expect(html).toContain("Secondary");
+    expect(html).toContain("Co-teaching");
+
+    const { SubjectEdit } = await import("../src/runtime/react/default-ui/process-crud/subjects/edit.js");
+    const editHtml = renderToStaticMarkup(
+      <SubjectEdit
+        dict={dict}
+        processId={processId}
+        subject={{ id: subjectId, assignment_process_id: processId, name: "Tutoría", allocation_category: "secondary", activity_type: "tutoring", default_group_weekly_hours: null, default_teacher_weekly_hours_per_position: null, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }}
+        onDone={() => undefined}
+      />
+    );
+    expect(editHtml).toContain('data-reparto-dialog="subject-edit"');
+    expect(editHtml).toContain('data-reparto-field="allocation-category"');
+    expect(editHtml).not.toContain('data-reparto-field="stage"');
   });
 
   it("subject delete confirmation renders inside a shadcn AlertDialog", async () => {
@@ -161,7 +185,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       <SubjectDelete
         dict={dict}
         processId={processId}
-        subject={{ id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }}
+        subject={{ id: subjectId, assignment_process_id: processId, name: "Matemáticas", allocation_category: "secondary", activity_type: "tutoring", default_group_weekly_hours: null, default_teacher_weekly_hours_per_position: null, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }}
         onDone={() => undefined}
       />
     );
@@ -227,7 +251,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.subjects = [
-      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: "ESO", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", allocation_category: "main", activity_type: "ordinary", default_group_weekly_hours: 4, default_teacher_weekly_hours_per_position: 4, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.requirements = [
       { id: requirementId, assignment_process_id: processId, teaching_group_id: teachingGroupId, subject_id: subjectId, required_hours: 4, requirement_type: "ordinary", flags: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -282,7 +306,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.subjects = [
-      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", stage: "ESO", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: subjectId, assignment_process_id: processId, name: "Matemáticas", allocation_category: "main", activity_type: "ordinary", default_group_weekly_hours: 4, default_teacher_weekly_hours_per_position: 4, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.teachers = [
       { id: profileId, display_name: "Profesora Ana", user_id: null, active: true, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }

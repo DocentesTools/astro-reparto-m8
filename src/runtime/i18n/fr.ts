@@ -64,11 +64,15 @@ export const fr: RepartoDictionary = {
     selectionCriteria: "Critère de sélection",
     selectionNotes: "Notes de sélection",
     orderLocked: "Ordre verrouillé",
-    overrideReason: "Motif de dérogation"
+    overrideReason: "Motif de dérogation",
+    allocationCategory: "Catégorie d'attribution",
+    activityType: "Type d'activité"
   },
   option: {
     requirementType: { ordinary: "Ordinaire", optional: "Optionnel", reinforcement: "Renforcement", split_group: "Groupe dédoublé", bilingual: "Bilingue", other: "Autre" },
     assignmentType: { main: "Principale", shared: "Partagée", reinforcement: "Renforcement", split_group: "Groupe dédoublé", other: "Autre" },
+    allocationCategory: { main: "Principale", secondary: "Secondaire" },
+    activityType: { ordinary: "Ordinaire", tutoring: "Tutorat", co_teaching: "Co-enseignement", support: "Soutien", department_level: "Niveau département", other: "Autre" },
     boolean: { yes: "Oui", no: "Non" }
   },
   view: {
@@ -224,7 +228,7 @@ export const fr: RepartoDictionary = {
     noData: "Pas encore de données disponibles.",
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
-  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom ou niveau...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
+  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
   classroomBulk: {
     action: "Créer des groupes",
     title: "Créer plusieurs classes",

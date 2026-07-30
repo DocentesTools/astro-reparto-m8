@@ -128,6 +128,11 @@ export const repartoKeys = {
     [...repartoKeys.teacherProfiles(), "detail", profileId ?? null] as const,
   subjects: (processId?: string) =>
     [...repartoKeys.process(processId), "subjects"] as const,
+  // The group-subject matrix. A bulk apply touches many cells at once, so
+  // invalidating this one prefix is the whole matrix — there is deliberately no
+  // per-cell key to keep partially-stale rows from surviving a bulk operation.
+  groupSubjects: (processId?: string) =>
+    [...repartoKeys.process(processId), "group-subjects"] as const,
   teachingGroups: (processId?: string) =>
     [...repartoKeys.process(processId), "groups"] as const,
   hourRequirements: (processId?: string) =>

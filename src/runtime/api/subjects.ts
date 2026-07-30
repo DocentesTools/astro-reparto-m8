@@ -7,7 +7,7 @@ import {
   type SubjectCreateInput,
   type SubjectPublic,
   type SubjectsPublic,
-  type SubjectUpdate
+  type SubjectUpdateInput
 } from "../schemas.js";
 
 export const subjects = {
@@ -36,7 +36,7 @@ export const subjects = {
       schema: SubjectPublicSchema,
       auth: true
     }),
-  update: (processId: string, subjectId: string, body: SubjectUpdate) =>
+  update: (processId: string, subjectId: string, body: SubjectUpdateInput) =>
     request<SubjectPublic>({
       method: "PATCH",
       path: `/assignment-processes/${processId}/subjects/${subjectId}`,

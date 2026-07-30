@@ -6,7 +6,7 @@ export type RepartoMetaLike = {
 
 export const REPARTO_CONTRACT_VERSION = "reparto-docente-m8@0.1";
 
-export type RepartoContractMethod = "GET" | "POST" | "PATCH";
+export type RepartoContractMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export type RepartoContractOperation = {
   readonly method: RepartoContractMethod;
@@ -177,6 +177,41 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "POST",
     path: "/assignment-processes/{process_id}/allocation-revisions/",
     response: "DepartmentHourAllocationRevisionPublic"
+  },
+  "groupSubjects.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/group-subjects/",
+    response: "GroupSubjectsPublic"
+  },
+  "groupSubjects.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+    response: "GroupSubjectPublic"
+  },
+  "groupSubjects.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/group-subjects/",
+    response: "GroupSubjectPublic"
+  },
+  "groupSubjects.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+    response: "GroupSubjectPublic"
+  },
+  "groupSubjects.remove": {
+    method: "DELETE",
+    path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+    response: "GroupSubjectPublic"
+  },
+  "groupSubjects.bulkPreview": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/group-subjects/bulk-preview",
+    response: "GroupSubjectBulkPreview"
+  },
+  "groupSubjects.bulkApply": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/group-subjects/bulk-apply",
+    response: "GroupSubjectBulkResult"
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 

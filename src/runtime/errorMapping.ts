@@ -38,6 +38,8 @@ export type RepartoFieldKey =
   | "orderLocked"
   | "overrideReason"
   | "flags"
+  | "allocationCategory"
+  | "activityType"
   | "previousAcademicYear";
 
 export type RepartoErrorKey =
@@ -113,6 +115,8 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   order_locked: "orderLocked",
   override_reason: "overrideReason",
   flags: "flags",
+  allocation_category: "allocationCategory",
+  activity_type: "activityType",
   previous_academic_year_id: "previousAcademicYear"
 };
 

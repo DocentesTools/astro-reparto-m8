@@ -41,9 +41,24 @@ export function SubjectsList({
         </RowActions>
       )
     },
-    { id: "stage", label: dict.field.stage, value: (subject) => subject.stage ?? "" }
+    {
+      id: "allocation-category",
+      label: dict.field.allocationCategory,
+      value: (subject) => dict.option.allocationCategory[subject.allocation_category]
+    },
+    {
+      id: "activity-type",
+      label: dict.field.activityType,
+      value: (subject) => dict.option.activityType[subject.activity_type]
+    }
   ];
-  const stages = [...new Set(rows.map((subject) => subject.stage).filter((stage): stage is string => Boolean(stage)))].sort((a, b) => a.localeCompare(b));
+  // MAIN vs SECONDARY is the §3.5 planning distinction, so it is the filter the
+  // department head needs on this list — not the deleted two-stage `stage`.
+  const categories = [
+    ...new Set(
+      rows.map((subject) => dict.option.allocationCategory[subject.allocation_category])
+    )
+  ].sort((a, b) => a.localeCompare(b));
   const selectedCount = selectedIds.size;
   const deleteSelectedAction = selectedCount > 0 ? (
     <button
@@ -64,7 +79,11 @@ export function SubjectsList({
         columns={columns}
         data={rows}
         emptyLabel={dict.table.noResults}
-        filter={{ label: dict.field.stage, options: stages, value: (subject) => subject.stage ?? "" }}
+        filter={{
+          label: dict.field.allocationCategory,
+          options: categories,
+          value: (subject) => dict.option.allocationCategory[subject.allocation_category]
+        }}
         labels={{
           columns: dict.table.columns,
           filter: dict.table.all,
@@ -78,11 +97,12 @@ export function SubjectsList({
         }}
         rowAttributes={(subject) => ({
           "data-subject-id": subject.id,
-          "data-subject-stage": subject.stage ?? ""
+          "data-subject-allocation-category": subject.allocation_category,
+          "data-subject-activity-type": subject.activity_type
         })}
         rowKey={(subject) => subject.id}
         rowName="subject"
-        searchFields={[(subject) => subject.name, (subject) => subject.stage ?? ""]}
+        searchFields={[(subject) => subject.name]}
         selection={{
           actions: deleteSelectedAction,
           onSelectedKeysChange: onSelectedIdsChange,

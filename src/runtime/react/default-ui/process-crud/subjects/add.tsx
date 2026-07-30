@@ -6,12 +6,21 @@ import {
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
+  SelectField,
   TextField,
   useMappedError,
   type Dict
 } from "../shared.js";
 import { useCreateRepartoSubject } from "../../../hooks.js";
-import type { SubjectCreateInput } from "../../../../schemas.js";
+import type {
+  ActivityType,
+  SubjectAllocationCategory,
+  SubjectCreateInput
+} from "../../../../schemas.js";
+import {
+  activityTypeOptions,
+  allocationCategoryOptions
+} from "./classification.js";
 
 export type SubjectAddProps = {
   dict: Dict;
@@ -23,7 +32,9 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
   const createMutation = useCreateRepartoSubject();
   const [mapped, setError, clearError] = useMappedError();
   const [name, setName] = useState("");
-  const [stage, setStage] = useState("");
+  const [allocationCategory, setAllocationCategory] =
+    useState<SubjectAllocationCategory>("main");
+  const [activityType, setActivityType] = useState<ActivityType>("ordinary");
   const [notes, setNotes] = useState("");
 
   const canSave = name.trim().length > 0 && !createMutation.isPending;
@@ -34,7 +45,8 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
     clearError();
     const body: SubjectCreateInput = {
       name: name.trim(),
-      stage: stage.trim() || null,
+      allocation_category: allocationCategory,
+      activity_type: activityType,
       notes: notes.trim() || null
     };
     createMutation.mutate(
@@ -62,13 +74,25 @@ export function SubjectAdd({ dict, processId, onDone }: SubjectAddProps) {
           mapped={mapped}
           fieldErrorKey="name"
         />
-        <TextField
-          field="stage"
-          id="subject-add-stage"
-          label={dict.field.stage}
-          maxLength={50}
-          onChange={setStage}
-          value={stage}
+        <SelectField
+          field="allocation-category"
+          label={dict.field.allocationCategory}
+          onChange={(value) =>
+            setAllocationCategory(value as SubjectAllocationCategory)
+          }
+          options={allocationCategoryOptions(dict)}
+          value={allocationCategory}
+          mapped={mapped}
+          fieldErrorKey="allocationCategory"
+        />
+        <SelectField
+          field="activity-type"
+          label={dict.field.activityType}
+          onChange={(value) => setActivityType(value as ActivityType)}
+          options={activityTypeOptions(dict)}
+          value={activityType}
+          mapped={mapped}
+          fieldErrorKey="activityType"
         />
         <TextField
           field="notes"

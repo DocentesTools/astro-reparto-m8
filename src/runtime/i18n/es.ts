@@ -64,11 +64,15 @@ export const es: RepartoDictionary = {
     selectionCriteria: "Criterio de selección",
     selectionNotes: "Notas de selección",
     orderLocked: "Orden bloqueado",
-    overrideReason: "Motivo de la excepción"
+    overrideReason: "Motivo de la excepción",
+    allocationCategory: "Categoría de asignación",
+    activityType: "Tipo de actividad"
   },
   option: {
     requirementType: { ordinary: "Ordinaria", optional: "Optativa", reinforcement: "Refuerzo", split_group: "Desdoble", bilingual: "Bilingüe", other: "Otra" },
     assignmentType: { main: "Principal", shared: "Compartida", reinforcement: "Refuerzo", split_group: "Desdoble", other: "Otra" },
+    allocationCategory: { main: "Principal", secondary: "Secundaria" },
+    activityType: { ordinary: "Ordinaria", tutoring: "Tutoría", co_teaching: "Codocencia", support: "Apoyo", department_level: "Nivel de departamento", other: "Otra" },
     boolean: { yes: "Sí", no: "No" }
   },
   view: {
@@ -224,7 +228,7 @@ export const es: RepartoDictionary = {
     noData: "Aún no hay datos disponibles.",
     noPermission: "No tiene permiso."
   },
-  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre o etapa...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
   classroomBulk: {
     action: "Crear grupos",
     title: "Crear varios grupos",

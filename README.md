@@ -54,6 +54,34 @@ than zero, and the create schema normalizes it to the canonical `"120.00"` strin
 (rejecting a third decimal place rather than rounding it). A `final` or
 `archived` process must be reopened before its allocation can change.
 
+## Subjects and the group-subject matrix
+
+A subject no longer carries a two-stage `stage`. It classifies itself with
+`allocation_category` (`main`/`secondary` — the mandatory-vs-optional planning
+distinction, never a boolean `is_main`) and a descriptive `activity_type`, and
+carries *suggested* planning defaults. The defaults only seed new rows: editing
+one never rewrites an already-materialized group-subject cell or activity.
+
+`groupSubjects` wraps the matrix itself — one cell per (group, subject) pair,
+holding the **actual** planning values. `teaching_group_id` and `subject_id` are
+the immutable identity of a cell: re-targeting one means deleting it and creating
+another. An empty hour **inherits the subject default** (the backend stores
+`NULL`) while a typed `0` is a real zero; `parseHoursField` from
+`@mano8/astro-reparto-m8/decimals` keeps the two apart, and no form may collapse
+them.
+
+`groupSubjects.bulkPreview` and `groupSubjects.bulkApply` are a pair, not two
+independent calls. Preview dry-runs one subject across the groups matched by the
+optional stage / grade-range filters and returns the create/update/unchanged
+split, per-group conflicts, selection-level `validation_errors` and an
+`expected_affected_count`. Apply sends that count back; the backend recomputes
+and answers **409** when the selection changed in between, so a stale
+confirmation can never be committed — re-preview rather than retrying the apply.
+The set values follow the backend's present-vs-absent semantics: a field you omit
+is left untouched, an explicit `null` hour clears an override back to "inherit",
+and `required_teacher_count` takes only a positive integer because its column is
+`NOT NULL`.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

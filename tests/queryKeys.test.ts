@@ -170,6 +170,13 @@ describe("reparto query keys", () => {
       "p1",
       "requirements"
     ]);
+    expect(repartoKeys.groupSubjects("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "group-subjects"
+    ]);
     expect(repartoKeys.allocationRevisions("p1")).toEqual([
       "reparto",
       "processes",

@@ -155,10 +155,19 @@ ids, etc.) stay internal — no UI label.
 
 ### 3.6 Subject
 
+> Amended **2026-07-30** by the three-stage adaptation — see §12. `stage` is
+> retired; the classification and planning-default fields below replace it.
+
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `name` | Name | Nom | Nombre | yes | max 150 |
-| `stage` | Stage | Niveau | Etapa | no | free-form str, max 50 |
+| `allocation_category` | Allocation category | Catégorie d'attribution | Categoría de asignación | yes (defaulted) | enum `main`/`secondary`; never a boolean |
+| `activity_type` | Activity type | Type d'activité | Tipo de actividad | yes (defaulted) | enum `ordinary`/`tutoring`/`co_teaching`/`support`/`department_level`/`other`; descriptive only |
+| `default_group_weekly_hours` | Default group hours | Heures groupe par défaut | Horas de grupo por defecto | no | suggestion; empty = no suggestion, not 0 |
+| `default_teacher_weekly_hours_per_position` | Default teacher hours per position | Heures enseignant par poste (défaut) | Horas por puesto por defecto | no | suggestion; empty = no suggestion, not 0 |
+| `default_required_teacher_count` | Default teacher positions | Postes enseignants par défaut | Puestos docentes por defecto | yes (defaulted) | int ≥ 1 |
+| `allows_multiple_groups` | Allows multiple groups | Plusieurs groupes autorisés | Permite varios grupos | no | bool |
+| `allows_zero_groups` | Allows zero groups | Aucun groupe autorisé | Permite cero grupos | no | bool |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
 ### 3.7 Classroom (teaching group)
@@ -229,6 +238,21 @@ ids, etc.) stay internal — no UI label.
 | `status` | Status | État | Estado | read-only (table) | enum `pending`/`active`/`completed`/`skipped`/`overridden` |
 | `skip_reason` | Skip reason | Motif d'absence | Motivo de la ausencia | conditional | required when skipped |
 | `forced_by_user_id` | Forced by | Forcé par | Forzado por | no | FK user |
+| `notes` | Notes | Notes | Notas | no | textarea |
+
+### 3.13 Group subject
+
+> Added **2026-07-30** by the three-stage adaptation — see §12. One cell of the
+> group-subject matrix (backend plan §5.5).
+
+| Field | en | fr | es | Required? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `teaching_group_id` | Classroom | Classe | Grupo | yes (form) | FK select |
+| `subject_id` | Subject | Matière | Materia | yes (form) | FK select |
+| `group_weekly_hours` | Group hours | Heures groupe | Horas de grupo | no | empty **inherits the subject default**; `0` is a real zero |
+| `teacher_weekly_hours_per_position` | Teacher hours per position | Heures enseignant par poste | Horas por puesto | no | empty inherits the subject default |
+| `required_teacher_count` | Teacher positions | Postes enseignants | Puestos docentes | yes (defaulted) | int ≥ 1 |
+| `active` | Active | Actif | Activa | no | bool; an inactive cell is not a planning candidate |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
 ---
@@ -522,3 +546,35 @@ Host overrides remain possible but plugin defaults are complete.
 If a new entity, field, or action appears in a later phase, the
 freeze must be updated **first** (this file is edited, PR'd, and
 merged) and only then can the runtime dictionary grow.
+
+---
+
+## 12. Three-stage adaptation amendments (2026-07-30 →)
+
+The three-stage adaptation deletes concepts this freeze named. **A frozen name
+whose concept no longer exists is retired here explicitly, never silently
+renamed** — a reader of an older skin must be able to find out what happened to
+a name rather than find it quietly reused for something else.
+
+Amendment rules:
+
+1. A retired name is listed in the table below with what replaced it. It is
+   removed from its §3 table in the same change, and that table gains a pointer
+   to this section.
+2. A retired `data-reparto-*` / `data-<entity>-*` DOM slot is **not** reused for
+   a different concept. New concepts get new slot names.
+3. Labels for a new surface land with the UI that renders them, not ahead of it
+   — the i18n suite requires `en`/`fr`/`es` parity, so a key with no view is a
+   translation nobody has reviewed in context.
+
+| Retired | Where it was | Replaced by | Landed |
+| --- | --- | --- | --- |
+| `Subject.stage` (field + label + `data-subject-stage` row slot + list filter) | §3.6 | `allocation_category` (`data-subject-allocation-category`) and `activity_type` (`data-subject-activity-type`); the subject list filters on allocation category | 2026-07-30 |
+
+Still to retire, with the bullet that owns each (listed so a reader does not
+mistake the silence for approval): `total-required-hours`,
+`teacher-available-hours`, `pending-required-hours` and `requirement-count`
+(single-balance slots — the planning balance header and dashboard bullets),
+`requirement_type` / `flags` / `assigned_hours` / `assignment_type` /
+`override_reason` (the requirements-view and assignment-board bullets),
+`available_hours` (the teacher LAN view and participants bullets).

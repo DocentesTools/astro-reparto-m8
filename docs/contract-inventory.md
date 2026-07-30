@@ -141,10 +141,26 @@ reason input for `reopen`.
 | Patch | `PATCH /{subject_id}` → `SubjectPublic` (process writer) | patch | ✓ |
 | Delete | `DELETE /{subject_id}` → `SubjectPublic` (process writer) | delete | ✓ |
 | Create required | `name: str[1..150]` (process_id from URL) | `name*` | ✓ |
-| Public shape | `id, assignment_process_id, name, stage, notes, created_at, updated_at` | (n/a) | ✓ |
+| Create optional | `allocation_category` (default `main`), `activity_type` (default `ordinary`), `default_group_weekly_hours: float>=0 \| null`, `default_teacher_weekly_hours_per_position: float>=0 \| null`, `default_required_teacher_count: int>=1` (default 1), `allows_multiple_groups: bool` (default false), `allows_zero_groups: bool` (default false), `notes` | (n/a) | ✓ |
+| Public shape | `id, assignment_process_id, name, allocation_category, activity_type, default_group_weekly_hours, default_teacher_weekly_hours_per_position, default_required_teacher_count, allows_multiple_groups, allows_zero_groups, notes, created_at, updated_at` | (n/a) | ✓ |
 
-Notes: `stage` is a free-form `str[1..50]`, not an enum. Uniqueness
-`(process_id, name)` is DB-enforced.
+> Re-verified **2026-07-30** against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle` (`db_models/subjects.py`,
+> `app/routes/subjects.py`) for the three-stage adaptation (backend plan §5.3,
+> §3.5, §20.17).
+
+Notes: the two-stage `stage` column is **gone** — a runtime that still sends or
+expects it fails the strict parse. `allocation_category` is
+`main`/`secondary` (an extensible enum, never a boolean `is_main`) and
+`activity_type` is `ordinary`/`tutoring`/`co_teaching`/`support`/
+`department_level`/`other`, **descriptive only**: no behaviour may branch on it
+(plan §20.17). The `default_*` fields are *suggestions* that seed new
+`GroupSubject`/`TeachingActivity` rows; editing one never rewrites an
+already-materialized row (plan §20.14). A `null` hour default means "no
+suggestion", not zero. Hour defaults are serialized as JSON numbers today and
+become canonical two-decimal strings after the backend's `NUMERIC(8, 2)` sweep
+(plan §3.9) — the runtime reads both through `HoursSchema` and always **sends**
+the canonical string. Uniqueness `(process_id, name)` is DB-enforced.
 
 ### 2.3 Teaching group (classroom) — `prefix=/…/groups`
 
@@ -287,6 +303,59 @@ number today and becomes a canonical two-decimal string when the backend's
 `NUMERIC(8, 2)` column sweep lands (backend plan §3.9) — the runtime reads
 both through `HoursSchema` and always **sends** the canonical string.
 
+### 2.11 Group subject — `prefix=/…/group-subjects`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.5, §7.2,
+> §20.14). Verified against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`: `app/routes/group_subjects.py`,
+> `controllers/group_subjects.py`, `db_models/group_subjects.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| List | `GET /` → `GroupSubjectsPublic` |
+| Create | `POST /` → `201` `GroupSubjectPublic` (process writer) |
+| Get | `GET /{group_subject_id}` → `GroupSubjectPublic` |
+| Patch | `PATCH /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
+| Delete | `DELETE /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
+| Bulk preview | `POST /bulk-preview` → `GroupSubjectBulkPreview` (process writer, dry run) |
+| Bulk apply | `POST /bulk-apply` → `GroupSubjectBulkResult` (process writer) |
+| Create required | `assignment_process_id` (must equal the URL id), `teaching_group_id`, `subject_id` |
+| Create optional | `group_weekly_hours: float>=0 \| null`, `teacher_weekly_hours_per_position: float>=0 \| null`, `required_teacher_count: int>=1` (default 1), `active: bool` (default true), `notes` |
+| Patch fields | the create-optional set only — `teaching_group_id`/`subject_id` are immutable identity |
+| Public shape | create fields + `id, created_at, updated_at` |
+
+Notes: uniqueness `(assignment_process_id, teaching_group_id, subject_id)` is
+DB-enforced (`400` on violation). A cross-process group or subject reference is
+`404`; a payload `assignment_process_id` that disagrees with the URL is `400`; a
+`final`/`archived` process is `400`. A `null` hour **inherits the subject
+default** — it is not zero, and the two must never be collapsed in a form.
+
+Bulk request body (shared by both bulk routes): `subject_id`, `mode`
+(`create_missing`/`update_existing`/`upsert`), the optional selection filters
+`stage: str \| null`, `minimum_grade: int>0 \| null`, `maximum_grade: int>0 \|
+null`, and the optional set values `group_weekly_hours`,
+`teacher_weekly_hours_per_position`, `required_teacher_count`. The set values
+follow **`model_fields_set` semantics**: a field that is *absent* is not applied
+(an update leaves it untouched, a create falls back to the default — `NULL`
+hours, count 1), while an explicit `null` hour clears an override. Send
+`required_teacher_count` only as a positive integer: the column is `NOT NULL`
+and an explicit `null` would be applied verbatim.
+
+`bulk-apply` additionally requires `expected_affected_count`, the count the
+matching `bulk-preview` returned. Apply recomputes the plan and answers **409**
+when it no longer matches (a changed selection can never be applied blindly),
+**400** when `validation_errors` is non-empty (`minimum_grade` above
+`maximum_grade` is the current case), and commits everything in one transaction
+with a single `group_subject.bulk_applied` audit event.
+
+Preview shape: `mode`, `subject_id`, `matched_group_ids`, `to_create`,
+`to_update`, `unchanged` (each a change row of `teaching_group_id`,
+`group_subject_id` — `null` for a row that does not exist yet — plus the three
+resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
+`update_existing` cannot satisfy), `validation_errors` and
+`expected_affected_count` (`len(to_create) + len(to_update)`). Result shape:
+`created_count`, `updated_count`, `data` (the affected cells), `count`.
+
 ---
 
 ## 3. Additional surface area not in plan §2
@@ -410,7 +479,8 @@ omitted; anything listed MUST be `required()`.
 | Department | `school_id, name` (`slug` auto) | `name, slug, department_head_user_id, notes` |
 | Teacher profile | `display_name` | `display_name, user_id, active, notes` |
 | Assignment process | `academic_year_id, school_id, department_id` | `status, default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` |
-| Subject | `name` | `name, stage, notes` |
+| Subject | `name` | `name, allocation_category, activity_type, default_group_weekly_hours, default_teacher_weekly_hours_per_position, default_required_teacher_count, allows_multiple_groups, allows_zero_groups, notes` |
+| Group subject | `teaching_group_id, subject_id` (`assignment_process_id` from URL) | `group_weekly_hours, teacher_weekly_hours_per_position, required_teacher_count, active, notes` |
 | Teaching group | `stage, grade, group_code, label` | `stage, grade, group_code, label, notes` |
 | Hour requirement | `teaching_group_id, subject_id, required_hours` | `required_hours, requirement_type, flags, notes` |
 | Process teacher | `teacher_profile_id, available_hours` | `available_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` |
@@ -433,6 +503,9 @@ Special operations:
 - `POST /…/turns/{id}/skip` — body `SelectionTurnAction { reason, notes? }`
 - `POST /…/turns/{id}/override` — body `SelectionTurnAction { reason, notes? }`
 - `POST /…/assignments/direct-choice` — body `AssignmentDirectChoice { meeting_session_id, hour_requirement_id, assigned_hours, assignment_type?, notes? }`
+- `POST /…/allocation-revisions/` — body `{allocated_group_weekly_hours, reason, source?, source_reference?, received_at?}`
+- `POST /…/group-subjects/bulk-preview` — body `GroupSubjectBulkRequest { subject_id, mode, stage?, minimum_grade?, maximum_grade?, group_weekly_hours?, teacher_weekly_hours_per_position?, required_teacher_count? }`
+- `POST /…/group-subjects/bulk-apply` — same body plus `expected_affected_count` (409 when stale)
 
 ---
 

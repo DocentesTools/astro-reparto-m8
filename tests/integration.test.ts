@@ -97,7 +97,17 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/allocation-revisions/current",
       response: "DepartmentHourAllocationRevisionPublic"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(31);
+    expect(REPARTO_CONTRACT_OPERATIONS["groupSubjects.bulkApply"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/group-subjects/bulk-apply",
+      response: "GroupSubjectBulkResult"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["groupSubjects.remove"]).toEqual({
+      method: "DELETE",
+      path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+      response: "GroupSubjectPublic"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(38);
   });
 });
 

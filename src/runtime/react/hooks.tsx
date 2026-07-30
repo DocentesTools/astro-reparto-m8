@@ -31,7 +31,7 @@ import type {
   SchoolCreate,
   SchoolUpdate,
   SubjectCreateInput,
-  SubjectUpdate,
+  SubjectUpdateInput,
   TeacherProfileCreate,
   TeacherProfileLinkUser,
   TeacherProfileUpdate,
@@ -326,7 +326,7 @@ export function useUpdateRepartoSubject() {
     }: {
       processId: string;
       subjectId: string;
-      body: SubjectUpdate;
+      body: SubjectUpdateInput;
     }) => subjects.update(processId, subjectId, body),
     onSuccess: (_data, { processId }) => {
       void queryClient.invalidateQueries({ queryKey: repartoKeys.subjects(processId) });

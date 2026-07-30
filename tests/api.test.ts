@@ -7,6 +7,7 @@ import {
   auditEvents,
   classroomStages,
   departments,
+  groupSubjects,
   history,
   hourRequirements,
   meetingSessions,
@@ -678,7 +679,27 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: subjectId,
     assignment_process_id: processId,
     name: "Mathematics",
-    stage: "ESO",
+    allocation_category: "main",
+    activity_type: "ordinary",
+    default_group_weekly_hours: 4,
+    default_teacher_weekly_hours_per_position: 4,
+    default_required_teacher_count: 1,
+    allows_multiple_groups: false,
+    allows_zero_groups: false,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const groupSubjectId = "12121212-1212-4121-8121-121212121212";
+  const groupSubjectBody = {
+    id: groupSubjectId,
+    assignment_process_id: processId,
+    teaching_group_id: groupId,
+    subject_id: subjectId,
+    group_weekly_hours: 4,
+    teacher_weekly_hours_per_position: null,
+    required_teacher_count: 1,
+    active: true,
     notes: null,
     created_at: now,
     updated_at: now
@@ -794,6 +815,159 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     expect(() => subjects.create(processId, { name: "" } as never)).toThrow();
     expect(() =>
       subjects.update(processId, subjectId, { name: "" } as never)
+    ).toThrow();
+  });
+
+  it("group subjects list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({ data: [groupSubjectBody], count: 1 })
+    );
+    await expect(groupSubjects.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.get(processId, groupSubjectId)
+    ).resolves.toMatchObject({ group_weekly_hours: "4.00" });
+
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        group_weekly_hours: 4
+      })
+    ).resolves.toMatchObject({ id: groupSubjectId });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+    ).toEqual({
+      assignment_process_id: processId,
+      teaching_group_id: groupId,
+      subject_id: subjectId,
+      group_weekly_hours: "4.00"
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...groupSubjectBody, required_teacher_count: 2 })
+    );
+    await expect(
+      groupSubjects.update(processId, groupSubjectId, {
+        required_teacher_count: 2,
+        group_weekly_hours: null
+      })
+    ).resolves.toMatchObject({ required_teacher_count: 2 });
+    const patched = fetchMock.mock.calls.at(-1);
+    expect((patched?.[1] as RequestInit).method).toBe("PATCH");
+    // An explicit null clears the override back to "inherit the subject
+    // default"; an omitted field is left untouched entirely.
+    expect(JSON.parse((patched?.[1] as RequestInit).body as string)).toEqual({
+      required_teacher_count: 2,
+      group_weekly_hours: null
+    });
+
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.remove(processId, groupSubjectId)
+    ).resolves.toMatchObject({ id: groupSubjectId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/${groupSubjectId}`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "DELETE"
+    );
+
+    expect(() =>
+      groupSubjects.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_teacher_count: 0
+      })
+    ).toThrow();
+    expect(() =>
+      groupSubjects.update(processId, groupSubjectId, {
+        teaching_group_id: groupId
+      } as never)
+    ).toThrow();
+  });
+
+  it("group-subject bulk preview and apply are a confirmed pair", async () => {
+    const change = {
+      teaching_group_id: groupId,
+      group_subject_id: null,
+      group_weekly_hours: 4,
+      teacher_weekly_hours_per_position: null,
+      required_teacher_count: 1
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        mode: "create_missing",
+        subject_id: subjectId,
+        matched_group_ids: [groupId],
+        to_create: [change],
+        to_update: [],
+        unchanged: [],
+        conflicts: [],
+        validation_errors: [],
+        expected_affected_count: 1
+      })
+    );
+    await expect(
+      groupSubjects.bulkPreview(processId, {
+        subject_id: subjectId,
+        mode: "create_missing",
+        stage: "ESO",
+        group_weekly_hours: 4
+      })
+    ).resolves.toMatchObject({ expected_affected_count: 1 });
+    const previewed = fetchMock.mock.calls.at(-1);
+    expect(previewed?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/bulk-preview`
+    );
+    expect((previewed?.[1] as RequestInit).method).toBe("POST");
+    expect(JSON.parse((previewed?.[1] as RequestInit).body as string)).toEqual({
+      subject_id: subjectId,
+      mode: "create_missing",
+      stage: "ESO",
+      group_weekly_hours: "4.00"
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        created_count: 1,
+        updated_count: 0,
+        data: [groupSubjectBody],
+        count: 1
+      })
+    );
+    await expect(
+      groupSubjects.bulkApply(processId, {
+        subject_id: subjectId,
+        mode: "create_missing",
+        stage: "ESO",
+        group_weekly_hours: 4,
+        expected_affected_count: 1
+      })
+    ).resolves.toMatchObject({ created_count: 1 });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/bulk-apply`
+    );
+    expect(
+      JSON.parse(
+        (fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string
+      ).expected_affected_count
+    ).toBe(1);
+
+    // Apply without the previewed count is not a request worth sending: the
+    // backend's 409 staleness guard has nothing to compare against.
+    expect(() =>
+      groupSubjects.bulkApply(processId, {
+        subject_id: subjectId,
+        mode: "create_missing"
+      } as never)
     ).toThrow();
   });
 

@@ -120,6 +120,33 @@ export const AssignmentStatusSchema = z.enum([
 ]);
 export type AssignmentStatus = z.infer<typeof AssignmentStatusSchema>;
 
+/**
+ * Whether a subject is a mandatory MAIN planning input or an optional
+ * SECONDARY one (backend plan §3.5). An extensible enum, never a boolean
+ * `is_main`.
+ */
+export const SubjectAllocationCategorySchema = z.enum(["main", "secondary"]);
+export type SubjectAllocationCategory = z.infer<
+  typeof SubjectAllocationCategorySchema
+>;
+
+/**
+ * Descriptive teaching-activity category (backend plan §5.3, §5.6).
+ *
+ * Descriptive **only** (plan §20.17): no behaviour may branch on it. It drives
+ * labels, filters, defaults and reports; the real behaviour comes from the hour,
+ * count and linked-group fields.
+ */
+export const ActivityTypeSchema = z.enum([
+  "ordinary",
+  "tutoring",
+  "co_teaching",
+  "support",
+  "department_level",
+  "other"
+]);
+export type ActivityType = z.infer<typeof ActivityTypeSchema>;
+
 const uuidSchema = z.uuid();
 const dateTimeSchema = z.iso.datetime({
   offset: true,
@@ -128,6 +155,42 @@ const dateTimeSchema = z.iso.datetime({
 const dateOnlySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be a YYYY-MM-DD string.");
+
+/**
+ * Build a schema for an hour value the UI *sends*, as opposed to one it reads.
+ *
+ * Strict on the way out (a third decimal place is rejected rather than rounded,
+ * so a bad payload fails here instead of at the backend) and normalized to the
+ * canonical `"120.00"` string of plan §3.9. A number is accepted too, which
+ * keeps form code out of the representation question: the backend hour columns
+ * are `float` today and `NUMERIC(8, 2)` after the §3.9 sweep, and a canonical
+ * decimal string is exact for both.
+ *
+ * `minimum` mirrors the backend field constraint — `"positive"` for a `gt=0`
+ * column such as an allocation, `"zero"` for the `ge=0` planning hours, where a
+ * real zero is a legitimate value.
+ */
+function hoursRequestSchema(label: string, minimum: "zero" | "positive") {
+  return z.union([z.string(), z.number()]).transform((value, ctx) => {
+    let hundredths: number;
+    try {
+      hundredths = hoursToHundredths(value);
+    } catch (error) {
+      ctx.addIssue((error as Error).message);
+      return z.NEVER;
+    }
+    const canonical = hundredthsToHours(hundredths);
+    if (hundredths < 0 || (minimum === "positive" && hundredths === 0)) {
+      ctx.addIssue(
+        minimum === "positive"
+          ? `${label} must be greater than zero: ${canonical}.`
+          : `${label} must not be negative: ${canonical}.`
+      );
+      return z.NEVER;
+    }
+    return canonical;
+  });
+}
 
 export const AssignmentProcessPublicSchema = z
   .object({
@@ -776,12 +839,33 @@ export type TeacherProfileLinkUser = z.infer<
   typeof TeacherProfileLinkUserSchema
 >;
 
+// ── Subjects (backend plan §5.3) ─────────────────────────────────────────────
+//
+// The two-stage `stage` column is gone. A subject now classifies itself
+// (`allocation_category`, `activity_type`) and carries *suggested* planning
+// defaults. The defaults only seed new rows: the actual per-group values live on
+// `GroupSubject` and the actual planning values on `TeachingActivity`, and
+// editing a default here never rewrites an already-materialized row (§20.14).
+
+/** A suggested hour default: `null` means "no suggestion", not zero. */
+const suggestedHoursRequestSchema = hoursRequestSchema("Hour default", "zero")
+  .nullable()
+  .optional();
+
 export const SubjectPublicSchema = z
   .object({
     id: uuidSchema,
     assignment_process_id: uuidSchema,
     name: z.string().min(1).max(150),
-    stage: z.string().max(50).nullable(),
+    allocation_category: SubjectAllocationCategorySchema,
+    activity_type: ActivityTypeSchema,
+    // Tolerant on the way in: entity schemas still serialize a JSON number
+    // until the backend `NUMERIC(8, 2)` sweep lands. `null` is "no default".
+    default_group_weekly_hours: HoursSchema.nullable(),
+    default_teacher_weekly_hours_per_position: HoursSchema.nullable(),
+    default_required_teacher_count: z.number().int().positive(),
+    allows_multiple_groups: z.boolean(),
+    allows_zero_groups: z.boolean(),
     notes: z.string().nullable(),
     created_at: dateTimeSchema,
     updated_at: dateTimeSchema
@@ -789,25 +873,52 @@ export const SubjectPublicSchema = z
   .strict();
 export type SubjectPublic = z.infer<typeof SubjectPublicSchema>;
 
+/**
+ * Create payload. Only `name` is required — every classification and planning
+ * default has a backend default (`main` / `ordinary` / no hour suggestion /
+ * one teacher position / neither group-count flag), so a field left out is a
+ * deliberate "use the backend default" rather than a hole in the form.
+ */
 export const SubjectCreateSchema = z
   .object({
     assignment_process_id: uuidSchema,
     name: z.string().min(1).max(150),
-    stage: z.string().max(50).nullable().optional(),
+    allocation_category: SubjectAllocationCategorySchema.optional(),
+    activity_type: ActivityTypeSchema.optional(),
+    default_group_weekly_hours: suggestedHoursRequestSchema,
+    default_teacher_weekly_hours_per_position: suggestedHoursRequestSchema,
+    default_required_teacher_count: z.number().int().positive().optional(),
+    allows_multiple_groups: z.boolean().optional(),
+    allows_zero_groups: z.boolean().optional(),
     notes: z.string().max(2000).nullable().optional()
   })
   .strict();
 export type SubjectCreate = z.infer<typeof SubjectCreateSchema>;
-export type SubjectCreateInput = Omit<SubjectCreate, "assignment_process_id">;
+export type SubjectCreateInput = Omit<
+  z.input<typeof SubjectCreateSchema>,
+  "assignment_process_id"
+>;
 
+/**
+ * Partial update. `default_required_teacher_count` and the two group-link flags
+ * are non-nullable columns, so they are optional but never `null`: the backend
+ * applies whatever is present, and a `null` would violate the column.
+ */
 export const SubjectUpdateSchema = z
   .object({
     name: z.string().min(1).max(150).optional(),
-    stage: z.string().max(50).nullable().optional(),
+    allocation_category: SubjectAllocationCategorySchema.optional(),
+    activity_type: ActivityTypeSchema.optional(),
+    default_group_weekly_hours: suggestedHoursRequestSchema,
+    default_teacher_weekly_hours_per_position: suggestedHoursRequestSchema,
+    default_required_teacher_count: z.number().int().positive().optional(),
+    allows_multiple_groups: z.boolean().optional(),
+    allows_zero_groups: z.boolean().optional(),
     notes: z.string().max(2000).nullable().optional()
   })
   .strict();
 export type SubjectUpdate = z.infer<typeof SubjectUpdateSchema>;
+export type SubjectUpdateInput = z.input<typeof SubjectUpdateSchema>;
 
 export const SubjectsPublicSchema = z
   .object({
@@ -816,6 +927,204 @@ export const SubjectsPublicSchema = z
   })
   .strict();
 export type SubjectsPublic = z.infer<typeof SubjectsPublicSchema>;
+
+// ── Group subjects (backend plan §5.5, §7.2) ─────────────────────────────────
+//
+// One cell of the intermediate group-subject matrix: "this subject applies to
+// this group in this process, with these actual planning values". A `null` hour
+// inherits the subject default (the backend stores `NULL`); a typed `0` is a
+// real zero. No form may collapse the two — `parseHoursField` in `./decimals`
+// exists for exactly that distinction.
+
+/** Actual planning hours for one cell: `null` inherits the subject default. */
+const cellHoursRequestSchema = hoursRequestSchema("Group-subject hours", "zero")
+  .nullable()
+  .optional();
+
+export const GroupSubjectPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    teaching_group_id: uuidSchema,
+    subject_id: uuidSchema,
+    group_weekly_hours: HoursSchema.nullable(),
+    teacher_weekly_hours_per_position: HoursSchema.nullable(),
+    required_teacher_count: z.number().int().positive(),
+    active: z.boolean(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
+export type GroupSubjectPublic = z.infer<typeof GroupSubjectPublicSchema>;
+
+export const GroupSubjectCreateSchema = z
+  .object({
+    assignment_process_id: uuidSchema,
+    teaching_group_id: uuidSchema,
+    subject_id: uuidSchema,
+    group_weekly_hours: cellHoursRequestSchema,
+    teacher_weekly_hours_per_position: cellHoursRequestSchema,
+    required_teacher_count: z.number().int().positive().optional(),
+    active: z.boolean().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type GroupSubjectCreate = z.infer<typeof GroupSubjectCreateSchema>;
+export type GroupSubjectCreateInput = Omit<
+  z.input<typeof GroupSubjectCreateSchema>,
+  "assignment_process_id"
+>;
+
+/**
+ * Partial update. `teaching_group_id` / `subject_id` are the immutable identity
+ * of the cell and are rejected here by `.strict()`, matching the backend: a
+ * mis-targeted cell is deleted and recreated, never re-pointed.
+ */
+export const GroupSubjectUpdateSchema = z
+  .object({
+    group_weekly_hours: cellHoursRequestSchema,
+    teacher_weekly_hours_per_position: cellHoursRequestSchema,
+    required_teacher_count: z.number().int().positive().optional(),
+    active: z.boolean().optional(),
+    notes: z.string().max(2000).nullable().optional()
+  })
+  .strict();
+export type GroupSubjectUpdate = z.infer<typeof GroupSubjectUpdateSchema>;
+export type GroupSubjectUpdateInput = z.input<typeof GroupSubjectUpdateSchema>;
+
+export const GroupSubjectsPublicSchema = z
+  .object({
+    data: z.array(GroupSubjectPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type GroupSubjectsPublic = z.infer<typeof GroupSubjectsPublicSchema>;
+
+/**
+ * How a bulk operation treats a matched group that already has a cell.
+ *
+ * `create_missing` only inserts; `update_existing` only patches and reports a
+ * matched group with no cell as a conflict; `upsert` does both.
+ */
+export const GroupSubjectBulkModeSchema = z.enum([
+  "create_missing",
+  "update_existing",
+  "upsert"
+]);
+export type GroupSubjectBulkMode = z.infer<typeof GroupSubjectBulkModeSchema>;
+
+const groupSubjectBulkRequestShape = {
+  subject_id: uuidSchema,
+  mode: GroupSubjectBulkModeSchema,
+  // Selection filters over the process's teaching groups. All three are
+  // optional; omitting every one targets every group in the process.
+  stage: z.string().min(1).max(100).nullable().optional(),
+  minimum_grade: z.number().int().positive().nullable().optional(),
+  maximum_grade: z.number().int().positive().nullable().optional(),
+  // Set values. The backend applies exactly the fields that are *present*
+  // (`model_fields_set`): omitting one leaves an existing cell untouched and
+  // lets a created cell fall back to its default, while an explicit `null`
+  // clears an hour override back to "inherit the subject default".
+  group_weekly_hours: cellHoursRequestSchema,
+  teacher_weekly_hours_per_position: cellHoursRequestSchema,
+  // Not nullable, unlike the hours: the column is `NOT NULL`, and the backend
+  // would apply an explicit `null` verbatim. Omit it to keep the existing count.
+  required_teacher_count: z.number().int().positive().optional()
+} as const;
+
+export const GroupSubjectBulkRequestSchema = z
+  .object(groupSubjectBulkRequestShape)
+  .strict();
+export type GroupSubjectBulkRequest = z.infer<
+  typeof GroupSubjectBulkRequestSchema
+>;
+export type GroupSubjectBulkRequestInput = z.input<
+  typeof GroupSubjectBulkRequestSchema
+>;
+
+/**
+ * Apply payload. `expected_affected_count` is the count the matching preview
+ * returned: the backend recomputes the plan and answers **409** when it no
+ * longer matches, so a selection that changed under the user cannot be applied
+ * blindly (plan §7.2). Re-preview and re-confirm on that conflict.
+ */
+export const GroupSubjectBulkApplyRequestSchema = z
+  .object({
+    ...groupSubjectBulkRequestShape,
+    expected_affected_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type GroupSubjectBulkApplyRequest = z.infer<
+  typeof GroupSubjectBulkApplyRequestSchema
+>;
+export type GroupSubjectBulkApplyRequestInput = z.input<
+  typeof GroupSubjectBulkApplyRequestSchema
+>;
+
+/**
+ * One row of a preview, carrying the cell state *after* the operation.
+ * `group_subject_id` is `null` for a row that does not exist yet.
+ */
+export const GroupSubjectBulkChangeSchema = z
+  .object({
+    teaching_group_id: uuidSchema,
+    group_subject_id: uuidSchema.nullable(),
+    group_weekly_hours: HoursSchema.nullable(),
+    teacher_weekly_hours_per_position: HoursSchema.nullable(),
+    required_teacher_count: z.number().int().positive()
+  })
+  .strict();
+export type GroupSubjectBulkChange = z.infer<
+  typeof GroupSubjectBulkChangeSchema
+>;
+
+/** A matched group the requested mode cannot satisfy, with the reason why. */
+export const GroupSubjectBulkConflictSchema = z
+  .object({
+    teaching_group_id: uuidSchema,
+    reason: z.string()
+  })
+  .strict();
+export type GroupSubjectBulkConflict = z.infer<
+  typeof GroupSubjectBulkConflictSchema
+>;
+
+/**
+ * Dry run of a bulk operation. `validation_errors` are selection-level problems
+ * (an inverted grade range) that block apply with a 400; `conflicts` are
+ * per-group and do not block the rest of the selection.
+ */
+export const GroupSubjectBulkPreviewSchema = z
+  .object({
+    mode: GroupSubjectBulkModeSchema,
+    subject_id: uuidSchema,
+    matched_group_ids: z.array(uuidSchema),
+    to_create: z.array(GroupSubjectBulkChangeSchema),
+    to_update: z.array(GroupSubjectBulkChangeSchema),
+    unchanged: z.array(GroupSubjectBulkChangeSchema),
+    conflicts: z.array(GroupSubjectBulkConflictSchema),
+    validation_errors: z.array(z.string()),
+    // `to_create.length + to_update.length`; echoed back to apply.
+    expected_affected_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type GroupSubjectBulkPreview = z.infer<
+  typeof GroupSubjectBulkPreviewSchema
+>;
+
+/** Outcome of a committed bulk apply: one transaction, one audit event. */
+export const GroupSubjectBulkResultSchema = z
+  .object({
+    created_count: z.number().int().nonnegative(),
+    updated_count: z.number().int().nonnegative(),
+    data: z.array(GroupSubjectPublicSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict();
+export type GroupSubjectBulkResult = z.infer<
+  typeof GroupSubjectBulkResultSchema
+>;
 
 const ClassroomStageBaseSchema = z.object({
   id: uuidSchema,
@@ -1069,34 +1378,10 @@ export type DepartmentHourAllocationSource = z.infer<
   typeof DepartmentHourAllocationSourceSchema
 >;
 
-/**
- * An hour value the UI *sends*, as opposed to one it reads.
- *
- * Strict on the way out (a third decimal place is rejected rather than rounded,
- * so a bad payload fails here instead of at the backend) and normalized to the
- * canonical `"120.00"` string of plan §3.9. A number is accepted too, which
- * keeps form code out of the representation question: the backend hour columns
- * are `float` today and `NUMERIC(8, 2)` after the §3.9 sweep, and a canonical
- * decimal string is exact for both.
- */
-const positiveHoursRequestSchema = z
-  .union([z.string(), z.number()])
-  .transform((value, ctx) => {
-    let hundredths: number;
-    try {
-      hundredths = hoursToHundredths(value);
-    } catch (error) {
-      ctx.addIssue((error as Error).message);
-      return z.NEVER;
-    }
-    if (hundredths <= 0) {
-      ctx.addIssue(
-        `Allocated group weekly hours must be greater than zero: ${hundredthsToHours(hundredths)}.`
-      );
-      return z.NEVER;
-    }
-    return hundredthsToHours(hundredths);
-  });
+const positiveHoursRequestSchema = hoursRequestSchema(
+  "Allocated group weekly hours",
+  "positive"
+);
 
 export const DepartmentHourAllocationRevisionPublicSchema = z
   .object({

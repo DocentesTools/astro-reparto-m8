@@ -3,6 +3,7 @@ import {
   AcademicYearCreateSchema,
   AcademicYearPublicSchema,
   AcademicYearsPublicSchema,
+  ActivityTypeSchema,
   AssignmentCreateSchema,
   AssignmentDirectChoiceSchema,
   AssignmentProcessCreateSchema,
@@ -21,6 +22,17 @@ import {
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
+  GroupSubjectBulkApplyRequestSchema,
+  GroupSubjectBulkChangeSchema,
+  GroupSubjectBulkConflictSchema,
+  GroupSubjectBulkModeSchema,
+  GroupSubjectBulkPreviewSchema,
+  GroupSubjectBulkRequestSchema,
+  GroupSubjectBulkResultSchema,
+  GroupSubjectCreateSchema,
+  GroupSubjectPublicSchema,
+  GroupSubjectsPublicSchema,
+  GroupSubjectUpdateSchema,
   HourRequirementCreateSchema,
   HourRequirementPublicSchema,
   HourRequirementsPublicSchema,
@@ -34,6 +46,7 @@ import {
   SchoolCreateSchema,
   SchoolPublicSchema,
   SchoolsPublicSchema,
+  SubjectAllocationCategorySchema,
   SubjectCreateSchema,
   SubjectPublicSchema,
   SubjectsPublicSchema,
@@ -354,7 +367,13 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     id: subjectId,
     assignment_process_id: processId,
     name: "Mathematics",
-    stage: "ESO",
+    allocation_category: "main",
+    activity_type: "ordinary",
+    default_group_weekly_hours: 4,
+    default_teacher_weekly_hours_per_position: 4,
+    default_required_teacher_count: 1,
+    allows_multiple_groups: false,
+    allows_zero_groups: false,
     notes: null,
     created_at: now,
     updated_at: now
@@ -448,8 +467,18 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBe("Maths");
     expect(() => SubjectCreateSchema.parse({})).toThrow();
     expect(SubjectUpdateSchema.parse({}).notes).toBeUndefined();
-    expect(SubjectUpdateSchema.parse({ stage: null }).stage).toBeNull();
+    expect(SubjectUpdateSchema.parse({ notes: null }).notes).toBeNull();
     expect(() => SubjectUpdateSchema.parse({ name: "" })).toThrow();
+    // The two-stage `stage` field is gone from the contract; sending it is a
+    // bad payload, not a tolerated leftover.
+    expect(() => SubjectUpdateSchema.parse({ stage: "ESO" })).toThrow();
+    expect(() =>
+      SubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        name: "Maths",
+        stage: "ESO"
+      })
+    ).toThrow();
     expect(SubjectsPublicSchema.parse({ data: [subjectBody], count: 1 }).count).toBe(1);
     expect(() =>
       SubjectsPublicSchema.parse({ data: [subjectBody], count: 1, extra: 1 })
@@ -781,5 +810,460 @@ describe("allocation revision schemas", () => {
       "copied_draft",
       "other"
     ]);
+  });
+});
+
+describe("subject planning schemas", () => {
+  const subjectId = "12121212-1212-4121-8121-121212121212";
+  const subjectBody = {
+    id: subjectId,
+    assignment_process_id: processId,
+    name: "Tutoring",
+    allocation_category: "secondary",
+    activity_type: "tutoring",
+    default_group_weekly_hours: 1,
+    default_teacher_weekly_hours_per_position: 2,
+    default_required_teacher_count: 1,
+    allows_multiple_groups: false,
+    allows_zero_groups: true,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("freezes the classification enums", () => {
+    expect(SubjectAllocationCategorySchema.options).toEqual([
+      "main",
+      "secondary"
+    ]);
+    expect(ActivityTypeSchema.options).toEqual([
+      "ordinary",
+      "tutoring",
+      "co_teaching",
+      "support",
+      "department_level",
+      "other"
+    ]);
+  });
+
+  it("reads planning defaults tolerantly and keeps null distinct from zero", () => {
+    const parsed = SubjectPublicSchema.parse(subjectBody);
+    expect(parsed.default_group_weekly_hours).toBe("1.00");
+    expect(parsed.default_teacher_weekly_hours_per_position).toBe("2.00");
+    expect(parsed.allows_zero_groups).toBe(true);
+    // A `null` default is "no suggestion", never `"0.00"`.
+    expect(
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_group_weekly_hours: null,
+        default_teacher_weekly_hours_per_position: null
+      }).default_group_weekly_hours
+    ).toBeNull();
+    // …and a typed zero stays a real zero.
+    expect(
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_group_weekly_hours: 0
+      }).default_group_weekly_hours
+    ).toBe("0.00");
+    // Entity schemas still serialize a JSON float, so a binary artifact must
+    // round rather than blank the view; the post-sweep string parses too.
+    expect(
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_group_weekly_hours: 2.9000000000000004
+      }).default_group_weekly_hours
+    ).toBe("2.90");
+    expect(
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_teacher_weekly_hours_per_position: "2.50"
+      }).default_teacher_weekly_hours_per_position
+    ).toBe("2.50");
+    expect(() =>
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        allocation_category: "tertiary"
+      })
+    ).toThrow();
+    expect(() =>
+      SubjectPublicSchema.parse({ ...subjectBody, activity_type: "detention" })
+    ).toThrow();
+    expect(() =>
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_required_teacher_count: 0
+      })
+    ).toThrow();
+    expect(() =>
+      SubjectPublicSchema.parse({
+        ...subjectBody,
+        default_group_weekly_hours: -1
+      })
+    ).toThrow();
+  });
+
+  it("sends canonical hour defaults and omits what it does not set", () => {
+    // Only the name is required; every classification and default has a
+    // backend default, so an omitted field means "use it".
+    expect(
+      SubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        name: "Maths"
+      })
+    ).toEqual({ assignment_process_id: processId, name: "Maths" });
+    expect(
+      SubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        name: "Co-teaching",
+        allocation_category: "secondary",
+        activity_type: "co_teaching",
+        default_group_weekly_hours: 2,
+        default_teacher_weekly_hours_per_position: "2.5",
+        default_required_teacher_count: 2,
+        allows_multiple_groups: true,
+        allows_zero_groups: false,
+        notes: null
+      })
+    ).toEqual({
+      assignment_process_id: processId,
+      name: "Co-teaching",
+      allocation_category: "secondary",
+      activity_type: "co_teaching",
+      default_group_weekly_hours: "2.00",
+      default_teacher_weekly_hours_per_position: "2.50",
+      default_required_teacher_count: 2,
+      allows_multiple_groups: true,
+      allows_zero_groups: false,
+      notes: null
+    });
+    // `null` clears the suggestion; zero is a legitimate default value.
+    expect(
+      SubjectUpdateSchema.parse({ default_group_weekly_hours: null })
+        .default_group_weekly_hours
+    ).toBeNull();
+    expect(
+      SubjectUpdateSchema.parse({ default_group_weekly_hours: 0 })
+        .default_group_weekly_hours
+    ).toBe("0.00");
+    // Strict on the way out: rounding a third decimal place silently would
+    // send a value the user never typed.
+    expect(() =>
+      SubjectUpdateSchema.parse({ default_group_weekly_hours: "2.005" })
+    ).toThrow();
+    expect(() =>
+      SubjectUpdateSchema.parse({ default_group_weekly_hours: "not-a-number" })
+    ).toThrow();
+    expect(() =>
+      SubjectUpdateSchema.parse({ default_group_weekly_hours: -1 })
+    ).toThrow();
+    expect(() =>
+      SubjectUpdateSchema.parse({ default_required_teacher_count: 0 })
+    ).toThrow();
+    // The count column is NOT NULL, so `null` is never a valid payload.
+    expect(() =>
+      SubjectUpdateSchema.parse({ default_required_teacher_count: null })
+    ).toThrow();
+  });
+});
+
+describe("group-subject schemas", () => {
+  const groupSubjectId = "13131313-1313-4131-8131-131313131313";
+  const teachingGroupId = "14141414-1414-4141-8141-141414141414";
+  const subjectId = "15151515-1515-4151-8151-151515151515";
+  const otherGroupId = "16161616-1616-4161-8161-161616161616";
+
+  const cellBody = {
+    id: groupSubjectId,
+    assignment_process_id: processId,
+    teaching_group_id: teachingGroupId,
+    subject_id: subjectId,
+    group_weekly_hours: 4,
+    teacher_weekly_hours_per_position: 4,
+    required_teacher_count: 1,
+    active: true,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("parses a matrix cell and keeps 'inherit' distinct from zero", () => {
+    const parsed = GroupSubjectPublicSchema.parse(cellBody);
+    expect(parsed.group_weekly_hours).toBe("4.00");
+    expect(parsed.active).toBe(true);
+    // NULL means "inherit the subject default", not zero hours.
+    expect(
+      GroupSubjectPublicSchema.parse({
+        ...cellBody,
+        group_weekly_hours: null,
+        teacher_weekly_hours_per_position: null
+      })
+    ).toMatchObject({
+      group_weekly_hours: null,
+      teacher_weekly_hours_per_position: null
+    });
+    expect(
+      GroupSubjectPublicSchema.parse({ ...cellBody, group_weekly_hours: 0 })
+        .group_weekly_hours
+    ).toBe("0.00");
+    expect(() =>
+      GroupSubjectPublicSchema.parse({ ...cellBody, required_teacher_count: 0 })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectPublicSchema.parse({ ...cellBody, surprise: 1 })
+    ).toThrow();
+    expect(
+      GroupSubjectsPublicSchema.parse({ data: [cellBody], count: 1 }).count
+    ).toBe(1);
+    expect(() =>
+      GroupSubjectsPublicSchema.parse({ data: [cellBody], count: -1 })
+    ).toThrow();
+  });
+
+  it("builds create and update payloads, with identity immutable on update", () => {
+    expect(
+      GroupSubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        teaching_group_id: teachingGroupId,
+        subject_id: subjectId
+      })
+    ).toEqual({
+      assignment_process_id: processId,
+      teaching_group_id: teachingGroupId,
+      subject_id: subjectId
+    });
+    expect(
+      GroupSubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        teaching_group_id: teachingGroupId,
+        subject_id: subjectId,
+        group_weekly_hours: "3.5",
+        teacher_weekly_hours_per_position: null,
+        required_teacher_count: 2,
+        active: false,
+        notes: "Split group"
+      })
+    ).toEqual({
+      assignment_process_id: processId,
+      teaching_group_id: teachingGroupId,
+      subject_id: subjectId,
+      group_weekly_hours: "3.50",
+      teacher_weekly_hours_per_position: null,
+      required_teacher_count: 2,
+      active: false,
+      notes: "Split group"
+    });
+    expect(() =>
+      GroupSubjectCreateSchema.parse({
+        assignment_process_id: processId,
+        teaching_group_id: teachingGroupId
+      })
+    ).toThrow();
+    expect(GroupSubjectUpdateSchema.parse({}).active).toBeUndefined();
+    expect(
+      GroupSubjectUpdateSchema.parse({ group_weekly_hours: null })
+        .group_weekly_hours
+    ).toBeNull();
+    // Re-pointing a cell at another group or subject is not an update: the
+    // backend treats both as immutable identity.
+    expect(() =>
+      GroupSubjectUpdateSchema.parse({ teaching_group_id: otherGroupId })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectUpdateSchema.parse({ subject_id: subjectId })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectUpdateSchema.parse({ required_teacher_count: 0 })
+    ).toThrow();
+  });
+
+  it("freezes the bulk mode enum", () => {
+    expect(GroupSubjectBulkModeSchema.options).toEqual([
+      "create_missing",
+      "update_existing",
+      "upsert"
+    ]);
+  });
+
+  it("keeps bulk set values absent unless the caller set them", () => {
+    // Absent ≠ null: an omitted field is not applied at all, while an explicit
+    // null clears an hour override back to "inherit the subject default".
+    expect(
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "upsert"
+      })
+    ).toEqual({ subject_id: subjectId, mode: "upsert" });
+    expect(
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "update_existing",
+        stage: "ESO",
+        minimum_grade: 1,
+        maximum_grade: 4,
+        group_weekly_hours: null,
+        teacher_weekly_hours_per_position: 3,
+        required_teacher_count: 2
+      })
+    ).toEqual({
+      subject_id: subjectId,
+      mode: "update_existing",
+      stage: "ESO",
+      minimum_grade: 1,
+      maximum_grade: 4,
+      group_weekly_hours: null,
+      teacher_weekly_hours_per_position: "3.00",
+      required_teacher_count: 2
+    });
+    expect(() =>
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "replace_all"
+      })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectBulkRequestSchema.parse({ mode: "upsert" })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "upsert",
+        minimum_grade: 0
+      })
+    ).toThrow();
+    // The count column is NOT NULL and the backend applies whatever is
+    // present, so an explicit null must never leave the client.
+    expect(() =>
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "upsert",
+        required_teacher_count: null
+      })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectBulkRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "upsert",
+        expected_affected_count: 3
+      })
+    ).toThrow();
+  });
+
+  it("requires the previewed count on apply", () => {
+    expect(
+      GroupSubjectBulkApplyRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "create_missing",
+        expected_affected_count: 0
+      }).expected_affected_count
+    ).toBe(0);
+    expect(() =>
+      GroupSubjectBulkApplyRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "create_missing"
+      })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectBulkApplyRequestSchema.parse({
+        subject_id: subjectId,
+        mode: "create_missing",
+        expected_affected_count: -1
+      })
+    ).toThrow();
+  });
+
+  it("parses the preview split, conflicts and apply result", () => {
+    const toCreate = {
+      teaching_group_id: teachingGroupId,
+      group_subject_id: null,
+      group_weekly_hours: 4,
+      teacher_weekly_hours_per_position: null,
+      required_teacher_count: 1
+    };
+    const toUpdate = {
+      ...toCreate,
+      teaching_group_id: otherGroupId,
+      group_subject_id: groupSubjectId
+    };
+
+    const parsedChange = GroupSubjectBulkChangeSchema.parse(toCreate);
+    // A row that does not exist yet has no id — that is what makes it a
+    // create rather than an update.
+    expect(parsedChange.group_subject_id).toBeNull();
+    expect(parsedChange.group_weekly_hours).toBe("4.00");
+    expect(parsedChange.teacher_weekly_hours_per_position).toBeNull();
+    expect(() =>
+      GroupSubjectBulkChangeSchema.parse({ ...toCreate, extra: 1 })
+    ).toThrow();
+
+    expect(
+      GroupSubjectBulkConflictSchema.parse({
+        teaching_group_id: teachingGroupId,
+        reason: "No existing group-subject row to update."
+      }).reason
+    ).toContain("No existing");
+
+    const preview = GroupSubjectBulkPreviewSchema.parse({
+      mode: "upsert",
+      subject_id: subjectId,
+      matched_group_ids: [teachingGroupId, otherGroupId],
+      to_create: [toCreate],
+      to_update: [toUpdate],
+      unchanged: [],
+      conflicts: [
+        {
+          teaching_group_id: otherGroupId,
+          reason: "No existing group-subject row to update."
+        }
+      ],
+      validation_errors: [],
+      expected_affected_count: 2
+    });
+    expect(preview.expected_affected_count).toBe(2);
+    expect(preview.to_create).toHaveLength(1);
+    expect(
+      GroupSubjectBulkPreviewSchema.parse({
+        mode: "update_existing",
+        subject_id: subjectId,
+        matched_group_ids: [],
+        to_create: [],
+        to_update: [],
+        unchanged: [],
+        conflicts: [],
+        validation_errors: [
+          "minimum_grade must be less than or equal to maximum_grade."
+        ],
+        expected_affected_count: 0
+      }).validation_errors
+    ).toHaveLength(1);
+    expect(() =>
+      GroupSubjectBulkPreviewSchema.parse({
+        mode: "upsert",
+        subject_id: subjectId,
+        matched_group_ids: [],
+        to_create: [],
+        to_update: [],
+        unchanged: [],
+        conflicts: [],
+        validation_errors: []
+      })
+    ).toThrow();
+
+    expect(
+      GroupSubjectBulkResultSchema.parse({
+        created_count: 1,
+        updated_count: 1,
+        data: [cellBody],
+        count: 1
+      })
+    ).toMatchObject({ created_count: 1, updated_count: 1, count: 1 });
+    expect(() =>
+      GroupSubjectBulkResultSchema.parse({
+        created_count: -1,
+        updated_count: 0,
+        data: [],
+        count: 0
+      })
+    ).toThrow();
   });
 });

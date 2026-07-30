@@ -65,11 +65,15 @@ export const en = {
     selectionCriteria: "Selection criteria",
     selectionNotes: "Selection notes",
     orderLocked: "Order locked",
-    overrideReason: "Override reason"
+    overrideReason: "Override reason",
+    allocationCategory: "Allocation category",
+    activityType: "Activity type"
   },
   option: {
     requirementType: { ordinary: "Ordinary", optional: "Optional", reinforcement: "Reinforcement", split_group: "Split group", bilingual: "Bilingual", other: "Other" },
     assignmentType: { main: "Main", shared: "Shared", reinforcement: "Reinforcement", split_group: "Split group", other: "Other" },
+    allocationCategory: { main: "Main", secondary: "Secondary" },
+    activityType: { ordinary: "Ordinary", tutoring: "Tutoring", co_teaching: "Co-teaching", support: "Support", department_level: "Department level", other: "Other" },
     boolean: { yes: "Yes", no: "No" }
   },
   view: {
@@ -225,7 +229,7 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name or stage...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
   classroomBulk: {
     action: "Create groups",
     title: "Bulk create classrooms",

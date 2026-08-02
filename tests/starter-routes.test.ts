@@ -19,7 +19,7 @@ const routeCases = [
   ["subjects.astro", "RepartoSubjectsView", "Reparto subjects"],
   ["classrooms.astro", "RepartoClassroomsView", "Reparto classrooms"],
   ["planning.astro", "RepartoPlanningView", "dict.planning.pageTitle"],
-  ["requirements.astro", "RepartoHourRequirementsView", "Reparto requirements"],
+  ["requirements.astro", "RepartoHourRequirementsView", "dict.requirements.pageTitle"],
   ["participants.astro", "RepartoProcessParticipantsView", "Reparto participants"],
   ["assignments.astro", "RepartoAssignmentsView", "Reparto assignments"],
   ["audit.astro", "RepartoAuditView", "dict.audit.pageTitle"]

@@ -100,10 +100,7 @@ const mocks = vi.hoisted(() => ({
     generationPreview: vi.fn(),
     generate: vi.fn(),
     reconciliationPreview: vi.fn(),
-    reconcile: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    remove: vi.fn()
+    reconcile: vi.fn()
   },
   processTeachers: {
     list: vi.fn(),
@@ -226,9 +223,6 @@ describe("reparto React hooks", () => {
     mocks.hourRequirements.generate.mockClear();
     mocks.hourRequirements.reconciliationPreview.mockClear();
     mocks.hourRequirements.reconcile.mockClear();
-    mocks.hourRequirements.create.mockClear();
-    mocks.hourRequirements.update.mockClear();
-    mocks.hourRequirements.remove.mockClear();
     mocks.processTeachers.list.mockClear();
     mocks.processTeachers.create.mockClear();
     mocks.processTeachers.update.mockClear();
@@ -374,7 +368,7 @@ describe("reparto React hooks", () => {
     expect(mocks.useQueryClient).toHaveBeenCalled();
   });
 
-  it("wires process-scoped entity list + CRUD hooks (Phase 3 step 1)", async () => {
+  it("wires process-scoped entity queries and supported mutations", async () => {
     const {
       useRepartoSubjects,
       useCreateRepartoSubject,
@@ -394,9 +388,6 @@ describe("reparto React hooks", () => {
       useUpdateRepartoTeachingGroup,
       useDeleteRepartoTeachingGroup,
       useRepartoHourRequirements,
-      useCreateRepartoHourRequirement,
-      useUpdateRepartoHourRequirement,
-      useDeleteRepartoHourRequirement,
       useRepartoProcessTeachers,
       useCreateRepartoProcessTeacher,
       useUpdateRepartoProcessTeacher,
@@ -508,24 +499,6 @@ describe("reparto React hooks", () => {
     const deleteGroup = useDeleteRepartoTeachingGroup();
     deleteGroup.mutate({ processId: "p1", groupId: "g1" });
 
-    const createRequirement = useCreateRepartoHourRequirement();
-    createRequirement.mutate({
-      processId: "p1",
-      body: {
-        teaching_group_id: "g1",
-        subject_id: "s1",
-        required_hours: 4
-      }
-    });
-    const updateRequirement = useUpdateRepartoHourRequirement();
-    updateRequirement.mutate({
-      processId: "p1",
-      requirementId: "r1",
-      body: { required_hours: 6 }
-    });
-    const deleteRequirement = useDeleteRepartoHourRequirement();
-    deleteRequirement.mutate({ processId: "p1", requirementId: "r1" });
-
     const createParticipant = useCreateRepartoProcessTeacher();
     createParticipant.mutate({
       processId: "p1",
@@ -597,15 +570,6 @@ describe("reparto React hooks", () => {
       label: "X"
     });
     expect(mocks.teachingGroups.remove).toHaveBeenCalledWith("p1", "g1");
-    expect(mocks.hourRequirements.create).toHaveBeenCalledWith("p1", {
-      teaching_group_id: "g1",
-      subject_id: "s1",
-      required_hours: 4
-    });
-    expect(mocks.hourRequirements.update).toHaveBeenCalledWith("p1", "r1", {
-      required_hours: 6
-    });
-    expect(mocks.hourRequirements.remove).toHaveBeenCalledWith("p1", "r1");
     expect(mocks.processTeachers.create).toHaveBeenCalledWith("p1", {
       teacher_profile_id: "t1",
       available_hours: 18
@@ -643,7 +607,7 @@ describe("reparto React hooks", () => {
       group_subject_ids: ["gs1", "gs2"]
     });
     expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
-    expect(mocks.useMutation).toHaveBeenCalledTimes(22);
+    expect(mocks.useMutation).toHaveBeenCalledTimes(19);
   });
 
   it("wires plan validation and requirement-generation workflow hooks", async () => {

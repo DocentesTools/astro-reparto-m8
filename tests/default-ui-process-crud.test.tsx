@@ -7,6 +7,8 @@ const profileId = "22222222-2222-4222-8222-222222222222";
 const teachingGroupId = "33333333-3333-4333-8333-333333333333";
 const subjectId = "44444444-4444-4444-8444-444444444444";
 const requirementId = "55555555-5555-4555-8555-555555555555";
+const teachingActivityId = "56565656-5656-4656-8656-565656565656";
+const teachingPlanId = "57575757-5757-4757-8757-575757575757";
 const participantId = "66666666-6666-4666-8666-666666666666";
 const assignmentId = "77777777-7777-4777-8777-777777777777";
 const auditId = "88888888-8888-4888-8888-888888888888";
@@ -409,33 +411,62 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain("Selected classrooms to delete: 1.");
   });
 
-  it("requirements view renders classroom+subject labels per row and a create action", async () => {
+  it("requirements view groups generated slots by activity and position with authoritative status", async () => {
     reset();
-    queryState.groups = [
-      { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
-    ];
     queryState.subjects = [
       { id: subjectId, assignment_process_id: processId, name: "Matemáticas", allocation_category: "main", activity_type: "ordinary", default_group_weekly_hours: 4, default_teacher_weekly_hours_per_position: 4, default_required_teacher_count: 1, allows_multiple_groups: false, allows_zero_groups: false, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
+    queryState.teachingActivities = [
+      { id: teachingActivityId, teaching_plan_id: teachingPlanId, subject_id: subjectId, allocation_category: "main", activity_type: "ordinary", group_weekly_hours_per_group: "4.00", teacher_weekly_hours_per_position: "4.00", required_teacher_count: 1, notes: "Main teaching", source: "main_generated", source_group_subject_id: null, sync_state: "current", retired_at: null, group_subject_ids: [], linked_group_count: 0, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+    ];
+    queryState.teachingPlan = {
+      id: teachingPlanId,
+      assignment_process_id: processId,
+      allocation_revision_id: null,
+      status: "reconciliation_required",
+      current_generation_number: 3,
+      locked_at: "2026-07-04T10:00:00Z",
+      locked_by_user_id: null,
+      requirements_generated_at: "2026-07-04T10:00:00Z",
+      stale_reason: "allocation_changed",
+      feasibility_status: "feasible",
+      feasibility_generation: 3,
+      feasibility_checked_at: "2026-07-04T10:00:00Z",
+      feasibility_input_fingerprint: "fingerprint",
+      feasibility_solver_version: "solver-v1",
+      feasibility_diagnostics_ref: null,
+      created_at: "2026-07-04T10:00:00Z",
+      updated_at: "2026-07-04T10:00:00Z"
+    };
     queryState.requirements = [
-      { id: requirementId, assignment_process_id: processId, teaching_group_id: teachingGroupId, subject_id: subjectId, required_hours: 4, requirement_type: "ordinary", flags: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: requirementId, assignment_process_id: processId, teaching_activity_id: teachingActivityId, position_index: 0, required_teacher_hours: "4.00", status: "assigned", created_generation: 2, last_validated_generation: 3, retired_generation: null, superseded_by_requirement_id: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" },
+      { id: "58585858-5858-4858-8858-585858585858", assignment_process_id: processId, teaching_activity_id: teachingActivityId, position_index: 1, required_teacher_hours: "4.00", status: "stale", created_generation: 1, last_validated_generation: 2, retired_generation: 3, superseded_by_requirement_id: requirementId, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     const { RepartoHourRequirementsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoHourRequirementsView processId={processId} />);
     expect(html).toContain('data-reparto-route="requirements"');
-    expect(html).toContain('data-reparto-table="requirements"');
-    expect(html).toContain("1° ESO A");
-    expect(html).toContain("Matemáticas");
+    expect(html).toContain('data-reparto-list="requirements-by-activity"');
+    expect(html).toContain('data-teaching-plan-status="reconciliation_required"');
+    expect(html).toContain('data-requirement-status="assigned"');
+    expect(html).toContain("Matemáticas · Ordinary");
+    expect(html).toContain("Position 1");
+    expect(html).toContain("4.00 teacher hours");
+    expect(html).toContain("Created in generation 2; validated in generation 3.");
+    expect(html).toContain("Retired in generation 3.");
+    expect(html).toContain("A replacement slot was recorded.");
+    expect(html).toContain('data-retired-generation="3"');
+    expect(html).not.toContain('data-reparto-action="create"');
+    expect(html).not.toContain('data-reparto-row-action="edit"');
+    expect(html).not.toContain('data-reparto-row-action="delete"');
   });
 
-  it("requirements view disables Create with a missing-prerequisite reason when classrooms+subjects are empty (es locale)", async () => {
+  it("requirements view renders a localized read-only empty state", async () => {
     reset();
     const { RepartoHourRequirementsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoHourRequirementsView locale="es" processId={processId} />);
-    expect(html).toContain('data-disabled-reason=');
-    const createMatch = html.match(/<button[^>]*data-reparto-action="create"[^>]*>/);
-    expect(createMatch?.[0]).toContain("disabled");
-    expect(html).toContain('data-reparto-disabled-reason=""');
+    expect(html).toContain('data-reparto-state="no-generated-requirements"');
+    expect(html).toContain("Todavía no se han generado puestos horarios");
+    expect(html).not.toContain('data-reparto-action="create"');
   });
 
   it("participants view renders teacher display_name + edit/delete row actions", async () => {
@@ -476,7 +507,10 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: profileId, display_name: "Profesora Ana", user_id: null, active: true, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.requirements = [
-      { id: requirementId, assignment_process_id: processId, teaching_group_id: teachingGroupId, subject_id: subjectId, required_hours: 4, requirement_type: "ordinary", flags: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: requirementId, assignment_process_id: processId, teaching_activity_id: teachingActivityId, position_index: 0, required_teacher_hours: "4.00", status: "available", created_generation: 1, last_validated_generation: 1, retired_generation: null, superseded_by_requirement_id: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+    ];
+    queryState.teachingActivities = [
+      { id: teachingActivityId, teaching_plan_id: teachingPlanId, subject_id: subjectId, allocation_category: "main", activity_type: "ordinary", group_weekly_hours_per_group: "4.00", teacher_weekly_hours_per_position: "4.00", required_teacher_count: 1, notes: null, source: "main_generated", source_group_subject_id: null, sync_state: "current", retired_at: null, group_subject_ids: [], linked_group_count: 0, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.participants = [
       { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, available_hours: 18, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -488,7 +522,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const html = renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />);
     expect(html).toContain('data-reparto-route="assignments"');
     expect(html).toContain('data-reparto-table="assignments"');
-    expect(html).toContain("1° ESO A");
+    expect(html).toContain("Matemáticas · Ordinary · Position 1");
     expect(html).toContain("Profesora Ana");
     expect(html).toContain('data-reparto-row-action="delete"');
   });
@@ -515,18 +549,6 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-action="create-missing-prerequisite"');
     expect(html).toContain(`/reparto/processes/${processId}/requirements`);
     expect(html).toContain(`/reparto/processes/${processId}/participants`);
-  });
-
-  it("requirement add form exposes one-level + Create new entries for classroom and subject selects (D-7 one-level)", async () => {
-    reset();
-    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
-    const dict = useDict("en");
-    const { RequirementAdd } = await import("../src/runtime/react/default-ui/process-crud/requirements/add.js");
-    const html = renderToStaticMarkup(
-      <RequirementAdd dict={dict} processId={processId} onDone={() => undefined} />
-    );
-    const createNewCount = (html.match(/data-reparto-fk-action="create-new"/g) ?? []).length;
-    expect(createNewCount).toBe(2);
   });
 
   it("audit view is read-only: no Create, Edit, or Delete actions; rows list the event type", async () => {

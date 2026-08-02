@@ -141,8 +141,12 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.entity.classroom.singular).toBe("Classroom");
     expect(fr.entity.classroom.singular).toBe("Classe");
     expect(es.entity.classroom.singular).toBe("Grupo");
-    expect(en.entity.hourRequirement.singular).toBe("Hour requirement");
-    expect(es.entity.hourRequirement.singular).toBe("Horas necesarias");
+    expect(en.entity.hourRequirement.singular).toBe("Requirement slot");
+    expect(fr.entity.hourRequirement.singular).toBe("Créneau de besoin");
+    expect(es.entity.hourRequirement.singular).toBe("Puesto horario");
+    expect(en.entity.hourRequirement.status.reconciliation_required).toBe(
+      "Reconciliation required"
+    );
   });
 
   it("exposes every action verb under action.* from the freeze", () => {

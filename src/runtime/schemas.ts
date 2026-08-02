@@ -87,16 +87,6 @@ export const ValidationSeveritySchema = z.enum([
 ]);
 export type ValidationSeverity = z.infer<typeof ValidationSeveritySchema>;
 
-export const RequirementTypeSchema = z.enum([
-  "ordinary",
-  "reinforcement",
-  "split_group",
-  "optional",
-  "bilingual",
-  "other"
-]);
-export type RequirementType = z.infer<typeof RequirementTypeSchema>;
-
 export const ProcessTeacherStatusSchema = z.enum(["active", "inactive"]);
 export type ProcessTeacherStatus = z.infer<typeof ProcessTeacherStatusSchema>;
 
@@ -1217,59 +1207,48 @@ export const TeachingGroupBulkCreateSchema = z.object({
 }).strict();
 export type TeachingGroupBulkCreate = z.infer<typeof TeachingGroupBulkCreateSchema>;
 
+export const RequirementGenerationSlotStatusSchema = z.enum([
+  "available",
+  "assigned",
+  "stale",
+  "reconciliation_required"
+]);
+export type RequirementGenerationSlotStatus = z.infer<
+  typeof RequirementGenerationSlotStatusSchema
+>;
+
+/**
+ * One generated, indivisible teacher-position slot. Requirements are read-only:
+ * their identity, hours and lifecycle are owned by generation/reconciliation.
+ */
 export const HourRequirementPublicSchema = z
   .object({
     id: uuidSchema,
     assignment_process_id: uuidSchema,
-    teaching_group_id: uuidSchema,
-    subject_id: uuidSchema,
-    required_hours: z.number().positive(),
-    requirement_type: RequirementTypeSchema,
-    flags: z.string().nullable(),
-    notes: z.string().nullable(),
+    teaching_activity_id: uuidSchema,
+    position_index: z.number().int().nonnegative(),
+    required_teacher_hours: HoursSchema,
+    status: RequirementGenerationSlotStatusSchema,
+    created_generation: z.number().int().nonnegative(),
+    last_validated_generation: z.number().int().nonnegative(),
+    retired_generation: z.number().int().nonnegative().nullable(),
+    superseded_by_requirement_id: uuidSchema.nullable(),
     created_at: dateTimeSchema,
     updated_at: dateTimeSchema
   })
   .strict();
 export type HourRequirementPublic = z.infer<typeof HourRequirementPublicSchema>;
 
-export const HourRequirementCreateSchema = z
-  .object({
-    assignment_process_id: uuidSchema,
-    teaching_group_id: uuidSchema,
-    subject_id: uuidSchema,
-    required_hours: z.number().positive(),
-    requirement_type: RequirementTypeSchema.optional(),
-    flags: z.string().max(500).nullable().optional(),
-    notes: z.string().max(2000).nullable().optional()
-  })
-  .strict();
-export type HourRequirementCreate = z.infer<
-  typeof HourRequirementCreateSchema
->;
-export type HourRequirementCreateInput = Omit<
-  HourRequirementCreate,
-  "assignment_process_id"
->;
-
-export const HourRequirementUpdateSchema = z
-  .object({
-    required_hours: z.number().positive().optional(),
-    requirement_type: RequirementTypeSchema.optional(),
-    flags: z.string().max(500).nullable().optional(),
-    notes: z.string().max(2000).nullable().optional()
-  })
-  .strict();
-export type HourRequirementUpdate = z.infer<
-  typeof HourRequirementUpdateSchema
->;
-
 export const HourRequirementsPublicSchema = z
   .object({
     data: z.array(HourRequirementPublicSchema),
     count: z.number().int().nonnegative()
   })
-  .strict();
+  .strict()
+  .refine((result) => result.count === result.data.length, {
+    message: "Requirement count must match generated slots.",
+    path: ["count"]
+  });
 export type HourRequirementsPublic = z.infer<
   typeof HourRequirementsPublicSchema
 >;
@@ -1584,41 +1563,10 @@ export type PlanValidationReport = z.infer<
 
 // ── Requirement generation (backend plan §7.5, §20.8) ──────────────────────
 //
-// The package's legacy HourRequirementPublic contract is replaced by the
-// dedicated generated-slot contract in the requirements-view adaptation. Keep
-// this workflow schema self-contained until that breaking rewrite lands so the
-// generation response is still fully validated instead of accepting unknown
-// rows or reviving manual requirement writes.
-
-export const RequirementGenerationSlotStatusSchema = z.enum([
-  "available",
-  "assigned",
-  "stale",
-  "reconciliation_required"
-]);
-export type RequirementGenerationSlotStatus = z.infer<
-  typeof RequirementGenerationSlotStatusSchema
->;
-
-export const RequirementGenerationSlotSchema = z
-  .object({
-    id: uuidSchema,
-    assignment_process_id: uuidSchema,
-    teaching_activity_id: uuidSchema,
-    position_index: z.number().int().nonnegative(),
-    required_teacher_hours: HoursSchema,
-    status: RequirementGenerationSlotStatusSchema,
-    created_generation: z.number().int().nonnegative(),
-    last_validated_generation: z.number().int().nonnegative(),
-    retired_generation: z.number().int().nonnegative().nullable(),
-    superseded_by_requirement_id: uuidSchema.nullable(),
-    created_at: dateTimeSchema,
-    updated_at: dateTimeSchema
-  })
-  .strict();
-export type RequirementGenerationSlot = z.infer<
-  typeof RequirementGenerationSlotSchema
->;
+// Generation and reconciliation return the same canonical public slot shape.
+// Keep the workflow name as a public alias for existing consumers.
+export const RequirementGenerationSlotSchema = HourRequirementPublicSchema;
+export type RequirementGenerationSlot = HourRequirementPublic;
 
 export const RequirementSlotPlanSchema = z
   .object({

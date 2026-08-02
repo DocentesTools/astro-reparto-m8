@@ -9,7 +9,7 @@ export const fr: RepartoDictionary = {
     assignmentProcess: { singular: "Processus d'affectation", plural: "Processus d'affectation", status: { draft: "Brouillon", ready_for_meeting: "Prêt pour la séance", meeting_open: "Séance ouverte", assigning: "Affectation en cours", department_proposal: "Proposition du département", sent_to_school_leadership: "Envoyé à la direction", returned_by_school_leadership: "Renvoyé par la direction", internal_revision: "Révision interne", final: "Final", reopened: "Rouverte", archived: "Archivé" } },
     subject: { singular: "Matière", plural: "Matières", status: {} },
     classroom: { singular: "Classe", plural: "Classes", status: {} },
-    hourRequirement: { singular: "Besoin horaire", plural: "Besoins horaires", status: {} },
+    hourRequirement: { singular: "Créneau de besoin", plural: "Créneaux de besoin", status: { available: "Disponible", assigned: "Affecté", stale: "Obsolète", reconciliation_required: "Réconciliation requise" } },
     processParticipant: { singular: "Participant au processus", plural: "Participants au processus", status: { active: "Actif", inactive: "Inactif" } },
     assignment: { singular: "Affectation", plural: "Affectations", status: { draft: "Brouillon", confirmed: "Confirmé", overridden: "Forcé", cancelled: "Annulé" } },
     meetingSession: { singular: "Séance", plural: "Séances", status: { prepared: "Préparé", open: "Ouvert", selecting: "Sélection en cours", paused: "En pause", closed: "Clos", reopened: "Rouverte" } },
@@ -41,7 +41,6 @@ export const fr: RepartoDictionary = {
     academicYear: "Année scolaire",
     department: "Département",
     departmentHead: "Chef de département",
-    requiredHours: "Heures requises",
     availableHours: "Heures disponibles",
     assignedHours: "Heures affectées",
     defaultTeacherHoursReference: "Heures de référence",
@@ -52,12 +51,10 @@ export const fr: RepartoDictionary = {
     subject: "Matière",
     classroom: "Classe",
     teacher: "Enseignant",
-    hourRequirement: "Besoin horaire",
+    hourRequirement: "Créneau de besoin",
     processParticipant: "Participant",
-    requirementType: "Type",
     assignmentType: "Type",
     source: "Source",
-    flags: "Indicateurs",
     participatesInSelection: "Participe à la sélection",
     selectionPosition: "Position",
     selectionPoints: "Points de sélection",
@@ -72,7 +69,6 @@ export const fr: RepartoDictionary = {
     requiredTeacherCount: "Postes enseignants"
   },
   option: {
-    requirementType: { ordinary: "Ordinaire", optional: "Optionnel", reinforcement: "Renforcement", split_group: "Groupe dédoublé", bilingual: "Bilingue", other: "Autre" },
     assignmentType: { main: "Principale", shared: "Partagée", reinforcement: "Renforcement", split_group: "Groupe dédoublé", other: "Autre" },
     allocationCategory: { main: "Principale", secondary: "Secondaire" },
     activityType: { ordinary: "Ordinaire", tutoring: "Tutorat", co_teaching: "Co-enseignement", support: "Soutien", department_level: "Niveau département", other: "Autre" },
@@ -100,8 +96,45 @@ export const fr: RepartoDictionary = {
   audit: {
     pageTitle: "Audit de la répartition", description: "Consultez les événements d'audit du processus actif.",
     action: { created: "Créé", updated: "Modifié", deleted: "Supprimé", transitioned: "État modifié", reopened: "Rouvert", copied_from_previous_year: "Copié depuis l'année précédente", direct_choice: "Choix direct enregistré", started: "Démarré", completed: "Terminé", skipped: "Passé", overridden: "Forcé" },
-    entity: { process: "Processus d'affectation", assignment_process: "Processus d'affectation", assignment: "Affectation", subject: "Matière", hour_requirement: "Besoin horaire", selection_turn: "Tour de sélection", teaching_group: "Classe", process_teacher: "Participant au processus" },
+    entity: { process: "Processus d'affectation", assignment_process: "Processus d'affectation", assignment: "Affectation", subject: "Matière", hour_requirement: "Créneau de besoin", selection_turn: "Tour de sélection", teaching_group: "Classe", process_teacher: "Participant au processus" },
     role: { superadmin: "Super-administrateur", department_head: "Chef de département", teacher: "Enseignant", school_leadership: "Direction de l'établissement" }, event: "{entity} : {action}"
+  },
+  requirements: {
+    pageTitle: "Créneaux de besoin générés",
+    description: "Consultez les postes enseignants indivisibles générés depuis le plan d'enseignement. La génération et la réconciliation restent pilotées par le service.",
+    statusTitle: "État de la génération et de la réconciliation",
+    planUnavailable: "Plan indisponible",
+    planStatusSummary: "État du plan : {status}. Génération actuelle : {generation}.",
+    planStatus: {
+      draft: "Brouillon",
+      unbalanced: "Déséquilibré",
+      balanced: "Équilibré",
+      locked: "Verrouillé",
+      requirements_generated: "Besoins générés",
+      stale: "Obsolète",
+      reconciliation_required: "Réconciliation requise"
+    },
+    generationState: {
+      unavailable: "L'état du plan d'enseignement est indisponible ; les créneaux générés restent en lecture seule.",
+      notGenerated: "Le plan n'a pas encore atteint l'étape de génération des besoins.",
+      ready: "Le plan est verrouillé et prêt pour la génération des besoins.",
+      current: "Les créneaux générés sont à jour pour la génération du service indiquée ci-dessous.",
+      stale: "Le plan a changé après la génération. Les créneaux existants restent visibles pendant la préparation de la réconciliation.",
+      reconciliationRequired: "Des créneaux affectés exigent une réconciliation explicite avant que la génération redevienne à jour."
+    },
+    metric: { activities: "Activités", slots: "Créneaux générés", available: "Disponibles", assigned: "Affectés", attention: "À traiter" },
+    slotsTitle: "Créneaux par activité et position",
+    slotsDescription: "Chaque position est complète et indivisible ; les heures ne sont jamais modifiées depuis cette vue.",
+    empty: "Aucun créneau de besoin n'a encore été généré pour ce plan.",
+    unknownActivity: "Activité d'enseignement inconnue",
+    unknownSubject: "Matière inconnue",
+    activityLabel: "{subject} · {type}",
+    positionCount: "{count} position(s) enseignante(s)",
+    position: "Position {position}",
+    teacherHours: "{hours} heures enseignantes",
+    generationLineage: "Créé à la génération {created} ; validé à la génération {validated}.",
+    retiredLineage: "Retiré à la génération {generation}.",
+    superseded: "Un créneau de remplacement a été enregistré."
   },
   planning: {
     pageTitle: "Planification de la répartition",
@@ -379,7 +412,7 @@ export const fr: RepartoDictionary = {
     bootstrap: {
       title: "Configurer votre répartition",
       subtitle: "Quelques étapes avant de pouvoir tenir la séance.",
-      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus", subjects: "Ajouter des matières", classrooms: "Ajouter des classes", teacherRoster: "Ajouter des enseignants", requirements: "Ajouter des besoins horaires", participants: "Ajouter des participants" },
+      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus", subjects: "Ajouter des matières", classrooms: "Ajouter des classes", teacherRoster: "Ajouter des enseignants", requirements: "Générer les créneaux de besoin", participants: "Ajouter des participants" },
       done: "Terminé",
       open: "Ouvrir"
     }
@@ -449,7 +482,7 @@ export const fr: RepartoDictionary = {
     noData: "Pas encore de données disponibles.",
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
-  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom...", searchRequirements: "Rechercher par classe ou matière...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
+  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
   classroomBulk: {
     action: "Créer des groupes",
     title: "Créer plusieurs classes",
@@ -458,17 +491,6 @@ export const fr: RepartoDictionary = {
     groupEnd: "Dernier groupe",
     created: "Classes créées : {count}",
     createError: "Impossible de créer les classes"
-  },
-  requirementBulk: {
-    action: "Ajouter des besoins en masse",
-    title: "Ajouter des besoins horaires en masse",
-    description: "Créer le même besoin horaire pour toutes les classes d'un niveau et d'une plage d'années.",
-    gradeStart: "Première année",
-    gradeEnd: "Dernière année",
-    noMatches: "Aucune classe ne correspond au niveau et à la plage d'années sélectionnés.",
-    created: "Besoins horaires créés : {count}",
-    createError: "Certains besoins horaires n'ont pas pu être créés",
-    createErrorCount: "{count} échec(s)"
   },
   groupSubjectBulk: {
     title: "Éditeur groupé des matières par classe",
@@ -540,15 +562,6 @@ export const fr: RepartoDictionary = {
     deleteBody: "Matières sélectionnées à supprimer : {count}. Cette action est irréversible.",
     deleted: "Matières supprimées : {count}",
     deleteError: "Impossible de supprimer les matières sélectionnées"
-  },
-  requirementSelection: {
-    selectAllVisible: "Sélectionner tous les besoins visibles",
-    selectRow: "Sélectionner {name}",
-    deleteSelected: "Supprimer la sélection ({count})",
-    deleteTitle: "Supprimer les besoins sélectionnés",
-    deleteBody: "Besoins sélectionnés à supprimer : {count}. Cette action est irréversible.",
-    deleted: "Besoins supprimés : {count}",
-    deleteError: "Impossible de supprimer les besoins sélectionnés"
   },
   participantSelection: {
     selectAllVisible: "Sélectionner tous les participants visibles",

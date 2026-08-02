@@ -24,10 +24,8 @@ export type RepartoFieldKey =
   | "teacher"
   | "hourRequirement"
   | "processParticipant"
-  | "requirementType"
   | "assignmentType"
   | "source"
-  | "requiredHours"
   | "assignedHours"
   | "availableHours"
   | "participatesInSelection"
@@ -37,7 +35,6 @@ export type RepartoFieldKey =
   | "selectionNotes"
   | "orderLocked"
   | "overrideReason"
-  | "flags"
   | "allocationCategory"
   | "activityType"
   | "mode"
@@ -108,10 +105,8 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   hour_requirement_id: "hourRequirement",
   process_teacher_id: "processParticipant",
   teacher_profile_id: "teacher",
-  requirement_type: "requirementType",
   assignment_type: "assignmentType",
   source: "source",
-  required_hours: "requiredHours",
   assigned_hours: "assignedHours",
   available_hours: "availableHours",
   participates_in_selection: "participatesInSelection",
@@ -121,7 +116,6 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   selection_notes: "selectionNotes",
   order_locked: "orderLocked",
   override_reason: "overrideReason",
-  flags: "flags",
   allocation_category: "allocationCategory",
   activity_type: "activityType",
   mode: "mode",

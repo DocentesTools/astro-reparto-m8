@@ -148,6 +148,15 @@ release/retire action. Apply requires a reason plus the preview's exact conflict
 count. A 409 discards the stale preview instead of retrying, and the result shows
 released assignments, generation counts and the authoritative live-slot count.
 
+The `/requirements` starter route is the read-focused result surface for those
+workflows. It validates the generated-slot contract, groups slots by
+teaching activity and zero-based service position (shown one-based to users),
+and displays authoritative plan generation/reconciliation state plus per-slot
+`available` / `assigned` / `stale` / `reconciliation_required` status. Manual
+requirement create, edit, bulk-create and delete APIs, hooks and dialogs are not
+exported: slot identity and hours change only through generation or explicit
+reconciliation.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

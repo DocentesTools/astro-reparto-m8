@@ -29,6 +29,7 @@ const userId = "33333333-3333-4333-8333-333333333333";
 const turnId = "77777777-7777-4777-8777-777777777777";
 const teacherId = "88888888-8888-4888-8888-888888888888";
 const requirementId = "99999999-9999-4999-8999-999999999999";
+const teachingActivityId = "96969696-9696-4696-8696-969696969696";
 const versionId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const nextVersionId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const artifactId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
@@ -721,12 +722,14 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
   const requirementBody = {
     id: requirementId,
     assignment_process_id: processId,
-    teaching_group_id: groupId,
-    subject_id: subjectId,
-    required_hours: 4,
-    requirement_type: "ordinary",
-    flags: null,
-    notes: null,
+    teaching_activity_id: teachingActivityId,
+    position_index: 0,
+    required_teacher_hours: "4.00",
+    status: "available",
+    created_generation: 1,
+    last_validated_generation: 1,
+    retired_generation: null,
+    superseded_by_requirement_id: null,
     created_at: now,
     updated_at: now
   };
@@ -1032,7 +1035,7 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     ).toThrow();
   });
 
-  it("hour requirements list/get/create/update/remove", async () => {
+  it("reads generated hour-requirement slots without mutation methods", async () => {
     fetchMock.mockResolvedValueOnce(
       response({ data: [requirementBody], count: 1 })
     );
@@ -1046,50 +1049,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     fetchMock.mockResolvedValueOnce(response(requirementBody));
     await expect(
       hourRequirements.get(processId, requirementId)
-    ).resolves.toMatchObject({ required_hours: 4 });
-
-    fetchMock.mockResolvedValueOnce(response(requirementBody));
-    await expect(
-      hourRequirements.create(processId, {
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 4
-      })
-    ).resolves.toMatchObject({ requirement_type: "ordinary" });
-    expect(
-      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
-        .assignment_process_id
-    ).toBe(processId);
-
-    fetchMock.mockResolvedValueOnce(
-      response({ ...requirementBody, required_hours: 6 })
-    );
-    await expect(
-      hourRequirements.update(processId, requirementId, {
-        required_hours: 6
-      })
-    ).resolves.toMatchObject({ required_hours: 6 });
-
-    fetchMock.mockResolvedValueOnce(response(requirementBody));
-    await expect(
-      hourRequirements.remove(processId, requirementId)
-    ).resolves.toMatchObject({ id: requirementId });
-    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
-    );
-
-    expect(() =>
-      hourRequirements.create(processId, {
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 0
-      } as never)
-    ).toThrow();
-    expect(() =>
-      hourRequirements.update(processId, requirementId, {
-        requirement_type: "unknown"
-      } as never)
-    ).toThrow();
+    ).resolves.toMatchObject({ required_teacher_hours: "4.00" });
+    expect(hourRequirements).not.toHaveProperty("create");
+    expect(hourRequirements).not.toHaveProperty("update");
+    expect(hourRequirements).not.toHaveProperty("remove");
   });
 
   it("process teachers list/get/create/update/remove", async () => {

@@ -177,20 +177,21 @@ the canonical string. Uniqueness `(process_id, name)` is DB-enforced.
 Notes: `label` is the human-readable name (e.g. "1 ESO A") and is unique per
 process. UI auto-suggest label from `stage`/`grade`/`group_code`.
 
-### 2.4 Hour requirement — `prefix=/…/requirements`
+### 2.4 Requirement slot — `prefix=/…/requirements`
 
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `HourRequirementsPublic` | list | ✓ |
-| Create | `POST /` → `201` `HourRequirementPublic` (process writer) | create | ✓ |
 | Get | `GET /{requirement_id}` → `HourRequirementPublic` | get | ✓ |
-| Patch | `PATCH /{requirement_id}` → `HourRequirementPublic` (process writer) | patch | ✓ |
-| Delete | `DELETE /{requirement_id}` → `HourRequirementPublic` (process writer) | delete | ✓ |
-| Create required | `teaching_group_id`, `subject_id`, `required_hours: float>0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Generate preview/apply | `POST /generation-preview`, `POST /generate` | three-stage §7.5 | ✓ |
+| Reconcile preview/apply | `POST /reconciliation-preview`, `POST /reconcile` | three-stage §7.5/§9 | ✓ |
+| Manual create/patch/delete | removed; generated slots are read-only | three-stage §5.9/§20.12 | ✓ |
+| Public shape | `teaching_activity_id`, zero-based `position_index`, canonical `required_teacher_hours`, lifecycle `status`, generation lineage, timestamps | three-stage §5.9/§20.8 | ✓ |
 
-Notes: `requirement_type` enum values: `ordinary, reinforcement, split_group,
-optional, bilingual, other`. `flags` is a free-form comma-separated string.
+Notes: one requirement is one complete, indivisible teacher-position slot.
+`status` is `available`, `assigned`, `stale`, or `reconciliation_required`.
+Identity and hours are changed only through deterministic generation or explicit,
+reasoned reconciliation; the client exposes no manual mutation wrapper or hook.
 
 ### 2.5 Process teacher (participant) — `prefix=/…/teachers`
 
@@ -585,7 +586,7 @@ where the backend accepts them**". Verified:
 | Assignment processes | `/assignment-processes/` | `skip, limit` | `academic_year_id: uuid?` | — |
 | Subjects | `/…/subjects/` | — | — | — |
 | Teaching groups | `/…/groups/` | — | — | — |
-| Hour requirements | `/…/requirements/` | — | — | — |
+| Requirement slots | `/…/requirements/` | — | — | — |
 | Process teachers | `/…/teachers/` | — | — | — |
 | Assignments | `/…/assignments/` | — | — | — |
 | Meeting sessions | `/…/meeting-sessions/` | — | — | — |
@@ -617,7 +618,7 @@ omitted; anything listed MUST be `required()`.
 | Subject | `name` | `name, allocation_category, activity_type, default_group_weekly_hours, default_teacher_weekly_hours_per_position, default_required_teacher_count, allows_multiple_groups, allows_zero_groups, notes` |
 | Group subject | `teaching_group_id, subject_id` (`assignment_process_id` from URL) | `group_weekly_hours, teacher_weekly_hours_per_position, required_teacher_count, active, notes` |
 | Teaching group | `stage, grade, group_code, label` | `stage, grade, group_code, label, notes` |
-| Hour requirement | `teaching_group_id, subject_id, required_hours` | `required_hours, requirement_type, flags, notes` |
+| Requirement slot | — (generated from the teaching plan) | — (read-only; generation/reconciliation only) |
 | Process teacher | `teacher_profile_id, available_hours` | `available_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` |
 | Assignment | `hour_requirement_id, process_teacher_id, assigned_hours` | `assigned_hours, assignment_type, source, status, confirmed_by_user_id, override_reason, overridden_by_user_id, notes` |
 | Meeting session | *(none — `assignment_process_id` from URL)* | `status, lan_access_enabled, direct_teacher_selection_enabled, selection_mode, notes` |
@@ -655,7 +656,7 @@ Special operations:
 | `Assignment process /assignment-processes list, create, get, patch, transition, reopen, summary, dashboard, lan/me, events / academic_year_id*, school_id*, department_id* / patch/transition/reopen (no delete)` | ✓ + `copy-from` | extra `POST /copy-from/{src}` not in plan §2 — see §3.1 |
 | `Subject /…/subjects list, create, get, patch, delete / name* / hard delete (confirm)` | ✓ | matches |
 | `Teaching group (classroom) /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
-| `Hour requirement /…/requirements list, create, get, patch, delete / teaching_group_id*, subject_id*, required_hours* / hard delete (confirm)` | ✓ | matches |
+| `Requirement slot /…/requirements list, get, generation-preview/generate, reconciliation-preview/reconcile / teaching_activity_id + position_index + required_teacher_hours / generated, never manually deleted` | ✓ | three-stage contract |
 | `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, available_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness |
 | `Assignment /…/assignments list, create, direct-choice, get, patch, delete / hour_requirement_id*, process_teacher_id*, assigned_hours*, meeting_session_id* / hard delete (confirm)` | ✓ | matches; **note**: `meeting_session_id` is NOT a Create field in the backend — it is set when a teacher uses `direct-choice` and is left null on `POST /`. Plan §2 row should be read as "the direct-choice path carries `meeting_session_id`", not the create path |
 | `Meeting session /…/meeting-sessions list, create, get, patch, close / — / close (no delete)` | ✓ | matches |
@@ -685,19 +686,19 @@ This inventory is the direct input for Phase 1 of the plan
 ("runtime for global entities"). Concretely, Phase 1 will:
 
 1. Add `src/runtime/schemas.ts` enum + entity families for:
-   `AcademicYearStatus`, `RequirementType`, `AssignmentType`, `AssignmentSource`,
+   `AcademicYearStatus`, `AssignmentType`, `AssignmentSource`,
    `AssignmentStatus`, `ProcessTeacherStatus`, `MeetingSessionStatus`,
    `SelectionTurnStatus`, plus the eight entity families that are
    "missing" per plan §2.
 2. Add `src/runtime/api/{schools,academicYears,departments,teacherProfiles}.ts`
    (one file per entity), all using the existing `request()` client and
    parsing responses with the matching `…PublicSchema`.
-3. Add `src/runtime/api/{subjects,teachingGroups,hourRequirements,processTeachers,assignments,auditEvents}.ts`
-   (Phase 3), with the assignments wrapper gaining `update` and `remove`
-   (Phase 3 work — `assignments.ts` today only has `directChoice`).
-4. Extend `src/runtime/queryKeys.ts` and `src/runtime/react/hooks.tsx`
-   with list + create + update + delete + special-op hooks per entity
-   following `useCreateRepartoProcess`.
+3. Add `src/runtime/api/{subjects,teachingGroups,hourRequirements,processTeachers,assignments,auditEvents}.ts`.
+   The three-stage adaptation later narrowed `hourRequirements` to read plus
+   generation/reconciliation; its former manual CRUD surface is intentionally gone.
+4. Extend `src/runtime/queryKeys.ts` and `src/runtime/react/hooks.tsx` with the
+   operations the live service owns. Generated requirements expose a list query
+   and generation/reconciliation mutations, never row CRUD hooks.
 
 This document is the contract those files must mirror. Any divergence
 between this file and the running backend is a bug; a divergence

@@ -9,7 +9,7 @@ export const es: RepartoDictionary = {
     assignmentProcess: { singular: "Proceso de reparto", plural: "Procesos de reparto", status: { draft: "Borrador", ready_for_meeting: "Listo para la sesión", meeting_open: "Sesión abierta", assigning: "Asignación en curso", department_proposal: "Propuesta del departamento", sent_to_school_leadership: "Enviado a la dirección", returned_by_school_leadership: "Devuelto por la dirección", internal_revision: "Revisión interna", final: "Final", reopened: "Reabierto", archived: "Archivado" } },
     subject: { singular: "Materia", plural: "Materias", status: {} },
     classroom: { singular: "Grupo", plural: "Grupos", status: {} },
-    hourRequirement: { singular: "Horas necesarias", plural: "Horas necesarias", status: {} },
+    hourRequirement: { singular: "Puesto horario", plural: "Puestos horarios", status: { available: "Disponible", assigned: "Asignado", stale: "Obsoleto", reconciliation_required: "Conciliación requerida" } },
     processParticipant: { singular: "Participante en el proceso", plural: "Participantes en el proceso", status: { active: "Activo", inactive: "Inactivo" } },
     assignment: { singular: "Reparto", plural: "Repartos", status: { draft: "Borrador", confirmed: "Confirmado", overridden: "Forzado", cancelled: "Cancelado" } },
     meetingSession: { singular: "Sesión de reparto", plural: "Sesiones de reparto", status: { prepared: "Preparado", open: "Abierto", selecting: "Seleccionando", paused: "En pausa", closed: "Cerrado", reopened: "Reabierta" } },
@@ -41,7 +41,6 @@ export const es: RepartoDictionary = {
     academicYear: "Curso académico",
     department: "Departamento",
     departmentHead: "Jefe de departamento",
-    requiredHours: "Horas necesarias",
     availableHours: "Horas disponibles",
     assignedHours: "Horas asignadas",
     defaultTeacherHoursReference: "Horas de referencia",
@@ -52,12 +51,10 @@ export const es: RepartoDictionary = {
     subject: "Materia",
     classroom: "Grupo",
     teacher: "Docente",
-    hourRequirement: "Horas necesarias",
+    hourRequirement: "Puesto horario",
     processParticipant: "Participante",
-    requirementType: "Tipo",
     assignmentType: "Tipo",
     source: "Origen",
-    flags: "Indicadores",
     participatesInSelection: "Participa en la selección",
     selectionPosition: "Posición",
     selectionPoints: "Puntos de selección",
@@ -72,7 +69,6 @@ export const es: RepartoDictionary = {
     requiredTeacherCount: "Puestos docentes"
   },
   option: {
-    requirementType: { ordinary: "Ordinaria", optional: "Optativa", reinforcement: "Refuerzo", split_group: "Desdoble", bilingual: "Bilingüe", other: "Otra" },
     assignmentType: { main: "Principal", shared: "Compartida", reinforcement: "Refuerzo", split_group: "Desdoble", other: "Otra" },
     allocationCategory: { main: "Principal", secondary: "Secundaria" },
     activityType: { ordinary: "Ordinaria", tutoring: "Tutoría", co_teaching: "Codocencia", support: "Apoyo", department_level: "Nivel de departamento", other: "Otra" },
@@ -100,8 +96,45 @@ export const es: RepartoDictionary = {
   audit: {
     pageTitle: "Auditoría del reparto", description: "Consulta los eventos de auditoría del proceso activo.",
     action: { created: "Creado", updated: "Modificado", deleted: "Eliminado", transitioned: "Estado modificado", reopened: "Reabierto", copied_from_previous_year: "Copiado del curso anterior", direct_choice: "Elección directa registrada", started: "Iniciado", completed: "Completado", skipped: "Omitido", overridden: "Forzado" },
-    entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Horas necesarias", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
+    entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Puesto horario", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
     role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
+  },
+  requirements: {
+    pageTitle: "Puestos horarios generados",
+    description: "Consulta los puestos docentes indivisibles generados desde el plan docente. La generación y la conciliación siguen siendo responsabilidad del servicio.",
+    statusTitle: "Estado de generación y conciliación",
+    planUnavailable: "Plan no disponible",
+    planStatusSummary: "Estado del plan: {status}. Generación actual: {generation}.",
+    planStatus: {
+      draft: "Borrador",
+      unbalanced: "Desequilibrado",
+      balanced: "Equilibrado",
+      locked: "Bloqueado",
+      requirements_generated: "Necesidades generadas",
+      stale: "Obsoleto",
+      reconciliation_required: "Conciliación requerida"
+    },
+    generationState: {
+      unavailable: "El estado del plan docente no está disponible; los puestos generados siguen siendo de solo lectura.",
+      notGenerated: "El plan todavía no ha alcanzado la generación de necesidades.",
+      ready: "El plan está bloqueado y listo para generar las necesidades.",
+      current: "Los puestos generados están actualizados para la generación del servicio indicada abajo.",
+      stale: "El plan cambió después de la generación. Los puestos existentes siguen visibles mientras el servicio prepara la conciliación.",
+      reconciliationRequired: "Hay puestos asignados que requieren conciliación explícita antes de que la generación vuelva a estar actualizada."
+    },
+    metric: { activities: "Actividades", slots: "Puestos generados", available: "Disponibles", assigned: "Asignados", attention: "Requieren atención" },
+    slotsTitle: "Puestos por actividad y posición",
+    slotsDescription: "Cada posición es completa e indivisible; las horas nunca se editan desde esta vista.",
+    empty: "Todavía no se han generado puestos horarios para este plan.",
+    unknownActivity: "Actividad docente desconocida",
+    unknownSubject: "Materia desconocida",
+    activityLabel: "{subject} · {type}",
+    positionCount: "{count} posición(es) docente(s)",
+    position: "Posición {position}",
+    teacherHours: "{hours} horas docentes",
+    generationLineage: "Creado en la generación {created}; validado en la generación {validated}.",
+    retiredLineage: "Retirado en la generación {generation}.",
+    superseded: "Se registró un puesto de sustitución."
   },
   planning: {
     pageTitle: "Planificación del reparto",
@@ -379,7 +412,7 @@ export const es: RepartoDictionary = {
     bootstrap: {
       title: "Configurar el reparto",
       subtitle: "Algunos pasos antes de iniciar la sesión.",
-      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso", subjects: "Añadir materias", classrooms: "Añadir grupos", teacherRoster: "Añadir docentes", requirements: "Añadir horas necesarias", participants: "Añadir participantes" },
+      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso", subjects: "Añadir materias", classrooms: "Añadir grupos", teacherRoster: "Añadir docentes", requirements: "Generar puestos horarios", participants: "Añadir participantes" },
       done: "Hecho",
       open: "Abrir"
     }
@@ -449,7 +482,7 @@ export const es: RepartoDictionary = {
     noData: "Aún no hay datos disponibles.",
     noPermission: "No tiene permiso."
   },
-  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre...", searchRequirements: "Buscar por grupo o materia...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
   classroomBulk: {
     action: "Crear grupos",
     title: "Crear varios grupos",
@@ -458,17 +491,6 @@ export const es: RepartoDictionary = {
     groupEnd: "Último grupo",
     created: "Grupos creados: {count}",
     createError: "No se pudieron crear los grupos"
-  },
-  requirementBulk: {
-    action: "Añadir horas en masa",
-    title: "Añadir horas necesarias en masa",
-    description: "Crear la misma necesidad horaria para todos los grupos de una etapa e intervalo de cursos.",
-    gradeStart: "Curso inicial",
-    gradeEnd: "Curso final",
-    noMatches: "Ningún grupo coincide con la etapa e intervalo de cursos seleccionados.",
-    created: "Horas necesarias creadas: {count}",
-    createError: "Algunas horas necesarias no se pudieron crear",
-    createErrorCount: "{count} fallo(s)"
   },
   groupSubjectBulk: {
     title: "Editor masivo de materias por grupo",
@@ -540,15 +562,6 @@ export const es: RepartoDictionary = {
     deleteBody: "Materias seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
     deleted: "Materias eliminadas: {count}",
     deleteError: "No se pudieron eliminar las materias seleccionadas"
-  },
-  requirementSelection: {
-    selectAllVisible: "Seleccionar todas las necesidades visibles",
-    selectRow: "Seleccionar {name}",
-    deleteSelected: "Eliminar seleccionadas ({count})",
-    deleteTitle: "Eliminar las necesidades seleccionadas",
-    deleteBody: "Necesidades seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
-    deleted: "Necesidades eliminadas: {count}",
-    deleteError: "No se pudieron eliminar las necesidades seleccionadas"
   },
   participantSelection: {
     selectAllVisible: "Seleccionar todos los participantes visibles",

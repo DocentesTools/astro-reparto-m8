@@ -47,7 +47,7 @@ registry skins (Phase 1–3) must mirror.
 | Assignment process | Processus d'affectation | Proceso de reparto | `assignmentProcesses` | `/assignment-processes` | `entity.assignmentProcess` |
 | Subject | Matière | Materia / Asignatura | `subjects` | `/…/subjects` | `entity.subject` |
 | Classroom | Classe | Grupo / Aula | `teachingGroups` | `/…/groups` | `entity.classroom` |
-| Hour requirement | Besoin horaire | Horas necesarias | `hourRequirements` | `/…/requirements` | `entity.hourRequirement` |
+| Requirement slot | Créneau de besoin | Puesto horario | `hourRequirements` | `/…/requirements` | `entity.hourRequirement` |
 | Process participant | Participant au processus | Participante en el proceso | `processTeachers` | `/…/teachers` | `entity.processParticipant` |
 | Assignment | Affectation | Reparto / Asignación | `assignments` | `/…/assignments` | `entity.assignment` |
 | Meeting session | Séance | Sesión de reparto | `meetingSessions` | `/…/meeting-sessions` | `entity.meetingSession` |
@@ -74,7 +74,7 @@ registry skins (Phase 1–3) must mirror.
 | Process | Processes | Processus | Processus | Proceso | Procesos |
 | Subject | Subjects | Matière | Matières | Materia | Materias |
 | Classroom | Classrooms | Classe | Classes | Grupo | Grupos |
-| Hour requirement | Hour requirements | Besoin horaire | Besoins horaires | Horas necesarias | Horas necesarias |
+| Requirement slot | Requirement slots | Créneau de besoin | Créneaux de besoin | Puesto horario | Puestos horarios |
 | Process participant | Process participants | Participant | Participants | Participante | Participantes |
 | Assignment | Assignments | Affectation | Affectations | Reparto | Repartos |
 | Meeting session | Meeting sessions | Séance | Séances | Sesión | Sesiones |
@@ -180,16 +180,19 @@ ids, etc.) stay internal — no UI label.
 | `label` | Label | Libellé | Etiqueta | yes | max 100; e.g. "1 ESO A" |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
-### 3.8 Hour requirement
+### 3.8 Generated requirement slot
 
-| Field | en | fr | es | Required? | Notes |
+> Replaced **2026-08-02** by the three-stage adaptation. This entity is generated
+> and read-only; no create/edit/delete form exists.
+
+| Field | en | fr | es | Surface | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `teaching_group_id` | Classroom | Classe | Grupo | yes (form) | FK select |
-| `subject_id` | Subject | Matière | Materia | yes (form) | FK select |
-| `required_hours` | Required hours | Heures requises | Horas necesarias | yes | float > 0 |
-| `requirement_type` | Type | Type | Tipo | no | enum `ordinary`/`reinforcement`/`split_group`/`optional`/`bilingual`/`other` |
-| `flags` | Flags | Indicateurs | Indicadores | no | comma-separated |
-| `notes` | Notes | Notes | Notas | no | textarea |
+| `teaching_activity_id` | Teaching activity | Activité d'enseignement | Actividad docente | activity group | resolved to subject + activity type; UUID is never visible copy |
+| `position_index` | Position | Position | Posición | slot row | zero-based contract, displayed one-based |
+| `required_teacher_hours` | Teacher hours | Heures enseignantes | Horas docentes | slot row | canonical two-decimal string; indivisible and read-only |
+| `status` | Status | État | Estado | badge | `available`/`assigned`/`stale`/`reconciliation_required` |
+| `created_generation` | Created generation | Génération de création | Generación de creación | lineage | read-only |
+| `last_validated_generation` | Validated generation | Génération de validation | Generación de validación | lineage | read-only |
 
 ### 3.9 Process participant (process teacher)
 
@@ -209,7 +212,7 @@ ids, etc.) stay internal — no UI label.
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `hour_requirement_id` | Hour requirement | Besoin horaire | Horas necesarias | yes (form) | FK select |
+| `hour_requirement_id` | Requirement slot | Créneau de besoin | Puesto horario | yes (form) | generated-slot FK select |
 | `process_teacher_id` | Process participant | Participant | Participante | yes (form) | FK select |
 | `assigned_hours` | Assigned hours | Heures affectées | Horas asignadas | yes | float > 0 |
 | `assignment_type` | Type | Type | Tipo | no | enum `main`/`shared`/`reinforcement`/`split_group`/`other` |
@@ -347,6 +350,24 @@ The editor freezes these surface slots:
 | Apply action | `data-reparto-action="reconcile-requirements"` | reason + exact expected conflict count |
 | Apply result | `data-reparto-slot="requirement-reconciliation-result"` | released/resolved/generation counts |
 | Live-slot count | `data-reconciled-live-slot-count` | authoritative result `count` |
+
+### 3.17 Generated requirements view
+
+> Added **2026-08-02** by the three-stage adaptation. The view is read-focused:
+> it groups generated slots by teaching activity and position and exposes only
+> service-owned lifecycle state. It has no row-selection or mutation controls.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="requirements"` | package-owned generated-slot view |
+| Generation/reconciliation status | `data-reparto-slot="requirements-generation-status"` | service `TeachingPlan.status` and `current_generation_number` |
+| Plan status | `data-teaching-plan-status` | raw service state, including `stale` / `reconciliation_required` |
+| Summary metrics | `data-requirement-metric="activities\|slots\|available\|assigned\|attention"` | derived counts over the validated generated-slot response |
+| Activity groups | `data-reparto-list="requirements-by-activity"` | one card per `teaching_activity_id`, labeled by subject + activity type |
+| Position row | `data-requirement-position` | contract index remains zero-based; visible label is one-based |
+| Slot lifecycle | `data-requirement-status` / `data-reparto-slot-status` | authoritative `HourRequirement.status` |
+| Retirement lineage | `data-retired-generation` | service generation that retired the historical slot; replacement UUID is never visible copy |
+| Empty state | `data-reparto-state="no-generated-requirements"` | no generated slot; no create affordance |
 
 ---
 
@@ -552,7 +573,7 @@ exists. Each step links to its create flow. Dictionary root:
 | `flow.bootstrap.step.subjects` | Add subjects | Ajouter des matières | Añadir materias |
 | `flow.bootstrap.step.classrooms` | Add classrooms | Ajouter des classes | Añadir grupos |
 | `flow.bootstrap.step.teacherRoster` | Add teachers | Ajouter des enseignants | Añadir docentes |
-| `flow.bootstrap.step.requirements` | Add hour requirements | Ajouter des besoins horaires | Añadir horas necesarias |
+| `flow.bootstrap.step.requirements` | Generate requirement slots | Générer les créneaux de besoin | Generar puestos horarios |
 | `flow.bootstrap.step.participants` | Add process participants | Ajouter des participants | Añadir participantes |
 | `flow.bootstrap.done` | Done | Terminé | Hecho |
 | `flow.bootstrap.open` | Open | Ouvrir | Abrir |
@@ -663,11 +684,11 @@ Amendment rules:
 | Retired | Where it was | Replaced by | Landed |
 | --- | --- | --- | --- |
 | `Subject.stage` (field + label + `data-subject-stage` row slot + list filter) | §3.6 | `allocation_category` (`data-subject-allocation-category`) and `activity_type` (`data-subject-activity-type`); the subject list filters on allocation category | 2026-07-30 |
+| `HourRequirement.teaching_group_id` / `subject_id` / `required_hours` / `requirement_type` / `flags` / `notes`, manual CRUD dialogs, selection and `data-requirement-type` / `data-requirement-hours` | §3.8 | generated `teaching_activity_id` + `position_index` + `required_teacher_hours` + generation lineage; read-only activity/position groups in §3.17 | 2026-08-02 |
 
 Still to retire, with the bullet that owns each (listed so a reader does not
 mistake the silence for approval): `total-required-hours`,
 `teacher-available-hours`, `pending-required-hours` and `requirement-count`
 (single-balance slots — the planning balance header and dashboard bullets),
-`requirement_type` / `flags` / `assigned_hours` / `assignment_type` /
-`override_reason` (the requirements-view and assignment-board bullets),
+`assigned_hours` / `assignment_type` / `override_reason` (the assignment-board bullet),
 `available_hours` (the teacher LAN view and participants bullets).

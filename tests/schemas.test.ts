@@ -35,10 +35,8 @@ import {
   GroupSubjectPublicSchema,
   GroupSubjectsPublicSchema,
   GroupSubjectUpdateSchema,
-  HourRequirementCreateSchema,
   HourRequirementPublicSchema,
   HourRequirementsPublicSchema,
-  HourRequirementUpdateSchema,
   MeetingSessionCreateSchema,
   MainMaterializationResultSchema,
   PlanBalanceSchema,
@@ -381,6 +379,7 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
   const groupId = "33333333-3333-4333-8333-333333333333";
   const stageId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   const requirementId = "44444444-4444-4444-8444-444444444444";
+  const teachingActivityId = "45454545-4545-4545-8545-454545454545";
   const processTeacherId = "55555555-5555-4555-8555-555555555555";
   const teacherProfileId = "66666666-6666-4666-8666-666666666666";
   const assignmentId = "77777777-7777-4777-8777-777777777777";
@@ -420,12 +419,14 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
   const requirementBody = {
     id: requirementId,
     assignment_process_id: processId,
-    teaching_group_id: groupId,
-    subject_id: subjectId,
-    required_hours: 4,
-    requirement_type: "ordinary",
-    flags: null,
-    notes: null,
+    teaching_activity_id: teachingActivityId,
+    position_index: 0,
+    required_teacher_hours: "4.00",
+    status: "available",
+    created_generation: 1,
+    last_validated_generation: 1,
+    retired_generation: null,
+    superseded_by_requirement_id: null,
     created_at: now,
     updated_at: now
   };
@@ -542,38 +543,26 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBe(0);
   });
 
-  it("parses hour-requirement payloads and validates create/update", () => {
-    expect(HourRequirementPublicSchema.parse(requirementBody).required_hours).toBe(4);
+  it("parses generated, read-only requirement slots", () => {
+    expect(
+      HourRequirementPublicSchema.parse(requirementBody).required_teacher_hours
+    ).toBe("4.00");
     expect(() =>
       HourRequirementPublicSchema.parse({ ...requirementBody, extra: 1 })
     ).toThrow();
-    expect(
-      HourRequirementCreateSchema.parse({
-        assignment_process_id: processId,
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 3
-      }).requirement_type
-    ).toBeUndefined();
     expect(() =>
-      HourRequirementCreateSchema.parse({
-        assignment_process_id: processId,
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 0
-      })
+      HourRequirementPublicSchema.parse({ ...requirementBody, position_index: -1 })
     ).toThrow();
-    expect(
-      HourRequirementUpdateSchema.parse({ required_hours: 6, flags: "bilingual" })
-        .flags
-    ).toBe("bilingual");
     expect(() =>
-      HourRequirementUpdateSchema.parse({ required_hours: -1 })
+      HourRequirementPublicSchema.parse({ ...requirementBody, status: "partial" })
     ).toThrow();
     expect(
       HourRequirementsPublicSchema.parse({ data: [requirementBody], count: 1 })
         .count
     ).toBe(1);
+    expect(() =>
+      HourRequirementsPublicSchema.parse({ data: [requirementBody], count: 2 })
+    ).toThrow();
   });
 
   it("parses process-teacher payloads and validates create/update", () => {

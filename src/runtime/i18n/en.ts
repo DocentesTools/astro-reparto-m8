@@ -10,7 +10,7 @@ export const en = {
     assignmentProcess: { singular: "Assignment process", plural: "Assignment processes", status: { draft: "Draft", ready_for_meeting: "Ready for meeting", meeting_open: "Meeting open", assigning: "Assigning", department_proposal: "Department proposal", sent_to_school_leadership: "Sent to school leadership", returned_by_school_leadership: "Returned by school leadership", internal_revision: "Internal revision", final: "Final", reopened: "Reopened", archived: "Archived" } },
     subject: { singular: "Subject", plural: "Subjects", status: {} },
     classroom: { singular: "Classroom", plural: "Classrooms", status: {} },
-    hourRequirement: { singular: "Hour requirement", plural: "Hour requirements", status: {} },
+    hourRequirement: { singular: "Requirement slot", plural: "Requirement slots", status: { available: "Available", assigned: "Assigned", stale: "Stale", reconciliation_required: "Reconciliation required" } },
     processParticipant: { singular: "Process participant", plural: "Process participants", status: { active: "Active", inactive: "Inactive" } },
     assignment: { singular: "Assignment", plural: "Assignments", status: { draft: "Draft", confirmed: "Confirmed", overridden: "Overridden", cancelled: "Cancelled" } },
     meetingSession: { singular: "Meeting session", plural: "Meeting sessions", status: { prepared: "Prepared", open: "Open", selecting: "Selecting", paused: "Paused", closed: "Closed", reopened: "Reopened" } },
@@ -42,7 +42,6 @@ export const en = {
     academicYear: "Academic year",
     department: "Department",
     departmentHead: "Department head",
-    requiredHours: "Required hours",
     availableHours: "Available hours",
     assignedHours: "Assigned hours",
     defaultTeacherHoursReference: "Default hours reference",
@@ -53,12 +52,10 @@ export const en = {
     subject: "Subject",
     classroom: "Classroom",
     teacher: "Teacher",
-    hourRequirement: "Hour requirement",
+    hourRequirement: "Requirement slot",
     processParticipant: "Process participant",
-    requirementType: "Type",
     assignmentType: "Type",
     source: "Source",
-    flags: "Flags",
     participatesInSelection: "Participates in selection",
     selectionPosition: "Selection position",
     selectionPoints: "Selection points",
@@ -73,7 +70,6 @@ export const en = {
     requiredTeacherCount: "Teacher positions"
   },
   option: {
-    requirementType: { ordinary: "Ordinary", optional: "Optional", reinforcement: "Reinforcement", split_group: "Split group", bilingual: "Bilingual", other: "Other" },
     assignmentType: { main: "Main", shared: "Shared", reinforcement: "Reinforcement", split_group: "Split group", other: "Other" },
     allocationCategory: { main: "Main", secondary: "Secondary" },
     activityType: { ordinary: "Ordinary", tutoring: "Tutoring", co_teaching: "Co-teaching", support: "Support", department_level: "Department level", other: "Other" },
@@ -101,8 +97,45 @@ export const en = {
   audit: {
     pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
     action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden" },
-    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Hour requirement", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
+    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Requirement slot", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
+  },
+  requirements: {
+    pageTitle: "Generated requirement slots",
+    description: "Review the indivisible teacher positions generated from the teaching plan. Generation and reconciliation remain service-owned.",
+    statusTitle: "Generation and reconciliation status",
+    planUnavailable: "Plan unavailable",
+    planStatusSummary: "Plan status: {status}. Current generation: {generation}.",
+    planStatus: {
+      draft: "Draft",
+      unbalanced: "Unbalanced",
+      balanced: "Balanced",
+      locked: "Locked",
+      requirements_generated: "Requirements generated",
+      stale: "Stale",
+      reconciliation_required: "Reconciliation required"
+    },
+    generationState: {
+      unavailable: "The teaching-plan state is unavailable; generated slots remain read-only.",
+      notGenerated: "The plan has not reached requirement generation yet.",
+      ready: "The plan is locked and ready for requirement generation.",
+      current: "Generated slots are current for the service generation shown below.",
+      stale: "The plan changed after generation. Existing slots stay visible while the service prepares reconciliation.",
+      reconciliationRequired: "Assigned slots need explicit reconciliation before generation can become current again."
+    },
+    metric: { activities: "Activities", slots: "Generated slots", available: "Available", assigned: "Assigned", attention: "Needs attention" },
+    slotsTitle: "Slots by activity and position",
+    slotsDescription: "Each position is complete and indivisible; hours are never edited from this view.",
+    empty: "No requirement slots have been generated for this plan yet.",
+    unknownActivity: "Unknown teaching activity",
+    unknownSubject: "Unknown subject",
+    activityLabel: "{subject} · {type}",
+    positionCount: "{count} teacher position(s)",
+    position: "Position {position}",
+    teacherHours: "{hours} teacher hours",
+    generationLineage: "Created in generation {created}; validated in generation {validated}.",
+    retiredLineage: "Retired in generation {generation}.",
+    superseded: "A replacement slot was recorded."
   },
   planning: {
     pageTitle: "Reparto planning",
@@ -380,7 +413,7 @@ export const en = {
     bootstrap: {
       title: "Set up your reparto",
       subtitle: "A few steps before you can run the meeting.",
-      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create a process", subjects: "Add subjects", classrooms: "Add classrooms", teacherRoster: "Add teachers", requirements: "Add hour requirements", participants: "Add process participants" },
+      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create a process", subjects: "Add subjects", classrooms: "Add classrooms", teacherRoster: "Add teachers", requirements: "Generate requirement slots", participants: "Add process participants" },
       done: "Done",
       open: "Open"
     }
@@ -450,7 +483,7 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
   classroomBulk: {
     action: "Create groups",
     title: "Bulk create classrooms",
@@ -459,17 +492,6 @@ export const en = {
     groupEnd: "Group end",
     created: "{count} classrooms created",
     createError: "Classrooms could not be created"
-  },
-  requirementBulk: {
-    action: "Bulk add hours",
-    title: "Bulk add hour requirements",
-    description: "Create the same hour requirement for every classroom in a stage and grade range.",
-    gradeStart: "Grade start",
-    gradeEnd: "Grade end",
-    noMatches: "No classrooms match the selected stage and grade range.",
-    created: "{count} hour requirements created",
-    createError: "Some hour requirements could not be created",
-    createErrorCount: "{count} failed"
   },
   groupSubjectBulk: {
     title: "Group-subject bulk editor",
@@ -541,15 +563,6 @@ export const en = {
     deleteBody: "Selected subjects to delete: {count}. This action cannot be undone.",
     deleted: "Subjects deleted: {count}",
     deleteError: "The selected subjects could not be deleted"
-  },
-  requirementSelection: {
-    selectAllVisible: "Select all visible requirements",
-    selectRow: "Select {name}",
-    deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected requirements",
-    deleteBody: "Selected requirements to delete: {count}. This action cannot be undone.",
-    deleted: "Requirements deleted: {count}",
-    deleteError: "The selected requirements could not be deleted"
   },
   participantSelection: {
     selectAllVisible: "Select all visible participants",

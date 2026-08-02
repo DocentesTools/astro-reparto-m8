@@ -274,7 +274,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       { en: "Assignment process", fr: "Processus d'affectation", es: "Proceso de reparto" },
       { en: "Subject", fr: "Matière", es: "Materia" },
       { en: "Classroom", fr: "Classe", es: "Grupo" },
-      { en: "Hour requirement", fr: "Besoin horaire", es: "Horas necesarias" },
+      { en: "Requirement slot", fr: "Créneau de besoin", es: "Puesto horario" },
       { en: "Process participant", fr: "Participant au processus", es: "Participantes en el proceso" },
       { en: "Assignment", fr: "Affectation", es: "Reparto" },
       { en: "Meeting session", fr: "Séance", es: "Sesión de reparto" },
@@ -365,7 +365,7 @@ describe("contract inventory — still the source of truth (Phase 0.5, step 1)",
     expect(inventory).toMatch(/###\s+2\.1\s+Assignment\s+process/);
     expect(inventory).toMatch(/###\s+2\.2\s+Subject/);
     expect(inventory).toMatch(/###\s+2\.3\s+Teaching\s+group/);
-    expect(inventory).toMatch(/###\s+2\.4\s+Hour\s+requirement/);
+    expect(inventory).toMatch(/###\s+2\.4\s+Requirement\s+slot/);
     expect(inventory).toMatch(/###\s+2\.5\s+Process\s+teacher/);
     expect(inventory).toMatch(/###\s+2\.6\s+Assignment/);
     expect(inventory).toMatch(/###\s+2\.7\s+Meeting\s+session/);

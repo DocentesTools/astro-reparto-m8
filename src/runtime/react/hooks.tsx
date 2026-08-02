@@ -31,8 +31,6 @@ import type {
   DepartmentHourAllocationRevisionCreateInput,
   GroupSubjectBulkApplyRequestInput,
   GroupSubjectBulkRequestInput,
-  HourRequirementCreateInput,
-  HourRequirementUpdate,
   ProcessTeacherCreateInput,
   ProcessTeacherUpdate,
   RequirementReconcileRequestInput,
@@ -771,62 +769,6 @@ export function useGenerateRepartoRequirements() {
       });
       void queryClient.invalidateQueries({
         queryKey: repartoKeys.summary(processId)
-      });
-    }
-  });
-}
-
-export function useCreateRepartoHourRequirement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      processId,
-      body
-    }: {
-      processId: string;
-      body: HourRequirementCreateInput;
-    }) => hourRequirements.create(processId, body),
-    onSuccess: (_data, { processId }) => {
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.hourRequirements(processId)
-      });
-    }
-  });
-}
-
-export function useUpdateRepartoHourRequirement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      processId,
-      requirementId,
-      body
-    }: {
-      processId: string;
-      requirementId: string;
-      body: HourRequirementUpdate;
-    }) => hourRequirements.update(processId, requirementId, body),
-    onSuccess: (_data, { processId }) => {
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.hourRequirements(processId)
-      });
-    }
-  });
-}
-
-export function useDeleteRepartoHourRequirement() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      processId,
-      requirementId
-    }: {
-      processId: string;
-      requirementId: string;
-    }) => hourRequirements.remove(processId, requirementId),
-    onSuccess: (_data, { processId }) => {
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.hourRequirements(processId)
       });
     }
   });

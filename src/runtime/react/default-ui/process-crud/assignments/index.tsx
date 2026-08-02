@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { formatRepartoMessage } from "../../../../i18n/index.js";
 import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import {
   useRepartoAssignments,
@@ -7,7 +8,7 @@ import {
   useRepartoProcessTeachers,
   useRepartoSubjects,
   useRepartoTeacherProfiles,
-  useRepartoTeachingGroups
+  useRepartoTeachingActivities
 } from "../../../hooks.js";
 import type {
   AssignmentPublic,
@@ -15,7 +16,7 @@ import type {
   ProcessTeacherPublic,
   SubjectPublic,
   TeacherProfilePublic,
-  TeachingGroupPublic
+  TeachingActivityPublic
 } from "../../../../schemas.js";
 
 import { AssignmentsList } from "./list.js";
@@ -42,25 +43,31 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const query = useRepartoAssignments(processId);
   const requirementsQuery = useRepartoHourRequirements(processId);
   const participantsQuery = useRepartoProcessTeachers(processId);
-  const classroomsQuery = useRepartoTeachingGroups(processId);
   const subjectsQuery = useRepartoSubjects(processId);
+  const activitiesQuery = useRepartoTeachingActivities(processId);
   const teacherProfilesQuery = useRepartoTeacherProfiles({ limit: 100 });
 
   const rows = query.data?.data ?? [];
   const requirements = requirementsQuery.data?.data ?? [];
   const participants = participantsQuery.data?.data ?? [];
-  const classrooms = classroomsQuery.data?.data ?? [];
   const subjects = subjectsQuery.data?.data ?? [];
+  const activities = activitiesQuery.data?.data ?? [];
   const teacherProfiles = teacherProfilesQuery.data?.data ?? [];
 
-  const classroomLabel = (id: string) =>
-    classrooms.find((c: TeachingGroupPublic) => c.id === id)?.label ?? dict.entity.classroom.singular.toLowerCase();
   const subjectName = (id: string) =>
     subjects.find((s: SubjectPublic) => s.id === id)?.name ?? dict.entity.subject.singular.toLowerCase();
   const requirementLabel = (id: string) => {
     const req = requirements.find((r: HourRequirementPublic) => r.id === id);
     if (!req) return dict.entity.hourRequirement.singular.toLowerCase();
-    return `${classroomLabel(req.teaching_group_id)} · ${subjectName(req.subject_id)}`;
+    const activity = activities.find(
+      (candidate: TeachingActivityPublic) => candidate.id === req.teaching_activity_id
+    );
+    const activityLabel = activity
+      ? `${subjectName(activity.subject_id)} · ${dict.option.activityType[activity.activity_type]}`
+      : dict.requirements.unknownActivity;
+    return `${activityLabel} · ${formatRepartoMessage(dict.requirements.position, {
+      position: req.position_index + 1
+    })}`;
   };
   const participantName = (id: string) => {
     const participant = participants.find((p: ProcessTeacherPublic) => p.id === id);

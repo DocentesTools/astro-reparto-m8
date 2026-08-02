@@ -1404,6 +1404,28 @@ describe("teaching-plan and activity API wrappers", () => {
 
     fetchMock.mockResolvedValueOnce(
       response({
+        ...planBody,
+        status: "locked",
+        locked_at: now,
+        locked_by_user_id: userId,
+        feasibility_status: "feasible",
+        feasibility_generation: 0,
+        feasibility_checked_at: now,
+        feasibility_input_fingerprint: "fingerprint",
+        feasibility_solver_version: "solver-v1"
+      })
+    );
+    await expect(teachingPlans.lock(processId)).resolves.toMatchObject({
+      status: "locked",
+      locked_by_user_id: userId
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/lock`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
         created: [activityBody],
         created_count: 1,
         skipped_source_ids: [],

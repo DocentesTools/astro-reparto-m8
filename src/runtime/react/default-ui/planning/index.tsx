@@ -97,5 +97,6 @@ export {
   PlanValidationSummary,
   RequirementGenerationPreviewCard,
   RequirementGenerationResultCard,
+  isPlanLockAvailable,
   isRequirementGenerationAvailable
 } from "./plan-generation.js";

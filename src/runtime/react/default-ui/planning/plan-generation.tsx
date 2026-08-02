@@ -15,6 +15,7 @@ import type {
 } from "../../../schemas.js";
 import {
   useGenerateRepartoRequirements,
+  useLockRepartoTeachingPlan,
   usePreviewRepartoRequirementGeneration,
   useRepartoTeachingPlan,
   useRepartoTeachingPlanValidations
@@ -40,6 +41,18 @@ export function isRequirementGenerationAvailable(
   plan: TeachingPlanPublic | null
 ): boolean {
   return plan !== null && GENERATABLE_STATUSES.has(plan.status);
+}
+
+export function isPlanLockAvailable(
+  plan: TeachingPlanPublic | null,
+  report: PlanValidationReport | null
+): boolean {
+  return (
+    plan?.status === "balanced" &&
+    plan.feasibility_status === "feasible" &&
+    report !== null &&
+    report.blocking_count === 0
+  );
 }
 
 export function PlanValidationSummary({
@@ -129,10 +142,22 @@ export function PlanValidationSummary({
 
 export function PlanLockConfirmation({
   dict,
-  plan
+  isConfirming = false,
+  isPending = false,
+  onCancel,
+  onConfirm,
+  onReview,
+  plan,
+  report
 }: {
   dict: RepartoDictionary;
+  isConfirming?: boolean;
+  isPending?: boolean;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+  onReview?: () => void;
   plan: TeachingPlanPublic | null;
+  report?: PlanValidationReport | null;
 }) {
   const lockConfirmed =
     plan !== null &&
@@ -150,7 +175,9 @@ export function PlanLockConfirmation({
       <p>
         {lockConfirmed
           ? dict.planning.generation.lockConfirmed
-          : dict.planning.generation.lockUnavailable}
+          : plan?.status === "balanced"
+            ? dict.planning.generation.lockReady
+            : dict.planning.generation.lockUnavailable}
       </p>
       {plan ? (
         <p
@@ -162,6 +189,54 @@ export function PlanLockConfirmation({
             generation: plan.current_generation_number
           })}
         </p>
+      ) : null}
+      {!lockConfirmed && plan ? (
+        <RowActions>
+          <ActionButton
+            action="review-plan-lock"
+            disabled={!isPlanLockAvailable(plan, report ?? null) || isPending}
+            disabledReason={
+              report === null || report === undefined
+                ? dict.planning.generation.lockDisabledValidations
+                : report.blocking_count > 0
+                  ? dict.planning.generation.lockDisabledBlocking
+                  : plan.feasibility_status !== "feasible"
+                    ? dict.planning.generation.lockDisabledFeasibility
+                    : plan.status !== "balanced"
+                      ? dict.planning.generation.lockDisabledStatus
+                      : null
+            }
+            label={dict.planning.generation.lockAction}
+            onClick={onReview}
+          />
+        </RowActions>
+      ) : null}
+      {isConfirming && isPlanLockAvailable(plan, report ?? null) ? (
+        <section
+          aria-labelledby="plan-lock-confirmation-title"
+          className="space-y-3 rounded-lg border border-primary/40 bg-muted/30 p-4"
+          data-reparto-dialog="plan-lock-confirmation"
+          role="alertdialog"
+        >
+          <h4 className="font-semibold" id="plan-lock-confirmation-title">
+            {dict.planning.generation.lockConfirmationTitle}
+          </h4>
+          <p>{dict.planning.generation.lockConfirmationDescription}</p>
+          <RowActions>
+            <ActionButton
+              action="lock-plan"
+              disabled={isPending}
+              label={dict.planning.generation.lockConfirmAction}
+              onClick={onConfirm}
+            />
+            <ActionButton
+              action="cancel"
+              disabled={isPending}
+              label={dict.action.cancel}
+              onClick={onCancel}
+            />
+          </RowActions>
+        </section>
       ) : null}
     </section>
   );
@@ -305,6 +380,7 @@ export function PlanLockAndRequirementGeneration({
   const dict = useDict(locale);
   const planQuery = useRepartoTeachingPlan(processId);
   const validationsQuery = useRepartoTeachingPlanValidations(processId);
+  const lockMutation = useLockRepartoTeachingPlan();
   const previewMutation = usePreviewRepartoRequirementGeneration();
   const generateMutation = useGenerateRepartoRequirements();
   const [mapped, setError, clearError] = useMappedError();
@@ -312,8 +388,39 @@ export function PlanLockAndRequirementGeneration({
     null
   );
   const [result, setResult] = useState<RequirementGenerationResult | null>(null);
-  const plan = planQuery.data ?? null;
+  const [isLockConfirming, setIsLockConfirming] = useState(false);
+  const [lockedPlan, setLockedPlan] = useState<TeachingPlanPublic | null>(null);
+  const observedPlan = planQuery.data ?? null;
+  const plan =
+    lockedPlan && (!observedPlan || observedPlan.status === "balanced")
+      ? lockedPlan
+      : observedPlan;
   const canPreview = isRequirementGenerationAvailable(plan);
+
+  function handleLock() {
+    if (
+      !processId ||
+      !isPlanLockAvailable(plan, validationsQuery.data ?? null) ||
+      lockMutation.isPending
+    ) {
+      return;
+    }
+    clearError();
+    lockMutation.mutate(processId, {
+      onSuccess: (nextPlan) => {
+        setLockedPlan(nextPlan);
+        setIsLockConfirming(false);
+        repartoToast.success(dict.planning.generation.lockSuccess);
+      },
+      onError: (error) => {
+        setError(error);
+        repartoToast.error(
+          dict.planning.generation.lockError,
+          error instanceof Error ? error.message : undefined
+        );
+      }
+    });
+  }
 
   function handlePreview() {
     if (!processId || !canPreview || previewMutation.isPending) return;
@@ -390,7 +497,16 @@ export function PlanLockAndRequirementGeneration({
         isLoading={validationsQuery.isLoading}
         report={validationsQuery.data ?? null}
       />
-      <PlanLockConfirmation dict={dict} plan={plan} />
+      <PlanLockConfirmation
+        dict={dict}
+        isConfirming={isLockConfirming}
+        isPending={lockMutation.isPending}
+        onCancel={() => setIsLockConfirming(false)}
+        onConfirm={handleLock}
+        onReview={() => setIsLockConfirming(true)}
+        plan={plan}
+        report={validationsQuery.data ?? null}
+      />
       <RepartoFormError mapped={mapped} />
       {result ? (
         <RequirementGenerationResultCard dict={dict} result={result} />

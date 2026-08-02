@@ -378,6 +378,7 @@ valid preview, requires a separate confirmation and discards the preview on
 | Create | `POST ""` → `201` `TeachingPlanPublic` (process writer); no request body; **409** when a plan already exists |
 | Summary | `GET /summary` → `PlanBalance` |
 | Validations | `GET /validations` → `PlanValidationReport` |
+| Lock | `POST /lock` → `TeachingPlanPublic` (admin); no request body; requires a balanced plan and a matching current feasible witness |
 | Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
 | Patch / delete | **not exposed** |
 | Public shape | `id, assignment_process_id, allocation_revision_id, status, current_generation_number, locked_at, locked_by_user_id, requirements_generated_at, stale_reason, feasibility_status, feasibility_generation, feasibility_checked_at, feasibility_input_fingerprint, feasibility_solver_version, feasibility_diagnostics_ref, created_at, updated_at` |
@@ -460,11 +461,11 @@ process/activity ids, status, generation lineage, supersession identity and
 timestamps. Hour fields accept the backend's current JSON numbers and future
 decimal strings, then normalize to canonical two-place strings.
 
-The live contract has **no plan lock/unlock endpoint**. `GET /teaching-plan`
-may report a plan already `locked` (including a restored plan), but the frontend
-must not invent a mutation or treat a local checkbox as a lock. The default UI
-therefore confirms only backend-observed lifecycle state and disables
-generation until the service reports `locked` or `stale`.
+The live contract now exposes `POST /teaching-plan/lock`. The frontend shows
+the service validation report first, requires a focused confirmation, and then
+uses the returned `TeachingPlanPublic` as the authoritative lock result. The
+backend still rejects a stale or non-feasible witness, and generation remains
+disabled until the service reports `locked` or `stale`.
 
 ---
 

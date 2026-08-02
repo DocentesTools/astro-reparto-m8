@@ -119,6 +119,11 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",
       response: "MainMaterializationResult"
     });
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingPlans.lock"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/teaching-plan/lock",
+      response: "TeachingPlanPublic"
+    });
     expect(REPARTO_CONTRACT_OPERATIONS["teachingActivities.update"]).toEqual({
       method: "PATCH",
       path:
@@ -137,7 +142,7 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/requirements/generate",
       response: "RequirementGenerationResult"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(50);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(51);
   });
 });
 

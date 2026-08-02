@@ -51,6 +51,14 @@ export const teachingPlans = {
       schema: PlanValidationReportSchema,
       auth: true
     }),
+  /** Lock a balanced plan after the backend verifies current feasibility. */
+  lock: (processId: string) =>
+    request<TeachingPlanPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/teaching-plan/lock`,
+      schema: TeachingPlanPublicSchema,
+      auth: true
+    }),
   /**
    * Idempotently create one main activity for each active main matrix cell that
    * does not already have a live materialization.

@@ -393,6 +393,27 @@ export function useRepartoTeachingPlanValidations(processId?: string) {
   });
 }
 
+export function useLockRepartoTeachingPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => teachingPlans.lock(processId),
+    onSuccess: (_data, processId) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlan(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlanValidations(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.dashboard(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.summary(processId)
+      });
+    }
+  });
+}
+
 export function useRepartoTeachingActivities(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);
   return useQuery({

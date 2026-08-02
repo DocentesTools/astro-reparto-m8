@@ -93,12 +93,12 @@ stale selection.
 ## Teaching plans and activities
 
 `teachingPlans` wraps the process's single intermediate plan: get/create, the
-dual planning summary, structured validations, and idempotent main-activity
-materialization. Plan lifecycle status and assignment feasibility remain
-separate axes. The summary likewise keeps group teaching hours and teacher
-workload independent; signed differences are canonical decimal strings, and
-the validation report exposes stable codes plus entity references rather than
-requiring consumers to parse display text.
+dual planning summary, structured validations, feasibility-gated locking, and
+idempotent main-activity materialization. Plan lifecycle status and assignment
+feasibility remain separate axes. The summary likewise keeps group teaching
+hours and teacher workload independent; signed differences are canonical
+decimal strings, and the validation report exposes stable codes plus entity
+references rather than requiring consumers to parse display text.
 
 `teachingActivities` exposes the live activity list and CRUD contract. An
 activity carries its complete planning values, source and sync state,
@@ -128,16 +128,15 @@ are sent as canonical two-place strings; activity type remains descriptive and
 never drives domain behavior. Every mutation refreshes the activity list,
 planning balance, requirement, dashboard and summary projections.
 
-`PlanLockAndRequirementGeneration` completes the contract-safe part of the next
-planning step. It reads the service-owned validation report and teaching-plan
-status, confirms only a lock state observed from the backend, previews the
-deterministic create/preserve/retire/conflict diff, and requires a separate
-confirmation before generation. The applied result shows the generation number
-and authoritative live-slot count. If conflicts exist, apply is disabled and
-the user is directed to reconciliation. The backend currently exposes no
-`lock`/`unlock` endpoint, so the component deliberately does not simulate a
-client-side lock; generation becomes available only for a backend-observed
-`locked` or `stale` plan.
+`PlanLockAndRequirementGeneration` completes the next planning step. It reads
+the service-owned validation report and teaching-plan status, enables a focused
+lock confirmation only for a balanced, currently feasible plan without
+blocking findings, and sends the lock command to the backend as the final
+authority. Generation becomes available only after the service returns a
+`locked` or `stale` plan. The component then previews the deterministic
+create/preserve/retire/conflict diff and requires a separate confirmation before
+generation. The applied result shows the generation number and authoritative
+live-slot count; conflicts disable apply and direct the user to reconciliation.
 
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package

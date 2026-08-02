@@ -7,6 +7,7 @@ import {
   PlanValidationSummary,
   RequirementGenerationPreviewCard,
   RequirementGenerationResultCard,
+  isPlanLockAvailable,
   isRequirementGenerationAvailable
 } from "../src/runtime/react/default-ui/planning/plan-generation.js";
 import type {
@@ -125,6 +126,22 @@ describe("plan lock and requirement-generation UI", () => {
     expect(isRequirementGenerationAvailable(null)).toBe(false);
   });
 
+  it("requires a balanced feasible plan and zero blocking validations to lock", () => {
+    const balancedPlan = { ...plan, status: "balanced" } as const;
+    const cleanReport = { ...report, blocking_count: 0, messages: [] };
+
+    expect(isPlanLockAvailable(balancedPlan, cleanReport)).toBe(true);
+    expect(isPlanLockAvailable(plan, cleanReport)).toBe(false);
+    expect(
+      isPlanLockAvailable(
+        { ...balancedPlan, feasibility_status: "infeasible" },
+        cleanReport
+      )
+    ).toBe(false);
+    expect(isPlanLockAvailable(balancedPlan, report)).toBe(false);
+    expect(isPlanLockAvailable(balancedPlan, null)).toBe(false);
+  });
+
   it("renders service validation findings and all query states", () => {
     const findings = renderToStaticMarkup(
       <PlanValidationSummary
@@ -170,7 +187,7 @@ describe("plan lock and requirement-generation UI", () => {
     expect(unknownError).toContain(dict.planning.generation.validationsUnavailable);
   });
 
-  it("confirms only server-observed lock lifecycle states", () => {
+  it("confirms server-observed lock states and renders the explicit lock action", () => {
     const locked = renderToStaticMarkup(
       <PlanLockConfirmation dict={dict} plan={plan} />
     );
@@ -184,7 +201,22 @@ describe("plan lock and requirement-generation UI", () => {
       />
     );
     expect(unlocked).toContain('data-plan-lock-confirmed="false"');
-    expect(unlocked).toContain("does not expose a lock action yet");
+    expect(unlocked).toContain("Review and lock plan");
+    expect(unlocked).toContain("disabled");
+
+    const confirmation = renderToStaticMarkup(
+      <PlanLockConfirmation
+        dict={dict}
+        isConfirming
+        plan={{ ...plan, status: "balanced" }}
+        report={{ ...report, blocking_count: 0, messages: [] }}
+      />
+    );
+    expect(confirmation).toContain(
+      'data-reparto-dialog="plan-lock-confirmation"'
+    );
+    expect(confirmation).toContain('data-reparto-action="lock-plan"');
+    expect(confirmation).toContain("Confirm plan lock");
 
     expect(
       renderToStaticMarkup(<PlanLockConfirmation dict={dict} plan={null} />)

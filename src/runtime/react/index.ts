@@ -38,6 +38,7 @@ export {
   useUpdateRepartoTeachingActivity,
   useDeleteRepartoTeachingActivity,
   useGenerateRepartoRequirements,
+  useLockRepartoTeachingPlan,
   usePreviewRepartoRequirementGeneration,
   useRepartoTeachingPlan,
   useRepartoTeachingPlanSummary,

@@ -233,6 +233,11 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/teaching-plan/validations",
     response: "PlanValidationReport"
   },
+  "teachingPlans.lock": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-plan/lock",
+    response: "TeachingPlanPublic"
+  },
   "teachingPlans.materializeMain": {
     method: "POST",
     path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",

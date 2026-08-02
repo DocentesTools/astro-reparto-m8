@@ -303,16 +303,20 @@ The editor freezes these surface slots:
 
 ### 3.15 Plan lock and requirement generation
 
-> Added **2026-07-30** by the three-stage adaptation. Lock state is
-> service-owned; because the current backend has no lock endpoint, this surface
-> confirms only a lock state returned by `GET /teaching-plan`.
+> Added **2026-07-30** by the three-stage adaptation and completed
+> **2026-08-02** against the feasibility-gated backend lock endpoint. Lock state
+> remains service-owned; the mutation result or a subsequent plan read is the
+> only source of a confirmed lock.
 
 | Concept | DOM slot | Contract |
 | --- | --- | --- |
 | Workflow | `data-reparto-component="plan-lock-requirement-generation"` | package-owned planning panel |
 | Validations | `data-reparto-slot="plan-lock-validations"` | service `PlanValidationReport`; stable code remains visible |
 | Validation count | `data-plan-validation-count="blocking\|warning"` | non-negative authoritative counts |
-| Lock confirmation | `data-reparto-slot="plan-lock-confirmation"` | `data-plan-lock-confirmed` reflects server lifecycle state only |
+| Lock status | `data-reparto-slot="plan-lock-confirmation"` | `data-plan-lock-confirmed` reflects server lifecycle state only |
+| Lock review action | `data-reparto-action="review-plan-lock"` | enabled only for a balanced, feasible plan with zero blocking validations |
+| Lock confirmation | `data-reparto-dialog="plan-lock-confirmation"` | focused confirmation after validations and before the backend mutation |
+| Lock action | `data-reparto-action="lock-plan"` | `POST /teaching-plan/lock`; backend remains the final feasibility authority |
 | Plan status | `data-teaching-plan-status` | raw service status; never a client-invented state |
 | Preview action | `data-reparto-action="preview-requirement-generation"` | enabled only for `locked` or `stale` |
 | Preview confirmation | `data-reparto-dialog="requirement-generation-confirmation"` | separate preview/apply boundary |

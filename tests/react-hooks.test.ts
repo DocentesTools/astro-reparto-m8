@@ -75,6 +75,7 @@ const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     summary: vi.fn(),
     validations: vi.fn(),
+    lock: vi.fn(),
     materializeMain: vi.fn()
   },
   teachingActivities: {
@@ -197,6 +198,7 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.summary.mockClear();
     mocks.teachingPlans.get.mockClear();
     mocks.teachingPlans.validations.mockClear();
+    mocks.teachingPlans.lock.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
     mocks.teachingActivities.create.mockClear();
@@ -632,6 +634,7 @@ describe("reparto React hooks", () => {
   it("wires plan validation and requirement-generation workflow hooks", async () => {
     const {
       useGenerateRepartoRequirements,
+      useLockRepartoTeachingPlan,
       usePreviewRepartoRequirementGeneration,
       useRepartoTeachingPlan,
       useRepartoTeachingPlanValidations
@@ -641,6 +644,19 @@ describe("reparto React hooks", () => {
     useRepartoTeachingPlanValidations("p1");
     expect(mocks.teachingPlans.get).toHaveBeenCalledWith("p1");
     expect(mocks.teachingPlans.validations).toHaveBeenCalledWith("p1");
+
+    mocks.invalidateQueries.mockClear();
+    const lock = useLockRepartoTeachingPlan();
+    lock.mutate("p1");
+    expect(mocks.teachingPlans.lock).toHaveBeenCalledWith("p1");
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan", "validations"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
 
     const preview = usePreviewRepartoRequirementGeneration();
     preview.mutate("p1");

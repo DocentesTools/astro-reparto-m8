@@ -46,6 +46,40 @@ describe("reparto query keys", () => {
       "p1",
       "exports"
     ]);
+    // A comparison hangs off the version list so one prefix invalidates both,
+    // and it carries the ordered pair: `right − left` is not symmetric, so the
+    // two orderings must not collide in the cache.
+    expect(repartoKeys.versionComparison("p1", "v1", "v2")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "comparison",
+      "v1",
+      "v2"
+    ]);
+    expect(repartoKeys.versionComparison("p1", "v1", "v2")).not.toEqual(
+      repartoKeys.versionComparison("p1", "v2", "v1")
+    );
+    expect(repartoKeys.versionComparison("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "comparison",
+      null,
+      null
+    ]);
+    expect(repartoKeys.previousYearComparison("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "previous-year"
+    ]);
   });
 
   it("builds stable keys for global entity lists (Phase 1)", () => {

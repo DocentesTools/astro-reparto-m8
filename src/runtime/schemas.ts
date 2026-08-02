@@ -531,16 +531,64 @@ export const ProcessVersionsPublicSchema = z
   .strict();
 export type ProcessVersionsPublic = z.infer<typeof ProcessVersionsPublicSchema>;
 
+/**
+ * Snapshot sections the service diffs by name (backend `_COMPARED_SECTIONS`).
+ *
+ * Kept as a documented list rather than a closed enum: `changed_sections` stays
+ * `string[]` so a section added to a later snapshot version still renders — as
+ * its own raw code — instead of failing the whole comparison parse. The nine
+ * §10.3 flags below are the contract the UI branches on; a section name is
+ * reported, never interpreted.
+ */
+export const VERSION_COMPARISON_SECTIONS = [
+  "allocation_revisions",
+  "teaching_plan",
+  "subjects",
+  "group_subjects",
+  "teaching_activities",
+  "requirements",
+  "teachers"
+] as const;
+export type VersionComparisonSection =
+  (typeof VERSION_COMPARISON_SECTIONS)[number];
+
+/**
+ * The plan §10.3 diff between two three-stage snapshots.
+ *
+ * Nine change flags and eight signed deltas, all computed as `right − left` by
+ * the service. Two rules the UI must not break:
+ *
+ * * a *flag* is a set/identity comparison and a *delta* is arithmetic on
+ *   totals, so a dimension can be `changed` with a zero delta (one activity
+ *   added and one removed) — the flag is the authority, never the delta;
+ * * `allocation_delta` is `null` when either side has no current allocation.
+ *   That is "not comparable", not "no change": absent is not zero (§3.9).
+ *
+ * Every hour delta is a canonical signed two-place string; nothing here is a
+ * JSON number, which is why the retired float `*_hours_delta` pair is gone.
+ */
 export const VersionComparisonSchema = z
   .object({
     left_version_id: uuidSchema,
     right_version_id: uuidSchema,
     changed_sections: z.array(z.string()),
-    required_hours_delta: z.number(),
-    assigned_hours_delta: z.number(),
+    allocation_changed: z.boolean(),
+    group_hours_changed: z.boolean(),
+    teacher_load_changed: z.boolean(),
+    subject_category_changed: z.boolean(),
+    activity_added_or_removed: z.boolean(),
+    group_link_added_or_removed: z.boolean(),
+    teacher_position_count_changed: z.boolean(),
+    participant_target_changed: z.boolean(),
+    requirement_generation_changed: z.boolean(),
+    allocation_delta: SignedHoursSchema.nullable(),
+    group_load_delta: SignedHoursSchema,
+    teacher_load_delta: SignedHoursSchema,
+    participant_target_total_delta: SignedHoursSchema,
+    generation_number_delta: z.number().int(),
     teacher_count_delta: z.number().int(),
-    requirement_count_delta: z.number().int(),
-    assignment_count_delta: z.number().int()
+    activity_count_delta: z.number().int(),
+    requirement_count_delta: z.number().int()
   })
   .strict();
 export type VersionComparison = z.infer<typeof VersionComparisonSchema>;

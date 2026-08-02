@@ -36,6 +36,7 @@ import type {
   ProcessTeacherCreateInput,
   ProcessTeacherExtraHoursInput,
   ProcessTeacherUpdateInput,
+  ProcessVersionCreate,
   RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
@@ -121,12 +122,99 @@ export function useRepartoTeacherLan(processId?: string) {
   });
 }
 
+export function useRepartoProcess(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.process(processId),
+    queryFn: () => assignmentProcesses.get(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
 export function useRepartoVersions(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);
   return useQuery({
     queryKey: repartoKeys.versions(processId),
     queryFn: () => history.listVersions(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+/**
+ * Capture the current three-stage state as an immutable version (§10.2).
+ *
+ * Invalidates the version list only. A snapshot reads the process; it does not
+ * change it, so nothing else in the cache went stale.
+ */
+export function useCreateRepartoVersion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body = {}
+    }: {
+      processId: string;
+      body?: ProcessVersionCreate;
+    }) => history.createVersion(processId, body),
+    onSuccess: (_version, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.versions(variables.processId)
+      });
+    }
+  });
+}
+
+/**
+ * Diff two stored versions along the §10.3 dimensions.
+ *
+ * Disabled unless both ids are present and distinct: comparing a version with
+ * itself answers "every flag false", which reads as "nothing changed" when the
+ * truth is "nothing was compared". `buildVersionSelectionState` decides that
+ * on the view side; this is the same rule at the query boundary.
+ */
+export function useRepartoVersionComparison(
+  processId?: string,
+  leftVersionId?: string | null,
+  rightVersionId?: string | null
+) {
+  const resolvedProcessId = resolveProcessId(processId);
+  const comparable =
+    Boolean(resolvedProcessId) &&
+    Boolean(leftVersionId) &&
+    Boolean(rightVersionId) &&
+    leftVersionId !== rightVersionId;
+  return useQuery({
+    queryKey: repartoKeys.versionComparison(
+      processId,
+      leftVersionId,
+      rightVersionId
+    ),
+    queryFn: () =>
+      history.compareVersions(
+        requireProcessId(processId),
+        String(leftVersionId),
+        String(rightVersionId)
+      ),
+    enabled: comparable
+  });
+}
+
+/**
+ * Diff the live process against its previous-year source (§10.1, §10.3).
+ *
+ * `enabled` is the caller's, because the service answers 400 for a process
+ * that was not copied from another one: the view asks only once it has read
+ * `created_from_process_id` and knows there is a source to diff against.
+ */
+export function useRepartoPreviousYearComparison(
+  processId?: string,
+  enabled = true
+) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.previousYearComparison(processId),
+    queryFn: () => history.comparePreviousYear(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId) && enabled
   });
 }
 

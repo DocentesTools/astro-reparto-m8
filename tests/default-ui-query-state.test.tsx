@@ -183,6 +183,28 @@ function dataForKey(queryKey: readonly unknown[]) {
       count: 1
     };
   }
+  // The process detail: the versions island reads it to decide whether a
+  // previous-year comparison exists at all.
+  if (queryKey[2] === "detail" && queryKey.length === 4) {
+    return {
+      id: processId,
+      academic_year_id: "99999999-9999-4999-8999-999999999999",
+      school_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      department_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      status: "draft",
+      default_teacher_hours_reference: null,
+      selection_order_enabled: false,
+      selection_order_mode: "none",
+      direct_teacher_selection_enabled: true,
+      lan_access_enabled: true,
+      created_from_process_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      closed_at: null,
+      closed_by_user_id: null,
+      created_by_user_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      created_at: now,
+      updated_at: now
+    };
+  }
   return {
     data: [
       {
@@ -242,7 +264,14 @@ vi.mock("@tanstack/react-query", () => ({
       isError: true,
       isLoading: false
     };
-  }
+  },
+  useMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null
+  }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() })
 }));
 
 describe("default UI query states", () => {
@@ -346,9 +375,14 @@ describe("default UI query states", () => {
     expect(renderToStaticMarkup(<RepartoSharedView processId={processId} />)).toContain(
       'data-reparto-route="shared-screen"'
     );
-    expect(renderToStaticMarkup(<RepartoVersionsView processId={processId} />)).toContain(
-      'data-process-version-status="draft"'
-    );
+    const versions = renderToStaticMarkup(<RepartoVersionsView processId={processId} />);
+    expect(versions).toContain('data-process-version-status="draft"');
+    // Nothing has been asked for yet, so the panel says "not compared" rather
+    // than showing a cached or defaulted diff.
+    expect(versions).toContain('data-reparto-comparison-state="none"');
+    expect(versions).toContain("No comparison has been run yet.");
+    // This process records a source process, so last year can be diffed.
+    expect(versions).not.toContain('data-disabled-reason="no_previous_year"');
     expect(renderToStaticMarkup(<RepartoExportsView processId={processId} />)).toContain(
       'data-export-artifact-type="backup"'
     );

@@ -1,7 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.js";
-import { ProcessListView } from "../src/runtime/react/DepartmentHeadWorkspace.js";
+import {
+  ProcessListView,
+  VersionsView
+} from "../src/runtime/react/DepartmentHeadWorkspace.js";
 import {
   DepartmentHeadView,
   ProcessesView,
@@ -215,12 +218,24 @@ const version = {
 const comparison: VersionComparison = {
   left_version_id: version.id,
   right_version_id: "88888888-8888-4888-8888-888888888888",
-  changed_sections: ["teachers", "assignments"],
-  required_hours_delta: 1,
-  assigned_hours_delta: 2,
-  teacher_count_delta: 0,
-  requirement_count_delta: 1,
-  assignment_count_delta: 2
+  changed_sections: ["teaching_activities", "teachers"],
+  allocation_changed: true,
+  group_hours_changed: true,
+  teacher_load_changed: false,
+  subject_category_changed: false,
+  activity_added_or_removed: true,
+  group_link_added_or_removed: true,
+  teacher_position_count_changed: false,
+  participant_target_changed: true,
+  requirement_generation_changed: true,
+  allocation_delta: "-4.00",
+  group_load_delta: "12.50",
+  teacher_load_delta: "0.00",
+  participant_target_total_delta: "3.00",
+  generation_number_delta: 1,
+  teacher_count_delta: -1,
+  activity_count_delta: 0,
+  requirement_count_delta: 2
 };
 
 const backupExport: ExportArtifactPublic = {
@@ -588,6 +603,13 @@ describe("default reparto UI", () => {
     expect(versions).toContain('data-reparto-action="create-version"');
     expect(versions).toContain('data-reparto-action="compare-versions"');
     expect(versions).toContain('data-reparto-panel="comparison"');
+    // No capture yet is not "no changes": the panel says nothing was compared
+    // and the compare control says why it cannot be pressed.
+    expect(versions).toContain('data-reparto-comparison-state="none"');
+    expect(versions).toContain('data-disabled-reason="not_enough_versions"');
+    expect(versions).toContain("No version has been captured yet.");
+    // A process with no source process cannot be diffed against last year.
+    expect(versions).toContain('data-disabled-reason="no_previous_year"');
     expect(
       renderToStaticMarkup(<ProcessListView count={1} processes={[process]} />)
     ).toContain('data-process-status="draft"');
@@ -600,8 +622,124 @@ describe("default reparto UI", () => {
         versions={[version, { ...version, version_number: 2 }]}
       />
     );
-    expect(versions).toContain("teachers, assignments");
-    expect(versions).toContain('data-reparto-slot="required-hours-delta"');
+    // All nine §10.3 dimensions are listed, changed or not: "did the
+    // allocation move?" needs an answer of "no", not an absent row.
+    for (const dimension of [
+      "allocation",
+      "group_hours",
+      "teacher_load",
+      "subject_category",
+      "activity",
+      "group_link",
+      "teacher_position_count",
+      "participant_target",
+      "requirement_generation"
+    ]) {
+      expect(versions).toContain(`data-reparto-dimension="${dimension}"`);
+    }
+    expect(versions).toContain('data-reparto-comparison-state="changed"');
+    expect(versions).toContain("6 of 9 comparison dimensions changed.");
+    // The service's own canonical strings, with only the positive sign added.
+    expect(versions).toContain("-4.00 h");
+    expect(versions).toContain("+12.50 h");
+    expect(versions).toContain('data-reparto-delta-sign="negative"');
+    expect(versions).toContain('data-reparto-delta-sign="zero"');
+    // A set change with a zero count is still a change: the flag decides.
+    expect(versions).toContain(
+      '<li class="rounded-md border border-border/70 bg-muted/20 px-3 py-2" data-reparto-dimension="activity" data-reparto-dimension-changed="true"'
+    );
+    // The `teachers` snapshot section is process participants, never the
+    // roster (freeze §5.4), and it is labelled as such.
+    expect(versions).toContain('data-reparto-section="teachers"');
+    expect(versions).toContain("Process participants");
+    // The retired float axes are gone from the panel with their contract.
+    expect(versions).not.toContain('data-reparto-slot="required-hours-delta"');
+    expect(versions).not.toContain('data-reparto-slot="assigned-hours-delta"');
+
+    // No allocation on one side is "not comparable", never a zero.
+    const notComparable = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{ ...comparison, allocation_delta: null }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(notComparable).toContain('data-reparto-delta-sign="none"');
+    expect(notComparable).toContain("Not comparable");
+
+    // Every dimension unchanged while sections still differ is its own state:
+    // saying "No changes" there would be false.
+    const sectionsOnly = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{
+          ...comparison,
+          allocation_changed: false,
+          group_hours_changed: false,
+          activity_added_or_removed: false,
+          group_link_added_or_removed: false,
+          participant_target_changed: false,
+          requirement_generation_changed: false
+        }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(sectionsOnly).toContain('data-reparto-comparison-state="sections_only"');
+    expect(sectionsOnly).toContain('data-reparto-slot="other-changes"');
+    expect(sectionsOnly).not.toContain("No changes");
+
+    const identical = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{
+          ...comparison,
+          changed_sections: [],
+          allocation_changed: false,
+          group_hours_changed: false,
+          activity_added_or_removed: false,
+          group_link_added_or_removed: false,
+          participant_target_changed: false,
+          requirement_generation_changed: false
+        }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(identical).toContain('data-reparto-comparison-state="identical"');
+    expect(identical).toContain("No changes");
+
+    // A section the service adds later is reported as its own code rather
+    // than dropped from the list.
+    const unknownSection = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{ ...comparison, changed_sections: ["something_new"] }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(unknownSection).toContain('data-reparto-section="something_new"');
+    expect(unknownSection).toContain("something_new");
+
+    // The same panel renders the previous-year diff, and says which it is.
+    // Rendered through the presentational view: the source and the
+    // previous-year availability are the container's state, not props of the
+    // island root.
+    const previousYear = renderToStaticMarkup(
+      <VersionsView
+        comparison={comparison}
+        comparisonSource="previous_year"
+        previousYearAvailable
+        versions={[version]}
+      />
+    );
+    expect(previousYear).toContain('data-reparto-comparison-source="previous_year"');
+    expect(previousYear).toContain("Previous academic year");
+    expect(previousYear).toContain('data-reparto-action="compare-previous-year"');
+
+    // Two versions selected, but the same one twice: refused here rather than
+    // answered with "every flag false".
+    const sameVersion = renderToStaticMarkup(
+      <VersionsView
+        selection={{ left: version.id, right: version.id }}
+        versions={[version, { ...version, id: "12121212-1212-4121-8121-121212121212", version_number: 2 }]}
+      />
+    );
+    expect(sameVersion).toContain('data-disabled-reason="same_version"');
 
     const exports = renderToStaticMarkup(
       <RepartoExportCenterView

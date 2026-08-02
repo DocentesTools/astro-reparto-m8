@@ -25,11 +25,22 @@ export {
 } from "./assignments.js";
 export {
   buildExportCenterState,
-  buildVersionComparisonLabel,
+  buildVersionComparisonView,
+  buildVersionSelectionState,
   canCompareVersions,
   nextLeadershipWorkflowAction,
+  versionSectionLabelKey,
+  VERSION_SECTION_LABEL_KEYS,
   type ExportCenterState,
-  type LeadershipWorkflowAction
+  type LeadershipWorkflowAction,
+  type VersionComparisonBlockedReason,
+  type VersionComparisonDelta,
+  type VersionComparisonDeltaKey,
+  type VersionComparisonDimension,
+  type VersionComparisonDimensionKey,
+  type VersionComparisonView,
+  type VersionSectionLabelKey,
+  type VersionSelectionState
 } from "./history.js";
 export { summarizeProcessDashboard } from "./dashboard.js";
 export {

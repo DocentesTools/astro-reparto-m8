@@ -3,11 +3,13 @@ import {
   buildCurrentTurnDisplay,
   buildExportCenterState,
   buildTeacherChoiceState,
-  buildVersionComparisonLabel,
+  buildVersionComparisonView,
+  buildVersionSelectionState,
   canCompareVersions,
   classifyDirectChoiceConflict,
   getLanConnectionState,
-  nextLeadershipWorkflowAction
+  nextLeadershipWorkflowAction,
+  versionSectionLabelKey
 } from "../src/runtime/ui/index.js";
 import {
   RepartoApiError,
@@ -31,17 +33,6 @@ const otherTeacherId = "44444444-4444-4444-8444-444444444444";
 const mathsActivity = "77777777-7777-4777-8777-777777777777";
 const tutoringActivity = "88888888-8888-4888-8888-888888888888";
 const now = "2026-07-04T10:00:00Z";
-
-const globalBalance = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 0,
-  pending_required_hours: 4,
-  availability_difference: 0,
-  uncovered_requirements: 1,
-  overloaded_teachers: 0,
-  state: "pending"
-} as const;
 
 const session: MeetingSessionPublic = {
   id: sessionId,
@@ -357,8 +348,13 @@ describe("LAN UI state", () => {
 describe("history UI state", () => {
   const processSummary: ProcessSummary = {
     process_id: processId,
-    global_balance: globalBalance,
-    validations: [],
+    generated_at: now,
+    readiness: "ready",
+    plan_status: "requirements_generated",
+    plan_balance: null,
+    total_slots: 4,
+    assigned_slots: 1,
+    available_slots: 3,
     current_turn: null,
     blocking_validation_count: 0
   };
@@ -405,25 +401,183 @@ describe("history UI state", () => {
     });
   });
 
-  it("summarizes comparisons and leadership workflow actions", () => {
-    const comparison: VersionComparison = {
-      left_version_id: version.id,
-      right_version_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-      changed_sections: ["teachers", "assignments"],
-      required_hours_delta: 0,
-      assigned_hours_delta: 4,
-      teacher_count_delta: 0,
-      requirement_count_delta: 0,
-      assignment_count_delta: 1
+  const comparison: VersionComparison = {
+    left_version_id: version.id,
+    right_version_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    changed_sections: ["teaching_activities", "teachers"],
+    allocation_changed: true,
+    group_hours_changed: true,
+    teacher_load_changed: false,
+    subject_category_changed: false,
+    activity_added_or_removed: true,
+    group_link_added_or_removed: true,
+    teacher_position_count_changed: false,
+    participant_target_changed: true,
+    requirement_generation_changed: true,
+    allocation_delta: "-4.00",
+    group_load_delta: "12.50",
+    teacher_load_delta: "0.00",
+    participant_target_total_delta: "3.00",
+    generation_number_delta: 1,
+    teacher_count_delta: -1,
+    activity_count_delta: 0,
+    requirement_count_delta: 2
+  };
+
+  it("renders every §10.3 dimension with the deltas the service pairs to it", () => {
+    const view = buildVersionComparisonView(comparison);
+    expect(view.dimensions.map((dimension) => dimension.key)).toEqual([
+      "allocation",
+      "group_hours",
+      "teacher_load",
+      "subject_category",
+      "activity",
+      "group_link",
+      "teacher_position_count",
+      "participant_target",
+      "requirement_generation"
+    ]);
+    expect(view.changedDimensionCount).toBe(6);
+    expect(view.identical).toBe(false);
+    expect(view.otherChangesOnly).toBe(false);
+    expect(view.changedSections).toEqual(["teaching_activities", "teachers"]);
+    // Hour deltas keep the service's canonical string; the sign comes from the
+    // decimal helpers, never from reading the text or from a float compare.
+    expect(view.dimensions[0].deltas).toEqual([
+      { key: "allocation_delta", unit: "hours", value: "-4.00", sign: -1 }
+    ]);
+    expect(view.dimensions[1].deltas[0]).toMatchObject({
+      value: "12.50",
+      sign: 1
+    });
+    expect(view.dimensions[2].deltas[0]).toMatchObject({
+      value: "0.00",
+      sign: 0
+    });
+    // Three dimensions are set comparisons the service publishes no delta for;
+    // they stay empty rather than being padded with a zero it never sent.
+    expect(view.dimensions[3].deltas).toEqual([]);
+    expect(view.dimensions[5].deltas).toEqual([]);
+    expect(view.dimensions[6].deltas).toEqual([]);
+    expect(view.dimensions[7].deltas).toEqual([
+      {
+        key: "participant_target_total_delta",
+        unit: "hours",
+        value: "3.00",
+        sign: 1
+      },
+      { key: "teacher_count_delta", unit: "count", value: -1, sign: -1 }
+    ]);
+    expect(view.dimensions[8].deltas.map((delta) => delta.key)).toEqual([
+      "generation_number_delta",
+      "requirement_count_delta"
+    ]);
+  });
+
+  it("keeps a changed flag authoritative over a zero delta", () => {
+    // One activity added and one removed: the set changed, the count did not.
+    const view = buildVersionComparisonView(comparison);
+    const activity = view.dimensions[4];
+    expect(activity.changed).toBe(true);
+    expect(activity.deltas[0]).toEqual({
+      key: "activity_count_delta",
+      unit: "count",
+      value: 0,
+      sign: 0
+    });
+  });
+
+  it("reports an absent allocation as not comparable, never as zero", () => {
+    const view = buildVersionComparisonView({
+      ...comparison,
+      allocation_delta: null
+    });
+    expect(view.dimensions[0].deltas[0]).toEqual({
+      key: "allocation_delta",
+      unit: "hours",
+      value: null,
+      sign: null
+    });
+  });
+
+  it("separates identical snapshots from sections-only differences", () => {
+    const unchangedFlags = {
+      ...comparison,
+      allocation_changed: false,
+      group_hours_changed: false,
+      activity_added_or_removed: false,
+      group_link_added_or_removed: false,
+      participant_target_changed: false,
+      requirement_generation_changed: false
     };
-    expect(buildVersionComparisonLabel(comparison)).toBe("teachers, assignments");
-    expect(buildVersionComparisonLabel({ ...comparison, changed_sections: [] })).toBe(
-      "No changes"
+    const sectionsOnly = buildVersionComparisonView(unchangedFlags);
+    expect(sectionsOnly.identical).toBe(false);
+    expect(sectionsOnly.otherChangesOnly).toBe(true);
+    expect(sectionsOnly.changedDimensionCount).toBe(0);
+
+    const identical = buildVersionComparisonView({
+      ...unchangedFlags,
+      changed_sections: []
+    });
+    expect(identical.identical).toBe(true);
+    expect(identical.otherChangesOnly).toBe(false);
+  });
+
+  it("labels snapshot sections and reports an unknown one as its own code", () => {
+    expect(versionSectionLabelKey("teachers")).toBe("processParticipants");
+    expect(versionSectionLabelKey("allocation_revisions")).toBe(
+      "allocationRevisions"
     );
+    expect(versionSectionLabelKey("requirements")).toBe("requirements");
+    expect(versionSectionLabelKey("something_new")).toBeNull();
+  });
+
+  it("defaults the comparison to the last two versions", () => {
+    const second = { ...version, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", version_number: 2 };
+    const third = { ...version, id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", version_number: 3 };
+    expect(buildVersionSelectionState([version, second, third])).toEqual({
+      leftVersionId: second.id,
+      rightVersionId: third.id,
+      canCompare: true,
+      reason: null
+    });
     expect(canCompareVersions([version])).toBe(false);
-    expect(canCompareVersions([version, { ...version, version_number: 2 }])).toBe(
-      true
-    );
+    expect(canCompareVersions([version, second])).toBe(true);
+  });
+
+  it("refuses a single version and a version compared with itself", () => {
+    expect(buildVersionSelectionState([])).toEqual({
+      leftVersionId: null,
+      rightVersionId: null,
+      canCompare: false,
+      reason: "not_enough_versions"
+    });
+    expect(buildVersionSelectionState([version])).toMatchObject({
+      leftVersionId: null,
+      rightVersionId: version.id,
+      canCompare: false,
+      reason: "not_enough_versions"
+    });
+    const second = { ...version, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", version_number: 2 };
+    expect(
+      buildVersionSelectionState([version, second], {
+        left: second.id,
+        right: second.id
+      })
+    ).toMatchObject({ canCompare: false, reason: "same_version" });
+  });
+
+  it("drops a requested version the process does not own", () => {
+    const second = { ...version, id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", version_number: 2 };
+    expect(
+      buildVersionSelectionState([version, second], {
+        left: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+        right: null
+      })
+    ).toMatchObject({ leftVersionId: version.id, rightVersionId: second.id });
+  });
+
+  it("summarizes leadership workflow actions", () => {
     expect(nextLeadershipWorkflowAction("sent_to_school_leadership")).toBe(
       "mark-returned"
     );

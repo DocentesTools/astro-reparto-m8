@@ -25,6 +25,7 @@ import {
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
+  VersionComparisonSchema,
   FeasibilityStatusSchema,
   GroupBalanceSchema,
   GroupSubjectBulkApplyRequestSchema,
@@ -435,6 +436,69 @@ describe("reparto schemas", () => {
         content: "{}",
         created_at: now,
         updated_at: now
+      })
+    ).toThrow();
+
+    // §10.3 comparison. The retired float pair (`required_hours_delta` /
+    // `assigned_hours_delta`) described a single aggregate axis and a partial
+    // assignment, neither of which exists; `.strict()` is what makes that a
+    // parse failure rather than a silently ignored field.
+    const comparisonBody = {
+      left_version_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      right_version_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      changed_sections: ["teaching_plan", "teachers"],
+      allocation_changed: true,
+      group_hours_changed: false,
+      teacher_load_changed: false,
+      subject_category_changed: false,
+      activity_added_or_removed: false,
+      group_link_added_or_removed: false,
+      teacher_position_count_changed: false,
+      participant_target_changed: true,
+      requirement_generation_changed: false,
+      allocation_delta: "-4.00",
+      group_load_delta: "0.00",
+      teacher_load_delta: "0.00",
+      participant_target_total_delta: "2.50",
+      generation_number_delta: 0,
+      teacher_count_delta: 1,
+      activity_count_delta: 0,
+      requirement_count_delta: 0
+    };
+    expect(VersionComparisonSchema.parse(comparisonBody)).toMatchObject({
+      allocation_delta: "-4.00",
+      participant_target_total_delta: "2.50"
+    });
+    // Absent is not zero: no allocation on one side is a null delta, and it
+    // must survive the parse as null.
+    expect(
+      VersionComparisonSchema.parse({ ...comparisonBody, allocation_delta: null })
+        .allocation_delta
+    ).toBeNull();
+    // A float artifact from the service is rounded to the canonical string
+    // rather than breaking the whole comparison view.
+    expect(
+      VersionComparisonSchema.parse({
+        ...comparisonBody,
+        teacher_load_delta: -8.8e-16
+      }).teacher_load_delta
+    ).toBe("0.00");
+    expect(() =>
+      VersionComparisonSchema.parse({
+        left_version_id: comparisonBody.left_version_id,
+        right_version_id: comparisonBody.right_version_id,
+        changed_sections: ["assignments"],
+        required_hours_delta: 0,
+        assigned_hours_delta: 4,
+        teacher_count_delta: 0,
+        requirement_count_delta: 0,
+        assignment_count_delta: 1
+      })
+    ).toThrow();
+    expect(() =>
+      VersionComparisonSchema.parse({
+        ...comparisonBody,
+        generation_number_delta: 1.5
       })
     ).toThrow();
   });

@@ -234,12 +234,24 @@ const versionBody = {
 const comparisonBody = {
   left_version_id: versionId,
   right_version_id: nextVersionId,
-  changed_sections: ["assignments"],
-  required_hours_delta: 0,
-  assigned_hours_delta: 4,
+  changed_sections: ["teaching_activities", "requirements"],
+  allocation_changed: false,
+  group_hours_changed: true,
+  teacher_load_changed: true,
+  subject_category_changed: false,
+  activity_added_or_removed: true,
+  group_link_added_or_removed: false,
+  teacher_position_count_changed: true,
+  participant_target_changed: false,
+  requirement_generation_changed: true,
+  allocation_delta: null,
+  group_load_delta: "4.00",
+  teacher_load_delta: "-2.50",
+  participant_target_total_delta: "0.00",
+  generation_number_delta: 1,
   teacher_count_delta: 0,
-  requirement_count_delta: 0,
-  assignment_count_delta: 1
+  activity_count_delta: 1,
+  requirement_count_delta: 2
 };
 
 const artifactBody = {
@@ -472,10 +484,17 @@ describe("history API", () => {
     fetchMock.mockResolvedValueOnce(response(comparisonBody));
     await expect(
       history.compareVersions(processId, versionId, nextVersionId)
-    ).resolves.toMatchObject({ assignment_count_delta: 1 });
+    ).resolves.toMatchObject({
+      requirement_count_delta: 2,
+      requirement_generation_changed: true,
+      // A hour delta stays the service's canonical signed string; the retired
+      // float `assigned_hours_delta` pair is not on this contract any more.
+      teacher_load_delta: "-2.50",
+      allocation_delta: null
+    });
     fetchMock.mockResolvedValueOnce(response(comparisonBody));
     await expect(history.comparePreviousYear(processId)).resolves.toMatchObject({
-      changed_sections: ["assignments"]
+      changed_sections: ["teaching_activities", "requirements"]
     });
     fetchMock.mockResolvedValueOnce(response({ data: [artifactBody], count: 1 }));
     await expect(history.listExports(processId)).resolves.toMatchObject({

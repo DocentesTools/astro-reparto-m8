@@ -311,6 +311,59 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     ).toBe(false);
   });
 
+  it("fully localizes the version comparison surface (§10.3)", () => {
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(collectKeys(dict.view.versions).sort()).toEqual(
+        collectKeys(en.view.versions).sort()
+      );
+      expect(collectStrings(dict.view.versions)).not.toEqual(
+        collectStrings(en.view.versions)
+      );
+    }
+    // Every §10.3 dimension and every published delta has a label; a number on
+    // screen with no name is a number a head cannot act on.
+    expect(Object.keys(en.view.versions.dimension).sort()).toEqual([
+      "activity",
+      "allocation",
+      "group_hours",
+      "group_link",
+      "participant_target",
+      "requirement_generation",
+      "subject_category",
+      "teacher_load",
+      "teacher_position_count"
+    ]);
+    expect(Object.keys(en.view.versions.delta).sort()).toEqual([
+      "activity_count_delta",
+      "allocation_delta",
+      "generation_number_delta",
+      "group_load_delta",
+      "participant_target_total_delta",
+      "requirement_count_delta",
+      "teacher_count_delta",
+      "teacher_load_delta"
+    ]);
+    // The snapshot section the service calls `teachers` is process
+    // participants; freeze §5.4 forbids naming anything else "teachers".
+    expect(en.view.versions.section.processParticipants).toBe(
+      en.entity.processParticipant.plural
+    );
+    expect(en.view.versions.changedSummary).toContain("{changed}");
+    expect(en.view.versions.changedSummary).toContain("{total}");
+    expect(en.view.versions.otherChanges).toContain("{count}");
+    expect(en.view.versions.item).toContain("{number}");
+    // The retired float axes lost their labels with their contract.
+    const allKeys = collectKeys(en);
+    for (const retired of [
+      "view.versions.requiredDelta",
+      "view.versions.assignedDelta",
+      "view.versions.teacherDelta"
+    ]) {
+      expect(allKeys, `${retired} must stay retired`).not.toContain(retired);
+    }
+  });
+
   it("localizes route-loading copy in every supported locale", () => {
     expect(en.view.pageLoading).toEqual({
       title: "Loading reparto page",

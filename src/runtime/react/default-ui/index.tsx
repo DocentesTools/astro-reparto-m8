@@ -1,8 +1,10 @@
+import { useState } from "react";
 import {
   DepartmentHeadWorkspace,
   ExportCenterView,
   ProcessListView,
-  VersionsView
+  VersionsView,
+  type VersionComparisonSource
 } from "../DepartmentHeadWorkspace.js";
 import {
   SharedScreenWorkspace,
@@ -10,18 +12,25 @@ import {
 } from "../LanWorkspace.js";
 import { MeetingControlWorkspace } from "../MeetingWorkspace.js";
 import {
+  useCreateRepartoVersion,
   useRepartoAssignments,
   useRepartoDashboard,
   useRepartoExports,
   useRepartoHourRequirements,
   useRepartoMeetingSessions,
+  useRepartoPreviousYearComparison,
+  useRepartoProcess,
   useRepartoProcesses,
   useRepartoSummary,
   useRepartoTeacherLan,
+  useRepartoVersionComparison,
   useRepartoVersions
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
-import { summarizeProcessDashboard } from "../../ui/index.js";
+import {
+  buildVersionSelectionState,
+  summarizeProcessDashboard
+} from "../../ui/index.js";
 import { repartoPanelClass } from "../styles.js";
 import {
   Shell,
@@ -576,7 +585,7 @@ export function RepartoVersionsView({
   processId,
   versions
 }: {
-  comparison?: VersionComparison;
+  comparison?: VersionComparison | null;
   config?: ViewConfig;
   locale?: "en" | "fr" | "es";
   processId?: string;
@@ -603,19 +612,66 @@ export function RepartoVersionsView({
   );
 }
 
+/**
+ * The versions route: capture a snapshot, pick two, read the difference.
+ *
+ * Two comparison sources share one panel and are kept apart by an explicit
+ * switch rather than by whichever query answered last. Selecting a version
+ * moves the *draft* pair; pressing compare applies it. That is deliberate —
+ * a diff is a request against the service, and firing one on every keystroke
+ * of a select would leave the panel showing an answer to a question the head
+ * has already moved on from.
+ *
+ * The previous-year action is offered only when the process records a source
+ * process: the service answers 400 otherwise, and a button whose refusal is
+ * already known should not be pressable (the same rule the meeting controls
+ * follow).
+ */
 function RepartoVersionsContent({
   comparison,
   locale,
   processId,
   versions
 }: {
-  comparison?: VersionComparison;
+  comparison?: VersionComparison | null;
   locale?: RepartoLocale;
   processId?: string;
   versions?: ProcessVersionPublic[];
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const versionsQuery = useRepartoVersions(processId);
+  const processQuery = useRepartoProcess(processId);
+  const createVersion = useCreateRepartoVersion();
+  const [draft, setDraft] = useState<{ left?: string | null; right?: string | null }>({});
+  const [applied, setApplied] = useState<{ left: string; right: string } | null>(null);
+  const [source, setSource] = useState<VersionComparisonSource>("versions");
+  const [reason, setReason] = useState("");
+
   const activeVersions = versions ?? versionsQuery.data?.data ?? [];
+  const selection = buildVersionSelectionState(activeVersions, draft);
+  const previousYearAvailable = Boolean(
+    processQuery.data?.created_from_process_id
+  );
+  const comparisonQuery = useRepartoVersionComparison(
+    processId,
+    applied?.left,
+    applied?.right
+  );
+  const previousYearQuery = useRepartoPreviousYearComparison(
+    processId,
+    previousYearAvailable && source === "previous_year"
+  );
+  // A comparison is shown only for the pair that was actually asked for: with
+  // no applied selection there is no question on screen, and a cached answer to
+  // an earlier one would be read as an answer to this one.
+  const activeComparison =
+    comparison ??
+    (source === "previous_year"
+      ? (previousYearQuery.data ?? null)
+      : applied
+        ? (comparisonQuery.data ?? null)
+        : null);
+
   const isLoading =
     versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions;
   if (isLoading || versionsQuery.isError) {
@@ -624,21 +680,67 @@ function RepartoVersionsContent({
         error={versionsQuery.error}
         isError={versionsQuery.isError}
         isLoading={isLoading}
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        label={dict.nav.item.versions}
         locale={locale}
       />
     );
   }
   return (
     <>
-      <VersionsView comparison={comparison} locale={locale} versions={activeVersions} />
-      <QueryState
-        error={versionsQuery.error}
-        isError={versionsQuery.isError}
-        isLoading={
-          versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions
+      <VersionsView
+        comparison={activeComparison}
+        comparisonSource={source}
+        createPending={createVersion.isPending}
+        createReason={reason}
+        locale={locale}
+        onCompare={() => {
+          if (!selection.canCompare) return;
+          setApplied({
+            left: String(selection.leftVersionId),
+            right: String(selection.rightVersionId)
+          });
+          setSource("versions");
+        }}
+        onCreateVersion={() => {
+          const processIdentifier = resolveProcessId(processId);
+          if (!processIdentifier || createVersion.isPending) return;
+          createVersion.mutate(
+            {
+              processId: processIdentifier,
+              body: { reason: reason.trim() === "" ? null : reason.trim() }
+            },
+            { onSuccess: () => setReason("") }
+          );
+        }}
+        onPreviousYear={() => setSource("previous_year")}
+        onReasonChange={setReason}
+        onSelectVersion={(side, versionId) =>
+          setDraft((current) => ({ ...current, [side]: versionId }))
         }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        previousYearAvailable={previousYearAvailable}
+        selection={draft}
+        versions={activeVersions}
+      />
+      <QueryState
+        error={createVersion.error}
+        isError={createVersion.isError}
+        isLoading={false}
+        label={dict.view.versions.createError}
+        locale={locale}
+      />
+      <QueryState
+        error={source === "previous_year" ? previousYearQuery.error : comparisonQuery.error}
+        isError={
+          source === "previous_year"
+            ? previousYearQuery.isError
+            : comparisonQuery.isError
+        }
+        isLoading={
+          source === "previous_year"
+            ? previousYearQuery.isLoading && previousYearAvailable
+            : comparisonQuery.isFetching && applied !== null
+        }
+        label={dict.view.versions.comparison}
         locale={locale}
       />
     </>

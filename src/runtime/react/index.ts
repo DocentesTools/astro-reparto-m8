@@ -5,7 +5,8 @@ export {
   ProcessInvariantRow,
   ProcessListView,
   ProcessValidationList,
-  VersionsView
+  VersionsView,
+  type VersionComparisonSource
 } from "./DepartmentHeadWorkspace.js";
 export { MeetingControlWorkspace } from "./MeetingWorkspace.js";
 export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
@@ -16,6 +17,7 @@ export {
   useCreateRepartoDepartment,
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
+  useCreateRepartoVersion,
   useDeleteRepartoTeacherProfile,
   useLinkRepartoTeacherProfileUser,
   useRepartoAcademicYears,
@@ -23,11 +25,14 @@ export {
   useRepartoDepartments,
   useRepartoExports,
   useRepartoMeetingSessions,
+  useRepartoPreviousYearComparison,
+  useRepartoProcess,
   useRepartoProcesses,
   useRepartoSchools,
   useRepartoSummary,
   useRepartoTeacherLan,
   useRepartoTeacherProfiles,
+  useRepartoVersionComparison,
   useRepartoVersions,
   useUpdateRepartoAcademicYear,
   useUpdateRepartoDepartment,

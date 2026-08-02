@@ -26,12 +26,16 @@ const mocks = vi.hoisted(() => ({
   })),
   assignmentProcesses: {
     list: vi.fn(),
+    get: vi.fn(),
     dashboard: vi.fn(),
     summary: vi.fn(),
     myLanSummary: vi.fn()
   },
   history: {
     listVersions: vi.fn(),
+    createVersion: vi.fn(),
+    compareVersions: vi.fn(),
+    comparePreviousYear: vi.fn(),
     listExports: vi.fn()
   },
   meetingSessions: {
@@ -191,7 +195,11 @@ describe("reparto React hooks", () => {
     mocks.assignmentProcesses.dashboard.mockClear();
     mocks.assignmentProcesses.summary.mockClear();
     mocks.assignmentProcesses.myLanSummary.mockClear();
+    mocks.assignmentProcesses.get.mockClear();
     mocks.history.listVersions.mockClear();
+    mocks.history.createVersion.mockClear();
+    mocks.history.compareVersions.mockClear();
+    mocks.history.comparePreviousYear.mockClear();
     mocks.history.listExports.mockClear();
     mocks.meetingSessions.list.mockClear();
     mocks.schools.list.mockClear();
@@ -295,6 +303,75 @@ describe("reparto React hooks", () => {
     expect(mocks.meetingSessions.list).not.toHaveBeenCalled();
     expect(mocks.history.listVersions).not.toHaveBeenCalled();
     expect(mocks.history.listExports).not.toHaveBeenCalled();
+    expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]);
+  });
+
+  it("wires the version snapshot and comparison hooks (§10.2, §10.3)", async () => {
+    const {
+      useCreateRepartoVersion,
+      useRepartoPreviousYearComparison,
+      useRepartoProcess,
+      useRepartoVersionComparison
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoProcess("process-1");
+    expect(mocks.assignmentProcesses.get).toHaveBeenCalledWith("process-1");
+
+    useCreateRepartoVersion().mutate({
+      processId: "process-1",
+      body: { reason: "before the meeting" }
+    });
+    expect(mocks.history.createVersion).toHaveBeenCalledWith("process-1", {
+      reason: "before the meeting"
+    });
+    // A snapshot reads the process; only the version list went stale.
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: [
+        "reparto",
+        "processes",
+        "detail",
+        "process-1",
+        "versions"
+      ]
+    });
+    mocks.history.createVersion.mockClear();
+    useCreateRepartoVersion().mutate({ processId: "process-1" });
+    expect(mocks.history.createVersion).toHaveBeenCalledWith("process-1", {});
+
+    useRepartoVersionComparison("process-1", "v1", "v2");
+    expect(mocks.history.compareVersions).toHaveBeenCalledWith(
+      "process-1",
+      "v1",
+      "v2"
+    );
+
+    useRepartoPreviousYearComparison("process-1");
+    expect(mocks.history.comparePreviousYear).toHaveBeenCalledWith("process-1");
+  });
+
+  it("refuses a comparison that would answer nothing", async () => {
+    const { useRepartoPreviousYearComparison, useRepartoVersionComparison } =
+      await import("../src/runtime/react/hooks.js");
+
+    // A version against itself answers "every flag false", which reads as
+    // "nothing changed" when the truth is "nothing was compared".
+    useRepartoVersionComparison("process-1", "v1", "v1");
+    useRepartoVersionComparison("process-1", "v1");
+    useRepartoVersionComparison("process-1");
+    useRepartoVersionComparison(undefined, "v1", "v2");
+    // The service answers 400 without a source process, so the caller gates it.
+    useRepartoPreviousYearComparison("process-1", false);
+    useRepartoPreviousYearComparison();
+
+    expect(mocks.history.compareVersions).not.toHaveBeenCalled();
+    expect(mocks.history.comparePreviousYear).not.toHaveBeenCalled();
     expect(mocks.useQuery.mock.calls.map(([options]) => options.enabled)).toEqual([
       false,
       false,

@@ -242,6 +242,29 @@ the three invariants, the pending positions, the lifecycle state and whose turn
 it is by position. The `dashboard` prop is gone from both the workspace and
 `RepartoSharedView`.
 
+The `/versions` route captures immutable snapshots and diffs two of them. A
+comparison is the service's own §10.3 answer: nine change flags — leadership
+allocation, group hours, teacher load, subject category, activities, activity
+group links, teacher positions, participant targets and requirement generation
+— each rendered whether it changed or not, with the signed deltas the service
+pairs to it. A flag is a set comparison and a delta is arithmetic on totals, so
+"one activity added, one removed" is a real change with a zero count and the
+package never infers one from the other. Every hour delta stays the service's
+canonical two-decimal string; only a leading `+` is added, from the sign the
+decimal helpers computed. `allocation_delta` is `null` when one side has no
+allocation, and that renders as **Not comparable**, never as `0.00`.
+
+Three states are kept apart, because collapsing them would each time state
+something false: nothing has been compared yet, the two snapshots are
+identical, and every dimension is unchanged while snapshot sections still
+differ. `buildVersionComparisonView` and `buildVersionSelectionState` from
+`@mano8/astro-reparto-m8/ui` are the framework-neutral helpers behind that;
+the selection defaults to the last two captures, refuses a version compared
+with itself, and drops a version id the process does not own rather than
+sending it. The previous-year diff (`GET /…/compare-previous-year`) shares the
+panel and is offered only when the process records a `created_from_process_id`
+— the service answers 400 otherwise.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

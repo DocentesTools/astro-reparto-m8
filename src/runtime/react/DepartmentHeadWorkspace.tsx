@@ -15,10 +15,13 @@ import type {
 } from "../schemas.js";
 import {
   buildExportCenterState,
-  buildVersionComparisonLabel,
-  canCompareVersions,
+  buildVersionComparisonView,
+  buildVersionSelectionState,
   nextLeadershipWorkflowAction,
-  summarizeProcessDashboard
+  summarizeProcessDashboard,
+  versionSectionLabelKey,
+  type VersionComparisonDelta,
+  type VersionComparisonView
 } from "../ui/index.js";
 import {
   formatRepartoMessage,
@@ -30,8 +33,11 @@ import {
   repartoActionRowClass,
   repartoButtonClass,
   repartoEyebrowClass,
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
   repartoGridClass,
   repartoHeaderClass,
+  repartoInputClass,
   repartoListClass,
   repartoListItemClass,
   repartoMainGridClass,
@@ -67,16 +73,8 @@ const fallbackSummary: ProcessSummary = {
   blocking_validation_count: 0
 };
 
-const fallbackComparison: VersionComparison = {
-  left_version_id: "00000000-0000-4000-8000-000000000011",
-  right_version_id: "00000000-0000-4000-8000-000000000012",
-  changed_sections: [],
-  required_hours_delta: 0,
-  assigned_hours_delta: 0,
-  teacher_count_delta: 0,
-  requirement_count_delta: 0,
-  assignment_count_delta: 0
-};
+/** Where the rendered comparison came from — two captures, or last year. */
+export type VersionComparisonSource = "versions" | "previous_year";
 
 export function CurrentTurnCard({
   currentTurn,
@@ -735,20 +733,249 @@ export function ProcessListView({
   );
 }
 
+/**
+ * How a signed difference reads on screen, from the sign the decimal helpers
+ * computed rather than from the text.
+ *
+ * The service's canonical string already carries its own `-`; only a positive
+ * difference gains a `+`. A `null` value is the single "not comparable" case
+ * (§10.3: no allocation on one side of the diff) and is never rendered as a
+ * zero — absent is not zero, here as everywhere else.
+ */
+function versionDeltaSignState(delta: VersionComparisonDelta): string {
+  if (delta.sign === null) return "none";
+  if (delta.sign > 0) return "positive";
+  if (delta.sign < 0) return "negative";
+  return "zero";
+}
+
+function versionDeltaText(
+  delta: VersionComparisonDelta,
+  dict: ReturnType<typeof getRepartoDictionary>
+): string {
+  if (delta.value === null) return dict.view.versions.notComparable;
+  const sign = delta.sign === 1 ? "+" : "";
+  return delta.unit === "hours"
+    ? `${sign}${delta.value} h`
+    : `${sign}${delta.value}`;
+}
+
+/**
+ * The nine §10.3 dimensions, each with the deltas the service pairs with it.
+ *
+ * Every dimension is listed on every comparison, changed or not: a head
+ * reading "did the allocation move?" needs the answer "no" to be present, not
+ * absent. `changed` is the service's flag and is never inferred from a delta —
+ * one activity added and one removed is a real change with a zero count — so
+ * the state badge and the numbers beside it can legitimately disagree.
+ */
+function VersionComparisonDimensions({
+  dict,
+  view
+}: {
+  dict: ReturnType<typeof getRepartoDictionary>;
+  view: VersionComparisonView;
+}) {
+  return (
+    <ul className={repartoListClass} data-reparto-slot="comparison-dimensions">
+      {view.dimensions.map((dimension) => (
+        <li
+          className={repartoListItemClass}
+          data-reparto-dimension={dimension.key}
+          data-reparto-dimension-changed={dimension.changed ? "true" : "false"}
+          key={dimension.key}
+        >
+          <div className={repartoPanelHeaderClass}>
+            <span className="font-medium">
+              {dict.view.versions.dimension[dimension.key]}
+            </span>
+            <span
+              className="text-sm text-muted-foreground"
+              data-reparto-slot="dimension-state"
+            >
+              {dict.view.versions.state[dimension.changed ? "changed" : "unchanged"]}
+            </span>
+          </div>
+          {dimension.deltas.length > 0 ? (
+            <dl className={repartoMetricsClass}>
+              {dimension.deltas.map((delta) => (
+                <div
+                  className={repartoMetricItemClass}
+                  data-reparto-delta={delta.key}
+                  key={delta.key}
+                >
+                  <dt className={repartoMetricLabelClass}>
+                    {dict.view.versions.delta[delta.key]}
+                  </dt>
+                  <dd
+                    className={repartoMetricValueClass}
+                    data-reparto-delta-sign={versionDeltaSignState(delta)}
+                    data-reparto-slot="delta-value"
+                  >
+                    {versionDeltaText(delta, dict)}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The comparison panel: what differs between the two snapshots, and nothing
+ * about how they were picked.
+ *
+ * Three states, kept apart on purpose. *No comparison* means none was asked
+ * for — it is not "no changes". *Identical* means the service compared them
+ * and found neither a dimension nor a section that differs. *Other changes
+ * only* means every §10.3 dimension is unchanged while snapshot sections still
+ * differ, which happens for a stored reason or a plan timestamp; saying "no
+ * changes" there would be false.
+ */
+function VersionComparisonPanel({
+  comparison,
+  dict,
+  source
+}: {
+  comparison: VersionComparison | null;
+  dict: ReturnType<typeof getRepartoDictionary>;
+  source: VersionComparisonSource;
+}) {
+  const view = comparison ? buildVersionComparisonView(comparison) : null;
+  const state = !view
+    ? "none"
+    : view.identical
+      ? "identical"
+      : view.otherChangesOnly
+        ? "sections_only"
+        : "changed";
+  return (
+    <section
+      className={repartoPanelClass}
+      data-reparto-comparison-source={source}
+      data-reparto-comparison-state={state}
+      data-reparto-panel="comparison"
+    >
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.versions.comparison}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="comparison-source">
+          {dict.view.versions.source[source]}
+        </span>
+      </div>
+      {view ? (
+        <>
+          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="comparison-state">
+            {view.identical
+              ? dict.view.versions.noChanges
+              : formatRepartoMessage(dict.view.versions.changedSummary, {
+                  changed: view.changedDimensionCount,
+                  total: view.dimensions.length
+                })}
+          </p>
+          <VersionComparisonDimensions dict={dict} view={view} />
+          <div className={repartoPanelHeaderClass}>
+            <h3 className="mt-3 text-sm font-semibold">
+              {dict.view.versions.sectionsTitle}
+            </h3>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="changed-section-count">
+              {view.changedSections.length}
+            </span>
+          </div>
+          {view.changedSections.length > 0 ? (
+            <ul className={repartoListClass} data-reparto-slot="changed-sections">
+              {view.changedSections.map((section) => {
+                const labelKey = versionSectionLabelKey(section);
+                return (
+                  <li
+                    className={repartoListItemClass}
+                    data-reparto-section={section}
+                    key={section}
+                  >
+                    {labelKey ? dict.view.versions.section[labelKey] : section}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+          {view.otherChangesOnly ? (
+            <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="other-changes">
+              {formatRepartoMessage(dict.view.versions.otherChanges, {
+                count: view.changedSections.length
+              })}
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="no-comparison">
+          {dict.view.versions.noComparison}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Version history and the comparison between two captures.
+ *
+ * The panel used to show three float deltas — required hours, assigned hours
+ * and a teacher count — against a `changed_sections` list rendered as a raw
+ * comma-joined string. Two of those numbers no longer exist: there is no
+ * aggregate "required" axis (§3.1 has two independent balances) and an
+ * assignment carries no hours of its own (§5.10). What replaces them is the
+ * §10.3 contract itself: nine named dimensions with the service's own signed
+ * deltas beside them, every hour figure a canonical decimal string.
+ *
+ * The view is controlled. Which two versions are compared, and whether the
+ * previous year is being diffed instead, are the caller's state — the same
+ * split the planning panels use, so the query that fetches a comparison lives
+ * next to the cache it invalidates rather than inside a render tree.
+ */
 export function VersionsView({
-  comparison = fallbackComparison,
+  comparison = null,
+  comparisonSource = "versions",
+  createPending = false,
+  createReason = "",
   locale,
+  onCompare,
+  onCreateVersion,
+  onPreviousYear,
+  onReasonChange,
+  onSelectVersion,
+  previousYearAvailable = false,
+  selection,
   versions = []
 }: {
-  comparison?: VersionComparison;
+  comparison?: VersionComparison | null;
+  comparisonSource?: VersionComparisonSource;
+  createPending?: boolean;
+  createReason?: string;
   locale?: RepartoLocale;
+  onCompare?: () => void;
+  onCreateVersion?: () => void;
+  onPreviousYear?: () => void;
+  onReasonChange?: (reason: string) => void;
+  onSelectVersion?: (side: "left" | "right", versionId: string) => void;
+  previousYearAvailable?: boolean;
+  selection?: { left?: string | null; right?: string | null };
   versions?: ProcessVersionPublic[];
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const comparisonEnabled = canCompareVersions(versions);
-  const comparisonLabel = comparison.changed_sections.length === 0
-    ? dict.view.versions.noChanges
-    : buildVersionComparisonLabel(comparison);
+  const selectionState = buildVersionSelectionState(versions, selection ?? {});
+  const sides = [
+    {
+      key: "left" as const,
+      label: dict.view.versions.left,
+      value: selectionState.leftVersionId
+    },
+    {
+      key: "right" as const,
+      label: dict.view.versions.right,
+      value: selectionState.rightVersionId
+    }
+  ];
   return (
     <main className={repartoShellClass} data-reparto-route="versions">
       <div className={repartoMainGridClass}>
@@ -769,55 +996,129 @@ export function VersionsView({
                     data-process-version-status={version.status}
                     key={version.id}
                   >
-                    {formatRepartoMessage(dict.view.versions.item, { number: version.version_number })}
+                    <div className={repartoPanelHeaderClass}>
+                      <span className="font-medium">
+                        {formatRepartoMessage(dict.view.versions.item, {
+                          number: version.version_number
+                        })}
+                      </span>
+                      <span
+                        className="text-sm text-muted-foreground"
+                        data-reparto-slot="version-detail"
+                      >
+                        {formatRepartoMessage(dict.view.versions.itemDetail, {
+                          created: version.created_at,
+                          status: dict.entity.assignmentProcess.status[version.status]
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground" data-reparto-slot="version-reason">
+                      {version.reason ?? dict.view.versions.noReason}
+                    </p>
                   </li>
                 ))}
               </ul>
-            ) : null}
+            ) : (
+              <p className="text-sm text-muted-foreground" data-reparto-slot="no-versions">
+                {dict.view.versions.empty}
+              </p>
+            )}
+          </div>
+          <div className={repartoFieldGridClass}>
+            <label className={repartoFieldLabelClass}>
+              {dict.view.versions.createReason}
+              <input
+                className={repartoInputClass}
+                data-reparto-field="version-reason"
+                maxLength={500}
+                onChange={(event: { target: { value: string } }) =>
+                  onReasonChange?.(event.target.value)
+                }
+                type="text"
+                value={createReason}
+              />
+            </label>
           </div>
           <div className={repartoActionRowClass}>
-            <button className={repartoButtonClass} type="button" data-reparto-action="create-version">
-              {dict.view.versions.create}
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="create-version"
+              disabled={createPending}
+              onClick={() => onCreateVersion?.()}
+              type="button"
+            >
+              {createPending ? dict.view.versions.createPending : dict.view.versions.create}
             </button>
             <button
               className={repartoButtonClass}
+              data-disabled-reason={previousYearAvailable ? undefined : "no_previous_year"}
+              data-reparto-action="compare-previous-year"
+              disabled={!previousYearAvailable}
+              onClick={() => onPreviousYear?.()}
+              type="button"
+            >
+              {dict.view.versions.previousYear}
+            </button>
+          </div>
+          {previousYearAvailable ? null : (
+            <p className="text-sm text-muted-foreground" data-reparto-slot="no-previous-year">
+              {dict.view.versions.noPreviousYear}
+            </p>
+          )}
+        </section>
+        <section className={repartoPanelClass} data-reparto-panel="version-selection">
+          <div className={repartoPanelHeaderClass}>
+            <h2>{dict.view.versions.compare}</h2>
+            <span
+              className="text-sm text-muted-foreground"
+              data-reparto-slot="comparison-availability"
+            >
+              {selectionState.reason
+                ? dict.view.versions.blocked[selectionState.reason]
+                : dict.view.versions.source.versions}
+            </span>
+          </div>
+          <div className={repartoFieldGridClass}>
+            {sides.map((side) => (
+              <label className={repartoFieldLabelClass} key={side.key}>
+                {side.label}
+                <select
+                  className={repartoInputClass}
+                  data-reparto-field={`compare-${side.key}`}
+                  onChange={(event: { target: { value: string } }) =>
+                    onSelectVersion?.(side.key, event.target.value)
+                  }
+                  value={side.value ?? ""}
+                >
+                  {versions.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      {formatRepartoMessage(dict.view.versions.item, {
+                        number: version.version_number
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-disabled-reason={selectionState.reason ?? undefined}
               data-reparto-action="compare-versions"
-              disabled={!comparisonEnabled}
+              disabled={!selectionState.canCompare}
+              onClick={() => onCompare?.()}
               type="button"
             >
               {dict.view.versions.compare}
             </button>
           </div>
         </section>
-        <section className={repartoPanelClass} data-reparto-panel="comparison">
-          <div className={repartoPanelHeaderClass}>
-            <h2>{dict.view.versions.comparison}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="comparison-state">
-              {comparisonLabel}
-            </span>
-          </div>
-          <dl className={repartoMetricsClass}>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.view.versions.requiredDelta}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="required-hours-delta">
-                {comparison.required_hours_delta}
-              </dd>
-            </div>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.view.versions.assignedDelta}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-hours-delta">
-                {comparison.assigned_hours_delta}
-              </dd>
-            </div>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.view.versions.teacherDelta}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-count-delta">
-                {comparison.teacher_count_delta}
-              </dd>
-            </div>
-          </dl>
-          <div data-reparto-slot="comparison-detail" />
-        </section>
+        <VersionComparisonPanel
+          comparison={comparison}
+          dict={dict}
+          source={comparisonSource}
+        />
       </div>
     </main>
   );

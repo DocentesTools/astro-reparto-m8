@@ -397,6 +397,32 @@ The editor freezes these surface slots:
 
 ---
 
+### 3.18 Versions and comparison
+
+> Added **2026-08-02** by the three-stage adaptation. The comparison renders the
+> plan §10.3 dimensions the service publishes and nothing it derives itself: a
+> `changed` flag is the service's set comparison and a delta is its arithmetic,
+> so the two are shown side by side and never inferred from one another.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="versions"` | package-owned version history |
+| Version row | `data-process-version-id` / `data-process-version-status` | immutable `ProcessVersionPublic`; the id is a DOM attribute, never a label |
+| Version detail | `data-reparto-slot="version-detail"` / `version-reason` | captured status, timestamp and stored reason (`No reason recorded` when absent) |
+| Empty history | `data-reparto-slot="no-versions"` | no capture yet; never rendered as "no changes" |
+| Capture action | `data-reparto-action="create-version"` with `data-reparto-field="version-reason"` | `POST /versions`, optional reason ≤ 500 characters |
+| Selection | `data-reparto-field="compare-left\|compare-right"` | ordered pair; defaults to the last two captures |
+| Compare action | `data-reparto-action="compare-versions"` | `GET /versions/{left}/compare/{right}`; disabled reason on `data-disabled-reason` (`not_enough_versions`, `same_version`) |
+| Previous-year action | `data-reparto-action="compare-previous-year"` | `GET /compare-previous-year`; disabled as `no_previous_year` unless the process records `created_from_process_id` |
+| Comparison panel | `data-reparto-panel="comparison"` with `data-reparto-comparison-source="versions\|previous_year"` | one panel, two sources, always named |
+| Comparison state | `data-reparto-comparison-state="none\|identical\|sections_only\|changed"` | "not compared" is distinct from "no changes"; sections differing with every dimension unchanged is its own state |
+| Dimension row | `data-reparto-dimension` / `data-reparto-dimension-changed` | the nine §10.3 flags: `allocation`, `group_hours`, `teacher_load`, `subject_category`, `activity`, `group_link`, `teacher_position_count`, `participant_target`, `requirement_generation` — all nine always listed |
+| Delta | `data-reparto-delta` / `data-reparto-delta-sign="positive\|negative\|zero\|none"` | the service's own signed value; hour deltas stay canonical two-decimal strings and only a leading `+` is added |
+| Not comparable | `data-reparto-delta-sign="none"` | `allocation_delta: null` — no allocation on one side; never rendered as `0.00` |
+| Changed sections | `data-reparto-slot="changed-sections"` / `data-reparto-section` | snapshot section names; the service's `teachers` section is labelled **Process participants** (§5.4), and an unrecognized section is shown as its own raw code |
+
+---
+
 ## 4. Canonical action verbs (button / link / menu labels)
 
 The runtime dictionary exposes every action verb under `action.*` so
@@ -716,7 +742,11 @@ Amendment rules:
 | `ProcessTeacher.available_hours` (field + `field.availableHours` label + the participants add/edit hour input + the `available_hours` list column + the `availableHours` error-mapping key) | §3.9 | `base_weekly_hours` (editable), `extra_weekly_hours` (audited action only), computed `target_weekly_hours` and `is_overloaded`; error keys `baseWeeklyHours` / `extraWeeklyHours` | 2026-08-02 |
 | `TeacherLanSummary.global_balance` / `teacher_balance` / `blocking_validation_count` and the `data-reparto-slot="teacher-available-hours"` / `teacher-balance` slots | teacher LAN view | `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's own `participant` (`ParticipantBalance`) and `available_slots`; slots `teacher-base-hours`, `teacher-extra-hours`, `teacher-target-hours`, `teacher-assigned-hours`, `teacher-remaining-hours`, `teacher-overload`, `teacher-state`, `available-slots`, `lan-plan-balance` | 2026-08-02 |
 | `ProcessSummary.global_balance` / `validations` and `ProcessDashboard.global_balance` / `teacher_balances` / `requirement_balances` / `validations` (with `GlobalBalance`, `TeacherBalance`, `RequirementBalance`, `ValidationMessage` and the `GlobalBalanceState` / `TeacherBalanceState` enums), plus the `overview-chart` / `teacher-load-chart` / `classroom-coverage-chart` panels and the `total-required-hours`, `pending-required-hours`, `overview-state`, `balance-summary`, `requirement-count`, `teacher-count`, `teacher-summary`, `coverage-summary`, `validation-count` slots, `data-reparto-chart-value` / `data-reparto-chart-bar`, and the whole `validation.*` dictionary branch | dashboard / shared screen | `ProcessSummary` (`readiness`, `plan_status`, `plan_balance`, `total_slots`/`assigned_slots`/`available_slots`) and `ProcessDashboard` (`readiness` + `planning`/`assignment` sections). Panels `planning-balance`, `assignment-progress`, `participant-balances`; slots `plan-status`, `planning-empty`, `total-slots`, `assigned-slots`, `available-slots`, `slot-progress`, `total-target-hours`, `total-assigned-hours`, `total-remaining-hours`, `participant-balances`, `participant-hours`, `participant-count`, `participant-summary`, `blocking-count`, `planning-validations`, `assignment-validations`, `validation-summary`; the three invariants as `data-reparto-invariant` / `data-reparto-invariant-state` and never one badge; both axes as `data-reparto-balance-axis`; findings printed from the service's own `message` with `data-reparto-validation-code` | 2026-08-02 |
+| `VersionComparison.required_hours_delta` / `assigned_hours_delta` / `assignment_count_delta` and the `required-hours-delta` / `assigned-hours-delta` / `teacher-count-delta` slots, the `comparison-detail` placeholder, and the `view.versions.requiredDelta` / `assignedDelta` / `teacherDelta` / `noChanges`-as-a-section-list labels | versions & comparison | the plan §10.3 contract: nine change flags and eight signed deltas (`allocation_delta` nullable, hour deltas canonical strings), rendered as §3.18's dimension rows with `data-reparto-delta` / `data-reparto-delta-sign`; `changed_sections` becomes a labelled list, never a comma-joined string | 2026-08-02 |
 | Shared-screen panels `global-state` / `turn-state` and the `dashboard` prop on `SharedScreenWorkspace` / `RepartoSharedView`; the meeting route rendering the dashboard a second time | shared screen / meeting control | `shared-balance`, `shared-slots` and a `turn-state` panel fed only by `ProcessSummary`, plus the meeting-control panels `meeting-turn-control`, `pending-slots`, `reconciliation-state`, `authorized-overloads`; slots `shared-state`, `shared-plan-balance`, `meeting-state`, `lifecycle-state`, `lifecycle-detail`, `pending-slots`, `overload-count`, `overload-hours`, `authorized-overloads`, `no-authorized-overloads`; attributes `data-reparto-lifecycle-state`, `data-reparto-selection-blocked`, `data-reparto-plan-stale`, `data-reparto-reconciliation-required`; disabled reasons as stable codes on `data-disabled-reason` | 2026-08-02 |
+
+The versions bullet closed the last surface that still parsed a float hour
+delta: every hour figure the package reads is now a canonical decimal string.
 
 Nothing from the single-balance family is left to retire: the dashboard bullet
 took `ProcessSummary` and `ProcessDashboard` with it, and the LAN bullet had

@@ -92,6 +92,23 @@ export const repartoKeys = {
     [...repartoKeys.process(processId), "teacher-lan"] as const,
   versions: (processId?: string) =>
     [...repartoKeys.process(processId), "versions"] as const,
+  // A comparison is keyed by the ordered pair it diffs: `right − left` is not
+  // symmetric, so `(a, b)` and `(b, a)` are two different answers and must not
+  // share a cache entry. Both sit under `versions` so capturing a new version
+  // invalidates the list and every comparison drawn from it with one prefix.
+  versionComparison: (
+    processId?: string,
+    leftVersionId?: string | null,
+    rightVersionId?: string | null
+  ) =>
+    [
+      ...repartoKeys.versions(processId),
+      "comparison",
+      leftVersionId ?? null,
+      rightVersionId ?? null
+    ] as const,
+  previousYearComparison: (processId?: string) =>
+    [...repartoKeys.versions(processId), "previous-year"] as const,
   exports: (processId?: string) =>
     [...repartoKeys.process(processId), "exports"] as const,
   schools: () => [...repartoKeys.all, "schools"] as const,

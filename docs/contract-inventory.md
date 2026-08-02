@@ -572,6 +572,35 @@ existing runtime handles them. The plan's §7 information architecture
 lists `Versions` and `Exports` in the Process group; the inventory
 above confirms both are reachable today.
 
+**`VersionComparison` (three-stage, 2026-08-02).** The comparison payload was
+rewritten with the snapshot it summarises (backend plan §10.2/§10.3). The float
+`required_hours_delta` / `assigned_hours_delta` / `assignment_count_delta`
+family is gone — there is no aggregate "required" axis (§3.1 has two
+independent balances) and an assignment carries no hours of its own (§5.10).
+What the service publishes now, all computed as `right − left`:
+
+| Field | Type | Note |
+| --- | --- | --- |
+| `changed_sections` | `string[]` | snapshot section names; `allocation_revisions`, `teaching_plan`, `subjects`, `group_subjects`, `teaching_activities`, `requirements`, `teachers`. Parsed as `string[]`, not an enum, so a section added later still renders |
+| `allocation_changed`, `group_hours_changed`, `teacher_load_changed`, `subject_category_changed`, `activity_added_or_removed`, `group_link_added_or_removed`, `teacher_position_count_changed`, `participant_target_changed`, `requirement_generation_changed` | `bool` | the nine §10.3 dimensions; a *set* comparison, so a flag can be true with a zero delta |
+| `allocation_delta` | canonical signed hours, **nullable** | `null` when either side has no current allocation — "not comparable", never `0.00` |
+| `group_load_delta`, `teacher_load_delta`, `participant_target_total_delta` | canonical signed hours | parsed through `SignedHoursSchema`; no hour value is a JSON number here |
+| `generation_number_delta`, `teacher_count_delta`, `activity_count_delta`, `requirement_count_delta` | `int` | signed counts |
+
+`GET /compare-previous-year` returns the same payload with the two **process**
+ids in the `*_version_id` fields (it diffs live snapshots, not stored
+versions) and answers **400** when the process has no
+`created_from_process_id`. The runtime therefore gates that call on the
+process detail rather than calling it speculatively.
+
+Runtime surface: `src/runtime/api/history.ts` (unchanged paths),
+`repartoKeys.versionComparison(processId, left, right)` /
+`repartoKeys.previousYearComparison(processId)`, hooks
+`useRepartoVersionComparison`, `useRepartoPreviousYearComparison`,
+`useCreateRepartoVersion` and `useRepartoProcess`, and the view-state helpers
+`buildVersionComparisonView` / `buildVersionSelectionState` /
+`versionSectionLabelKey` in `src/runtime/ui/history.ts`.
+
 ### 3.3 Streaming summary — `GET /assignment-processes/{process_id}/events`
 
 - Content-Type: `text/event-stream`

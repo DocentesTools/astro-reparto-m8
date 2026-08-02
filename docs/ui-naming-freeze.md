@@ -325,6 +325,29 @@ The editor freezes these surface slots:
 | Apply result | `data-reparto-slot="requirement-generation-result"` | server generation number and counts |
 | Live-slot count | `data-generated-slot-count` | authoritative `RequirementGenerationResult.count` |
 
+### 3.16 Allocation changes and reconciliation
+
+> Added **2026-08-02** by the three-stage adaptation. Plan/reconciliation state
+> remains service-owned; the UI never deletes an assignment or retries a stale
+> confirmation silently.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Workflow | `data-reparto-component="allocation-change-reconciliation"` | package-owned planning panel |
+| Reconciliation state | `data-reparto-slot="allocation-reconciliation-status"` | service plan status; `stale`/`reconciliation_required` enable preview |
+| Preserved assignment notice | `data-reparto-state="assignments-preserved"` | assignments remain visible until explicit apply |
+| Allocation history | `data-reparto-table="allocation-revisions"` | append-only immutable revisions |
+| Allocation form | `data-reparto-form="allocation-revision"` | positive decimal hours, mandatory reason, source metadata |
+| Record action | `data-reparto-action="create-allocation-revision"` | audited `POST /allocation-revisions/` |
+| Preview action | `data-reparto-action="preview-requirement-reconciliation"` | `POST /requirements/reconciliation-preview` |
+| Preview confirmation | `data-reparto-dialog="requirement-reconciliation-confirmation"` | reasoned manual-resolution boundary |
+| Preview counts | `data-reconciliation-preview-count="create\|preserve\|retire\|conflict"` | deterministic affected-requirement diff |
+| Conflict table | `data-reparto-table="reconciliation-conflicts"` | affected assigned requirements only |
+| Manual action | `data-reparto-manual-action="release-and-replace\|release-and-retire"` | explicit service behavior, never a silent delete |
+| Apply action | `data-reparto-action="reconcile-requirements"` | reason + exact expected conflict count |
+| Apply result | `data-reparto-slot="requirement-reconciliation-result"` | released/resolved/generation counts |
+| Live-slot count | `data-reconciled-live-slot-count` | authoritative result `count` |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

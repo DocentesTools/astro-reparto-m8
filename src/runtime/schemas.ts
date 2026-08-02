@@ -1663,6 +1663,101 @@ export type RequirementGenerationResult = z.infer<
   typeof RequirementGenerationResultSchema
 >;
 
+// ── Requirement reconciliation (backend plan §7.5, §9, §20.8) ─────────────
+
+export const RequirementConflictResolutionSchema = z.enum([
+  "value_changed",
+  "removed"
+]);
+export type RequirementConflictResolution = z.infer<
+  typeof RequirementConflictResolutionSchema
+>;
+
+/**
+ * One assigned slot that a regeneration would disturb. The active assignment
+ * remains present during preview; only an explicit, reasoned reconciliation
+ * may release it and retire or supersede the old slot.
+ */
+export const RequirementConflictDetailSchema = z
+  .object({
+    requirement_id: uuidSchema,
+    teaching_activity_id: uuidSchema,
+    position_index: z.number().int().nonnegative(),
+    resolution: RequirementConflictResolutionSchema,
+    current_required_teacher_hours: HoursSchema,
+    new_required_teacher_hours: HoursSchema.nullable(),
+    assignment_id: uuidSchema,
+    process_teacher_id: uuidSchema,
+    superseded_by_requirement_id: uuidSchema.nullable()
+  })
+  .strict();
+export type RequirementConflictDetail = z.infer<
+  typeof RequirementConflictDetailSchema
+>;
+
+export const RequirementReconciliationPreviewSchema = z
+  .object({
+    next_generation_number: z.number().int().positive(),
+    conflicts: z.array(RequirementConflictDetailSchema),
+    conflict_count: z.number().int().nonnegative(),
+    create_count: z.number().int().nonnegative(),
+    preserve_count: z.number().int().nonnegative(),
+    retire_count: z.number().int().nonnegative(),
+    requires_reconciliation: z.boolean(),
+    is_noop: z.boolean()
+  })
+  .strict()
+  .refine((preview) => preview.conflict_count === preview.conflicts.length, {
+    message: "Conflict count must match reconciliation conflicts.",
+    path: ["conflict_count"]
+  });
+export type RequirementReconciliationPreview = z.infer<
+  typeof RequirementReconciliationPreviewSchema
+>;
+
+export const RequirementReconcileRequestSchema = z
+  .object({
+    reason: z.string().trim().min(1).max(1000),
+    expected_conflict_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type RequirementReconcileRequest = z.infer<
+  typeof RequirementReconcileRequestSchema
+>;
+export type RequirementReconcileRequestInput = z.input<
+  typeof RequirementReconcileRequestSchema
+>;
+
+export const RequirementReconciliationResultSchema = z
+  .object({
+    generation_number: z.number().int().positive(),
+    resolved: z.array(RequirementConflictDetailSchema),
+    resolved_count: z.number().int().nonnegative(),
+    released_assignment_ids: z.array(uuidSchema),
+    created: z.array(RequirementGenerationSlotSchema),
+    created_count: z.number().int().nonnegative(),
+    preserved_count: z.number().int().nonnegative(),
+    retired_count: z.number().int().nonnegative(),
+    data: z.array(RequirementGenerationSlotSchema),
+    count: z.number().int().nonnegative()
+  })
+  .strict()
+  .refine((result) => result.resolved_count === result.resolved.length, {
+    message: "Resolved count must match reconciliation details.",
+    path: ["resolved_count"]
+  })
+  .refine(
+    (result) =>
+      result.released_assignment_ids.length === result.resolved_count,
+    {
+      message: "Released assignment count must match resolved conflicts.",
+      path: ["released_assignment_ids"]
+    }
+  );
+export type RequirementReconciliationResult = z.infer<
+  typeof RequirementReconciliationResultSchema
+>;
+
 const activityHoursRequestSchema = hoursRequestSchema(
   "Teaching-activity hours",
   "zero"

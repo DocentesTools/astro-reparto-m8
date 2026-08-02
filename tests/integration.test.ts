@@ -142,7 +142,22 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/requirements/generate",
       response: "RequirementGenerationResult"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(51);
+    expect(
+      REPARTO_CONTRACT_OPERATIONS[
+        "hourRequirements.reconciliationPreview"
+      ]
+    ).toEqual({
+      method: "POST",
+      path:
+        "/assignment-processes/{process_id}/requirements/reconciliation-preview",
+      response: "RequirementReconciliationPreview"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["hourRequirements.reconcile"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/requirements/reconcile",
+      response: "RequirementReconciliationResult"
+    });
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(53);
   });
 });
 

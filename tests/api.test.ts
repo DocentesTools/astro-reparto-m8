@@ -1439,6 +1439,93 @@ describe("teaching-plan and activity API wrappers", () => {
       `/assignment-processes/${processId}/teaching-plan/materialize-main`
     );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    const reconciliationAssignmentId =
+      "24242424-2424-4424-8424-242424242424";
+    const reconciliationTeacherId =
+      "25252525-2525-4525-8525-252525252525";
+    const reconciliationSlot = {
+      id: requirementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: 3,
+      status: "available",
+      created_generation: 2,
+      last_validated_generation: 2,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+    const conflict = {
+      requirement_id: requirementId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      resolution: "value_changed",
+      current_required_teacher_hours: 2.9000000000000004,
+      new_required_teacher_hours: 3,
+      assignment_id: reconciliationAssignmentId,
+      process_teacher_id: reconciliationTeacherId,
+      superseded_by_requirement_id: null
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        next_generation_number: 2,
+        conflicts: [conflict],
+        conflict_count: 1,
+        create_count: 0,
+        preserve_count: 2,
+        retire_count: 0,
+        requires_reconciliation: true,
+        is_noop: false
+      })
+    );
+    await expect(
+      hourRequirements.reconciliationPreview(processId)
+    ).resolves.toMatchObject({
+      conflict_count: 1,
+      conflicts: [
+        {
+          current_required_teacher_hours: "2.90",
+          new_required_teacher_hours: "3.00"
+        }
+      ]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/reconciliation-preview`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        generation_number: 2,
+        resolved: [conflict],
+        resolved_count: 1,
+        released_assignment_ids: [reconciliationAssignmentId],
+        created: [reconciliationSlot],
+        created_count: 1,
+        preserved_count: 2,
+        retired_count: 0,
+        data: [reconciliationSlot],
+        count: 3
+      })
+    );
+    await expect(
+      hourRequirements.reconcile(processId, {
+        reason: "  Allocation changed.  ",
+        expected_conflict_count: 1
+      })
+    ).resolves.toMatchObject({ resolved_count: 1, count: 3 });
+    const reconcileCall = fetchMock.mock.calls.at(-1);
+    expect(reconcileCall?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/reconcile`
+    );
+    expect(JSON.parse((reconcileCall?.[1] as RequestInit).body as string)).toEqual(
+      {
+        reason: "Allocation changed.",
+        expected_conflict_count: 1
+      }
+    );
   });
 
   it("previews and applies deterministic requirement generation", async () => {

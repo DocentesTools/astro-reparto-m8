@@ -467,6 +467,30 @@ uses the returned `TeachingPlanPublic` as the authoritative lock result. The
 backend still rejects a stale or non-feasible witness, and generation remains
 disabled until the service reports `locked` or `stale`.
 
+### 2.15 Allocation reconciliation — `prefix=/…/requirements`
+
+> Added **2026-08-02** for the §13.2 allocation-change reconciliation workflow.
+> Verified against `reparto-docente-m8` current branch:
+> `app/routes/hour_requirements.py`, `controllers/hour_requirements.py`, and
+> `db_models/hour_requirements.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| Preview | `POST /reconciliation-preview` → `RequirementReconciliationPreview`; no request body |
+| Apply | `POST /reconcile` with `reason` (1..1000) and `expected_conflict_count` → `RequirementReconciliationResult` |
+| Reconcilable status | `stale` or `reconciliation_required`; other plan states return 400 |
+| Stale confirmation | apply returns 409 when the conflict count no longer matches; the client must discard and rerun preview |
+| Conflict shape | requirement/activity/position identity, `value_changed` or `removed`, current/new canonical hours, assignment/participant identity, optional replacement identity |
+| Preview shape | next generation, ordered conflicts, create/preserve/retire/conflict counts, `requires_reconciliation`, `is_noop` |
+| Result shape | generation, resolved conflicts, released assignment ids, created/preserved/retired counts, complete live `data`, authoritative live `count` |
+
+Preview never changes a row. Apply is the explicit manual-resolution boundary:
+it records the reason, soft-cancels only the listed assignments, retires the old
+slots, creates replacements for hour changes, preserves audit history and moves
+the plan back to `requirements_generated`. The browser validates every response
+strictly and normalizes all conflict and slot hours to canonical two-place
+strings.
+
 ---
 
 ## 3. Additional surface area not in plan §2

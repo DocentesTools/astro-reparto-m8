@@ -48,6 +48,11 @@ const mocks = vi.hoisted(() => ({
     update: vi.fn(),
     archive: vi.fn()
   },
+  allocationRevisions: {
+    list: vi.fn(),
+    current: vi.fn(),
+    create: vi.fn()
+  },
   departments: {
     list: vi.fn(),
     create: vi.fn(),
@@ -94,6 +99,8 @@ const mocks = vi.hoisted(() => ({
     list: vi.fn(),
     generationPreview: vi.fn(),
     generate: vi.fn(),
+    reconciliationPreview: vi.fn(),
+    reconcile: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
     remove: vi.fn()
@@ -136,6 +143,9 @@ vi.mock("../src/runtime/api/schools.js", () => ({
 }));
 vi.mock("../src/runtime/api/academicYears.js", () => ({
   academicYears: mocks.academicYears
+}));
+vi.mock("../src/runtime/api/allocationRevisions.js", () => ({
+  allocationRevisions: mocks.allocationRevisions
 }));
 vi.mock("../src/runtime/api/departments.js", () => ({
   departments: mocks.departments
@@ -186,6 +196,9 @@ describe("reparto React hooks", () => {
     mocks.meetingSessions.list.mockClear();
     mocks.schools.list.mockClear();
     mocks.academicYears.list.mockClear();
+    mocks.allocationRevisions.list.mockClear();
+    mocks.allocationRevisions.current.mockClear();
+    mocks.allocationRevisions.create.mockClear();
     mocks.departments.list.mockClear();
     mocks.teacherProfiles.list.mockClear();
     mocks.subjects.list.mockClear();
@@ -211,6 +224,8 @@ describe("reparto React hooks", () => {
     mocks.hourRequirements.list.mockClear();
     mocks.hourRequirements.generationPreview.mockClear();
     mocks.hourRequirements.generate.mockClear();
+    mocks.hourRequirements.reconciliationPreview.mockClear();
+    mocks.hourRequirements.reconcile.mockClear();
     mocks.hourRequirements.create.mockClear();
     mocks.hourRequirements.update.mockClear();
     mocks.hourRequirements.remove.mockClear();
@@ -673,6 +688,72 @@ describe("reparto React hooks", () => {
       ["reparto", "processes", "detail", "p1", "requirements"],
       ["reparto", "processes", "detail", "p1", "dashboard"],
       ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
+  });
+
+  it("wires allocation revisions and explicit reconciliation with broad invalidation", async () => {
+    const {
+      useCreateRepartoAllocationRevision,
+      usePreviewRepartoRequirementReconciliation,
+      useReconcileRepartoRequirements,
+      useRepartoAllocationRevisions,
+      useRepartoCurrentAllocationRevision
+    } = await import("../src/runtime/react/hooks.js");
+
+    useRepartoAllocationRevisions("p1");
+    useRepartoCurrentAllocationRevision("p1");
+    expect(mocks.allocationRevisions.list).toHaveBeenCalledWith("p1");
+    expect(mocks.allocationRevisions.current).toHaveBeenCalledWith("p1");
+
+    mocks.invalidateQueries.mockClear();
+    const createRevision = useCreateRepartoAllocationRevision();
+    createRevision.mutate({
+      processId: "p1",
+      body: {
+        allocated_group_weekly_hours: "120.00",
+        reason: "Leadership update"
+      }
+    });
+    expect(mocks.allocationRevisions.create).toHaveBeenCalledWith("p1", {
+      allocated_group_weekly_hours: "120.00",
+      reason: "Leadership update"
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "allocation-revisions"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "requirements"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
+
+    const preview = usePreviewRepartoRequirementReconciliation();
+    preview.mutate("p1");
+    expect(mocks.hourRequirements.reconciliationPreview).toHaveBeenCalledWith(
+      "p1"
+    );
+
+    mocks.invalidateQueries.mockClear();
+    const reconcile = useReconcileRepartoRequirements();
+    reconcile.mutate({
+      processId: "p1",
+      body: { reason: "Reviewed manually", expected_conflict_count: 2 }
+    });
+    expect(mocks.hourRequirements.reconcile).toHaveBeenCalledWith("p1", {
+      reason: "Reviewed manually",
+      expected_conflict_count: 2
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "allocation-revisions"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "requirements"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"],
+      ["reparto", "processes", "detail", "p1", "assignments"],
+      ["reparto", "processes", "detail", "p1", "audit-events"]
     ]);
   });
 

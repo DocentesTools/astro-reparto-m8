@@ -138,6 +138,16 @@ create/preserve/retire/conflict diff and requires a separate confirmation before
 generation. The applied result shows the generation number and authoritative
 live-slot count; conflicts disable apply and direct the user to reconciliation.
 
+`AllocationChangeReconciliation` supplies that explicit reconciliation surface
+and is mounted by `/planning`. Department heads can record an immutable,
+reasoned allocation revision; history remains visible while the service marks
+the plan stale and blocks new assignments. The reconciliation preview keeps
+unchanged requirements and existing assignments visible, identifies each
+affected assigned position and shows the manual release/replace or
+release/retire action. Apply requires a reason plus the preview's exact conflict
+count. A 409 discards the stale preview instead of retrying, and the result shows
+released assignments, generation counts and the authoritative live-slot count.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

@@ -277,6 +277,17 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "POST",
     path: "/assignment-processes/{process_id}/requirements/generate",
     response: "RequirementGenerationResult"
+  },
+  "hourRequirements.reconciliationPreview": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/requirements/reconciliation-preview",
+    response: "RequirementReconciliationPreview"
+  },
+  "hourRequirements.reconcile": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/requirements/reconcile",
+    response: "RequirementReconciliationResult"
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 

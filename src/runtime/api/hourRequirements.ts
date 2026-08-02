@@ -6,12 +6,18 @@ import {
   HourRequirementUpdateSchema,
   RequirementGenerationPreviewSchema,
   RequirementGenerationResultSchema,
+  RequirementReconcileRequestSchema,
+  RequirementReconciliationPreviewSchema,
+  RequirementReconciliationResultSchema,
   type HourRequirementCreateInput,
   type HourRequirementPublic,
   type HourRequirementsPublic,
   type HourRequirementUpdate,
   type RequirementGenerationPreview,
-  type RequirementGenerationResult
+  type RequirementGenerationResult,
+  type RequirementReconcileRequestInput,
+  type RequirementReconciliationPreview,
+  type RequirementReconciliationResult
 } from "../schemas.js";
 
 export const hourRequirements = {
@@ -47,6 +53,29 @@ export const hourRequirements = {
       method: "POST",
       path: `/assignment-processes/${processId}/requirements/generate`,
       schema: RequirementGenerationResultSchema,
+      auth: true
+    }),
+  /** Preview every assigned slot that explicit reconciliation would release. */
+  reconciliationPreview: (processId: string) =>
+    request<RequirementReconciliationPreview>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/requirements/reconciliation-preview`,
+      schema: RequirementReconciliationPreviewSchema,
+      auth: true
+    }),
+  /**
+   * Apply an audited manual resolution. The confirmed conflict count guards
+   * against applying a stale preview and the reason is recorded by the service.
+   */
+  reconcile: (
+    processId: string,
+    body: RequirementReconcileRequestInput
+  ) =>
+    request<RequirementReconciliationResult>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/requirements/reconcile`,
+      body: RequirementReconcileRequestSchema.parse(body),
+      schema: RequirementReconciliationResultSchema,
       auth: true
     }),
   create: (processId: string, body: HourRequirementCreateInput) =>

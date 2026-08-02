@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { academicYears } from "../api/academicYears.js";
+import { allocationRevisions } from "../api/allocationRevisions.js";
 import { assignmentProcesses } from "../api/assignmentProcesses.js";
 import { assignments } from "../api/assignments.js";
 import { auditEvents } from "../api/auditEvents.js";
@@ -27,12 +28,14 @@ import type {
   ClassroomStageUpdate,
   DepartmentCreate,
   DepartmentUpdate,
+  DepartmentHourAllocationRevisionCreateInput,
   GroupSubjectBulkApplyRequestInput,
   GroupSubjectBulkRequestInput,
   HourRequirementCreateInput,
   HourRequirementUpdate,
   ProcessTeacherCreateInput,
   ProcessTeacherUpdate,
+  RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
   SubjectCreateInput,
@@ -661,10 +664,94 @@ export function useRepartoHourRequirements(processId?: string) {
   });
 }
 
+export function useRepartoAllocationRevisions(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.allocationRevisions(processId),
+    queryFn: () => allocationRevisions.list(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+export function useRepartoCurrentAllocationRevision(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.currentAllocationRevision(processId),
+    queryFn: () => allocationRevisions.current(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+function invalidateAllocationChangeProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string
+) {
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.allocationRevisions(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.teachingPlan(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.hourRequirements(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.dashboard(processId)
+  });
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.summary(processId)
+  });
+}
+
+export function useCreateRepartoAllocationRevision() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: DepartmentHourAllocationRevisionCreateInput;
+    }) => allocationRevisions.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateAllocationChangeProjections(queryClient, processId);
+    }
+  });
+}
+
 export function usePreviewRepartoRequirementGeneration() {
   return useMutation({
     mutationFn: (processId: string) =>
       hourRequirements.generationPreview(processId)
+  });
+}
+
+export function usePreviewRepartoRequirementReconciliation() {
+  return useMutation({
+    mutationFn: (processId: string) =>
+      hourRequirements.reconciliationPreview(processId)
+  });
+}
+
+export function useReconcileRepartoRequirements() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: RequirementReconcileRequestInput;
+    }) => hourRequirements.reconcile(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateAllocationChangeProjections(queryClient, processId);
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.auditEvents(processId)
+      });
+    }
   });
 }
 

@@ -7,6 +7,7 @@ export {
 export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
 export {
   useArchiveRepartoAcademicYear,
+  useCreateRepartoAllocationRevision,
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
   useCreateRepartoSchool,
@@ -40,6 +41,10 @@ export {
   useGenerateRepartoRequirements,
   useLockRepartoTeachingPlan,
   usePreviewRepartoRequirementGeneration,
+  usePreviewRepartoRequirementReconciliation,
+  useReconcileRepartoRequirements,
+  useRepartoAllocationRevisions,
+  useRepartoCurrentAllocationRevision,
   useRepartoTeachingPlan,
   useRepartoTeachingPlanSummary,
   useRepartoTeachingPlanValidations,

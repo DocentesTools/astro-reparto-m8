@@ -17,6 +17,7 @@ import { PlanningBalanceHeader } from "./balance-header.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
 import { SecondaryActivityEditor } from "./secondary-activities.js";
 import { PlanLockAndRequirementGeneration } from "./plan-generation.js";
+import { AllocationChangeReconciliation } from "./allocation-reconciliation.js";
 
 function PlanningContent({
   locale,
@@ -52,6 +53,7 @@ function PlanningContent({
       <MainSubjectMaterialization locale={locale} processId={processId} />
       <SecondaryActivityEditor locale={locale} processId={processId} />
       <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
+      <AllocationChangeReconciliation locale={locale} processId={processId} />
     </main>
   );
 }
@@ -100,3 +102,17 @@ export {
   isPlanLockAvailable,
   isRequirementGenerationAvailable
 } from "./plan-generation.js";
+export {
+  AllocationChangeReconciliation,
+  AllocationRevisionHistory,
+  ReconciliationStatusCard,
+  RequirementReconciliationPreviewCard,
+  RequirementReconciliationResultCard,
+  buildAllocationRevisionRequest,
+  buildReconciliationConflictRows,
+  isAllocationReconciliationAvailable,
+  isStaleRequirementReconciliationError,
+  type AllocationRevisionFormResult,
+  type AllocationRevisionFormValues,
+  type ReconciliationConflictRow
+} from "./allocation-reconciliation.js";

@@ -52,6 +52,10 @@ import {
   RequirementGenerationResultSchema,
   RequirementGenerationSlotSchema,
   RequirementGenerationSlotStatusSchema,
+  RequirementConflictResolutionSchema,
+  RequirementReconcileRequestSchema,
+  RequirementReconciliationPreviewSchema,
+  RequirementReconciliationResultSchema,
   RequirementSlotPlanSchema,
   SchoolCreateSchema,
   SchoolPublicSchema,
@@ -1468,6 +1472,97 @@ describe("teaching-plan and activity schemas", () => {
     ).toThrow();
     expect(() =>
       RequirementGenerationSlotSchema.parse({ ...slot, private_witness: "x" })
+    ).toThrow();
+  });
+
+  it("validates explicit reconciliation conflicts, confirmation and results", () => {
+    const assignmentId = "24242424-2424-4424-8424-242424242424";
+    const processTeacherId = "25252525-2525-4525-8525-252525252525";
+    const replacementId = "26262626-2626-4626-8626-262626262626";
+    const conflict = {
+      requirement_id: requirementId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      resolution: "value_changed",
+      current_required_teacher_hours: 2.9000000000000004,
+      new_required_teacher_hours: "3.00",
+      assignment_id: assignmentId,
+      process_teacher_id: processTeacherId,
+      superseded_by_requirement_id: null
+    };
+    const slot = {
+      id: replacementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: "3.00",
+      status: "available",
+      created_generation: 3,
+      last_validated_generation: 3,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+
+    expect(RequirementConflictResolutionSchema.options).toEqual([
+      "value_changed",
+      "removed"
+    ]);
+    const preview = RequirementReconciliationPreviewSchema.parse({
+      next_generation_number: 3,
+      conflicts: [conflict],
+      conflict_count: 1,
+      create_count: 0,
+      preserve_count: 4,
+      retire_count: 0,
+      requires_reconciliation: true,
+      is_noop: false
+    });
+    expect(preview.conflicts[0]).toMatchObject({
+      current_required_teacher_hours: "2.90",
+      new_required_teacher_hours: "3.00"
+    });
+    expect(
+      RequirementReconcileRequestSchema.parse({
+        reason: "  Leadership changed the allocation.  ",
+        expected_conflict_count: 1
+      })
+    ).toEqual({
+      reason: "Leadership changed the allocation.",
+      expected_conflict_count: 1
+    });
+    const result = RequirementReconciliationResultSchema.parse({
+      generation_number: 3,
+      resolved: [{ ...conflict, superseded_by_requirement_id: replacementId }],
+      resolved_count: 1,
+      released_assignment_ids: [assignmentId],
+      created: [slot],
+      created_count: 1,
+      preserved_count: 4,
+      retired_count: 0,
+      data: [slot],
+      count: 5
+    });
+    expect(result).toMatchObject({ resolved_count: 1, count: 5 });
+
+    expect(() =>
+      RequirementReconciliationPreviewSchema.parse({
+        ...preview,
+        conflict_count: 2
+      })
+    ).toThrow();
+    expect(() =>
+      RequirementReconcileRequestSchema.parse({
+        reason: "   ",
+        expected_conflict_count: 1
+      })
+    ).toThrow();
+    expect(() =>
+      RequirementReconciliationResultSchema.parse({
+        ...result,
+        released_assignment_ids: []
+      })
     ).toThrow();
   });
 

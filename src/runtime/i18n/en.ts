@@ -88,6 +88,11 @@ export const en = {
       },
       overloaded: "{hours} extra hours have been authorized for you.",
       notOverloaded: "No extra hours are authorized for you.",
+      connection: {
+        disconnected: "Live updates disconnected",
+        live: "Live updates connected",
+        stale: "Live updates delayed"
+      },
       state: {
         pending: "You have not reached your target yet.",
         balanced: "Your assigned hours match your target.",

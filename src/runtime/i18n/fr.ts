@@ -87,6 +87,11 @@ export const fr: RepartoDictionary = {
       },
       overloaded: "{hours} heures supplémentaires vous ont été autorisées.",
       notOverloaded: "Aucune heure supplémentaire ne vous est autorisée.",
+      connection: {
+        disconnected: "Mises à jour en direct déconnectées",
+        live: "Mises à jour en direct connectées",
+        stale: "Mises à jour en direct retardées"
+      },
       state: {
         pending: "Vous n'avez pas encore atteint votre cible.",
         balanced: "Vos heures attribuées correspondent à votre cible.",

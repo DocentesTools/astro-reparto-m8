@@ -91,6 +91,10 @@ export {
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";
 export {
+  useRepartoEventStream,
+  type RepartoEventStreamState
+} from "./useRepartoEvents.js";
+export {
   repartoRouteContainerClasses,
   repartoRouteLoaderClass,
   repartoRouteTransitionLoaderClass

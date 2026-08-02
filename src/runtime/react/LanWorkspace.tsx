@@ -5,12 +5,14 @@ import type {
   MeetingSessionPublic,
   PlanReadiness,
   ProcessSummary,
+  SseEventType,
   TeacherLanSummary
 } from "../schemas.js";
 import {
   buildMeetingControlState,
   buildTeacherChoiceState,
-  classifyDirectChoiceConflict
+  classifyDirectChoiceConflict,
+  type LanConnectionState
 } from "../ui/index.js";
 import {
   formatRepartoMessage,
@@ -36,8 +38,13 @@ import {
   repartoShellClass
 } from "./styles.js";
 
-function eventStreamUrl(processId?: string): string | undefined {
-  return processId ? assignmentProcesses.eventsUrl(processId) : undefined;
+function eventStreamUrl(
+  processId: string | undefined,
+  audience: "teacher" | "shared_screen"
+): string | undefined {
+  return processId
+    ? assignmentProcesses.eventsUrl(processId, audience)
+    : undefined;
 }
 
 /**
@@ -249,9 +256,11 @@ function TeacherDirectChoicePanel({
  * it does not, never quietly rendered as zero.
  */
 function TeacherHoursPanel({
+  connectionState,
   locale,
   summary
 }: {
+  connectionState: LanConnectionState;
   locale?: RepartoLocale;
   summary: TeacherLanSummary;
 }) {
@@ -297,7 +306,13 @@ function TeacherHoursPanel({
     >
       <div className={repartoPanelHeaderClass}>
         <h2>{dict.view.lan.title}</h2>
-        <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
+        <span
+          className="text-sm text-muted-foreground"
+          data-reparto-connection-state={connectionState}
+          data-reparto-slot="connection-state"
+        >
+          {dict.view.lan.connection[connectionState]}
+        </span>
       </div>
       <dl className={repartoMetricsClass}>
         {metrics.map((metric) => (
@@ -350,7 +365,9 @@ function TeacherHoursPanel({
 
 export function TeacherLanWorkspace({
   assignments = [],
+  connectionState = "disconnected",
   conflict = null,
+  lastEventType = null,
   locale,
   meetingSession = null,
   processId,
@@ -363,7 +380,9 @@ export function TeacherLanWorkspace({
   summary = null
 }: {
   assignments?: AssignmentPublic[];
+  connectionState?: LanConnectionState;
   conflict?: unknown;
+  lastEventType?: SseEventType | null;
   locale?: RepartoLocale;
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
@@ -376,14 +395,16 @@ export function TeacherLanWorkspace({
   summary?: TeacherLanSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const eventsUrl = eventStreamUrl(processId);
+  const eventsUrl = eventStreamUrl(processId, "teacher");
   const safeSummary = summary ?? fallbackTeacherSummary;
   return (
     <main
       className={repartoShellClass}
       data-process-id={processId}
       data-reparto-control="lan-teacher"
+      data-reparto-connection-state={connectionState}
       data-reparto-events-url={eventsUrl}
+      data-reparto-last-event={lastEventType ?? ""}
       data-reparto-route="my-view"
     >
       <header className={repartoHeaderClass}>
@@ -391,7 +412,11 @@ export function TeacherLanWorkspace({
         <h1>{dict.nav.item.myView}</h1>
       </header>
       <div className={repartoMainGridClass}>
-        <TeacherHoursPanel locale={locale} summary={safeSummary} />
+        <TeacherHoursPanel
+          connectionState={connectionState}
+          locale={locale}
+          summary={safeSummary}
+        />
         <section className={repartoPanelClass} data-reparto-panel="turn-and-balance">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.meetingReadiness}</h2>
@@ -440,16 +465,20 @@ export function TeacherLanWorkspace({
  * no name to display and this screen must not learn one.
  */
 export function SharedScreenWorkspace({
+  connectionState = "disconnected",
+  lastEventType = null,
   locale,
   processId,
   summary = null
 }: {
+  connectionState?: LanConnectionState;
+  lastEventType?: SseEventType | null;
   locale?: RepartoLocale;
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const eventsUrl = eventStreamUrl(processId);
+  const eventsUrl = eventStreamUrl(processId, "shared_screen");
   const control = buildMeetingControlState(summary);
   const lifecycleState = control.reconciliationRequired
     ? "reconciliation_required"
@@ -463,7 +492,9 @@ export function SharedScreenWorkspace({
       className={repartoShellClass}
       data-process-id={processId}
       data-reparto-control="projected-summary"
+      data-reparto-connection-state={connectionState}
       data-reparto-events-url={eventsUrl}
+      data-reparto-last-event={lastEventType ?? ""}
       data-reparto-lifecycle-state={lifecycleState}
       data-reparto-route="shared-screen"
       data-reparto-selection-blocked={control.selectionBlocked ? "true" : "false"}
@@ -481,7 +512,13 @@ export function SharedScreenWorkspace({
         <section className={repartoPanelClass} data-reparto-panel="shared-balance">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.planning}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
+            <span
+              className="text-sm text-muted-foreground"
+              data-reparto-connection-state={connectionState}
+              data-reparto-slot="connection-state"
+            >
+              {dict.view.lan.connection[connectionState]}
+            </span>
           </div>
           <ProcessInvariantRow
             balance={summary?.plan_balance ?? null}

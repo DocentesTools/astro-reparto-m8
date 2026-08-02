@@ -85,6 +85,30 @@ export const PlanReadinessSchema = z.enum([
 ]);
 export type PlanReadiness = z.infer<typeof PlanReadinessSchema>;
 
+/** Viewer tier requested from the role-projected process event stream. */
+export const SseAudienceSchema = z.enum([
+  "department_head",
+  "teacher",
+  "shared_screen"
+]);
+export type SseAudience = z.infer<typeof SseAudienceSchema>;
+
+/** Complete process-event vocabulary published by reparto-docente-m8. */
+export const SseEventTypeSchema = z.enum([
+  "stream.opened",
+  "stream.gap",
+  "allocation.revised",
+  "teaching_plan.updated",
+  "teaching_plan.balanced",
+  "teaching_plan.locked",
+  "teaching_plan.stale",
+  "requirements.generated",
+  "requirements.reconciled",
+  "requirements.reconciliation_required",
+  "participant.extra_hours_updated"
+]);
+export type SseEventType = z.infer<typeof SseEventTypeSchema>;
+
 export const ValidationSeveritySchema = z.enum([
   "info",
   "warning",
@@ -149,6 +173,55 @@ const dateTimeSchema = z.iso.datetime({
 const dateOnlySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be a YYYY-MM-DD string.");
+
+/** Full event shape available only to a department head. */
+export const DepartmentHeadSseEventDataSchema = z
+  .object({
+    event_type: SseEventTypeSchema.exclude(["stream.gap"]),
+    process_id: uuidSchema,
+    sequence: z.number().int().nonnegative(),
+    occurred_at: dateTimeSchema,
+    readiness: PlanReadinessSchema,
+    selection_blocked: z.boolean(),
+    payload: z.record(z.string(), z.unknown()),
+    subject_process_teacher_id: uuidSchema.nullable()
+  })
+  .strict();
+export type DepartmentHeadSseEventData = z.infer<
+  typeof DepartmentHeadSseEventDataSchema
+>;
+
+/** Teacher projection: only the viewer's own participant event carries a payload. */
+export const TeacherSseEventDataSchema = z
+  .object({
+    event_type: SseEventTypeSchema.exclude(["stream.gap"]),
+    process_id: uuidSchema,
+    sequence: z.number().int().nonnegative(),
+    occurred_at: dateTimeSchema,
+    readiness: PlanReadinessSchema,
+    selection_blocked: z.boolean(),
+    process_teacher_id: uuidSchema.optional(),
+    payload: z.record(z.string(), z.unknown()).optional()
+  })
+  .strict();
+export type TeacherSseEventData = z.infer<typeof TeacherSseEventDataSchema>;
+
+/** Identifier-free projection consumed by a room-facing shared screen. */
+export const SharedScreenSseEventDataSchema = z
+  .object({ readiness: PlanReadinessSchema })
+  .strict();
+export type SharedScreenSseEventData = z.infer<
+  typeof SharedScreenSseEventDataSchema
+>;
+
+/** Control frame emitted when the server-side subscriber buffer overflowed. */
+export const SseGapDataSchema = z
+  .object({
+    dropped: z.number().int().positive(),
+    detail: z.string().min(1)
+  })
+  .strict();
+export type SseGapData = z.infer<typeof SseGapDataSchema>;
 
 /**
  * Build a schema for an hour value the UI *sends*, as opposed to one it reads.

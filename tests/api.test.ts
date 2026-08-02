@@ -350,6 +350,9 @@ describe("assignment process API", () => {
     expect(assignmentProcesses.eventsUrl(processId)).toBe(
       `http://localhost/reparto/assignment-processes/${processId}/events`
     );
+    expect(assignmentProcesses.eventsUrl(processId, "teacher")).toBe(
+      `http://localhost/reparto/assignment-processes/${processId}/events?audience=teacher`
+    );
   });
 });
 

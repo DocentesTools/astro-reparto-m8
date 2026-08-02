@@ -14,6 +14,10 @@ import {
   useRepartoProcesses,
   useRepartoSchools
 } from "../hooks.js";
+import {
+  useRepartoEventStream,
+  type RepartoEventStreamState
+} from "../useRepartoEvents.js";
 import { resolveProcessId } from "../../queryKeys.js";
 import {
   formatRepartoMessage,
@@ -34,6 +38,7 @@ import {
   repartoShellClass
 } from "../styles.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
+import type { SseAudience } from "../../schemas.js";
 
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
@@ -455,13 +460,18 @@ export function WithSelectedProcess({
   children,
   locale,
   mode = "admin",
-  processId
+  processId,
+  streamAudience = "department_head"
 }: {
   bypass?: boolean;
-  children: (processId: string | undefined) => ReactNode;
+  children: (
+    processId: string | undefined,
+    eventState: RepartoEventStreamState
+  ) => ReactNode;
   locale?: RepartoLocale;
   mode?: "admin" | "readonly";
   processId?: string;
+  streamAudience?: SseAudience;
 }) {
   const routeProcessId = resolveProcessId(processId);
   const [selected, setSelected] = useState<string | undefined>(() => {
@@ -469,6 +479,7 @@ export function WithSelectedProcess({
     return window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim() || undefined;
   });
   const effective = selected ?? resolveProcessId(processId);
+  const eventState = useRepartoEventStream(effective, streamAudience);
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses();
   const processes = processesQuery.data?.data ?? [];
@@ -534,7 +545,7 @@ export function WithSelectedProcess({
           </div>
         </section>
       ) : null}
-      {children(effective ?? processId)}
+      {children(effective ?? processId, eventState)}
     </>
   );
 }

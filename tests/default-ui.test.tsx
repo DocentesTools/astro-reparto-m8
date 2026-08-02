@@ -359,6 +359,9 @@ describe("default reparto UI", () => {
     );
     expect(teacherHtml).toContain('data-reparto-route="my-view"');
     expect(teacherHtml).toContain('data-reparto-events-url=');
+    expect(teacherHtml).toContain("audience=teacher");
+    expect(teacherHtml).toContain('data-reparto-connection-state="disconnected"');
+    expect(teacherHtml).toContain("Live updates disconnected");
     expect(teacherHtml).toContain('data-reparto-action="direct-choice"');
     expect(teacherHtml).toContain('data-reparto-action="pass-turn"');
     expect(teacherHtml).toContain('data-reparto-panel="direct-choice-workflow"');
@@ -371,6 +374,8 @@ describe("default reparto UI", () => {
       />
     );
     expect(sharedHtml).toContain('data-reparto-route="shared-screen"');
+    expect(sharedHtml).toContain("audience=shared_screen");
+    expect(sharedHtml).toContain('data-reparto-connection-state="disconnected"');
     expect(sharedHtml).toContain('data-reparto-panel="shared-balance"');
     expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
   });

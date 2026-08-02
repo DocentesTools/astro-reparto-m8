@@ -449,6 +449,22 @@ The editor freezes these surface slots:
 | Final confirmation | `data-reparto-dialog="final-export-confirmation"` with `data-reparto-action="confirm-final-export"` | producing it archives the process |
 | Leadership workflow | `data-reparto-panel="leadership-workflow"` | unchanged: `mark-returned`, `start-revision`, `reopen-final` |
 
+### 3.20 Live process-event state
+
+> Added **2026-08-02** by the three-stage adaptation. Events are cache
+> invalidation signals, never a second state authority: a reconnect,
+> non-increasing sequence, invalid frame or server `stream.gap` causes an
+> authoritative HTTP refetch. A shared screen requests the identifier-free projection at the
+> endpoint rather than redacting a department-head frame after arrival.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Stream URL | `data-reparto-events-url` | audience-scoped process endpoint; never contains the bearer token |
+| Connection state | `data-reparto-slot="connection-state"` + `data-reparto-connection-state="live\|stale\|disconnected"` | localized transport freshness, updated by domain frames and heartbeat comments |
+| Last accepted event | `data-reparto-last-event` | registered event name only; empty before the first validated frame |
+| Teacher audience | `audience=teacher` | readiness, selection blocking and the caller's own participant-hour payload only |
+| Shared-screen audience | `audience=shared_screen` | `{ readiness }` only; no process, participant or hour identifiers arrive |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

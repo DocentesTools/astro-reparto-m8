@@ -113,7 +113,7 @@ a free-form bool, not a status enum.
 | Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` — `readiness` plus a `planning` section (`teaching_plan_id`, `status`, `PlanBalance`, `PlanValidationReport`, all nullable together when no plan exists) and an always-present `assignment` section (`AssignmentSummary` + `AssignmentValidationReport`). The two sections are reported side by side and are never summed | dashboard | ✓ |
 | Shared screen source | the projected view calls **`/summary` only** — never `/dashboard` (`RBAC-07`); the aggregate carries no `display_name` and no per-participant hours | (n/a) | ✓ |
 | LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (reader floor) — `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's **own** `participant` balance and `available_slots` | lan/me | ✓ |
-| Events (SSE) | `GET /{process_id}/events` → `text/event-stream` `event: process.summary` | events | ✓ |
+| Events (SSE) | `GET /{process_id}/events?audience=department_head\|teacher\|shared_screen` → bearer-authenticated `text/event-stream`; strict role projection and registered event names in §3.3 | eventsUrl + `useRepartoEventStream` | ✓ |
 | Create required | `academic_year_id, school_id, department_id` (all `uuid`) | `academic_year_id*`, `school_id*`, `department_id*` | ✓ |
 | Public shape | base + `id, closed_at, closed_by_user_id, created_by_user_id, created_at, updated_at` | (n/a) | ✓ |
 | Patch fields | `status, default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` | (n/a) | ✓ |
@@ -654,15 +654,29 @@ separate from planning import, uses the latest JSON backup, exposes the service'
 `restore_assignments` mode, and requires a focused confirmation because the
 target must be an empty draft.
 
-### 3.3 Streaming summary — `GET /assignment-processes/{process_id}/events`
+### 3.3 Role-projected process events — `GET /assignment-processes/{process_id}/events`
 
-- Content-Type: `text/event-stream`
-- Event name: `process.summary`
-- Payload: a `ProcessSummary` object serialised as JSON in the `data:`
-  line of the SSE frame
-- Use case: push live summary updates to a shared dashboard while a
-  meeting is open. Out of scope for Phase 0.5; the runtime may wrap it
-  in Phase 4 (dashboards).
+- Content-Type: `text/event-stream`; the client sends the auth adapter's bearer
+  token through Fetch because native `EventSource` cannot set `Authorization`.
+- Audience query: `department_head`, `teacher`, or `shared_screen`. The service
+  may downgrade but never upgrade the caller. Starter admin views request the
+  department-head projection, the teacher LAN view requests `teacher`, and the
+  room-facing view explicitly requests the identifier-free `shared_screen` tier.
+- Control events: `stream.opened` establishes readiness and forces a complete
+  process refetch after every connect; `stream.gap` forces the same refetch
+  because delivery is best effort. The broker sequence is global across process
+  topics, so forward jumps are valid; non-increasing values fail closed.
+- Domain events: `allocation.revised`; `teaching_plan.updated`, `.balanced`,
+  `.locked`, `.stale`; `requirements.generated`, `.reconciled`,
+  `.reconciliation_required`; and `participant.extra_hours_updated`.
+- Every frame is parsed by the strict role-specific Zod schema before it can
+  invalidate cache state. Department heads receive the full payload, teachers
+  receive readiness plus only their own participant payload, and shared screens
+  receive only `{ readiness }`.
+- `useRepartoEventStream` invalidates allocation, plan, generated-slot,
+  assignment, participant, dashboard, summary, teacher-LAN and audit query
+  projections according to the event family. Heartbeats maintain the visible
+  `live` / `stale` / `disconnected` connection state without changing data.
 
 ---
 

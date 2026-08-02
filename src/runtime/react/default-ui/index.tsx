@@ -40,6 +40,7 @@ import {
   summarizeProcessDashboard
 } from "../../ui/index.js";
 import { repartoPanelClass } from "../styles.js";
+import type { RepartoEventStreamState } from "../useRepartoEvents.js";
 import {
   Shell,
   WithSelectedProcess,
@@ -410,8 +411,9 @@ export function RepartoMyView({
         locale={locale}
         mode="readonly"
         processId={processId}
+        streamAudience="teacher"
       >
-        {(resolvedProcessId) => (
+        {(resolvedProcessId, eventState) => (
           <RepartoMyContent
             assignments={assignments}
             locale={locale}
@@ -423,6 +425,7 @@ export function RepartoMyView({
             selectedSlotId={selectedSlotId}
             selectionBlocked={selectionBlocked}
             summary={summary}
+            eventState={eventState}
           />
         )}
       </WithSelectedProcess>
@@ -440,7 +443,8 @@ function RepartoMyContent({
   requirements,
   selectedSlotId,
   selectionBlocked,
-  summary
+  summary,
+  eventState
 }: {
   assignments?: AssignmentPublic[];
   locale?: "en" | "fr" | "es";
@@ -452,6 +456,7 @@ function RepartoMyContent({
   selectedSlotId?: string | null;
   selectionBlocked?: boolean | null;
   summary?: TeacherLanSummary | null;
+  eventState: RepartoEventStreamState;
 }) {
   const summaryQuery = useRepartoTeacherLan(processId);
   const sessionsQuery = useRepartoMeetingSessions(processId);
@@ -491,6 +496,8 @@ function RepartoMyContent({
         selectedSlotId={selectedSlotId}
         selectionBlocked={selectionBlocked}
         summary={activeSummary}
+        connectionState={eventState.connectionState}
+        lastEventType={eventState.lastEventType}
       />
       <QueryState
         error={summaryQuery.error ?? sessionsQuery.error}
@@ -525,9 +532,11 @@ export function RepartoSharedView({
         locale={locale}
         mode="readonly"
         processId={processId}
+        streamAudience="shared_screen"
       >
-        {(resolvedProcessId) => (
+        {(resolvedProcessId, eventState) => (
           <RepartoSharedContent
+            eventState={eventState}
             locale={locale}
             processId={resolvedProcessId}
             summary={summary}
@@ -548,10 +557,12 @@ export function RepartoSharedView({
  * payload in, the redaction is a convention rather than a boundary.
  */
 function RepartoSharedContent({
+  eventState,
   locale,
   processId,
   summary
 }: {
+  eventState: RepartoEventStreamState;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
@@ -575,6 +586,8 @@ function RepartoSharedContent({
   return (
     <>
       <SharedScreenWorkspace
+        connectionState={eventState.connectionState}
+        lastEventType={eventState.lastEventType}
         locale={locale}
         processId={processId}
         summary={activeSummary}

@@ -46,6 +46,8 @@ import {
   ParticipantBalanceSchema,
   PlanBalanceSchema,
   PlanValidationReportSchema,
+  PlanningImportRequestSchema,
+  PlanningImportResultSchema,
   ProcessDashboardSchema,
   ProcessSummarySchema,
   ProcessTeacherCreateSchema,
@@ -103,6 +105,84 @@ describe("classroom stage schemas", () => {
     expect(ClassroomStagePublicSchema.parse({ id: processId, stage: "Secundaria", min_grade: 1, max_grade: 4, label: "ESO", created_at: now, updated_at: now }).label).toBe("ESO");
     expect(() => ClassroomStageCreateSchema.parse({ stage: "", min_grade: 1, max_grade: 4, label: "ESO" })).toThrow();
     expect(() => ClassroomStageCreateSchema.parse({ stage: "Secundaria", min_grade: 5, max_grade: 4, label: "ESO" })).toThrow();
+  });
+});
+
+describe("planning import schemas", () => {
+  const processId = "11111111-1111-4111-8111-111111111111";
+  const planId = "22222222-2222-4222-8222-222222222222";
+  const subjectId = "33333333-3333-4333-8333-333333333333";
+
+  it("applies import defaults while preserving canonical decimal strings", () => {
+    expect(
+      PlanningImportRequestSchema.parse({
+        activities: [
+          {
+            subject_id: subjectId,
+            group_weekly_hours_per_group: "2.50",
+            teacher_weekly_hours_per_position: "3.00"
+          }
+        ]
+      })
+    ).toEqual({
+      activities: [
+        {
+          subject_id: subjectId,
+          allocation_category: "secondary",
+          activity_type: "ordinary",
+          group_weekly_hours_per_group: "2.50",
+          teacher_weekly_hours_per_position: "3.00",
+          required_teacher_count: 1,
+          group_subject_ids: []
+        }
+      ]
+    });
+    expect(PlanningImportRequestSchema.parse({})).toEqual({ activities: [] });
+    expect(() =>
+      PlanningImportRequestSchema.parse({
+        activities: [
+          {
+            subject_id: subjectId,
+            group_weekly_hours_per_group: 2.5,
+            teacher_weekly_hours_per_position: "3.00"
+          }
+        ]
+      })
+    ).toThrow();
+  });
+
+  it("validates the authoritative post-import balance and findings", () => {
+    expect(
+      PlanningImportResultSchema.parse({
+        imported_count: 1,
+        imported_activity_ids: [subjectId],
+        balance: {
+          teaching_plan_id: planId,
+          assignment_process_id: processId,
+          group: {
+            total_group_load: "2.50",
+            allocated_group_weekly_hours: "4.00",
+            allocation_difference: "-1.50",
+            is_balanced: false
+          },
+          teacher: {
+            total_teacher_load: "3.00",
+            participant_target_total: "4.00",
+            teacher_load_difference: "-1.00",
+            is_balanced: false
+          },
+          is_exact: false
+        },
+        validations: {
+          teaching_plan_id: planId,
+          assignment_process_id: processId,
+          is_assignment_ready: false,
+          blocking_count: 1,
+          warning_count: 0,
+          messages: [{ severity: "blocking", code: "plan.reconcile", message: "Reconcile the imported plan.", entity_type: "teaching_plan", entity_id: planId }]
+        }
+      }).validations.messages[0]?.code
+    ).toBe("plan.reconcile");
   });
 });
 

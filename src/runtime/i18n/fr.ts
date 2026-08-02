@@ -230,6 +230,30 @@ export const fr: RepartoDictionary = {
         findings: "{blocking} bloquants · {warning} avertissements",
         error: "L'export de planification a échoué."
       },
+      importPlanning: {
+        title: "Import du plan",
+        description: "Importez des activités dans le plan courant. Un résultat non exact est accepté et affiché avec les suites requises.",
+        content: "JSON d'import",
+        placeholder: '{"activities": []}',
+        action: "Importer le plan",
+        neverBlocked: "L'import n'est pas bloqué par un résultat déséquilibré.",
+        error: { empty: "Collez un corps d'import de plan.", invalid_json: "Le contenu n'est pas un JSON valide.", invalid_contract: "Le JSON ne respecte pas le contrat d'import du plan." },
+        resultTitle: "État du plan importé",
+        resultSummary: "{count} activités importées.",
+        reconciliationTitle: "Réconciliation requise",
+        findings: "{blocking} bloquants · {warning} avertissements",
+        success: "Plan importé.",
+        requestError: "L'import du plan a échoué."
+      },
+      restore: {
+        confirmTitle: "Restaurer cette sauvegarde dans le brouillon ?",
+        confirmBody: "La cible doit être un brouillon vide. Le service valide la génération et la réconciliation avant toute écriture.",
+        restoreAssignments: "Restaurer les postes générés et les affectations",
+        confirmAction: "Restaurer la sauvegarde",
+        blocked: { no_backup: "Créez une sauvegarde JSON avant la restauration.", process_not_draft: "Seul un processus brouillon peut recevoir une sauvegarde." },
+        success: "Sauvegarde restaurée.",
+        error: "La sauvegarde n'a pas pu être restaurée."
+      },
       final: {
         title: "Export final de la répartition",
         description:

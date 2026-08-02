@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  CanonicalHoursSchema,
   HoursSchema,
   SignedHoursSchema,
   hoursToHundredths,
@@ -2169,3 +2170,39 @@ export const PlanningExportArtifactSchema = z
 export type PlanningExportArtifact = z.infer<
   typeof PlanningExportArtifactSchema
 >;
+
+/** One activity accepted by the planning exchange import (plan §7.8). */
+export const PlanningImportActivitySchema = z
+  .object({
+    subject_id: uuidSchema,
+    allocation_category: SubjectAllocationCategorySchema.default("secondary"),
+    activity_type: ActivityTypeSchema.default("ordinary"),
+    group_weekly_hours_per_group: CanonicalHoursSchema,
+    teacher_weekly_hours_per_position: CanonicalHoursSchema,
+    required_teacher_count: z.number().int().positive().default(1),
+    group_subject_ids: uniqueGroupSubjectIdsSchema.default([]),
+    notes: z.string().nullable().optional()
+  })
+  .strict();
+export type PlanningImportActivity = z.infer<
+  typeof PlanningImportActivitySchema
+>;
+
+/** Validated planning import body. An empty import is a legal no-op. */
+export const PlanningImportRequestSchema = z
+  .object({
+    activities: z.array(PlanningImportActivitySchema).default([])
+  })
+  .strict();
+export type PlanningImportRequest = z.infer<typeof PlanningImportRequestSchema>;
+
+/** Authoritative post-import state returned even when the plan is inexact. */
+export const PlanningImportResultSchema = z
+  .object({
+    imported_count: z.number().int().nonnegative(),
+    imported_activity_ids: z.array(uuidSchema),
+    balance: PlanBalanceSchema,
+    validations: PlanValidationReportSchema
+  })
+  .strict();
+export type PlanningImportResult = z.infer<typeof PlanningImportResultSchema>;

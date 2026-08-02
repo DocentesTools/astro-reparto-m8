@@ -37,12 +37,14 @@ const mocks = vi.hoisted(() => ({
     compareVersions: vi.fn(),
     comparePreviousYear: vi.fn(),
     listExports: vi.fn(),
-    createExport: vi.fn()
+    createExport: vi.fn(),
+    restoreDraft: vi.fn()
   },
   planningExchange: {
     exportDraft: vi.fn(),
     exportProvisional: vi.fn(),
-    exportFinal: vi.fn()
+    exportFinal: vi.fn(),
+    importPlanning: vi.fn()
   },
   meetingSessions: {
     list: vi.fn()
@@ -217,9 +219,11 @@ describe("reparto React hooks", () => {
     mocks.history.comparePreviousYear.mockClear();
     mocks.history.listExports.mockClear();
     mocks.history.createExport.mockClear();
+    mocks.history.restoreDraft.mockClear();
     mocks.planningExchange.exportDraft.mockClear();
     mocks.planningExchange.exportProvisional.mockClear();
     mocks.planningExchange.exportFinal.mockClear();
+    mocks.planningExchange.importPlanning.mockClear();
     mocks.meetingSessions.list.mockClear();
     mocks.schools.list.mockClear();
     mocks.academicYears.list.mockClear();
@@ -415,6 +419,51 @@ describe("reparto React hooks", () => {
     expect(mocks.invalidateQueries).toHaveBeenCalledTimes(5);
     expect(mocks.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["reparto", "processes", "detail", "process-1", "summary"]
+    });
+  });
+
+  it("refreshes plan projections after import and the restored process tree", async () => {
+    const { useImportRepartoPlanning, useRestoreRepartoDraft } = await import(
+      "../src/runtime/react/hooks.js"
+    );
+    const body = {
+      activities: [
+        {
+          subject_id: "11111111-1111-4111-8111-111111111111",
+          allocation_category: "secondary" as const,
+          activity_type: "ordinary" as const,
+          group_weekly_hours_per_group: "2.00",
+          teacher_weekly_hours_per_position: "3.00",
+          required_teacher_count: 1,
+          group_subject_ids: []
+        }
+      ]
+    };
+    useImportRepartoPlanning().mutate({ processId: "process-1", body });
+    expect(mocks.planningExchange.importPlanning).toHaveBeenCalledWith(
+      "process-1",
+      body
+    );
+    expect(mocks.invalidateQueries).toHaveBeenCalledTimes(7);
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["reparto", "processes", "detail", "process-1", "teaching-plan"]
+    });
+
+    mocks.invalidateQueries.mockClear();
+    useRestoreRepartoDraft().mutate({
+      processId: "process-1",
+      body: { content: "{}", restore_assignments: false }
+    });
+    expect(mocks.history.restoreDraft).toHaveBeenCalledWith("process-1", {
+      content: "{}",
+      restore_assignments: false
+    });
+    expect(mocks.invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["reparto", "processes", "detail", "process-1"]
+    });
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["reparto", "processes"]
     });
   });
 

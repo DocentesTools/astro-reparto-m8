@@ -810,12 +810,64 @@ describe("default reparto UI", () => {
       'data-final-blocked-reason="feasibility_not_confirmed"'
     );
     expect(exports).toContain('data-export-artifact-type="backup"');
-    // Restore keeps its action and its backup id; its own states are the next
-    // bullet's work.
     expect(exports).toContain('data-reparto-action="restore-draft"');
     expect(exports).toContain(
       'data-reparto-backup-id="99999999-9999-4999-8999-999999999999"'
     );
+    expect(exports).toContain('data-restore-blocked-reason="process_not_draft"');
+
+    const importAndRestore = renderToStaticMarkup(
+      <ExportCenterView
+        artifacts={[backupExport]}
+        plan={exportPlan}
+        planningImportContent={JSON.stringify({
+          activities: [
+            {
+              subject_id: "12121212-1212-4121-8121-121212121212",
+              group_weekly_hours_per_group: "2.00",
+              teacher_weekly_hours_per_position: "3.00"
+            }
+          ]
+        })}
+        planningImportResult={{
+          imported_count: 1,
+          imported_activity_ids: ["13131313-1313-4131-8131-131313131313"],
+          balance: planBalance,
+          validations: {
+            teaching_plan_id: planBalance.teaching_plan_id,
+            assignment_process_id: planBalance.assignment_process_id,
+            is_assignment_ready: false,
+            blocking_count: 1,
+            warning_count: 0,
+            messages: [
+              {
+                severity: "blocking",
+                code: "plan.reconciliation_required",
+                message: "Reconciliation is required.",
+                entity_type: "teaching_plan",
+                entity_id: planBalance.teaching_plan_id
+              }
+            ]
+          }
+        }}
+        processStatus="draft"
+        restoreConfirming
+      />
+    );
+    expect(importAndRestore).toContain('data-reparto-panel="planning-import"');
+    expect(importAndRestore).toContain('data-reparto-action="import-planning"');
+    expect(importAndRestore).toContain('data-import-exact="false"');
+    expect(importAndRestore).toContain(
+      'data-reparto-validation-code="plan.reconciliation_required"'
+    );
+    expect(importAndRestore).toContain('data-reparto-dialog="restore-confirmation"');
+    expect(importAndRestore).toContain('data-reparto-action="confirm-restore"');
+    expect(importAndRestore).toContain('data-reparto-field="restore-assignments"');
+
+    const invalidImport = renderToStaticMarkup(
+      <ExportCenterView planningImportContent="{" />
+    );
+    expect(invalidImport).toContain('data-planning-import-error="invalid_json"');
 
     const defaultExports = renderToStaticMarkup(<ExportCenterView artifacts={[]} />);
     expect(defaultExports).toContain('data-reparto-workflow-action="none"');

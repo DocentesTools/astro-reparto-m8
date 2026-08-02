@@ -611,7 +611,7 @@ because the three make three different promises:
 - `POST /exports/planning-provisional` → `PlanningExportArtifact`
 - `POST /exports/planning-final` → `PlanningExportArtifact`
 - `POST /imports/planning` — body `PlanningImportRequest` → `PlanningImportResult`
-  (**not yet wrapped**; it belongs to the backup/restore bullet)
+  (`planningExchange.importPlanning`, wrapped 2026-08-02)
 
 Draft and provisional artifacts are produced whatever the balances say — an
 inexact, unbalanced or stale plan may not withhold them (§3.10) — while the
@@ -638,11 +638,21 @@ nothing".
 
 Runtime surface: `src/runtime/api/planningExchange.ts`
 (`planningExchange.exportDraft` / `exportProvisional` / `exportFinal` and the
-`planningExportRequest(mode)` selector), hooks
-`useCreateRepartoPlanningExport` and `useCreateRepartoExportArtifact`, and the
-view-state helper `buildExportCenterState` in `src/runtime/ui/history.ts`.
+`planningExportRequest(mode)` selector plus `importPlanning`), hooks
+`useCreateRepartoPlanningExport`, `useImportRepartoPlanning`,
+`useCreateRepartoExportArtifact` and `useRestoreRepartoDraft`, and the view-state
+helpers `buildExportCenterState` / `buildPlanningImportDraftState` in
+`src/runtime/ui/history.ts`.
 A planning export is a mutation with no invalidation: it changes nothing, and
 caching it would show a plan that has since moved.
+
+The import panel accepts only the strict `PlanningImportRequest` JSON contract.
+It never disables import because the current or prospective plan is inexact;
+after success it renders both returned balance axes and every service-owned
+finding (including reconciliation work) with its stable code. Backup restore is
+separate from planning import, uses the latest JSON backup, exposes the service's
+`restore_assignments` mode, and requires a focused confirmation because the
+target must be an empty draft.
 
 ### 3.3 Streaming summary — `GET /assignment-processes/{process_id}/events`
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCurrentTurnDisplay,
   buildExportCenterState,
+  buildPlanningImportDraftState,
   buildTeacherChoiceState,
   buildVersionComparisonView,
   buildVersionSelectionState,
@@ -504,9 +505,58 @@ describe("history UI state", () => {
     ]);
     expect(state.backupCount).toBe(2);
     expect(state.latestBackupId).toBe("77777777-7777-4777-8777-777777777778");
+    expect(state.restore).toMatchObject({ allowed: true, reason: null });
+    expect(
+      buildExportCenterState({ artifacts: [backup], processStatus: "meeting_open" })
+        .restore
+    ).toMatchObject({ allowed: false, reason: "process_not_draft" });
     expect(
       buildExportCenterState({ artifacts: [{ ...backup, format: "pdf" }] })
-    ).toMatchObject({ backupCount: 0, latestBackupId: null });
+    ).toMatchObject({
+      backupCount: 0,
+      latestBackupId: null,
+      restore: { allowed: false, reason: "no_backup", backup: null }
+    });
+  });
+
+  it("validates planning import JSON without applying a balance gate", () => {
+    const subjectId = "11111111-1111-4111-8111-111111111112";
+    expect(buildPlanningImportDraftState(" ")).toEqual({
+      request: null,
+      error: "empty"
+    });
+    expect(buildPlanningImportDraftState("{")).toEqual({
+      request: null,
+      error: "invalid_json"
+    });
+    expect(buildPlanningImportDraftState('{"activities":[{"subject_id":"bad"}]}')).toEqual({
+      request: null,
+      error: "invalid_contract"
+    });
+    expect(
+      buildPlanningImportDraftState(
+        JSON.stringify({
+          activities: [
+            {
+              subject_id: subjectId,
+              group_weekly_hours_per_group: "2.00",
+              teacher_weekly_hours_per_position: "3.00"
+            }
+          ]
+        })
+      )
+    ).toMatchObject({
+      error: null,
+      request: {
+        activities: [
+          {
+            subject_id: subjectId,
+            allocation_category: "secondary",
+            activity_type: "ordinary"
+          }
+        ]
+      }
+    });
   });
 
   const comparison: VersionComparison = {

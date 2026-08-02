@@ -215,6 +215,11 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/exports/planning-final",
     response: "PlanningExportArtifact"
   },
+  "planningExchange.importPlanning": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/imports/planning",
+    response: "PlanningImportResult"
+  },
   "history.restoreDraft": {
     method: "POST",
     path: "/assignment-processes/{process_id}/restore-draft",

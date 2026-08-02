@@ -442,6 +442,8 @@ The editor freezes these surface slots:
 | Produced artifact | `data-reparto-slot="planning-artifact"` with `data-planning-artifact-mode` / `data-plan-exact` | both balances and the finding counts travel *inside* the artifact |
 | Process documents | `data-reparto-panel="export-center"` with `data-reparto-action="create-export"` + `data-reparto-export-type` | `POST /exports`; `internal_draft`, `school_leadership`, `teacher_summary`, `backup` — never `final` |
 | Document list | `data-reparto-slot="export-list"` / `data-export-artifact-id` / `data-export-artifact-type` | stored artifacts; `data-reparto-slot="backup-count"` counts JSON backups |
+| Planning import | `data-reparto-panel="planning-import"` / `data-reparto-action="import-planning"` | strict JSON request; never balance-gated; result shows both axes and `data-reparto-validation-code` findings |
+| Backup restore | `data-reparto-action="restore-draft"` → `data-reparto-dialog="restore-confirmation"` | latest JSON backup; draft-only known-state gate; optional generated-position/assignment restore |
 | Final assignment export | `data-reparto-panel="final-close"` with `data-final-export-allowed` | §20.25's top tier: complete reparto **and** confirmed feasibility |
 | Final refusals | `data-final-blocked-reason` | every refusal listed, not only the first: `plan_missing`, `requirements_not_generated`, `findings_unavailable`, `assignment_blocking`, `feasibility_not_confirmed` |
 | Final confirmation | `data-reparto-dialog="final-export-confirmation"` with `data-reparto-action="confirm-final-export"` | producing it archives the process |

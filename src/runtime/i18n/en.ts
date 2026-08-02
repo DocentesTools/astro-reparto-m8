@@ -231,6 +231,30 @@ export const en = {
         findings: "{blocking} blocking · {warning} warning",
         error: "The planning export failed."
       },
+      importPlanning: {
+        title: "Planning import",
+        description: "Import activities into the current plan. An inexact result is accepted and shown with its follow-up findings.",
+        content: "Import JSON",
+        placeholder: '{"activities": []}',
+        action: "Import planning",
+        neverBlocked: "Import is not blocked by an unbalanced result.",
+        error: { empty: "Paste a planning import body.", invalid_json: "The content is not valid JSON.", invalid_contract: "The JSON does not match the planning import contract." },
+        resultTitle: "Imported plan state",
+        resultSummary: "{count} activities imported.",
+        reconciliationTitle: "Reconciliation requirements",
+        findings: "{blocking} blocking · {warning} warning",
+        success: "Planning imported.",
+        requestError: "The planning import failed."
+      },
+      restore: {
+        confirmTitle: "Restore this backup into the draft?",
+        confirmBody: "The target must be an empty draft. The service validates generation and reconciliation consistency before writing anything.",
+        restoreAssignments: "Restore generated positions and assignments",
+        confirmAction: "Restore backup",
+        blocked: { no_backup: "Create a JSON backup before restoring.", process_not_draft: "Only a draft process can receive a backup." },
+        success: "Backup restored.",
+        error: "The backup could not be restored."
+      },
       final: {
         title: "Final assignment export",
         description:

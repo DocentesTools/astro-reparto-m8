@@ -14,6 +14,8 @@ import { MeetingControlWorkspace } from "../MeetingWorkspace.js";
 import {
   useCreateRepartoExportArtifact,
   useCreateRepartoPlanningExport,
+  useImportRepartoPlanning,
+  useRestoreRepartoDraft,
   useCreateRepartoVersion,
   useRepartoAssignmentValidations,
   useRepartoAssignments,
@@ -33,6 +35,7 @@ import {
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
 import {
+  buildPlanningImportDraftState,
   buildVersionSelectionState,
   summarizeProcessDashboard
 } from "../../ui/index.js";
@@ -52,6 +55,7 @@ import type {
   PlanReadiness,
   PlanningExportArtifact,
   PlanningExportMode,
+  PlanningImportResult,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
@@ -824,13 +828,20 @@ function RepartoExportsContent({
   const processQuery = useRepartoProcess(processId);
   const planningExport = useCreateRepartoPlanningExport();
   const documentExport = useCreateRepartoExportArtifact();
+  const planningImport = useImportRepartoPlanning();
+  const restoreDraft = useRestoreRepartoDraft();
   const [planningArtifact, setPlanningArtifact] =
     useState<PlanningExportArtifact | null>(null);
   const [pendingPlanningMode, setPendingPlanningMode] =
     useState<PlanningExportMode | null>(null);
   const [pendingDocumentType, setPendingDocumentType] =
     useState<ExportArtifactType | null>(null);
+  const [planningImportContent, setPlanningImportContent] = useState("");
+  const [planningImportResult, setPlanningImportResult] =
+    useState<PlanningImportResult | null>(null);
   const [finalConfirming, setFinalConfirming] = useState(false);
+  const [restoreConfirming, setRestoreConfirming] = useState(false);
+  const [restoreAssignments, setRestoreAssignments] = useState(true);
   const hasProcess = Boolean(resolveProcessId(processId));
   const isLoading = exportsQuery.isLoading && !artifacts && hasProcess;
   if (isLoading || exportsQuery.isError) {
@@ -893,6 +904,52 @@ function RepartoExportsContent({
     );
   }
 
+  function runPlanningImport() {
+    if (!processId || planningImport.isPending) return;
+    const draft = buildPlanningImportDraftState(planningImportContent);
+    if (!draft.request) return;
+    planningImport.mutate(
+      { processId, body: draft.request },
+      {
+        onSuccess: (result) => {
+          setPlanningImportResult(result);
+          repartoToast.success(dict.view.exports.importPlanning.success);
+        },
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.importPlanning.requestError,
+            error instanceof Error ? error.message : undefined
+          )
+      }
+    );
+  }
+
+  function runRestoreDraft() {
+    if (!processId || restoreDraft.isPending) return;
+    const backup = [...(artifacts ?? exportsQuery.data?.data ?? [])]
+      .filter((item) => item.export_type === "backup" && item.format === "json")
+      .sort((left, right) => left.created_at.localeCompare(right.created_at))
+      .at(-1);
+    if (!backup) return;
+    restoreDraft.mutate(
+      {
+        processId,
+        body: { content: backup.content, restore_assignments: restoreAssignments }
+      },
+      {
+        onSuccess: () => {
+          setRestoreConfirming(false);
+          repartoToast.success(dict.view.exports.restore.success);
+        },
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.restore.error,
+            error instanceof Error ? error.message : undefined
+          )
+      }
+    );
+  }
+
   return (
     <>
       <ExportCenterView
@@ -904,14 +961,26 @@ function RepartoExportsContent({
         onCreateDocumentExport={runDocumentExport}
         onCreateFinalExport={() => runDocumentExport("final")}
         onCreatePlanningExport={runPlanningExport}
+        onImportPlanning={runPlanningImport}
+        onPlanningImportContentChange={setPlanningImportContent}
+        onCancelRestore={() => setRestoreConfirming(false)}
+        onConfirmRestore={runRestoreDraft}
+        onRestoreAssignmentsChange={setRestoreAssignments}
+        onReviewRestore={() => setRestoreConfirming(true)}
         onReviewFinalExport={() => setFinalConfirming(true)}
         pendingDocumentType={pendingDocumentType}
         pendingPlanningMode={pendingPlanningMode}
+        pendingPlanningImport={planningImport.isPending}
+        pendingRestore={restoreDraft.isPending}
         plan={plan ?? planQuery.data ?? null}
         planValidations={planValidationsQuery.data ?? null}
         planningArtifact={planningArtifact}
+        planningImportContent={planningImportContent}
+        planningImportResult={planningImportResult}
         processId={processId}
         processStatus={processStatus ?? processQuery.data?.status}
+        restoreAssignments={restoreAssignments}
+        restoreConfirming={restoreConfirming}
       />
       <QueryState
         error={exportsQuery.error}

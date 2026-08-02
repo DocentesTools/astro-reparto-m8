@@ -1,8 +1,12 @@
 import { request } from "../client.js";
 import {
   PlanningExportArtifactSchema,
+  PlanningImportRequestSchema,
+  PlanningImportResultSchema,
   type PlanningExportArtifact,
-  type PlanningExportMode
+  type PlanningExportMode,
+  type PlanningImportRequest,
+  type PlanningImportResult
 } from "../schemas.js";
 
 /**
@@ -49,6 +53,21 @@ export const planningExchange = {
       method: "POST",
       path: `/assignment-processes/${processId}/exports/planning-final`,
       schema: PlanningExportArtifactSchema,
+      auth: true
+    }),
+  /**
+   * Ingest imported activities without requiring an exact plan (§3.10, §7.8).
+   *
+   * The returned balance and findings are the service's post-import answer;
+   * they inform the follow-up reconciliation and never become a client-side
+   * precondition for sending the import.
+   */
+  importPlanning: (processId: string, body: PlanningImportRequest) =>
+    request<PlanningImportResult>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/imports/planning`,
+      body: PlanningImportRequestSchema.parse(body),
+      schema: PlanningImportResultSchema,
       auth: true
     })
 } as const;

@@ -5,12 +5,14 @@ import type {
   ExportArtifactPublic,
   ExportArtifactType,
   FeasibilityStatus,
+  PlanningImportRequest,
   PlanningExportMode,
   PlanValidationReport,
   ProcessVersionPublic,
   TeachingPlanPublic,
   VersionComparison
 } from "../schemas.js";
+import { PlanningImportRequestSchema } from "../schemas.js";
 
 /**
  * Why one planning artifact cannot be produced right now, as a stable code.
@@ -80,6 +82,25 @@ export type ExportCenterState = {
   readonly finalExport: FinalExportState;
   readonly latestBackupId: string | null;
   readonly backupCount: number;
+  readonly restore: BackupRestoreState;
+};
+
+export type BackupRestoreBlockedReason = "no_backup" | "process_not_draft";
+
+export type BackupRestoreState = {
+  readonly allowed: boolean;
+  readonly reason: BackupRestoreBlockedReason | null;
+  readonly backup: ExportArtifactPublic | null;
+};
+
+export type PlanningImportDraftError =
+  | "empty"
+  | "invalid_json"
+  | "invalid_contract";
+
+export type PlanningImportDraftState = {
+  readonly request: PlanningImportRequest | null;
+  readonly error: PlanningImportDraftError | null;
 };
 
 export type LeadershipWorkflowAction =
@@ -111,6 +132,7 @@ export type ExportCenterInput = {
   /** Assignment findings; gate the strict *assignment* export. */
   readonly assignmentValidations?: AssignmentValidationReport | null;
   readonly artifacts?: readonly ExportArtifactPublic[];
+  readonly processStatus?: AssignmentProcessStatus;
 };
 
 /**
@@ -134,18 +156,46 @@ export function buildExportCenterState(
   const planValidations = input.planValidations ?? null;
   const assignmentValidations = input.assignmentValidations ?? null;
   const artifacts = input.artifacts ?? [];
-  const backups = artifacts.filter(
-    (item) => item.export_type === "backup" && item.format === "json"
-  );
+  const backups = [...artifacts]
+    .filter((item) => item.export_type === "backup" && item.format === "json")
+    .sort((left, right) => left.created_at.localeCompare(right.created_at));
+  const latestBackup = backups.at(-1) ?? null;
+  const restoreReason: BackupRestoreBlockedReason | null = latestBackup
+    ? input.processStatus && input.processStatus !== "draft"
+      ? "process_not_draft"
+      : null
+    : "no_backup";
   return {
     feasibilityStatus: plan?.feasibility_status ?? null,
     planStatus: plan?.status ?? null,
     planningExports: buildPlanningExportOffers(plan, planValidations),
     documentExportTypes: DOCUMENT_EXPORT_TYPES,
     finalExport: buildFinalExportState(plan, assignmentValidations),
-    latestBackupId: backups.at(-1)?.id ?? null,
-    backupCount: backups.length
+    latestBackupId: latestBackup?.id ?? null,
+    backupCount: backups.length,
+    restore: {
+      allowed: restoreReason === null,
+      reason: restoreReason,
+      backup: latestBackup
+    }
   };
+}
+
+/** Parse the contract-bound JSON planning import surface. */
+export function buildPlanningImportDraftState(
+  content: string
+): PlanningImportDraftState {
+  if (!content.trim()) return { request: null, error: "empty" };
+  let decoded: unknown;
+  try {
+    decoded = JSON.parse(content) as unknown;
+  } catch {
+    return { request: null, error: "invalid_json" };
+  }
+  const parsed = PlanningImportRequestSchema.safeParse(decoded);
+  return parsed.success
+    ? { request: parsed.data, error: null }
+    : { request: null, error: "invalid_contract" };
 }
 
 function buildPlanningExportOffers(

@@ -230,6 +230,30 @@ export const es: RepartoDictionary = {
         findings: "{blocking} bloqueantes · {warning} advertencias",
         error: "La exportación de planificación ha fallado."
       },
+      importPlanning: {
+        title: "Importación del plan",
+        description: "Importa actividades en el plan actual. Se acepta un resultado inexacto y se muestran sus acciones pendientes.",
+        content: "JSON de importación",
+        placeholder: '{"activities": []}',
+        action: "Importar planificación",
+        neverBlocked: "La importación no se bloquea por un resultado desequilibrado.",
+        error: { empty: "Pega un cuerpo de importación del plan.", invalid_json: "El contenido no es JSON válido.", invalid_contract: "El JSON no cumple el contrato de importación del plan." },
+        resultTitle: "Estado del plan importado",
+        resultSummary: "{count} actividades importadas.",
+        reconciliationTitle: "Requisitos de conciliación",
+        findings: "{blocking} bloqueantes · {warning} advertencias",
+        success: "Planificación importada.",
+        requestError: "La importación del plan ha fallado."
+      },
+      restore: {
+        confirmTitle: "¿Restaurar esta copia en el borrador?",
+        confirmBody: "El destino debe ser un borrador vacío. El servicio valida la generación y la conciliación antes de escribir.",
+        restoreAssignments: "Restaurar puestos generados y asignaciones",
+        confirmAction: "Restaurar copia",
+        blocked: { no_backup: "Crea una copia JSON antes de restaurar.", process_not_draft: "Solo un proceso en borrador puede recibir una copia." },
+        success: "Copia restaurada.",
+        error: "No se pudo restaurar la copia."
+      },
       final: {
         title: "Exportación final del reparto",
         description:

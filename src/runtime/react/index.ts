@@ -17,6 +17,8 @@ export {
   useCreateRepartoDepartment,
   useCreateRepartoExportArtifact,
   useCreateRepartoPlanningExport,
+  useImportRepartoPlanning,
+  useRestoreRepartoDraft,
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
   useCreateRepartoVersion,

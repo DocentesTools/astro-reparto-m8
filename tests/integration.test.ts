@@ -112,6 +112,13 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/exports/planning-final",
       response: "PlanningExportArtifact"
     });
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["planningExchange.importPlanning"]
+    ).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/imports/planning",
+      response: "PlanningImportResult"
+    });
     expect(REPARTO_CONTRACT_OPERATIONS["history.restoreDraft"]).toEqual({
       method: "POST",
       path: "/assignment-processes/{process_id}/restore-draft",
@@ -214,7 +221,7 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(64);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(65);
   });
 });
 

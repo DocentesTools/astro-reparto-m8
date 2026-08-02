@@ -10,7 +10,10 @@ import { groupSubjects } from "../api/groupSubjects.js";
 import { history } from "../api/history.js";
 import { hourRequirements } from "../api/hourRequirements.js";
 import { meetingSessions } from "../api/meetingSessions.js";
-import { planningExportRequest } from "../api/planningExchange.js";
+import {
+  planningExchange,
+  planningExportRequest
+} from "../api/planningExchange.js";
 import { processTeachers } from "../api/processTeachers.js";
 import { schools } from "../api/schools.js";
 import { subjects } from "../api/subjects.js";
@@ -40,6 +43,8 @@ import type {
   ProcessVersionCreate,
   ExportArtifactCreate,
   PlanningExportMode,
+  PlanningImportRequest,
+  ExportBackupRestore,
   RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
@@ -280,6 +285,59 @@ export function useCreateRepartoExportArtifact() {
       ]) {
         void queryClient.invalidateQueries({ queryKey });
       }
+    }
+  });
+}
+
+/**
+ * Import planning activities and refresh every projection derived from them.
+ *
+ * No plan-status or balance precondition lives here: draft/provisional import
+ * is deliberately allowed to produce an inexact plan, and the result carries
+ * the authoritative follow-up findings.
+ */
+export function useImportRepartoPlanning() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: PlanningImportRequest;
+    }) => planningExchange.importPlanning(processId, body),
+    onSuccess: (_result, { processId }) => {
+      for (const queryKey of [
+        repartoKeys.teachingActivities(processId),
+        repartoKeys.teachingPlan(processId),
+        repartoKeys.hourRequirements(processId),
+        repartoKeys.assignments(processId),
+        repartoKeys.dashboard(processId),
+        repartoKeys.summary(processId),
+        repartoKeys.auditEvents(processId)
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    }
+  });
+}
+
+/** Restore a JSON backup into the selected empty draft process (§10.4). */
+export function useRestoreRepartoDraft() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: ExportBackupRestore;
+    }) => history.restoreDraft(processId, body),
+    onSuccess: (_process, { processId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.process(processId)
+      });
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.processes() });
     }
   });
 }

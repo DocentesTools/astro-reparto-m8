@@ -609,6 +609,62 @@ describe("history API", () => {
     await expect(planningExchange.exportDraft(processId)).rejects.toThrow();
   });
 
+  it("imports planning activities and returns an unblocked inexact result", async () => {
+    const subjectId = "19191919-1919-4191-8191-191919191919";
+    const request = {
+      activities: [
+        {
+          subject_id: subjectId,
+          group_weekly_hours_per_group: "2.50",
+          teacher_weekly_hours_per_position: "3.00"
+        }
+      ]
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        imported_count: 1,
+        imported_activity_ids: [teachingActivityId],
+        balance: { ...planBalanceBody, is_exact: false },
+        validations: {
+          teaching_plan_id: planBalanceBody.teaching_plan_id,
+          assignment_process_id: processId,
+          is_assignment_ready: false,
+          blocking_count: 1,
+          warning_count: 0,
+          messages: [
+            {
+              severity: "blocking",
+              code: "plan.reconciliation_required",
+              message: "Reconciliation is required.",
+              entity_type: "teaching_plan",
+              entity_id: planBalanceBody.teaching_plan_id
+            }
+          ]
+        }
+      })
+    );
+    await expect(
+      planningExchange.importPlanning(processId, request)
+    ).resolves.toMatchObject({
+      imported_count: 1,
+      balance: { is_exact: false },
+      validations: { blocking_count: 1 }
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain("/imports/planning");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({
+      activities: [
+        {
+          ...request.activities[0],
+          allocation_category: "secondary",
+          activity_type: "ordinary",
+          required_teacher_count: 1,
+          group_subject_ids: []
+        }
+      ]
+    });
+  });
+
   it("validates export calls", () => {
     expect(() =>
       history.createExport(processId, {

@@ -13,6 +13,7 @@ import type {
   PlanValidationReport,
   PlanningExportArtifact,
   PlanningExportMode,
+  PlanningImportResult,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
@@ -22,6 +23,7 @@ import type {
 } from "../schemas.js";
 import {
   buildExportCenterState,
+  buildPlanningImportDraftState,
   buildVersionComparisonView,
   buildVersionSelectionState,
   nextLeadershipWorkflowAction,
@@ -29,6 +31,7 @@ import {
   versionSectionLabelKey,
   type ExportCenterState,
   type PlanningExportBlockedReason,
+  type PlanningImportDraftError,
   type VersionComparisonDelta,
   type VersionComparisonView
 } from "../ui/index.js";
@@ -1129,14 +1132,26 @@ export function ExportCenterView({
   onCreateDocumentExport,
   onCreateFinalExport,
   onCreatePlanningExport,
+  onImportPlanning,
+  onPlanningImportContentChange,
+  onCancelRestore,
+  onConfirmRestore,
+  onReviewRestore,
+  onRestoreAssignmentsChange,
   onReviewFinalExport,
   pendingDocumentType = null,
   pendingPlanningMode = null,
+  pendingPlanningImport = false,
+  pendingRestore = false,
   plan = null,
   planValidations = null,
   planningArtifact = null,
+  planningImportContent = "",
+  planningImportResult = null,
   processId,
-  processStatus = "draft"
+  processStatus = "draft",
+  restoreAssignments = true,
+  restoreConfirming = false
 }: {
   artifacts?: ExportArtifactPublic[];
   assignmentValidations?: AssignmentValidationReport | null;
@@ -1146,21 +1161,34 @@ export function ExportCenterView({
   onCreateDocumentExport?: (exportType: ExportArtifactType) => void;
   onCreateFinalExport?: () => void;
   onCreatePlanningExport?: (mode: PlanningExportMode) => void;
+  onImportPlanning?: () => void;
+  onPlanningImportContentChange?: (content: string) => void;
+  onCancelRestore?: () => void;
+  onConfirmRestore?: () => void;
+  onReviewRestore?: () => void;
+  onRestoreAssignmentsChange?: (restore: boolean) => void;
   onReviewFinalExport?: () => void;
   pendingDocumentType?: ExportArtifactType | null;
   pendingPlanningMode?: PlanningExportMode | null;
+  pendingPlanningImport?: boolean;
+  pendingRestore?: boolean;
   plan?: TeachingPlanPublic | null;
   planValidations?: PlanValidationReport | null;
   planningArtifact?: PlanningExportArtifact | null;
+  planningImportContent?: string;
+  planningImportResult?: PlanningImportResult | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
+  restoreAssignments?: boolean;
+  restoreConfirming?: boolean;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const state = buildExportCenterState({
     plan,
     planValidations,
     assignmentValidations,
-    artifacts
+    artifacts,
+    processStatus
   });
   const workflowAction = nextLeadershipWorkflowAction(processStatus);
   return (
@@ -1178,11 +1206,27 @@ export function ExportCenterView({
           pendingMode={pendingPlanningMode}
           state={state}
         />
+        <PlanningImportPanel
+          content={planningImportContent}
+          dict={dict}
+          onChange={onPlanningImportContentChange}
+          onImport={onImportPlanning}
+          pending={pendingPlanningImport}
+          planStatus={plan?.status ?? null}
+          result={planningImportResult}
+        />
         <ProcessDocumentPanel
           artifacts={artifacts}
           dict={dict}
           onExport={onCreateDocumentExport}
+          onCancelRestore={onCancelRestore}
+          onConfirmRestore={onConfirmRestore}
+          onRestoreAssignmentsChange={onRestoreAssignmentsChange}
+          onReviewRestore={onReviewRestore}
           pendingType={pendingDocumentType}
+          pendingRestore={pendingRestore}
+          restoreAssignments={restoreAssignments}
+          restoreConfirming={restoreConfirming}
           state={state}
         />
         <FinalAssignmentExportPanel
@@ -1231,6 +1275,100 @@ export function ExportCenterView({
         </section>
       </div>
     </main>
+  );
+}
+
+function PlanningImportPanel({
+  content,
+  dict,
+  onChange,
+  onImport,
+  pending,
+  planStatus,
+  result
+}: {
+  content: string;
+  dict: RepartoDictionary;
+  onChange?: (content: string) => void;
+  onImport?: () => void;
+  pending: boolean;
+  planStatus: TeachingPlanStatus | null;
+  result: PlanningImportResult | null;
+}) {
+  const draft = buildPlanningImportDraftState(content);
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="planning-import">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.exports.importPlanning.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="import-count">
+          {result?.imported_count ?? 0}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {dict.view.exports.importPlanning.description}
+      </p>
+      <label className={repartoFieldLabelClass}>
+        <span>{dict.view.exports.importPlanning.content}</span>
+        <textarea
+          className={`${repartoInputClass} min-h-36 font-mono`}
+          data-reparto-field="planning-import-content"
+          onChange={(event: { target: { value: string } }) =>
+            onChange?.(event.target.value)
+          }
+          placeholder={dict.view.exports.importPlanning.placeholder}
+          value={content}
+        />
+      </label>
+      {draft.error ? (
+        <p className="text-sm text-destructive" data-planning-import-error={draft.error}>
+          {dict.view.exports.importPlanning.error[draft.error as PlanningImportDraftError]}
+        </p>
+      ) : null}
+      <div className={repartoActionRowClass}>
+        <button
+          className={repartoButtonClass}
+          data-reparto-action="import-planning"
+          disabled={draft.request === null || pending}
+          onClick={() => onImport?.()}
+          type="button"
+        >
+          {dict.view.exports.importPlanning.action}
+        </button>
+      </div>
+      <p className="text-sm text-muted-foreground" data-reparto-slot="import-never-blocked">
+        {dict.view.exports.importPlanning.neverBlocked}
+      </p>
+      {result ? (
+        <section
+          className="space-y-3 rounded-md border border-border/70 p-4"
+          data-import-exact={result.balance.is_exact ? "true" : "false"}
+          data-reparto-slot="planning-import-result"
+          role="status"
+        >
+          <h3 className="font-semibold">{dict.view.exports.importPlanning.resultTitle}</h3>
+          <p>
+            {formatRepartoMessage(dict.view.exports.importPlanning.resultSummary, {
+              count: result.imported_count
+            })}
+          </p>
+          <PlanningBalancePanel balance={result.balance} dict={dict} planStatus={planStatus} />
+          <h3 className="font-semibold">
+            {dict.view.exports.importPlanning.reconciliationTitle}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {formatRepartoMessage(dict.view.exports.importPlanning.findings, {
+              blocking: result.validations.blocking_count,
+              warning: result.validations.warning_count
+            })}
+          </p>
+          <ProcessValidationList
+            dict={dict}
+            messages={result.validations.messages}
+            stage="planning"
+          />
+        </section>
+      ) : null}
+    </section>
   );
 }
 
@@ -1374,13 +1512,27 @@ function ProcessDocumentPanel({
   artifacts,
   dict,
   onExport,
+  onCancelRestore,
+  onConfirmRestore,
+  onRestoreAssignmentsChange,
+  onReviewRestore,
   pendingType,
+  pendingRestore,
+  restoreAssignments,
+  restoreConfirming,
   state
 }: {
   artifacts: ExportArtifactPublic[];
   dict: RepartoDictionary;
   onExport?: (exportType: ExportArtifactType) => void;
+  onCancelRestore?: () => void;
+  onConfirmRestore?: () => void;
+  onRestoreAssignmentsChange?: (restore: boolean) => void;
+  onReviewRestore?: () => void;
   pendingType: ExportArtifactType | null;
+  pendingRestore: boolean;
+  restoreAssignments: boolean;
+  restoreConfirming: boolean;
   state: ExportCenterState;
 }) {
   return (
@@ -1412,22 +1564,67 @@ function ProcessDocumentPanel({
         ))}
       </div>
       <div className={repartoActionRowClass}>
-        {/*
-          Restore stays where it was, pointed at the latest JSON backup. The
-          backup/restore states themselves are the next §13.2 bullet's work;
-          this bullet only moved the button out of the final-export panel it
-          never belonged in.
-        */}
         <button
           className={repartoButtonClass}
+          data-disabled-reason={state.restore.reason ?? undefined}
           data-reparto-action="restore-draft"
           data-reparto-backup-id={state.latestBackupId ?? ""}
-          disabled={state.latestBackupId === null}
+          disabled={!state.restore.allowed || pendingRestore}
+          onClick={() => onReviewRestore?.()}
           type="button"
         >
           {dict.action.restore}
         </button>
       </div>
+      {state.restore.reason ? (
+        <p className="text-sm text-destructive" data-restore-blocked-reason={state.restore.reason}>
+          {dict.view.exports.restore.blocked[state.restore.reason]}
+        </p>
+      ) : null}
+      {restoreConfirming && state.restore.allowed ? (
+        <section
+          aria-labelledby="restore-confirmation-title"
+          className="space-y-3 rounded-lg border border-primary/40 bg-muted/30 p-4"
+          data-reparto-dialog="restore-confirmation"
+          role="alertdialog"
+        >
+          <h3 className="font-semibold" id="restore-confirmation-title">
+            {dict.view.exports.restore.confirmTitle}
+          </h3>
+          <p>{dict.view.exports.restore.confirmBody}</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              checked={restoreAssignments}
+              data-reparto-field="restore-assignments"
+              onChange={(event: { target: { checked: boolean } }) =>
+                onRestoreAssignmentsChange?.(event.target.checked)
+              }
+              type="checkbox"
+            />
+            <span>{dict.view.exports.restore.restoreAssignments}</span>
+          </label>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="confirm-restore"
+              disabled={pendingRestore}
+              onClick={() => onConfirmRestore?.()}
+              type="button"
+            >
+              {dict.view.exports.restore.confirmAction}
+            </button>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="cancel"
+              disabled={pendingRestore}
+              onClick={() => onCancelRestore?.()}
+              type="button"
+            >
+              {dict.action.cancel}
+            </button>
+          </div>
+        </section>
+      ) : null}
       <div data-reparto-slot="export-list">
         {artifacts.length > 0 ? (
           <ul className={repartoListClass}>

@@ -34,7 +34,8 @@ import type {
   GroupSubjectBulkApplyRequestInput,
   GroupSubjectBulkRequestInput,
   ProcessTeacherCreateInput,
-  ProcessTeacherUpdate,
+  ProcessTeacherExtraHoursInput,
+  ProcessTeacherUpdateInput,
   RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
@@ -813,14 +814,62 @@ export function useUpdateRepartoProcessTeacher() {
     }: {
       processId: string;
       processTeacherId: string;
-      body: ProcessTeacherUpdate;
+      body: ProcessTeacherUpdateInput;
     }) => processTeachers.update(processId, processTeacherId, body),
     onSuccess: (_data, { processId }) => {
+      invalidateParticipantProjections(queryClient, processId);
+    }
+  });
+}
+
+/**
+ * Authorize extra weekly hours for one participant.
+ *
+ * Changing the authorized overload moves the participant target, which moves
+ * the teacher-load balance, the plan validations and every teacher's own LAN
+ * payload — so this invalidates the planning projections too, not only the
+ * participant list.
+ */
+export function useUpdateRepartoProcessTeacherExtraHours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      processTeacherId,
+      body
+    }: {
+      processId: string;
+      processTeacherId: string;
+      body: ProcessTeacherExtraHoursInput;
+    }) => processTeachers.extraHours(processId, processTeacherId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateParticipantProjections(queryClient, processId);
       void queryClient.invalidateQueries({
-        queryKey: repartoKeys.processTeachers(processId)
+        queryKey: repartoKeys.teachingPlan(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.auditEvents(processId)
       });
     }
   });
+}
+
+/**
+ * A participant's target feeds the dashboard, the summary and the teacher's own
+ * LAN view, so none of them may keep showing the previous figure.
+ */
+function invalidateParticipantProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string
+) {
+  for (const queryKey of [
+    repartoKeys.processTeachers(processId),
+    repartoKeys.dashboard(processId),
+    repartoKeys.summary(processId),
+    repartoKeys.teacherLan(processId)
+  ]) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
 }
 
 export function useDeleteRepartoProcessTeacher() {

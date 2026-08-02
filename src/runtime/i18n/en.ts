@@ -42,7 +42,10 @@ export const en = {
     academicYear: "Academic year",
     department: "Department",
     departmentHead: "Department head",
-    availableHours: "Available hours",
+    baseWeeklyHours: "Base hours",
+    extraWeeklyHours: "Authorized extra hours",
+    targetWeeklyHours: "Target hours",
+    overloaded: "Authorized overload",
     defaultTeacherHoursReference: "Default hours reference",
     selectionOrderEnabled: "Selection order enabled",
     selectionOrderMode: "Selection order mode",
@@ -74,6 +77,29 @@ export const en = {
   },
   view: {
     teacherTitle: "Teacher view",
+    lan: {
+      title: "Your hours",
+      metric: {
+        base: "Base",
+        extra: "Authorized extra",
+        target: "Target",
+        assigned: "Assigned",
+        remaining: "Remaining"
+      },
+      overloaded: "{hours} extra hours have been authorized for you.",
+      notOverloaded: "No extra hours are authorized for you.",
+      state: {
+        pending: "You have not reached your target yet.",
+        balanced: "Your assigned hours match your target.",
+        overloaded_authorized: "Your target includes authorized extra hours.",
+        inactive: "You are not active in this process.",
+        not_participating: "You are not part of the selection order."
+      },
+      availableSlots: "{count} complete position(s) are still free in this process.",
+      planBalance: "Group hours {group} against an allocation of {allocation}; teacher load {teacher} against a participant target of {target}.",
+      noAllocation: "no allocation yet",
+      noPlanBalance: "This process has no teaching plan yet, so there is no balance to show."
+    },
     loading: "{entity} loading",
     pageLoading: {
       title: "Loading reparto page",
@@ -647,6 +673,26 @@ export const en = {
     deleteBody: "Selected subjects to delete: {count}. This action cannot be undone.",
     deleted: "Subjects deleted: {count}",
     deleteError: "The selected subjects could not be deleted"
+  },
+  participants: {
+    hoursError: {
+      not_a_number: "Enter an hour value such as 12 or 12.50.",
+      too_many_decimals: "Hours take at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "This hour value is too large."
+    },
+    extraHoursAction: "Extra hours",
+    extraHoursTitle: "Authorize extra hours",
+    extraHoursBody: "{teacher} has a base of {base} hours and {extra} authorized extra hours, for a target of {target} hours.",
+    extraHoursHint: "Set the value back to 0 to withdraw the authorization. Both directions are recorded with your reason.",
+    extraHoursConfirm: "Authorize",
+    extraHoursSaved: "Authorized extra hours updated.",
+    extraHoursError: "The authorized extra hours could not be changed",
+    lastExtraHoursReason: "Last recorded reason: {reason}",
+    noExtraHoursReason: "No extra-hours change has been recorded yet.",
+    targetHint: "Target hours are base plus authorized extra; they are not edited directly.",
+    overloadedYes: "Yes",
+    overloadedNo: "No"
   },
   participantSelection: {
     selectAllVisible: "Select all visible participants",

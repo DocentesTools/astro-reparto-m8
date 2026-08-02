@@ -16,13 +16,14 @@ export type ParticipantsListProps = {
   onDeleteSelected: () => void;
   onSelectedIdsChange: (selectedIds: Set<string>) => void;
   onEdit: (participant: ProcessTeacherPublic) => void;
+  onExtraHours: (participant: ProcessTeacherPublic) => void;
   onDelete: (participant: ProcessTeacherPublic) => void;
   selectedIds: ReadonlySet<string>;
 };
 
 export function ParticipantsList({
   dict, rows, error, isError, isLoading, hasActiveForm,
-  teacherName, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
+  teacherName, onDeleteSelected, onSelectedIdsChange, onEdit, onExtraHours, onDelete, selectedIds
 }: ParticipantsListProps) {
   if (isLoading || isError) {
     return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.processParticipant.plural} />;
@@ -40,11 +41,25 @@ export function ParticipantsList({
       cell: (participant) => (
         <RowActions>
           <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(participant)} row />
+          <ActionButton action="extra-hours" disabled={hasActiveForm} label={dict.participants.extraHoursAction} onClick={() => onExtraHours(participant)} row />
           <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(participant)} row />
         </RowActions>
       )
     },
-    { id: "available_hours", label: dict.field.availableHours, value: (participant) => participant.available_hours },
+    // Base and extra are shown next to the target rather than in place of it:
+    // the target is the figure the assignment stage measures against, and it is
+    // only trustworthy when the reader can see the two parts it came from.
+    { id: "base_weekly_hours", label: dict.field.baseWeeklyHours, value: (participant) => participant.base_weekly_hours },
+    { id: "extra_weekly_hours", label: dict.field.extraWeeklyHours, value: (participant) => participant.extra_weekly_hours },
+    { id: "target_weekly_hours", label: dict.field.targetWeeklyHours, value: (participant) => participant.target_weekly_hours },
+    {
+      id: "overloaded",
+      label: dict.field.overloaded,
+      value: (participant) =>
+        participant.is_overloaded
+          ? dict.participants.overloadedYes
+          : dict.participants.overloadedNo
+    },
     { id: "status", label: dict.field.status, value: statusLabel }
   ];
   const statuses = [...new Set(rows.map(statusLabel))].sort((a, b) => a.localeCompare(b));
@@ -82,6 +97,7 @@ export function ParticipantsList({
         }}
         rowAttributes={(participant) => ({
           "data-participant-id": participant.id,
+          "data-participant-overloaded": participant.is_overloaded ? "true" : "false",
           "data-participant-status": participant.status,
           "data-teacher-profile-id": participant.teacher_profile_id
         })}

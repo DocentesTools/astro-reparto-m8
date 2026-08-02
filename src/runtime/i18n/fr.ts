@@ -41,7 +41,10 @@ export const fr: RepartoDictionary = {
     academicYear: "Année scolaire",
     department: "Département",
     departmentHead: "Chef de département",
-    availableHours: "Heures disponibles",
+    baseWeeklyHours: "Heures de base",
+    extraWeeklyHours: "Heures supplémentaires autorisées",
+    targetWeeklyHours: "Heures cibles",
+    overloaded: "Surcharge autorisée",
     defaultTeacherHoursReference: "Heures de référence",
     selectionOrderEnabled: "Ordre de sélection activé",
     selectionOrderMode: "Mode d'ordre",
@@ -73,6 +76,29 @@ export const fr: RepartoDictionary = {
   },
   view: {
     teacherTitle: "Vue enseignant",
+    lan: {
+      title: "Vos heures",
+      metric: {
+        base: "Base",
+        extra: "Supplémentaires autorisées",
+        target: "Cible",
+        assigned: "Attribuées",
+        remaining: "Restantes"
+      },
+      overloaded: "{hours} heures supplémentaires vous ont été autorisées.",
+      notOverloaded: "Aucune heure supplémentaire ne vous est autorisée.",
+      state: {
+        pending: "Vous n'avez pas encore atteint votre cible.",
+        balanced: "Vos heures attribuées correspondent à votre cible.",
+        overloaded_authorized: "Votre cible comprend des heures supplémentaires autorisées.",
+        inactive: "Vous n'êtes pas actif dans ce processus.",
+        not_participating: "Vous ne faites pas partie de l'ordre de sélection."
+      },
+      availableSlots: "{count} poste(s) complet(s) restent libres dans ce processus.",
+      planBalance: "Heures de groupe {group} face à une dotation de {allocation} ; charge enseignante {teacher} face à une cible de participants de {target}.",
+      noAllocation: "aucune dotation pour l'instant",
+      noPlanBalance: "Ce processus n'a pas encore de plan pédagogique, il n'y a donc aucun équilibre à afficher."
+    },
     loading: "Chargement de {entity}",
     pageLoading: {
       title: "Chargement de la page de répartition",
@@ -646,6 +672,26 @@ export const fr: RepartoDictionary = {
     deleteBody: "Matières sélectionnées à supprimer : {count}. Cette action est irréversible.",
     deleted: "Matières supprimées : {count}",
     deleteError: "Impossible de supprimer les matières sélectionnées"
+  },
+  participants: {
+    hoursError: {
+      not_a_number: "Saisissez une valeur horaire telle que 12 ou 12,50.",
+      too_many_decimals: "Les heures acceptent au maximum deux décimales.",
+      negative: "Les heures ne peuvent pas être négatives.",
+      out_of_range: "Cette valeur horaire est trop grande."
+    },
+    extraHoursAction: "Heures suppl.",
+    extraHoursTitle: "Autoriser des heures supplémentaires",
+    extraHoursBody: "{teacher} a une base de {base} heures et {extra} heures supplémentaires autorisées, pour une cible de {target} heures.",
+    extraHoursHint: "Remettez la valeur à 0 pour retirer l'autorisation. Les deux sens sont enregistrés avec votre motif.",
+    extraHoursConfirm: "Autoriser",
+    extraHoursSaved: "Heures supplémentaires autorisées mises à jour.",
+    extraHoursError: "Les heures supplémentaires autorisées n'ont pas pu être modifiées",
+    lastExtraHoursReason: "Dernier motif enregistré : {reason}",
+    noExtraHoursReason: "Aucune modification des heures supplémentaires n'a encore été enregistrée.",
+    targetHint: "Les heures cibles sont la base plus les heures supplémentaires autorisées ; elles ne se modifient pas directement.",
+    overloadedYes: "Oui",
+    overloadedNo: "Non"
   },
   participantSelection: {
     selectAllVisible: "Sélectionner tous les participants visibles",

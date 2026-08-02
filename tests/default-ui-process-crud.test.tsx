@@ -484,7 +484,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: profileId, display_name: "Profesora Ana", user_id: null, active: true, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.participants = [
-      { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, available_hours: 18, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, base_weekly_hours: "18.00", extra_weekly_hours: "0.00", target_weekly_hours: "18.00", is_overloaded: false, extra_hours_reason: null, extra_hours_updated_by_user_id: null, extra_hours_updated_at: null, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     const { RepartoProcessParticipantsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoProcessParticipantsView processId={processId} />);
@@ -492,7 +492,27 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-table="participants"');
     expect(html).toContain("Profesora Ana");
     expect(html).toContain('data-reparto-row-action="edit"');
+    expect(html).toContain('data-reparto-row-action="extra-hours"');
     expect(html).toContain('data-reparto-row-action="delete"');
+    // The participant target, and the two figures it is built from — never a
+    // single "available hours" capacity (plan §3.8).
+    expect(html).toContain('data-participant-overloaded="false"');
+    expect(html).toContain("18.00");
+    expect(html).not.toContain("Available hours");
+  });
+
+  it("participants list shows an authorized overload as target = base + extra", async () => {
+    reset();
+    queryState.teachers = [
+      { id: profileId, display_name: "Profesora Ana", user_id: null, active: true, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+    ];
+    queryState.participants = [
+      { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, base_weekly_hours: "18.00", extra_weekly_hours: "2.00", target_weekly_hours: "20.00", is_overloaded: true, extra_hours_reason: "Covering a vacancy", extra_hours_updated_by_user_id: null, extra_hours_updated_at: "2026-07-04T10:00:00Z", participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+    ];
+    const { RepartoProcessParticipantsView } = await import("../src/runtime/react/default-ui/index.js");
+    const html = renderToStaticMarkup(<RepartoProcessParticipantsView processId={processId} />);
+    expect(html).toContain('data-participant-overloaded="true"');
+    expect(html).toContain("20.00");
   });
 
   it("participants view disables Create with a missing prereq reason when the teacher roster is empty", async () => {
@@ -522,7 +542,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: teachingActivityId, teaching_plan_id: teachingPlanId, subject_id: subjectId, allocation_category: "main", activity_type: "ordinary", group_weekly_hours_per_group: "4.00", teacher_weekly_hours_per_position: "4.00", required_teacher_count: 1, notes: null, source: "main_generated", source_group_subject_id: null, sync_state: "current", retired_at: null, group_subject_ids: [], linked_group_count: 0, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.participants = [
-      { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, available_hours: 18, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, base_weekly_hours: "18.00", extra_weekly_hours: "0.00", target_weekly_hours: "18.00", is_overloaded: false, extra_hours_reason: null, extra_hours_updated_by_user_id: null, extra_hours_updated_at: null, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.assignments = [
       { id: assignmentId, assignment_process_id: processId, hour_requirement_id: requirementId, teaching_activity_id: teachingActivityId, process_teacher_id: participantId, source: "department_head", status: "active", chosen_by_user_id: null, confirmed_by_user_id: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -567,6 +587,72 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const createMatch = html.match(/<button[^>]*data-reparto-action="create"[^>]*>/);
     expect(createMatch?.[0]).toContain("disabled");
     expect(createMatch?.[0]).toContain("Every live slot is already assigned.");
+  });
+
+  it("extra hours are a reasoned action, and the edit form shows the target read-only", async () => {
+    reset();
+    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
+    const dict = useDict("en");
+    const participant = {
+      id: participantId,
+      assignment_process_id: processId,
+      teacher_profile_id: profileId,
+      base_weekly_hours: "18.00",
+      extra_weekly_hours: "2.00",
+      target_weekly_hours: "20.00",
+      is_overloaded: true,
+      extra_hours_reason: "Covering a vacancy",
+      extra_hours_updated_by_user_id: null,
+      extra_hours_updated_at: "2026-07-04T10:00:00Z",
+      participates_in_selection: true,
+      selection_position: null,
+      selection_points: null,
+      selection_criteria_label: null,
+      selection_notes: null,
+      order_locked: false,
+      status: "active" as const,
+      created_at: "2026-07-04T10:00:00Z",
+      updated_at: "2026-07-04T10:00:00Z"
+    };
+    const { ParticipantExtraHours } = await import(
+      "../src/runtime/react/default-ui/process-crud/participants/extra-hours.js"
+    );
+    const extraHours = renderToStaticMarkup(
+      <ParticipantExtraHours
+        dict={dict}
+        onDone={() => undefined}
+        participant={participant}
+        processId={processId}
+        teacherName="Profesora Ana"
+      />
+    );
+    expect(extraHours).toContain('data-reparto-form="participant-extra-hours"');
+    expect(extraHours).toContain('data-reparto-field="extra-weekly-hours"');
+    expect(extraHours).toContain('data-reparto-field="reason"');
+    // Unchanged hours and an empty reason: nothing to authorize and nothing to
+    // justify, so the action stays closed.
+    const extraSave = extraHours.match(/<button[^>]*data-reparto-action="save"[^>]*>/);
+    expect(extraSave?.[0]).toContain("disabled");
+
+    const { ParticipantEdit } = await import(
+      "../src/runtime/react/default-ui/process-crud/participants/edit.js"
+    );
+    const edit = renderToStaticMarkup(
+      <ParticipantEdit
+        dict={dict}
+        onDone={() => undefined}
+        participant={participant}
+        processId={processId}
+        teacherName="Profesora Ana"
+      />
+    );
+    // Base is editable; the authorized extra and the target it produces are
+    // shown but have no input, because the generic PATCH cannot carry them.
+    expect(edit).toContain('data-reparto-field="base-weekly-hours"');
+    expect(edit).not.toContain('data-reparto-field="extra-weekly-hours"');
+    expect(edit).toContain('data-reparto-slot="participant-target-hours"');
+    expect(edit).toContain('data-reparto-overloaded="true"');
+    expect(edit).toContain("Covering a vacancy");
   });
 
   it("bulk undo collects one reason for every selected assignment", async () => {

@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { parseHoursField } from "../../../../decimals.js";
 import {
   EntityDialogShell,
   FormGrid,
@@ -33,23 +34,31 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
   const teacherProfiles = teacherProfilesQuery.data?.data ?? [];
   const [mapped, setError, clearError] = useMappedError();
   const [teacherProfileId, setTeacherProfileId] = useState("");
-  const [availableHours, setAvailableHours] = useState("");
+  const [baseHours, setBaseHours] = useState("");
   const [participatesInSelection, setParticipatesInSelection] = useState(false);
   const [status, setStatus] = useState<ProcessTeacherStatus>("active");
   const [inlineCreateRoster, setInlineCreateRoster] = useState(false);
 
-  const hoursNum = Number.parseFloat(availableHours);
-  const hoursValid = Number.isFinite(hoursNum) && hoursNum >= 0;
+  // A participant is created at their contractual base only. Authorized extra
+  // hours carry a mandatory reason, so they are never part of a create form —
+  // the audited action is the one and only way in (backend plan §3.8, §7.6).
+  const parsedBase = parseHoursField(baseHours);
+  const baseError =
+    parsedBase.state === "invalid"
+      ? dict.participants.hoursError[parsedBase.reason]
+      : null;
   const canSave =
-    teacherProfileId.trim() !== "" && hoursValid && !createMutation.isPending;
+    teacherProfileId.trim() !== "" &&
+    parsedBase.state === "valid" &&
+    !createMutation.isPending;
 
   function handleSubmit(event: { preventDefault: () => void }) {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave || parsedBase.state !== "valid") return;
     clearError();
     const body: ProcessTeacherCreateInput = {
       teacher_profile_id: teacherProfileId,
-      available_hours: hoursNum,
+      base_weekly_hours: parsedBase.hours,
       participates_in_selection: participatesInSelection,
       status
     };
@@ -84,15 +93,19 @@ export function ParticipantAdd({ dict, processId, onDone }: ParticipantAddProps)
           mapped={mapped}
         />
         <TextField
-          field="available-hours"
-          id="participant-add-hours"
-          label={dict.field.availableHours}
-          onChange={setAvailableHours}
-          value={availableHours}
-          type="number"
+          field="base-weekly-hours"
+          id="participant-add-base-hours"
+          label={dict.field.baseWeeklyHours}
+          onChange={setBaseHours}
+          value={baseHours}
           mapped={mapped}
-          fieldErrorKey="availableHours"
+          fieldErrorKey="baseWeeklyHours"
         />
+        {baseError ? (
+          <p data-reparto-field-error="base-weekly-hours" role="alert">
+            {baseError}
+          </p>
+        ) : null}
         <label className="grid gap-1.5 text-sm font-medium">
           <span>{dict.field.participatesInSelection}</span>
           <input

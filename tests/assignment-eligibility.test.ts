@@ -45,7 +45,13 @@ function participant(
     id,
     assignment_process_id: processId,
     teacher_profile_id: id,
-    available_hours: 18,
+    base_weekly_hours: "18.00",
+    extra_weekly_hours: "0.00",
+    target_weekly_hours: "18.00",
+    is_overloaded: false,
+    extra_hours_reason: null,
+    extra_hours_updated_by_user_id: null,
+    extra_hours_updated_at: null,
     participates_in_selection: true,
     selection_position: null,
     selection_points: null,
@@ -172,7 +178,8 @@ describe("assignment teacher options", () => {
       processTeacherId: "teacher-1",
       assignedSlotCount: 1,
       assignedHours: "4.00",
-      remainingTargetHours: null,
+      // 18.00 target − 4.00 already taken, read from the participant row.
+      remainingTargetHours: "14.00",
       canAssign: true
     });
     expect(options[1].assignedHours).toBe("0.00");
@@ -226,16 +233,35 @@ describe("assignment teacher options", () => {
       canAssign: false,
       disabledReason: "exceeds_remaining_target"
     });
-    // An unknown target is reported as unknown, never assumed to pass or fail.
-    const unknown = buildAssignmentTeacherOptions(
+    // A lookup that cannot answer falls back to the participant row, which
+    // carries the service's own `base + extra` target.
+    const fallback = buildAssignmentTeacherOptions(
       participants,
       requirements,
       live,
       { slot: secondPosition, remainingTarget: () => undefined }
     );
     expect(
-      unknown.find((option) => option.processTeacherId === "teacher-2")
-    ).toMatchObject({ remainingTargetHours: null, canAssign: true });
+      fallback.find((option) => option.processTeacherId === "teacher-2")
+    ).toMatchObject({ remainingTargetHours: "18.00", canAssign: true });
+
+    // An authorized overload raises the target, and with it what fits.
+    const overloaded = buildAssignmentTeacherOptions(
+      [
+        participant("teacher-2", {
+          extra_weekly_hours: "2.00",
+          target_weekly_hours: "20.00",
+          is_overloaded: true
+        })
+      ],
+      requirements,
+      live,
+      { slot: secondPosition }
+    );
+    expect(overloaded[0]).toMatchObject({
+      remainingTargetHours: "20.00",
+      canAssign: true
+    });
   });
 
   it("sums the slot hours of every position a participant holds", () => {

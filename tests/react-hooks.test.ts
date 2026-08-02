@@ -106,6 +106,7 @@ const mocks = vi.hoisted(() => ({
     list: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    extraHours: vi.fn(),
     remove: vi.fn()
   },
   assignments: {
@@ -395,6 +396,7 @@ describe("reparto React hooks", () => {
       useRepartoProcessTeachers,
       useCreateRepartoProcessTeacher,
       useUpdateRepartoProcessTeacher,
+      useUpdateRepartoProcessTeacherExtraHours,
       useDeleteRepartoProcessTeacher,
       useRepartoAssignments,
       useRepartoAssignmentValidations,
@@ -510,13 +512,19 @@ describe("reparto React hooks", () => {
     const createParticipant = useCreateRepartoProcessTeacher();
     createParticipant.mutate({
       processId: "p1",
-      body: { teacher_profile_id: "t1", available_hours: 18 }
+      body: { teacher_profile_id: "t1", base_weekly_hours: 18 }
     });
     const updateParticipant = useUpdateRepartoProcessTeacher();
     updateParticipant.mutate({
       processId: "p1",
       processTeacherId: "pt1",
       body: { status: "inactive" }
+    });
+    const authorizeExtraHours = useUpdateRepartoProcessTeacherExtraHours();
+    authorizeExtraHours.mutate({
+      processId: "p1",
+      processTeacherId: "pt1",
+      body: { extra_weekly_hours: 2, reason: "Covering a vacancy" }
     });
     const deleteParticipant = useDeleteRepartoProcessTeacher();
     deleteParticipant.mutate({ processId: "p1", processTeacherId: "pt1" });
@@ -587,10 +595,14 @@ describe("reparto React hooks", () => {
     expect(mocks.teachingGroups.remove).toHaveBeenCalledWith("p1", "g1");
     expect(mocks.processTeachers.create).toHaveBeenCalledWith("p1", {
       teacher_profile_id: "t1",
-      available_hours: 18
+      base_weekly_hours: 18
     });
     expect(mocks.processTeachers.update).toHaveBeenCalledWith("p1", "pt1", {
       status: "inactive"
+    });
+    expect(mocks.processTeachers.extraHours).toHaveBeenCalledWith("p1", "pt1", {
+      extra_weekly_hours: 2,
+      reason: "Covering a vacancy"
     });
     expect(mocks.processTeachers.remove).toHaveBeenCalledWith("p1", "pt1");
     expect(mocks.assignments.create).toHaveBeenCalledWith("p1", {
@@ -625,7 +637,7 @@ describe("reparto React hooks", () => {
       group_subject_ids: ["gs1", "gs2"]
     });
     expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
-    expect(mocks.useMutation).toHaveBeenCalledTimes(20);
+    expect(mocks.useMutation).toHaveBeenCalledTimes(21);
   });
 
   it("wires plan validation and requirement-generation workflow hooks", async () => {

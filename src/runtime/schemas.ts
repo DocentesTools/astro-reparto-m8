@@ -375,19 +375,11 @@ export const ProcessDashboardSchema = z
   .strict();
 export type ProcessDashboard = z.infer<typeof ProcessDashboardSchema>;
 
-export const TeacherLanSummarySchema = z
-  .object({
-    process_id: uuidSchema,
-    teacher_profile_id: uuidSchema,
-    process_teacher_id: uuidSchema,
-    generated_at: dateTimeSchema,
-    global_balance: GlobalBalanceSchema,
-    teacher_balance: TeacherBalanceSchema,
-    current_turn: CurrentTurnSummarySchema.nullable(),
-    blocking_validation_count: z.number().int().nonnegative()
-  })
-  .strict();
-export type TeacherLanSummary = z.infer<typeof TeacherLanSummarySchema>;
+// `TeacherLanSummarySchema` used to sit here, next to the two obsolete
+// single-balance payloads above. It now embeds `PlanBalance` and
+// `ParticipantBalance`, so it is declared with them further down: a `z.object`
+// literal evaluates its shape eagerly, and referring to a `const` declared
+// later in the module would throw at import time rather than at parse time.
 
 export const MeetingSessionPublicSchema = z
   .object({
@@ -1294,12 +1286,39 @@ export type HourRequirementsPublic = z.infer<
   typeof HourRequirementsPublicSchema
 >;
 
+// ── Process participants (backend plan §3.8, §5.8, §7.6) ────────────────────
+//
+// A participant no longer has an *available capacity* to fill up to. They have
+// an exact **target**, `base_weekly_hours + extra_weekly_hours`, which the sum
+// of their slots must equal before final close. `target_weekly_hours` and
+// `is_overloaded` are computed by the backend and serialized on the public
+// schema, so they are read here and never recomputed from the two parts: the
+// service is the authority on its own arithmetic.
+//
+// `extra_weekly_hours` is department-head *authorized overload*, not a
+// tolerance for over-assignment: there is no override left anywhere in the
+// contract (§3.8). Every change to it carries a reason and an audit event,
+// which is why it is absent from the update schema below and reachable only
+// through {@link ProcessTeacherExtraHoursSchema}.
+
+/** Participant hours the UI sends; `ge=0` columns, so a real zero is legal. */
+const participantHoursRequestSchema = hoursRequestSchema(
+  "Participant hours",
+  "zero"
+);
+
 export const ProcessTeacherPublicSchema = z
   .object({
     id: uuidSchema,
     assignment_process_id: uuidSchema,
     teacher_profile_id: uuidSchema,
-    available_hours: z.number().nonnegative(),
+    base_weekly_hours: HoursSchema,
+    extra_weekly_hours: HoursSchema,
+    target_weekly_hours: HoursSchema,
+    is_overloaded: z.boolean(),
+    extra_hours_reason: z.string().nullable(),
+    extra_hours_updated_by_user_id: uuidSchema.nullable(),
+    extra_hours_updated_at: dateTimeSchema.nullable(),
     participates_in_selection: z.boolean(),
     selection_position: z.number().int().nonnegative().nullable(),
     selection_points: z.number().nonnegative().nullable(),
@@ -1313,11 +1332,19 @@ export const ProcessTeacherPublicSchema = z
   .strict();
 export type ProcessTeacherPublic = z.infer<typeof ProcessTeacherPublicSchema>;
 
+/**
+ * `extra_weekly_hours` is accepted here because the backend accepts it here:
+ * `ProcessTeacherCreate` carries the whole base field set. The default UI does
+ * not offer it, so a participant is created at their contractual base and any
+ * overload is authorized afterwards with a reason — but a host that has its own
+ * import path can still express what the service accepts.
+ */
 export const ProcessTeacherCreateSchema = z
   .object({
     assignment_process_id: uuidSchema,
     teacher_profile_id: uuidSchema,
-    available_hours: z.number().nonnegative(),
+    base_weekly_hours: participantHoursRequestSchema,
+    extra_weekly_hours: participantHoursRequestSchema.optional(),
     participates_in_selection: z.boolean().optional(),
     selection_position: z.number().int().nonnegative().nullable().optional(),
     selection_points: z.number().nonnegative().nullable().optional(),
@@ -1329,13 +1356,19 @@ export const ProcessTeacherCreateSchema = z
   .strict();
 export type ProcessTeacherCreate = z.infer<typeof ProcessTeacherCreateSchema>;
 export type ProcessTeacherCreateInput = Omit<
-  ProcessTeacherCreate,
+  z.input<typeof ProcessTeacherCreateSchema>,
   "assignment_process_id"
 >;
 
+/**
+ * `extra_weekly_hours` is deliberately absent, mirroring the backend schema:
+ * authorized overload changes only through the audited `/extra-hours` action,
+ * so a generic `PATCH` can never bypass the mandatory reason. With `.strict()`
+ * the payload cannot even be built here.
+ */
 export const ProcessTeacherUpdateSchema = z
   .object({
-    available_hours: z.number().nonnegative().optional(),
+    base_weekly_hours: participantHoursRequestSchema.optional(),
     participates_in_selection: z.boolean().optional(),
     selection_position: z.number().int().nonnegative().nullable().optional(),
     selection_points: z.number().nonnegative().nullable().optional(),
@@ -1346,6 +1379,23 @@ export const ProcessTeacherUpdateSchema = z
   })
   .strict();
 export type ProcessTeacherUpdate = z.infer<typeof ProcessTeacherUpdateSchema>;
+export type ProcessTeacherUpdateInput = z.input<
+  typeof ProcessTeacherUpdateSchema
+>;
+
+/** The audited authorized-overload action (backend plan §3.8, §7.6). */
+export const ProcessTeacherExtraHoursSchema = z
+  .object({
+    extra_weekly_hours: participantHoursRequestSchema,
+    reason: z.string().min(1).max(500)
+  })
+  .strict();
+export type ProcessTeacherExtraHours = z.infer<
+  typeof ProcessTeacherExtraHoursSchema
+>;
+export type ProcessTeacherExtraHoursInput = z.input<
+  typeof ProcessTeacherExtraHoursSchema
+>;
 
 export const ProcessTeachersPublicSchema = z
   .object({
@@ -1573,6 +1623,78 @@ export const PlanBalanceSchema = z
   })
   .strict();
 export type PlanBalance = z.infer<typeof PlanBalanceSchema>;
+
+/**
+ * Per-participant assignment state (backend plan §6.2).
+ *
+ * `overloaded_authorized` replaces the old `overloaded`, and the difference is
+ * the whole point of §3.8: it means `extra_weekly_hours > 0` — hours a
+ * department head authorized *in advance* — and never "assigned beyond the
+ * target", which the contract no longer allows to happen.
+ */
+export const ParticipantBalanceStateSchema = z.enum([
+  "pending",
+  "balanced",
+  "overloaded_authorized",
+  "inactive",
+  "not_participating"
+]);
+export type ParticipantBalanceState = z.infer<
+  typeof ParticipantBalanceStateSchema
+>;
+
+/**
+ * One participant's assignment progress against their exact target.
+ *
+ * `remaining_weekly_hours` is signed because the service computes
+ * `target − assigned` without clamping; a negative value would mean the
+ * participant is over their target, which the assignment gates prevent, so it
+ * is read as reported rather than floored to zero and hidden.
+ */
+export const ParticipantBalanceSchema = z
+  .object({
+    process_teacher_id: uuidSchema,
+    teacher_profile_id: uuidSchema,
+    display_name: z.string(),
+    base_weekly_hours: HoursSchema,
+    extra_weekly_hours: HoursSchema,
+    target_weekly_hours: HoursSchema,
+    assigned_weekly_hours: HoursSchema,
+    remaining_weekly_hours: SignedHoursSchema,
+    is_overloaded: z.boolean(),
+    assignment_count: z.number().int().nonnegative(),
+    state: ParticipantBalanceStateSchema
+  })
+  .strict();
+export type ParticipantBalance = z.infer<typeof ParticipantBalanceSchema>;
+
+/**
+ * The authenticated teacher's own LAN payload (backend plan §8.6, §20.25).
+ *
+ * Everything identifying here is the caller's own: `participant` is their row
+ * and nobody else's, exactly as the SSE teacher tier redacts other people's
+ * hours. `plan_balance` is aggregate and names no teacher, which is why it is
+ * LAN-safe and why the shared screen shows the same two figures (§8.7).
+ *
+ * `readiness` and `selection_blocked` come from the same lifecycle-gate status
+ * sets the write path consults, so this payload — not a client guess — is what
+ * decides whether the direct-selection panel is open.
+ */
+export const TeacherLanSummarySchema = z
+  .object({
+    process_id: uuidSchema,
+    teacher_profile_id: uuidSchema,
+    process_teacher_id: uuidSchema,
+    generated_at: dateTimeSchema,
+    readiness: PlanReadinessSchema,
+    selection_blocked: z.boolean(),
+    plan_balance: PlanBalanceSchema.nullable(),
+    participant: ParticipantBalanceSchema,
+    available_slots: z.number().int().nonnegative(),
+    current_turn: CurrentTurnSummarySchema.nullable()
+  })
+  .strict();
+export type TeacherLanSummary = z.infer<typeof TeacherLanSummarySchema>;
 
 /** One stable, entity-addressable planning validation finding. */
 export const PlanValidationMessageSchema = z

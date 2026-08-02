@@ -159,15 +159,31 @@ const dashboardBody = {
   ]
 };
 
+const participantBalanceBody = {
+  process_teacher_id: teacherId,
+  teacher_profile_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  display_name: "Linked Teacher",
+  base_weekly_hours: "18.00",
+  extra_weekly_hours: "0.00",
+  target_weekly_hours: "18.00",
+  assigned_weekly_hours: "4.00",
+  remaining_weekly_hours: "14.00",
+  is_overloaded: false,
+  assignment_count: 1,
+  state: "pending"
+};
+
 const teacherLanSummaryBody = {
   process_id: processId,
-  global_balance: globalBalanceBody,
   current_turn: null,
-  blocking_validation_count: 0,
-  teacher_profile_id: teacherBalanceBody.teacher_profile_id,
+  readiness: "ready",
+  selection_blocked: false,
+  plan_balance: null,
+  available_slots: 2,
+  teacher_profile_id: participantBalanceBody.teacher_profile_id,
   process_teacher_id: teacherId,
   generated_at: now,
-  teacher_balance: teacherBalanceBody
+  participant: participantBalanceBody
 };
 
 const assignmentBody = {
@@ -291,7 +307,10 @@ describe("assignment process API", () => {
     });
     fetchMock.mockResolvedValueOnce(response(teacherLanSummaryBody));
     await expect(assignmentProcesses.myLanSummary(processId)).resolves.toMatchObject({
-      teacher_balance: { display_name: "Linked Teacher" }
+      available_slots: 2,
+      participant: { display_name: "Linked Teacher", target_weekly_hours: "18.00" },
+      readiness: "ready",
+      selection_blocked: false
     });
     expect(assignmentProcesses.eventsUrl(processId)).toBe(
       `http://localhost/reparto/assignment-processes/${processId}/events`
@@ -730,7 +749,13 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: processTeacherId,
     assignment_process_id: processId,
     teacher_profile_id: teacherProfileId,
-    available_hours: 18,
+    base_weekly_hours: 18,
+    extra_weekly_hours: 0,
+    target_weekly_hours: 18,
+    is_overloaded: false,
+    extra_hours_reason: null,
+    extra_hours_updated_by_user_id: null,
+    extra_hours_updated_at: null,
     participates_in_selection: true,
     selection_position: 1,
     selection_points: 10,
@@ -1065,9 +1090,12 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     await expect(
       processTeachers.create(processId, {
         teacher_profile_id: teacherProfileId,
-        available_hours: 18
+        base_weekly_hours: 18
       })
-    ).resolves.toMatchObject({ available_hours: 18 });
+    ).resolves.toMatchObject({
+      base_weekly_hours: "18.00",
+      target_weekly_hours: "18.00"
+    });
     expect(
       JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
         .assignment_process_id
@@ -1090,16 +1118,53 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       "DELETE"
     );
 
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...processTeacherBody,
+        extra_weekly_hours: 2,
+        target_weekly_hours: 20,
+        is_overloaded: true,
+        extra_hours_reason: "Covering a vacancy"
+      })
+    );
+    await expect(
+      processTeachers.extraHours(processId, processTeacherId, {
+        extra_weekly_hours: "2",
+        reason: "Covering a vacancy"
+      })
+    ).resolves.toMatchObject({
+      is_overloaded: true,
+      target_weekly_hours: "20.00"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teachers/${processTeacherId}/extra-hours`
+    );
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+    ).toEqual({ extra_weekly_hours: "2.00", reason: "Covering a vacancy" });
+
     expect(() =>
       processTeachers.create(processId, {
         teacher_profile_id: teacherProfileId,
-        available_hours: -1
+        base_weekly_hours: -1
       } as never)
     ).toThrow();
     expect(() =>
       processTeachers.update(processId, processTeacherId, {
         status: "removed"
       } as never)
+    ).toThrow();
+    // Authorized overload cannot ride in on the generic PATCH.
+    expect(() =>
+      processTeachers.update(processId, processTeacherId, {
+        extra_weekly_hours: 2
+      } as never)
+    ).toThrow();
+    expect(() =>
+      processTeachers.extraHours(processId, processTeacherId, {
+        extra_weekly_hours: 2,
+        reason: ""
+      })
     ).toThrow();
   });
 

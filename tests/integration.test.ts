@@ -178,6 +178,12 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/assignments/validations",
       response: "AssignmentValidationReport"
     });
+    expect(REPARTO_CONTRACT_OPERATIONS["processTeachers.extraHours"]).toEqual({
+      method: "POST",
+      path:
+        "/assignment-processes/{process_id}/teachers/{process_teacher_id}/extra-hours",
+      response: "ProcessTeacherPublic"
+    });
     // No DELETE assignment operation: cancelling is the reason-required undo.
     expect(
       Object.values(REPARTO_CONTRACT_OPERATIONS).some(
@@ -185,7 +191,7 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(60);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(61);
   });
 });
 

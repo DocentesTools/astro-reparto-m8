@@ -86,6 +86,12 @@ export const REPARTO_CONTRACT_OPERATIONS = {
       "/assignment-processes/{process_id}/meeting-sessions/{meeting_session_id}/close",
     response: "MeetingSessionPublic"
   },
+  "processTeachers.extraHours": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/teachers/{process_teacher_id}/extra-hours",
+    response: "ProcessTeacherPublic"
+  },
   "selectionTurns.list": {
     method: "GET",
     path:

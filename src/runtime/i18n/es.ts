@@ -41,7 +41,10 @@ export const es: RepartoDictionary = {
     academicYear: "Curso académico",
     department: "Departamento",
     departmentHead: "Jefe de departamento",
-    availableHours: "Horas disponibles",
+    baseWeeklyHours: "Horas base",
+    extraWeeklyHours: "Horas extra autorizadas",
+    targetWeeklyHours: "Horas objetivo",
+    overloaded: "Sobrecarga autorizada",
     defaultTeacherHoursReference: "Horas de referencia",
     selectionOrderEnabled: "Orden de selección activado",
     selectionOrderMode: "Modo de orden",
@@ -73,6 +76,29 @@ export const es: RepartoDictionary = {
   },
   view: {
     teacherTitle: "Vista docente",
+    lan: {
+      title: "Tus horas",
+      metric: {
+        base: "Base",
+        extra: "Extra autorizadas",
+        target: "Objetivo",
+        assigned: "Asignadas",
+        remaining: "Restantes"
+      },
+      overloaded: "Se te han autorizado {hours} horas extra.",
+      notOverloaded: "No tienes horas extra autorizadas.",
+      state: {
+        pending: "Todavía no has alcanzado tu objetivo.",
+        balanced: "Tus horas asignadas coinciden con tu objetivo.",
+        overloaded_authorized: "Tu objetivo incluye horas extra autorizadas.",
+        inactive: "No estás activo en este proceso.",
+        not_participating: "No formas parte del orden de selección."
+      },
+      availableSlots: "Quedan {count} puesto(s) completo(s) libres en este proceso.",
+      planBalance: "Horas de grupo {group} frente a una dotación de {allocation}; carga docente {teacher} frente a un objetivo de participantes de {target}.",
+      noAllocation: "sin dotación todavía",
+      noPlanBalance: "Este proceso aún no tiene plan docente, así que no hay equilibrio que mostrar."
+    },
     loading: "Cargando {entity}",
     pageLoading: {
       title: "Cargando página de reparto",
@@ -646,6 +672,26 @@ export const es: RepartoDictionary = {
     deleteBody: "Materias seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
     deleted: "Materias eliminadas: {count}",
     deleteError: "No se pudieron eliminar las materias seleccionadas"
+  },
+  participants: {
+    hoursError: {
+      not_a_number: "Introduce un valor de horas como 12 o 12,50.",
+      too_many_decimals: "Las horas admiten como máximo dos decimales.",
+      negative: "Las horas no pueden ser negativas.",
+      out_of_range: "Este valor de horas es demasiado grande."
+    },
+    extraHoursAction: "Horas extra",
+    extraHoursTitle: "Autorizar horas extra",
+    extraHoursBody: "{teacher} tiene una base de {base} horas y {extra} horas extra autorizadas, para un objetivo de {target} horas.",
+    extraHoursHint: "Vuelve a poner el valor en 0 para retirar la autorización. Ambos sentidos se registran con tu motivo.",
+    extraHoursConfirm: "Autorizar",
+    extraHoursSaved: "Horas extra autorizadas actualizadas.",
+    extraHoursError: "No se pudieron cambiar las horas extra autorizadas",
+    lastExtraHoursReason: "Último motivo registrado: {reason}",
+    noExtraHoursReason: "Todavía no se ha registrado ningún cambio de horas extra.",
+    targetHint: "Las horas objetivo son la base más las horas extra autorizadas; no se editan directamente.",
+    overloadedYes: "Sí",
+    overloadedNo: "No"
   },
   participantSelection: {
     selectAllVisible: "Seleccionar todos los participantes visibles",

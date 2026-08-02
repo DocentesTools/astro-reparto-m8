@@ -26,7 +26,8 @@ export type RepartoFieldKey =
   | "processParticipant"
   | "source"
   | "reason"
-  | "availableHours"
+  | "baseWeeklyHours"
+  | "extraWeeklyHours"
   | "participatesInSelection"
   | "selectionPosition"
   | "selectionPoints"
@@ -107,7 +108,8 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   // Undo and reassignment are reason-required actions (backend plan §20.13),
   // so a rejected reason must land on its own field rather than the form.
   reason: "reason",
-  available_hours: "availableHours",
+  base_weekly_hours: "baseWeeklyHours",
+  extra_weekly_hours: "extraWeeklyHours",
   participates_in_selection: "participatesInSelection",
   selection_position: "selectionPosition",
   selection_points: "selectionPoints",

@@ -163,9 +163,11 @@ hour input, no share type and no over-assignment override: the hours shown come
 from the generated slot and are read-only. Assigning offers only free live slots
 and, for the selected slot, only participants the service would accept — an
 inactive participant, one who already holds another position of the same
-teaching activity, and (where the view knows the target) one the slot would push
-past their remaining target are listed with the reason instead of being silently
-dropped. The same eligibility helpers are exported from
+teaching activity, and one the slot would push past their remaining target are
+listed with the reason instead of being silently dropped. The remaining target
+comes from the participant row's own service-computed `target_weekly_hours`, so
+the exact-fit rule (§3.8) is pre-filtered everywhere; a `remainingTarget` lookup
+may still override it per view. The same eligibility helpers are exported from
 `@mano8/astro-reparto-m8/ui` (`buildAssignmentSlotOptions`,
 `buildAssignmentTeacherOptions`, `buildReassignmentTeacherOptions`) so a host UI
 disables the same choices for the same reason. Cancelling is the reason-required
@@ -189,13 +191,25 @@ for both the panel (`meeting_not_open`, `direct_selection_disabled`,
 `slot_not_available`, `duplicate_activity_position`,
 `exceeds_remaining_target`), and the dictionary translates them. Every gate
 fails closed: without the service's `readiness` and `selection_blocked` the
-panel refuses instead of assuming the assignment stage is open. The remaining
-target is the one value it will not guess — supply
-`remainingTargetHours` and the exact-fit rule is enforced client-side, omit it
-and the rule is left to the service. `classifyDirectChoiceConflict` keys a
-refused choice off the HTTP status (409 "the reparto moved, refresh and choose
-again" versus 400/422 "this choice breaks a rule") and passes the service's own
-sentence through untranslated, instead of searching it for keywords.
+panel refuses instead of assuming the assignment stage is open.
+`classifyDirectChoiceConflict` keys a refused choice off the HTTP status (409
+"the reparto moved, refresh and choose again" versus 400/422 "this choice breaks
+a rule") and passes the service's own sentence through untranslated, instead of
+searching it for keywords.
+
+`GET /…/lan/me` answers all three of those questions itself, so
+`TeacherLanWorkspace` reads `readiness`, `selection_blocked` and the caller's own
+remaining target from the payload; the matching props remain as overrides for a
+host that already holds fresher values. The teacher panel shows the five figures
+that make up a participant target — **base**, **authorized extra**, **target**,
+**assigned** and **remaining** — rather than the retired "available hours"
+capacity, plus the number of complete positions still free and the aggregate,
+identifier-free plan balance. Authorized extra hours are the department head's
+act, not a tolerance applied afterwards: they are absent from the participant
+`PATCH` on both sides of the wire and change only through
+`POST /…/teachers/{id}/extra-hours` with a mandatory reason
+(`useUpdateRepartoProcessTeacherExtraHours`), in either direction — withdrawing
+an authorization is the same action with `0`.
 
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package

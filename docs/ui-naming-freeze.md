@@ -199,7 +199,11 @@ ids, etc.) stay internal — no UI label.
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `teacher_profile_id` | Teacher | Enseignant | Docente | yes (form) | FK select from teacher roster |
-| `available_hours` | Available hours | Heures disponibles | Horas disponibles | yes | float ≥ 0 |
+| `base_weekly_hours` | Base hours | Heures de base | Horas base | yes | decimal hours ≥ 0; the only editable hour field |
+| `extra_weekly_hours` | Authorized extra hours | Heures supplémentaires autorisées | Horas extra autorizadas | read-only (form) | changed only by the reasoned `extra-hours` action |
+| `target_weekly_hours` | Target hours | Heures cibles | Horas objetivo | read-only | service-computed `base + extra` |
+| `is_overloaded` | Authorized overload | Surcharge autorisée | Sobrecarga autorizada | read-only | `extra_weekly_hours > 0`; never "over-assigned" |
+| `extra_hours_reason` | Reason | Motif | Motivo | yes (extra-hours action) | 1..500; shown read-only on the edit form |
 | `participates_in_selection` | Participates in selection | Participe à la sélection | Participa en la selección | no | bool |
 | `selection_position` | Selection position | Position | Posición | no | int |
 | `selection_points` | Selection points | Points de sélection | Puntos de selección | no | number |
@@ -207,6 +211,17 @@ ids, etc.) stay internal — no UI label.
 | `selection_notes` | Selection notes | Notes de sélection | Notas de selección | no | str |
 | `order_locked` | Order locked | Ordre verrouillé | Orden bloqueado | no | bool |
 | `status` | Status | État | Estado | read-only (table) | enum `active`/`inactive` |
+
+Row actions: `edit` (base hours, selection flag, status), `extra-hours` (the
+reasoned authorization) and `delete`. DOM slots:
+`data-participant-overloaded`, `data-reparto-slot="participant-target"`,
+`data-reparto-slot="participant-extra-hours"`,
+`data-reparto-slot="participant-target-hours"`,
+`data-reparto-slot="participant-overloaded"`,
+`data-reparto-slot="participant-extra-hours-reason"`,
+`data-reparto-form="participant-extra-hours"`,
+`data-reparto-field="base-weekly-hours"`,
+`data-reparto-field="extra-weekly-hours"`.
 
 ### 3.10 Assignment
 
@@ -698,9 +713,11 @@ Amendment rules:
 | `HourRequirement.teaching_group_id` / `subject_id` / `required_hours` / `requirement_type` / `flags` / `notes`, manual CRUD dialogs, selection and `data-requirement-type` / `data-requirement-hours` | §3.8 | generated `teaching_activity_id` + `position_index` + `required_teacher_hours` + generation lineage; read-only activity/position groups in §3.17 | 2026-08-02 |
 | `Assignment.assigned_hours` / `assignment_type` / `override_reason` / `overridden_by_user_id`, the `draft`/`confirmed`/`overridden` statuses, the assignment row `delete` action, the whole `assignmentSelection.*` bulk-delete surface and `error.hoursExceed` | §3.10 | the slot's own `required_teacher_hours` shown read-only; `status` `active`/`cancelled`; reason-required `undo` and `reassign` actions; an over-target assignment is prevented, not overridden (authorize `extra_weekly_hours` first) | 2026-08-02 |
 | `view.choice.impact` — "{n} hours will be assigned to you", plus `meetingClosed`/`directDisabled`/`otherTurn`/`covered`/`alreadyCovered`/`turnChanged` and the `data-reparto-impact-hours` DOM slot | §3.10 / teacher LAN panel | one position taken whole: `view.choice.disabled.<code>` and `view.choice.conflict.<code>` keyed off stable codes, per-position `data-reparto-slot-choice` / `data-slot-disabled-reason`, panel-level `data-reparto-choice-reason` and `data-reparto-selectable-slots` | 2026-08-02 |
+| `ProcessTeacher.available_hours` (field + `field.availableHours` label + the participants add/edit hour input + the `available_hours` list column + the `availableHours` error-mapping key) | §3.9 | `base_weekly_hours` (editable), `extra_weekly_hours` (audited action only), computed `target_weekly_hours` and `is_overloaded`; error keys `baseWeeklyHours` / `extraWeeklyHours` | 2026-08-02 |
+| `TeacherLanSummary.global_balance` / `teacher_balance` / `blocking_validation_count` and the `data-reparto-slot="teacher-available-hours"` / `teacher-balance` slots | teacher LAN view | `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's own `participant` (`ParticipantBalance`) and `available_slots`; slots `teacher-base-hours`, `teacher-extra-hours`, `teacher-target-hours`, `teacher-assigned-hours`, `teacher-remaining-hours`, `teacher-overload`, `teacher-state`, `available-slots`, `lan-plan-balance` | 2026-08-02 |
 
 Still to retire, with the bullet that owns each (listed so a reader does not
 mistake the silence for approval): `total-required-hours`,
-`teacher-available-hours`, `pending-required-hours` and `requirement-count`
-(single-balance slots — the planning balance header and dashboard bullets),
-`available_hours` (the teacher LAN view and participants bullets).
+`pending-required-hours` and `requirement-count` (single-balance slots — the
+dashboard and shared-screen bullets, which still read `GlobalBalance` /
+`TeacherBalance` through `ProcessSummary` and `ProcessDashboard`).

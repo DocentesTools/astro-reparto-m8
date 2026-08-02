@@ -29,14 +29,13 @@ import type {
  *    cannot be split (plan §3.8 — an overload is authorized in advance as
  *    extra hours or not at all).
  *
- * Rule 3 needs the participant's target hours, which the process-teacher read
- * schema does not carry yet (that field set lands with the participant/LAN
- * bullets). It is therefore evaluated through an explicit
- * {@link RemainingTargetLookup} the caller supplies: return `null` and the rule
- * is reported as unknown rather than silently assumed to pass, so the board
- * stays honest today and the LAN panel — which does know the remaining target —
- * enforces it in full. The service remains the authority in every case; this is
- * a pre-filter, never a substitute.
+ * Rule 3 needs the participant's target hours. `ProcessTeacherPublic` now
+ * carries `target_weekly_hours` (the service's own `base + extra`), so the rule
+ * is evaluated for every view by default — the board no longer has to report it
+ * as unknown. {@link RemainingTargetLookup} survives as an explicit override for
+ * a caller holding a fresher figure than the participant row; a lookup that
+ * answers `null` falls back to the row, because the row does know. The service
+ * remains the authority in every case; this is a pre-filter, never a substitute.
  */
 
 /** Why a generated slot cannot be assigned right now. */
@@ -65,19 +64,17 @@ export type AssignmentTeacherOption = {
   processTeacherId: string;
   assignedSlotCount: number;
   assignedHours: string;
-  /**
-   * `target − assigned` when the caller can supply the participant's target,
-   * `null` when that axis is not available to this view.
-   */
-  remainingTargetHours: string | null;
+  /** `target − assigned`, signed; negative would mean already over target. */
+  remainingTargetHours: string;
   canAssign: boolean;
   disabledReason: AssignmentTeacherDisabledReason | null;
 };
 
 /**
- * Remaining target hours for one participant, or `null` when the caller cannot
- * know them. Never derive this from a capacity field: the target is
- * `base_weekly_hours + extra_weekly_hours` (plan §3.8) and nothing else.
+ * An override for one participant's target hours, or `null` to use the
+ * participant row's own `target_weekly_hours`. Never derive this from a capacity
+ * field: the target is `base_weekly_hours + extra_weekly_hours` (plan §3.8) and
+ * nothing else.
  */
 export type RemainingTargetLookup = (
   processTeacherId: string
@@ -158,7 +155,7 @@ export function buildAssignmentTeacherOptions(
       held.map((assignment) => hoursBySlot.get(assignment.hour_requirement_id) ?? 0)
     );
     const remainingTargetHours = resolveRemainingTarget(
-      participant.id,
+      participant,
       assignedHours,
       options.remainingTarget
     );
@@ -230,12 +227,12 @@ function slotDisabledReason(
 }
 
 function resolveRemainingTarget(
-  processTeacherId: string,
+  participant: ProcessTeacherPublic,
   assignedHours: string,
   lookup: RemainingTargetLookup | undefined
-): string | null {
-  const target = lookup?.(processTeacherId);
-  if (target === null || target === undefined) return null;
+): string {
+  const target =
+    lookup?.(participant.id) ?? participant.target_weekly_hours;
   return subtractHours(target, assignedHours);
 }
 
@@ -248,17 +245,14 @@ function teacherDisabledReason({
   participant: ProcessTeacherPublic;
   held: readonly AssignmentPublic[];
   slot: AssignmentSlotOption | null;
-  remainingTargetHours: string | null;
+  remainingTargetHours: string;
 }): AssignmentTeacherDisabledReason | null {
   if (participant.status !== "active") return "participant_inactive";
   if (slot === null) return null;
   if (held.some((assignment) => assignment.teaching_activity_id === slot.activityId)) {
     return "duplicate_activity_position";
   }
-  if (
-    remainingTargetHours !== null &&
-    compareHours(slot.teacherHours, remainingTargetHours) > 0
-  ) {
+  if (compareHours(slot.teacherHours, remainingTargetHours) > 0) {
     return "exceeds_remaining_target";
   }
   return null;

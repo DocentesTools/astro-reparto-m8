@@ -13,6 +13,7 @@ import type {
 import { ParticipantsList } from "./list.js";
 import { ParticipantAdd } from "./add.js";
 import { ParticipantEdit } from "./edit.js";
+import { ParticipantExtraHours } from "./extra-hours.js";
 import { ParticipantDelete } from "./delete.js";
 import { ParticipantBulkDelete } from "./bulk-delete.js";
 
@@ -41,6 +42,7 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<ProcessTeacherPublic | null>(null);
+  const [authorizing, setAuthorizing] = useState<ProcessTeacherPublic | null>(null);
   const [deleting, setDeleting] = useState<ProcessTeacherPublic | null>(null);
   const [deletingSelected, setDeletingSelected] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
@@ -57,7 +59,8 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
       : null;
   const selectedParticipants = rows.filter((participant) => selectedIds.has(participant.id));
   const currentSelectedIds = new Set(selectedParticipants.map((participant) => participant.id));
-  const hasActiveForm = adding || deletingSelected || Boolean(editing) || Boolean(deleting);
+  const hasActiveForm =
+    adding || deletingSelected || Boolean(editing) || Boolean(authorizing) || Boolean(deleting);
 
   return (
     <main
@@ -76,6 +79,7 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
           label={dict.action.create}
           onClick={() => {
             setEditing(null);
+            setAuthorizing(null);
             setDeleting(null);
             setAdding(true);
           }}
@@ -98,12 +102,20 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
           selectedIds={currentSelectedIds}
           onEdit={(participant) => {
             setAdding(false);
+            setAuthorizing(null);
             setDeleting(null);
             setEditing(participant);
+          }}
+          onExtraHours={(participant) => {
+            setAdding(false);
+            setEditing(null);
+            setDeleting(null);
+            setAuthorizing(participant);
           }}
           onDelete={(participant) => {
             setAdding(false);
             setEditing(null);
+            setAuthorizing(null);
             setDeleting(participant);
           }}
         />
@@ -117,6 +129,15 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
             participant={editing}
             teacherName={teacherName(editing.teacher_profile_id)}
             onDone={() => setEditing(null)}
+          />
+        ) : null}
+        {authorizing ? (
+          <ParticipantExtraHours
+            dict={dict}
+            processId={processId ?? ""}
+            participant={authorizing}
+            teacherName={teacherName(authorizing.teacher_profile_id)}
+            onDone={() => setAuthorizing(null)}
           />
         ) : null}
         {deletingSelected ? (

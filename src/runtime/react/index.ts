@@ -64,6 +64,7 @@ export {
   useRepartoProcessTeachers,
   useCreateRepartoProcessTeacher,
   useUpdateRepartoProcessTeacher,
+  useUpdateRepartoProcessTeacherExtraHours,
   useDeleteRepartoProcessTeacher,
   useRepartoAssignments,
   useRepartoAssignmentValidations,

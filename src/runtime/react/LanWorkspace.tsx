@@ -40,35 +40,38 @@ function eventStreamUrl(processId?: string): string | undefined {
   return processId ? assignmentProcesses.eventsUrl(processId) : undefined;
 }
 
+/**
+ * What the teacher view shows before the service has answered.
+ *
+ * Every gate is closed and every figure is zero: a teacher client must never
+ * imply that selection is open, or that hours are available to take, on the
+ * strength of a placeholder. `readiness`/`selection_blocked` mirror what the
+ * choice helper treats as blocking, so the panel that renders this is disabled
+ * for the same reasons it would be disabled by the service.
+ */
 const fallbackTeacherSummary: TeacherLanSummary = {
   process_id: "00000000-0000-4000-8000-000000000001",
   teacher_profile_id: "00000000-0000-4000-8000-000000000002",
   process_teacher_id: "00000000-0000-4000-8000-000000000003",
   generated_at: "2026-07-05T00:00:00Z",
-  global_balance: {
-    total_required_hours: 0,
-    total_available_hours: 0,
-    total_assigned_hours: 0,
-    pending_required_hours: 0,
-    availability_difference: 0,
-    uncovered_requirements: 0,
-    overloaded_teachers: 0,
-    state: "pending"
-  },
-  teacher_balance: {
+  readiness: "not_ready",
+  selection_blocked: true,
+  plan_balance: null,
+  participant: {
     process_teacher_id: "00000000-0000-4000-8000-000000000003",
     teacher_profile_id: "00000000-0000-4000-8000-000000000002",
     display_name: "Teacher",
-    available_hours: 0,
-    assigned_hours: 0,
-    remaining_hours: 0,
-    excess_hours: 0,
+    base_weekly_hours: "0.00",
+    extra_weekly_hours: "0.00",
+    target_weekly_hours: "0.00",
+    assigned_weekly_hours: "0.00",
+    remaining_weekly_hours: "0.00",
+    is_overloaded: false,
     assignment_count: 0,
-    has_override: false,
     state: "pending"
   },
-  current_turn: null,
-  blocking_validation_count: 0
+  available_slots: 0,
+  current_turn: null
 };
 
 /**
@@ -228,6 +231,123 @@ function TeacherDirectChoicePanel({
   );
 }
 
+/**
+ * The teacher's own hours, as the service reports them.
+ *
+ * The panel this replaces showed *available / assigned / remaining* — capacity
+ * to fill up to, which under §3.8 no longer exists. What a participant has is
+ * an exact target, and the only honest way to show it is to show how it was
+ * built: contractual `base`, department-head authorized `extra`, their sum as
+ * the `target`, what the taken positions already come to, and what is left.
+ * Every figure is the service's own canonical decimal string, rendered as
+ * given: nothing here recomputes a total the backend already published.
+ *
+ * The process-wide line is `available_slots` — how many complete positions are
+ * still free — because that is the only process-level quantity a teacher acts
+ * on. `plan_balance` is aggregate and names nobody, which is what makes it
+ * LAN-safe; it is shown when the process has a plan and stated as absent when
+ * it does not, never quietly rendered as zero.
+ */
+function TeacherHoursPanel({
+  locale,
+  summary
+}: {
+  locale?: RepartoLocale;
+  summary: TeacherLanSummary;
+}) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const participant = summary.participant;
+  const metrics: {
+    hours: string;
+    label: string;
+    slot: string;
+  }[] = [
+    {
+      hours: participant.base_weekly_hours,
+      label: dict.view.lan.metric.base,
+      slot: "teacher-base-hours"
+    },
+    {
+      hours: participant.extra_weekly_hours,
+      label: dict.view.lan.metric.extra,
+      slot: "teacher-extra-hours"
+    },
+    {
+      hours: participant.target_weekly_hours,
+      label: dict.view.lan.metric.target,
+      slot: "teacher-target-hours"
+    },
+    {
+      hours: participant.assigned_weekly_hours,
+      label: dict.view.lan.metric.assigned,
+      slot: "teacher-assigned-hours"
+    },
+    {
+      hours: participant.remaining_weekly_hours,
+      label: dict.view.lan.metric.remaining,
+      slot: "teacher-remaining-hours"
+    }
+  ];
+  const balance = summary.plan_balance;
+  return (
+    <section
+      className={repartoPanelClass}
+      data-reparto-panel="teacher-summary"
+      data-reparto-participant-state={participant.state}
+    >
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.lan.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
+      </div>
+      <dl className={repartoMetricsClass}>
+        {metrics.map((metric) => (
+          <div className={repartoMetricItemClass} key={metric.slot}>
+            <dt className={repartoMetricLabelClass}>{metric.label}</dt>
+            <dd className={repartoMetricValueLargeClass} data-reparto-slot={metric.slot}>
+              {metric.hours}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p
+        className="text-sm text-muted-foreground"
+        data-reparto-overloaded={participant.is_overloaded ? "true" : "false"}
+        data-reparto-slot="teacher-overload"
+      >
+        {participant.is_overloaded
+          ? formatRepartoMessage(dict.view.lan.overloaded, {
+              hours: participant.extra_weekly_hours
+            })
+          : dict.view.lan.notOverloaded}
+      </p>
+      <p className="text-sm text-muted-foreground" data-reparto-slot="teacher-state">
+        {dict.view.lan.state[participant.state]}
+      </p>
+      <p
+        className="text-sm text-muted-foreground"
+        data-reparto-available-slots={summary.available_slots}
+        data-reparto-slot="available-slots"
+      >
+        {formatRepartoMessage(dict.view.lan.availableSlots, {
+          count: summary.available_slots
+        })}
+      </p>
+      <p className="text-sm text-muted-foreground" data-reparto-slot="lan-plan-balance">
+        {balance
+          ? formatRepartoMessage(dict.view.lan.planBalance, {
+              group: balance.group.total_group_load,
+              allocation:
+                balance.group.allocated_group_weekly_hours ??
+                dict.view.lan.noAllocation,
+              teacher: balance.teacher.total_teacher_load,
+              target: balance.teacher.participant_target_total
+            })
+          : dict.view.lan.noPlanBalance}
+      </p>
+    </section>
+  );
+}
+
 export function TeacherLanWorkspace({
   assignments = [],
   conflict = null,
@@ -271,39 +391,7 @@ export function TeacherLanWorkspace({
         <h1>{dict.nav.item.myView}</h1>
       </header>
       <div className={repartoMainGridClass}>
-        <section className={repartoPanelClass} data-reparto-panel="teacher-summary">
-          <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.overview}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
-          </div>
-          <dl className={repartoMetricsClass}>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.available}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-available-hours">
-                {safeSummary.teacher_balance.available_hours}
-              </dd>
-            </div>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assigned}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-assigned-hours">
-                {safeSummary.teacher_balance.assigned_hours}
-              </dd>
-            </div>
-            <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.pending}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="teacher-remaining-hours">
-                {safeSummary.teacher_balance.remaining_hours}
-              </dd>
-            </div>
-          </dl>
-          <p className="text-sm text-muted-foreground" data-reparto-slot="teacher-balance">
-            {formatRepartoMessage(dict.dashboard.summary.balance, {
-              assigned: safeSummary.global_balance.total_assigned_hours,
-              pending: safeSummary.global_balance.pending_required_hours,
-              required: safeSummary.global_balance.total_required_hours
-            })}
-          </p>
-        </section>
+        <TeacherHoursPanel locale={locale} summary={safeSummary} />
         <section className={repartoPanelClass} data-reparto-panel="turn-and-balance">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.meetingReadiness}</h2>
@@ -316,13 +404,17 @@ export function TeacherLanWorkspace({
           conflict={conflict}
           locale={locale}
           meetingSession={meetingSession}
-          readiness={readiness}
+          // The LAN payload carries the authoritative gate state and the
+          // caller's own remaining target, so the props are overrides for a
+          // host that already has fresher values — not the primary source they
+          // used to be, back when the summary could not answer any of the three.
+          readiness={readiness ?? safeSummary.readiness}
           remainingTargetHours={
-            remainingTargetHours ?? safeSummary.teacher_balance.remaining_hours
+            remainingTargetHours ?? safeSummary.participant.remaining_weekly_hours
           }
           requirements={requirements}
           selectedSlotId={selectedSlotId}
-          selectionBlocked={selectionBlocked}
+          selectionBlocked={selectionBlocked ?? safeSummary.selection_blocked}
           slotLabel={slotLabel}
           summary={safeSummary}
         />

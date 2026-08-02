@@ -82,21 +82,24 @@ function dataForKey(queryKey: readonly unknown[]) {
       teacher_profile_id: "55555555-5555-4555-8555-555555555555",
       process_teacher_id: teacherId,
       generated_at: now,
-      global_balance: globalBalance,
-      teacher_balance: {
+      readiness: "ready",
+      selection_blocked: false,
+      plan_balance: null,
+      participant: {
         process_teacher_id: teacherId,
         teacher_profile_id: "55555555-5555-4555-8555-555555555555",
         display_name: "Teacher",
-        available_hours: 4,
-        assigned_hours: 1,
-        remaining_hours: 3,
-        excess_hours: 0,
+        base_weekly_hours: "4.00",
+        extra_weekly_hours: "0.00",
+        target_weekly_hours: "4.00",
+        assigned_weekly_hours: "1.00",
+        remaining_weekly_hours: "3.00",
+        is_overloaded: false,
         assignment_count: 1,
-        has_override: false,
         state: "pending"
       },
-      current_turn: currentTurn,
-      blocking_validation_count: 0
+      available_slots: 1,
+      current_turn: currentTurn
     };
   }
   if (last === "versions") {
@@ -290,12 +293,13 @@ describe("default UI query states", () => {
     expect(renderToStaticMarkup(<RepartoMeetingView processId={processId} />)).toContain(
       "Turn 1"
     );
-    // The island renders from its own queries; with no service readiness in
-    // this fixture the panel is present and closed, which is the fail-closed
-    // answer rather than a missing panel.
-    expect(
-      renderToStaticMarkup(<RepartoMyView processId={processId} />)
-    ).toContain('data-reparto-choice-reason="plan_not_ready"');
+    // The island renders from its own queries, and the LAN payload — not a
+    // prop — decides both the hours it shows and whether the panel is open.
+    const myView = renderToStaticMarkup(<RepartoMyView processId={processId} />);
+    expect(myView).toContain('data-reparto-slot="teacher-target-hours"');
+    expect(myView).toContain('data-reparto-participant-state="pending"');
+    // Ready, but nothing picked yet: the remaining gate is the teacher's own.
+    expect(myView).toContain('data-reparto-choice-reason="no_slot_chosen"');
     expect(renderToStaticMarkup(<RepartoSharedView processId={processId} />)).toContain(
       'data-reparto-route="shared-screen"'
     );

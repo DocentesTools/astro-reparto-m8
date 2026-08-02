@@ -111,7 +111,7 @@ a free-form bool, not a status enum.
 | Copy-from | `POST /{process_id}/copy-from/{source_process_id}` body `{copy_assignments: bool=false}` | (not listed) | NEW §3.1 |
 | Summary | `GET /{process_id}/summary` → `ProcessSummary` | summary | ✓ |
 | Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` | dashboard | ✓ |
-| LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (auth required) | lan/me | ✓ |
+| LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (reader floor) — `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's **own** `participant` balance and `available_slots` | lan/me | ✓ |
 | Events (SSE) | `GET /{process_id}/events` → `text/event-stream` `event: process.summary` | events | ✓ |
 | Create required | `academic_year_id, school_id, department_id` (all `uuid`) | `academic_year_id*`, `school_id*`, `department_id*` | ✓ |
 | Public shape | base + `id, closed_at, closed_by_user_id, created_by_user_id, created_at, updated_at` | (n/a) | ✓ |
@@ -195,17 +195,37 @@ reasoned reconciliation; the client exposes no manual mutation wrapper or hook.
 
 ### 2.5 Process teacher (participant) — `prefix=/…/teachers`
 
+Re-verified 2026-08-02 against `reparto-docente-m8`
+`reparto_service/app/routes/process_teachers.py` and
+`db_models/process_teachers.py` on branch
+`feat/reparto-three-stage-enums-lifecycle`.
+
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `ProcessTeachersPublic` | list | ✓ |
-| Create | `POST /` → `201` `ProcessTeacherPublic` (process writer) | create | ✓ |
+| Create | `POST /` → `201` `ProcessTeacherPublic` (admin) | create | ✓ |
 | Get | `GET /{process_teacher_id}` → `ProcessTeacherPublic` | get | ✓ |
-| Patch | `PATCH /{process_teacher_id}` → `ProcessTeacherPublic` (process writer) | patch | ✓ |
-| Delete | `DELETE /{process_teacher_id}` → `ProcessTeacherPublic` (process writer) | delete | ✓ |
-| Create required | `teacher_profile_id: uuid`, `available_hours: float≥0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Patch | `PATCH /{process_teacher_id}` → `ProcessTeacherPublic` (admin) — **no `extra_weekly_hours`** | patch | ✓ |
+| Extra hours | `POST /{process_teacher_id}/extra-hours` body `{extra_weekly_hours, reason}` → `ProcessTeacherPublic` (admin) | three-stage §3.8/§7.6 | ✓ |
+| Delete | `DELETE /{process_teacher_id}` → `ProcessTeacherPublic` (admin) | delete | ✓ |
+| Create required | `teacher_profile_id: uuid`, `base_weekly_hours: float≥0` | three-stage §3.8 | ✓ |
+| Public shape | base + `id, target_weekly_hours, is_overloaded, extra_hours_reason, extra_hours_updated_by_user_id, extra_hours_updated_at, created_at, updated_at` | three-stage §5.8 | ✓ |
 
-Notes: `status` enum: `active | inactive`. Uniqueness
+Notes: a participant has an exact **target**, not an available capacity:
+`target_weekly_hours = base_weekly_hours + extra_weekly_hours`, and both
+computed fields are serialized by the service — the client reads them and never
+recomputes the sum. `is_overloaded` is `extra_weekly_hours > 0`; it does **not**
+mean assigned hours exceed the target, which the assignment gates prevent
+outright (there is no override anywhere in the contract).
+
+`extra_weekly_hours` is absent from `ProcessTeacherUpdate` on both sides:
+authorized overload carries a mandatory reason and an audit event, so the
+`/extra-hours` action is the only path, in either direction (withdrawing is the
+same action with `0`). It **is** present on `ProcessTeacherCreate`, because the
+backend's create schema carries the whole base field set; the default UI does
+not offer it there, so a participant is created at their contractual base.
+
+`status` enum: `active | inactive`. Uniqueness
 `(process_id, teacher_profile_id)` is DB-enforced — UI surfaces a clear
 "already a participant" error message on collision.
 
@@ -637,7 +657,7 @@ omitted; anything listed MUST be `required()`.
 | Group subject | `teaching_group_id, subject_id` (`assignment_process_id` from URL) | `group_weekly_hours, teacher_weekly_hours_per_position, required_teacher_count, active, notes` |
 | Teaching group | `stage, grade, group_code, label` | `stage, grade, group_code, label, notes` |
 | Requirement slot | — (generated from the teaching plan) | — (read-only; generation/reconciliation only) |
-| Process teacher | `teacher_profile_id, available_hours` | `available_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` |
+| Process teacher | `teacher_profile_id, base_weekly_hours` | `base_weekly_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` (**never** `extra_weekly_hours` — see `POST /…/extra-hours`) |
 | Assignment | `hour_requirement_id, process_teacher_id` | `notes` (undo and reassignment are their own reason-required actions) |
 | Meeting session | *(none — `assignment_process_id` from URL)* | `status, lan_access_enabled, direct_teacher_selection_enabled, selection_mode, notes` |
 | Selection turn | `meeting_session_id, process_teacher_id, position` (manual create rare; usually `initialize`) | `status, skip_reason, forced_by_user_id, notes` (mutation is via `start` / `complete` / `skip` / `override` actions) |
@@ -648,6 +668,8 @@ Special operations:
 - `POST /academic-years/{id}/archive` — no body
 - `POST /teacher-profiles/{id}/link-user` — body `{user_id}`
 - `POST /assignment-processes/{id}/transition` — body `{target_status}`
+- `POST /…/teachers/{process_teacher_id}/extra-hours` — body
+  `{extra_weekly_hours, reason}`; the only path that changes authorized overload
 - `POST /assignment-processes/{id}/reopen` — body `{reason: str[1..500]}`
 - `POST /assignment-processes/{id}/copy-from/{src}` — body `{copy_assignments: bool=false}`
 - `POST /…/meeting-sessions/{id}/close` — no body
@@ -677,7 +699,7 @@ Special operations:
 | `Subject /…/subjects list, create, get, patch, delete / name* / hard delete (confirm)` | ✓ | matches |
 | `Teaching group (classroom) /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
 | `Requirement slot /…/requirements list, get, generation-preview/generate, reconciliation-preview/reconcile / teaching_activity_id + position_index + required_teacher_hours / generated, never manually deleted` | ✓ | three-stage contract |
-| `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, available_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness |
+| `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, base_weekly_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness; plus the audited `POST /…/extra-hours` |
 | `Assignment /…/assignments list, create, direct-choice, get, patch, delete / hour_requirement_id*, process_teacher_id*, assigned_hours*, meeting_session_id* / hard delete (confirm)` | ✓ | matches; **note**: `meeting_session_id` is NOT a Create field in the backend — it is set when a teacher uses `direct-choice` and is left null on `POST /`. Plan §2 row should be read as "the direct-choice path carries `meeting_session_id`", not the create path |
 | `Meeting session /…/meeting-sessions list, create, get, patch, close / — / close (no delete)` | ✓ | matches |
 | `Selection turn /…/selection-turns list, initialize, start, complete, skip, override / — / state ops only` | ✓ | matches |

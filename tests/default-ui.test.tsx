@@ -91,21 +91,24 @@ const teacherSummary: TeacherLanSummary = {
   teacher_profile_id: "55555555-5555-4555-8555-555555555555",
   process_teacher_id: processSummary.current_turn?.process_teacher_id ?? "",
   generated_at: "2026-07-04T10:00:00Z",
-  global_balance: processSummary.global_balance,
-  teacher_balance: {
+  readiness: "ready",
+  selection_blocked: false,
+  plan_balance: null,
+  participant: {
     process_teacher_id: processSummary.current_turn?.process_teacher_id ?? "",
     teacher_profile_id: "55555555-5555-4555-8555-555555555555",
     display_name: "Teacher",
-    available_hours: 4,
-    assigned_hours: 1,
-    remaining_hours: 3,
-    excess_hours: 0,
+    base_weekly_hours: "4.00",
+    extra_weekly_hours: "0.00",
+    target_weekly_hours: "4.00",
+    assigned_weekly_hours: "1.00",
+    remaining_weekly_hours: "3.00",
+    is_overloaded: false,
     assignment_count: 1,
-    has_override: false,
     state: "pending"
   },
-  current_turn: processSummary.current_turn,
-  blocking_validation_count: 0
+  available_slots: 2,
+  current_turn: processSummary.current_turn
 };
 
 const meetingSession: MeetingSessionPublic = {
@@ -222,7 +225,100 @@ describe("default reparto UI", () => {
     }
   });
 
-  it("renders direct-choice state per position and fails closed without plan readiness", () => {
+  it("shows the teacher's own target as base plus authorized extra, with the aggregate balance", async () => {
+    const { TeacherLanWorkspace } = await import(
+      "../src/runtime/react/LanWorkspace.js"
+    );
+    const html = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        processId={processSummary.process_id}
+        summary={{
+          ...teacherSummary,
+          participant: {
+            ...teacherSummary.participant,
+            extra_weekly_hours: "2.00",
+            target_weekly_hours: "6.00",
+            remaining_weekly_hours: "5.00",
+            is_overloaded: true,
+            state: "overloaded_authorized"
+          },
+          plan_balance: {
+            teaching_plan_id: "77777777-7777-4777-8777-777777777777",
+            assignment_process_id: processSummary.process_id,
+            group: {
+              total_group_load: "120.00",
+              allocated_group_weekly_hours: "120.00",
+              allocation_difference: "0.00",
+              is_balanced: true
+            },
+            teacher: {
+              total_teacher_load: "124.00",
+              participant_target_total: "124.00",
+              teacher_load_difference: "0.00",
+              is_balanced: true
+            },
+            is_exact: true
+          }
+        }}
+      />
+    );
+    // Five figures, and the target is shown as the service computed it.
+    expect(html).toContain('data-reparto-slot="teacher-base-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-extra-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-target-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-assigned-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-remaining-hours"');
+    // The retired capacity slot is gone, not renamed onto a new concept.
+    expect(html).not.toContain('data-reparto-slot="teacher-available-hours"');
+    expect(html).toContain('data-reparto-overloaded="true"');
+    expect(html).toContain('data-reparto-participant-state="overloaded_authorized"');
+    expect(html).toContain("2.00 extra hours have been authorized for you.");
+    // Complete selectable positions, and the two aggregate balances that name
+    // nobody — the only process-wide figures a LAN client may see.
+    expect(html).toContain('data-reparto-available-slots="2"');
+    expect(html).toContain("120.00");
+    expect(html).toContain("124.00");
+
+    // Without a plan the balance line says so rather than reading zero.
+    const noPlan = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        processId={processSummary.process_id}
+        summary={teacherSummary}
+      />
+    );
+    expect(noPlan).toContain("no teaching plan yet");
+    expect(noPlan).toContain("No extra hours are authorized for you.");
+
+    // An allocation the leadership has not communicated is stated, not zeroed.
+    const noAllocation = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        processId={processSummary.process_id}
+        summary={{
+          ...teacherSummary,
+          plan_balance: {
+            teaching_plan_id: "77777777-7777-4777-8777-777777777777",
+            assignment_process_id: processSummary.process_id,
+            group: {
+              total_group_load: "120.00",
+              allocated_group_weekly_hours: null,
+              allocation_difference: null,
+              is_balanced: false
+            },
+            teacher: {
+              total_teacher_load: "124.00",
+              participant_target_total: "120.00",
+              teacher_load_difference: "4.00",
+              is_balanced: false
+            },
+            is_exact: false
+          }
+        }}
+      />
+    );
+    expect(noAllocation).toContain("no allocation yet");
+  });
+
+  it("renders direct-choice state per position and fails closed without plan readiness", async () => {
     const positions = [
       {
         id: "aaaaaaa1-1111-4111-8111-111111111111",
@@ -261,10 +357,11 @@ describe("default reparto UI", () => {
     expect(ready).toContain('data-reparto-slot="choice-result"');
     expect(ready).not.toContain("data-reparto-impact-hours");
 
-    // Without the service's readiness the panel refuses rather than assuming
-    // the assignment stage is open.
-    const unknown = renderToStaticMarkup(
+    // The LAN payload is the authority on the gates, so the props may be
+    // omitted entirely and the panel still opens for a ready service.
+    const fromPayload = renderToStaticMarkup(
       <TeacherLanView
+        assignments={[]}
         meetingSession={meetingSession}
         processId={processSummary.process_id}
         requirements={positions}
@@ -272,8 +369,53 @@ describe("default reparto UI", () => {
         summary={teacherSummary}
       />
     );
+    expect(fromPayload).toContain('data-reparto-choice-state="ready"');
+
+    // ...and it closes them for the same reason the service would: a payload
+    // that reports a blocked selection blocks, without any prop saying so.
+    const blocked = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={{ ...teacherSummary, selection_blocked: true }}
+      />
+    );
+    expect(blocked).toContain('data-reparto-choice-state="blocked"');
+    expect(blocked).toContain('data-reparto-choice-reason="selection_blocked"');
+
+    const recalculating = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={{ ...teacherSummary, readiness: "recalculation_required" }}
+      />
+    );
+    expect(recalculating).toContain(
+      'data-reparto-choice-reason="reconciliation_required"'
+    );
+
+    // With no payload at all the placeholder is closed, not empty-but-open: a
+    // teacher client never implies the assignment stage is open.
+    const { TeacherLanWorkspace } = await import(
+      "../src/runtime/react/LanWorkspace.js"
+    );
+    const unknown = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+      />
+    );
     expect(unknown).toContain('data-reparto-choice-state="blocked"');
     expect(unknown).toContain('data-reparto-choice-reason="plan_not_ready"');
+    expect(unknown).toContain('data-reparto-slot="teacher-target-hours"');
 
     // A position the viewer's own live assignment already covers for that
     // activity is offered with the distinct-teacher reason attached.

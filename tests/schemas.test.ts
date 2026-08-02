@@ -42,10 +42,12 @@ import {
   HourRequirementsPublicSchema,
   MeetingSessionCreateSchema,
   MainMaterializationResultSchema,
+  ParticipantBalanceSchema,
   PlanBalanceSchema,
   PlanValidationReportSchema,
   ProcessDashboardSchema,
   ProcessTeacherCreateSchema,
+  ProcessTeacherExtraHoursSchema,
   ProcessTeacherPublicSchema,
   ProcessTeachersPublicSchema,
   ProcessTeacherUpdateSchema,
@@ -130,6 +132,20 @@ const globalBalance = {
   uncovered_requirements: 1,
   overloaded_teachers: 0,
   state: "pending"
+};
+
+const participantBalance = {
+  process_teacher_id: teacherId,
+  teacher_profile_id: "88888888-8888-4888-8888-888888888888",
+  display_name: "Teacher",
+  base_weekly_hours: "18.00",
+  extra_weekly_hours: "2.00",
+  target_weekly_hours: "20.00",
+  assigned_weekly_hours: "4.00",
+  remaining_weekly_hours: "16.00",
+  is_overloaded: true,
+  assignment_count: 1,
+  state: "overloaded_authorized"
 };
 
 const teacherBalance = {
@@ -225,18 +241,68 @@ describe("reparto schemas", () => {
       })
     ).toThrow();
 
-    expect(
+    // The LAN payload carries the caller's own participation and the aggregate
+    // balance, and nothing that names another teacher.
+    const lanSummary = TeacherLanSummarySchema.parse({
+      process_id: processId,
+      teacher_profile_id: participantBalance.teacher_profile_id,
+      process_teacher_id: teacherId,
+      generated_at: now,
+      readiness: "ready",
+      selection_blocked: false,
+      plan_balance: null,
+      participant: participantBalance,
+      available_slots: 3,
+      current_turn: null
+    });
+    expect(lanSummary.participant).toMatchObject({
+      base_weekly_hours: "18.00",
+      extra_weekly_hours: "2.00",
+      target_weekly_hours: "20.00",
+      assigned_weekly_hours: "4.00",
+      remaining_weekly_hours: "16.00",
+      is_overloaded: true,
+      state: "overloaded_authorized"
+    });
+    expect(lanSummary.available_slots).toBe(3);
+    // The obsolete single-balance payload no longer parses at all, which is the
+    // point of `.strict()`: a stale service would fail loudly, not half-render.
+    expect(() =>
       TeacherLanSummarySchema.parse({
         process_id: processId,
-        teacher_profile_id: teacherBalance.teacher_profile_id,
+        teacher_profile_id: participantBalance.teacher_profile_id,
         process_teacher_id: teacherId,
         generated_at: now,
         global_balance: globalBalance,
         teacher_balance: teacherBalance,
         current_turn: null,
         blocking_validation_count: 0
-      }).teacher_balance.display_name
-    ).toBe("Teacher");
+      })
+    ).toThrow();
+    // Readiness and the blocked flag are required: a client that could not read
+    // them would have to guess whether selection is open.
+    expect(() =>
+      TeacherLanSummarySchema.parse({
+        process_id: processId,
+        teacher_profile_id: participantBalance.teacher_profile_id,
+        process_teacher_id: teacherId,
+        generated_at: now,
+        plan_balance: null,
+        participant: participantBalance,
+        available_slots: 0,
+        current_turn: null
+      })
+    ).toThrow();
+    expect(
+      ParticipantBalanceSchema.parse({
+        ...participantBalance,
+        remaining_weekly_hours: -2,
+        state: "pending"
+      }).remaining_weekly_hours
+    ).toBe("-2.00");
+    expect(() =>
+      ParticipantBalanceSchema.parse({ ...participantBalance, state: "overloaded" })
+    ).toThrow();
 
     expect(() =>
       ExportArtifactPublicSchema.parse({
@@ -438,7 +504,13 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     id: processTeacherId,
     assignment_process_id: processId,
     teacher_profile_id: teacherProfileId,
-    available_hours: 18,
+    base_weekly_hours: 18,
+    extra_weekly_hours: 2,
+    target_weekly_hours: 20,
+    is_overloaded: true,
+    extra_hours_reason: "Covering a vacancy",
+    extra_hours_updated_by_user_id: userId,
+    extra_hours_updated_at: now,
     participates_in_selection: true,
     selection_position: 1,
     selection_points: 10,
@@ -572,23 +644,69 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     expect(() =>
       ProcessTeacherPublicSchema.parse({ ...processTeacherBody, extra: 1 })
     ).toThrow();
+    // The three-stage participant: a target built from base plus authorized
+    // extra, both read as canonical hour strings, never a single capacity.
+    expect(ProcessTeacherPublicSchema.parse(processTeacherBody)).toMatchObject({
+      base_weekly_hours: "18.00",
+      extra_weekly_hours: "2.00",
+      target_weekly_hours: "20.00",
+      is_overloaded: true
+    });
+    expect(() =>
+      ProcessTeacherPublicSchema.parse({
+        ...processTeacherBody,
+        available_hours: 18
+      })
+    ).toThrow();
     expect(
       ProcessTeacherCreateSchema.parse({
         assignment_process_id: processId,
         teacher_profile_id: teacherProfileId,
-        available_hours: 0
-      }).available_hours
-    ).toBe(0);
+        base_weekly_hours: 0
+      }).base_weekly_hours
+    ).toBe("0.00");
     expect(() =>
       ProcessTeacherCreateSchema.parse({
         assignment_process_id: processId,
         teacher_profile_id: teacherProfileId,
-        available_hours: -1
+        base_weekly_hours: -1
       })
     ).toThrow();
     expect(
       ProcessTeacherUpdateSchema.parse({ status: "inactive" }).status
     ).toBe("inactive");
+    expect(
+      ProcessTeacherUpdateSchema.parse({ base_weekly_hours: "17.5" })
+        .base_weekly_hours
+    ).toBe("17.50");
+    // Authorized overload never rides in on a generic PATCH: the field is not
+    // in the schema, so the payload cannot be built at all (plan §3.8, §7.6).
+    expect(() =>
+      ProcessTeacherUpdateSchema.parse({ extra_weekly_hours: 2 })
+    ).toThrow();
+    expect(
+      ProcessTeacherExtraHoursSchema.parse({
+        extra_weekly_hours: 3,
+        reason: "Covering a vacancy"
+      })
+    ).toEqual({ extra_weekly_hours: "3.00", reason: "Covering a vacancy" });
+    // Withdrawing an authorization is the same action with zero, and it still
+    // needs the reason.
+    expect(
+      ProcessTeacherExtraHoursSchema.parse({
+        extra_weekly_hours: 0,
+        reason: "Vacancy filled"
+      }).extra_weekly_hours
+    ).toBe("0.00");
+    expect(() =>
+      ProcessTeacherExtraHoursSchema.parse({ extra_weekly_hours: 3, reason: "" })
+    ).toThrow();
+    expect(() =>
+      ProcessTeacherExtraHoursSchema.parse({ extra_weekly_hours: -1, reason: "x" })
+    ).toThrow();
+    expect(() =>
+      ProcessTeacherExtraHoursSchema.parse({ extra_weekly_hours: "3.005", reason: "x" })
+    ).toThrow();
     expect(() =>
       ProcessTeacherUpdateSchema.parse({ status: "removed" })
     ).toThrow();

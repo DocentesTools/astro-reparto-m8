@@ -90,15 +90,6 @@ export type ValidationSeverity = z.infer<typeof ValidationSeveritySchema>;
 export const ProcessTeacherStatusSchema = z.enum(["active", "inactive"]);
 export type ProcessTeacherStatus = z.infer<typeof ProcessTeacherStatusSchema>;
 
-export const AssignmentTypeSchema = z.enum([
-  "main",
-  "shared",
-  "reinforcement",
-  "split_group",
-  "other"
-]);
-export type AssignmentType = z.infer<typeof AssignmentTypeSchema>;
-
 export const AssignmentSourceSchema = z.enum([
   "department_head",
   "teacher_direct",
@@ -107,12 +98,15 @@ export const AssignmentSourceSchema = z.enum([
 ]);
 export type AssignmentSource = z.infer<typeof AssignmentSourceSchema>;
 
-export const AssignmentStatusSchema = z.enum([
-  "draft",
-  "confirmed",
-  "overridden",
-  "cancelled"
-]);
+/**
+ * Lifecycle of one slot occupancy (backend plan §5.10, §20.9).
+ *
+ * An assignment is one teacher holding one complete, indivisible slot: it is
+ * either the live occupancy or a cancelled row kept for audit. The two-stage
+ * `draft`/`confirmed`/`overridden` states modelled partial coverage and
+ * over-assignment overrides, neither of which exists any more.
+ */
+export const AssignmentStatusSchema = z.enum(["active", "cancelled"]);
 export type AssignmentStatus = z.infer<typeof AssignmentStatusSchema>;
 
 /**
@@ -441,44 +435,40 @@ export const MeetingSessionUpdateSchema = MeetingSessionPayloadSchema.omit({
   );
 export type MeetingSessionUpdate = z.infer<typeof MeetingSessionUpdateSchema>;
 
+/**
+ * Department-head manual assignment payload (backend plan §7.7).
+ *
+ * The slot and the teacher, and nothing else. A slot is indivisible, so the
+ * assignment always covers `required_teacher_hours` in full — there is no hour
+ * input to send. The activity is derived from the requirement server-side and
+ * is never trusted from the client, so it is deliberately absent here too;
+ * `.strict()` turns an attempt to send one into a client-side parse failure.
+ */
 export const AssignmentCreateSchema = z
   .object({
-    assignment_process_id: uuidSchema,
     hour_requirement_id: uuidSchema,
     process_teacher_id: uuidSchema,
-    assigned_hours: z.number().positive(),
-    assignment_type: AssignmentTypeSchema.optional(),
-    source: AssignmentSourceSchema.optional(),
-    status: AssignmentStatusSchema.optional(),
-    chosen_by_user_id: uuidSchema.nullable().optional(),
-    confirmed_by_user_id: uuidSchema.nullable().optional(),
-    override_reason: z.string().max(500).nullable().optional(),
-    overridden_by_user_id: uuidSchema.nullable().optional(),
-    notes: z.string().nullable().optional()
+    notes: z.string().max(1000).nullable().optional()
   })
   .strict();
 export type AssignmentCreate = z.infer<typeof AssignmentCreateSchema>;
 
+/**
+ * In-place edit of a live assignment. Only free-form notes remain editable:
+ * cancelling and moving a slot are their own reason-required actions.
+ */
 export const AssignmentUpdateSchema = z
   .object({
-    assigned_hours: z.number().positive().optional(),
-    assignment_type: AssignmentTypeSchema.optional(),
-    source: AssignmentSourceSchema.optional(),
-    status: AssignmentStatusSchema.optional(),
-    confirmed_by_user_id: uuidSchema.nullable().optional(),
-    override_reason: z.string().max(500).nullable().optional(),
-    overridden_by_user_id: uuidSchema.nullable().optional(),
-    notes: z.string().nullable().optional()
+    notes: z.string().max(1000).nullable().optional()
   })
   .strict();
 export type AssignmentUpdate = z.infer<typeof AssignmentUpdateSchema>;
 
+/** Teacher LAN direct choice: the meeting, the slot, and optional notes. */
 export const AssignmentDirectChoiceSchema = z
   .object({
     meeting_session_id: uuidSchema,
     hour_requirement_id: uuidSchema,
-    assigned_hours: z.number().positive(),
-    assignment_type: AssignmentTypeSchema.optional(),
     notes: z.string().max(1000).nullable().optional()
   })
   .strict();
@@ -486,11 +476,49 @@ export type AssignmentDirectChoice = z.infer<
   typeof AssignmentDirectChoiceSchema
 >;
 
-export const AssignmentPublicSchema = AssignmentCreateSchema.extend({
-  id: uuidSchema,
-  created_at: dateTimeSchema,
-  updated_at: dateTimeSchema
-}).strict();
+/**
+ * Undo a live assignment (backend plan §20.13). The reason is mandatory: every
+ * cancellation is audited, so the client cannot build a reasonless payload.
+ */
+export const AssignmentUndoSchema = z
+  .object({
+    reason: z.string().min(1).max(500)
+  })
+  .strict();
+export type AssignmentUndo = z.infer<typeof AssignmentUndoSchema>;
+
+/** Move one live slot to another participant, with a mandatory reason. */
+export const AssignmentReassignSchema = z
+  .object({
+    process_teacher_id: uuidSchema,
+    reason: z.string().min(1).max(500),
+    notes: z.string().max(1000).nullable().optional()
+  })
+  .strict();
+export type AssignmentReassign = z.infer<typeof AssignmentReassignSchema>;
+
+/**
+ * One slot occupancy as the service reports it. `teaching_activity_id` is the
+ * requirement's own activity, denormalised by the backend so the
+ * distinct-teacher rule is database-enforced; the UI reads it to group and to
+ * detect a sibling position without a second lookup.
+ */
+export const AssignmentPublicSchema = z
+  .object({
+    id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    hour_requirement_id: uuidSchema,
+    teaching_activity_id: uuidSchema,
+    process_teacher_id: uuidSchema,
+    source: AssignmentSourceSchema,
+    status: AssignmentStatusSchema,
+    chosen_by_user_id: uuidSchema.nullable(),
+    confirmed_by_user_id: uuidSchema.nullable(),
+    notes: z.string().nullable(),
+    created_at: dateTimeSchema,
+    updated_at: dateTimeSchema
+  })
+  .strict();
 export type AssignmentPublic = z.infer<typeof AssignmentPublicSchema>;
 
 export const AssignmentsPublicSchema = z
@@ -1559,6 +1587,29 @@ export const PlanValidationReportSchema = z
   .strict();
 export type PlanValidationReport = z.infer<
   typeof PlanValidationReportSchema
+>;
+
+/**
+ * Assignment-stage findings for one process (backend plan §6.3, §6.4).
+ *
+ * The assignment twin of {@link PlanValidationReportSchema}: it reuses the same
+ * stable-code message shape and reports unassigned slots plus participants who
+ * are not sitting exactly on their target. `is_final_ready` mirrors the plan
+ * §3.10 gate for final closure and the final assignment export; it is true only
+ * when no blocking finding is present. Like the planning report it is
+ * solver-free — reading it never triggers a feasibility evaluation.
+ */
+export const AssignmentValidationReportSchema = z
+  .object({
+    assignment_process_id: uuidSchema,
+    is_final_ready: z.boolean(),
+    blocking_count: z.number().int().nonnegative(),
+    warning_count: z.number().int().nonnegative(),
+    messages: z.array(PlanValidationMessageSchema)
+  })
+  .strict();
+export type AssignmentValidationReport = z.infer<
+  typeof AssignmentValidationReportSchema
 >;
 
 // ── Requirement generation (backend plan §7.5, §20.8) ──────────────────────

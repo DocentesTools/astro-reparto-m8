@@ -182,7 +182,6 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.disabled.missingPrereq).toContain("{prereq}");
     expect(en.error.duplicate).toBeTruthy();
     expect(en.error.fkViolation).toContain("{count}");
-    expect(en.error.hoursExceed).toContain("{assigned}");
     expect(en.error.unauthorized).toBeTruthy();
     expect(en.error.invalidDate).toBeTruthy();
     expect(en.error.conflict).toBeTruthy();
@@ -266,6 +265,44 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(es.planning.reconciliation.confirmationWarning).not.toBe(
       en.planning.reconciliation.confirmationWarning
     );
+  });
+
+  it("fully localizes the assignment board and retires the two-stage copy", () => {
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(collectKeys(dict.assignments).sort()).toEqual(
+        collectKeys(en.assignments).sort()
+      );
+      expect(collectStrings(dict.assignments)).not.toEqual(
+        collectStrings(en.assignments)
+      );
+    }
+    expect(en.assignments.undoBody).toContain("{slot}");
+    expect(en.assignments.undoBody).toContain("{teacher}");
+    expect(en.assignments.reassignBody).toContain("{teacher}");
+    expect(en.assignments.teacherHours).toContain("{hours}");
+    expect(Object.keys(en.entity.assignment.status).sort()).toEqual([
+      "active",
+      "cancelled"
+    ]);
+    // Retired with the assignment board (freeze §12): a slot is indivisible, so
+    // there is no partial coverage, no share type and no over-assignment
+    // override to name.
+    const allKeys = collectKeys(en);
+    for (const retired of [
+      "field.assignedHours",
+      "field.assignmentType",
+      "field.overrideReason",
+      "error.hoursExceed"
+    ]) {
+      expect(allKeys, `${retired} must stay retired`).not.toContain(retired);
+    }
+    expect(allKeys.some((key) => key.startsWith("option.assignmentType"))).toBe(
+      false
+    );
+    expect(
+      allKeys.some((key) => key.startsWith("assignmentSelection."))
+    ).toBe(false);
   });
 
   it("localizes route-loading copy in every supported locale", () => {

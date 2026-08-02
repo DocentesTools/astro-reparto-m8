@@ -12,7 +12,7 @@ export const en = {
     classroom: { singular: "Classroom", plural: "Classrooms", status: {} },
     hourRequirement: { singular: "Requirement slot", plural: "Requirement slots", status: { available: "Available", assigned: "Assigned", stale: "Stale", reconciliation_required: "Reconciliation required" } },
     processParticipant: { singular: "Process participant", plural: "Process participants", status: { active: "Active", inactive: "Inactive" } },
-    assignment: { singular: "Assignment", plural: "Assignments", status: { draft: "Draft", confirmed: "Confirmed", overridden: "Overridden", cancelled: "Cancelled" } },
+    assignment: { singular: "Assignment", plural: "Assignments", status: { active: "Active", cancelled: "Cancelled" } },
     meetingSession: { singular: "Meeting session", plural: "Meeting sessions", status: { prepared: "Prepared", open: "Open", selecting: "Selecting", paused: "Paused", closed: "Closed", reopened: "Reopened" } },
     selectionTurn: { singular: "Selection turn", plural: "Selection turns", status: { pending: "Pending", active: "Active", completed: "Completed", skipped: "Skipped", overridden: "Overridden" } },
     auditEvent: { singular: "Audit event", plural: "Audit events", status: {} },
@@ -43,7 +43,6 @@ export const en = {
     department: "Department",
     departmentHead: "Department head",
     availableHours: "Available hours",
-    assignedHours: "Assigned hours",
     defaultTeacherHoursReference: "Default hours reference",
     selectionOrderEnabled: "Selection order enabled",
     selectionOrderMode: "Selection order mode",
@@ -54,15 +53,14 @@ export const en = {
     teacher: "Teacher",
     hourRequirement: "Requirement slot",
     processParticipant: "Process participant",
-    assignmentType: "Type",
     source: "Source",
+    reason: "Reason",
     participatesInSelection: "Participates in selection",
     selectionPosition: "Selection position",
     selectionPoints: "Selection points",
     selectionCriteria: "Selection criteria",
     selectionNotes: "Selection notes",
     orderLocked: "Order locked",
-    overrideReason: "Override reason",
     allocationCategory: "Allocation category",
     activityType: "Activity type",
     groupWeeklyHours: "Group hours",
@@ -70,7 +68,6 @@ export const en = {
     requiredTeacherCount: "Teacher positions"
   },
   option: {
-    assignmentType: { main: "Main", shared: "Shared", reinforcement: "Reinforcement", split_group: "Split group", other: "Other" },
     allocationCategory: { main: "Main", secondary: "Secondary" },
     activityType: { ordinary: "Ordinary", tutoring: "Tutoring", co_teaching: "Co-teaching", support: "Support", department_level: "Department level", other: "Other" },
     boolean: { yes: "Yes", no: "No" }
@@ -96,7 +93,7 @@ export const en = {
   },
   audit: {
     pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
-    action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden" },
+    action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden", undone: "Undone", reassigned: "Reassigned", reentered: "Re-entered", recomputed: "Recomputed" },
     entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Requirement slot", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
   },
@@ -136,6 +133,53 @@ export const en = {
     generationLineage: "Created in generation {created}; validated in generation {validated}.",
     retiredLineage: "Retired in generation {generation}.",
     superseded: "A replacement slot was recorded."
+  },
+  assignments: {
+    pageTitle: "Assignment board",
+    description: "Give each complete teacher position to one eligible participant. Slot hours come from generation and are never edited here.",
+    metric: { slots: "Live slots", assigned: "Assigned", available: "Available" },
+    hoursColumn: "Slot hours",
+    teacherHours: "{hours} teacher hours",
+    unknownSlotHours: "Slot hours unavailable",
+    source: {
+      department_head: "Department head",
+      teacher_direct: "Teacher direct choice",
+      imported_from_previous_year: "Imported from the previous year",
+      system_copy: "System copy"
+    },
+    empty: "No slot has been assigned yet.",
+    historyRow: "Cancelled; kept for audit.",
+    assignAction: "Assign slot",
+    assignTitle: "Assign a requirement slot",
+    assignDescription: "Choose one free slot and one eligible participant. The slot is always taken in full.",
+    selectSlotFirst: "Choose a slot to see the participants eligible for it.",
+    noAssignableSlots: "Every live slot is already assigned.",
+    noEligibleTeachers: "No participant is eligible for this slot.",
+    teacherDisabled: {
+      participant_inactive: "Not an active participant.",
+      duplicate_activity_position: "Already holds a position of this activity.",
+      exceeds_remaining_target: "The whole slot does not fit the remaining target hours."
+    },
+    notesAction: "Notes",
+    notesTitle: "Edit assignment notes",
+    undoAction: "Undo",
+    undoTitle: "Undo this assignment?",
+    undoBody: "{slot} returns to the available slots and {teacher} re-enters the selection queue. The reason is recorded in the audit trail.",
+    undoConfirm: "Undo assignment",
+    undone: "The assignment was undone and the slot released.",
+    undoError: "The assignment could not be undone.",
+    reassignAction: "Reassign",
+    reassignTitle: "Reassign this slot",
+    reassignBody: "{slot} moves from {teacher} to the replacement you choose, in one operation. The reason is recorded in the audit trail.",
+    reassignConfirm: "Reassign slot",
+    replacement: "Replacement participant",
+    reassigned: "The slot was reassigned.",
+    reassignError: "The slot could not be reassigned.",
+    validationsTitle: "Assignment validations",
+    validationsSummary: "{blocking} blocking and {warnings} warning finding(s).",
+    validationsLoading: "Loading assignment validations.",
+    validationsUnavailable: "Assignment validations are unavailable.",
+    noValidations: "No assignment validation findings."
   },
   planning: {
     pageTitle: "Reparto planning",
@@ -466,7 +510,6 @@ export const en = {
     fkMissing: "The selected {field} no longer exists. Please pick another.",
     fkViolation: "Cannot delete: {count} item(s) still depend on this entry.",
     hoursInvalid: "Hours must be a positive number.",
-    hoursExceed: "Total assigned hours ({assigned}) exceed required hours ({required}). Provide an override reason.",
     processState: "The process is in {status}; this action is not allowed in that state.",
     permission: "You do not have permission to perform this action.",
     unauthorized: "Your session has expired. Please sign in again.",
@@ -572,15 +615,6 @@ export const en = {
     deleteBody: "Selected participants to delete: {count}. This action cannot be undone.",
     deleted: "Participants deleted: {count}",
     deleteError: "The selected participants could not be deleted"
-  },
-  assignmentSelection: {
-    selectAllVisible: "Select all visible assignments",
-    selectRow: "Select {name}",
-    deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected assignments",
-    deleteBody: "Selected assignments to delete: {count}. This action cannot be undone.",
-    deleted: "Assignments deleted: {count}",
-    deleteError: "The selected assignments could not be deleted"
   },
   classroomStages: {
     pageTitle: "Classroom stages",

@@ -210,18 +210,28 @@ ids, etc.) stay internal — no UI label.
 
 ### 3.10 Assignment
 
+One teacher occupying one complete, indivisible requirement slot. It carries no
+hours, no share type and no override — see the §12 amendment table for the
+names this replaced.
+
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `hour_requirement_id` | Requirement slot | Créneau de besoin | Puesto horario | yes (form) | generated-slot FK select |
-| `process_teacher_id` | Process participant | Participant | Participante | yes (form) | FK select |
-| `assigned_hours` | Assigned hours | Heures affectées | Horas asignadas | yes | float > 0 |
-| `assignment_type` | Type | Type | Tipo | no | enum `main`/`shared`/`reinforcement`/`split_group`/`other` |
+| `hour_requirement_id` | Requirement slot | Créneau de besoin | Puesto horario | yes (form) | free live-slot select; label carries the slot's own hours |
+| `process_teacher_id` | Process participant | Participant | Participante | yes (form) | eligible-participant select |
+| `teaching_activity_id` | — | — | — | read-only | denormalised by the service; drives the distinct-position rule, never labelled on its own |
 | `source` | Source | Source | Origen | read-only | enum `department_head`/`teacher_direct`/`imported_from_previous_year`/`system_copy` |
-| `status` | Status | État | Estado | read-only (form) | enum `draft`/`confirmed`/`overridden`/`cancelled` |
-| `confirmed_by_user_id` | Confirmed by | Confirmé par | Confirmado por | no | FK user |
-| `override_reason` | Override reason | Motif de dérogation | Motivo de la excepción | conditional | required when sum > required_hours |
-| `overridden_by_user_id` | Overridden by | Dérogation par | Excepción por | read-only | FK user |
-| `notes` | Notes | Notes | Notas | no | textarea |
+| `status` | Status | État | Estado | read-only (table) | enum `active`/`cancelled` |
+| `confirmed_by_user_id` | Confirmed by | Confirmé par | Confirmado por | read-only | FK user |
+| `reason` | Reason | Motif | Motivo | yes (undo / reassign) | 1..500; the action cannot be taken without it |
+| `notes` | Notes | Notes | Notas | no | textarea; the only editable field of a live assignment |
+
+Board actions: `create` (assign), row `edit` (notes), row `reassign`, row
+`undo`. There is no row `delete` and no bulk cancellation: cancelling is the
+reason-required undo action. DOM slots: `data-reparto-slot="assignment-occupancy"`,
+`data-reparto-slot="assignment-validations"`, `data-assignment-metric`,
+`data-assignment-source`, `data-participant-disabled-reason`,
+`data-reparto-slot="ineligible-participants"`,
+`data-reparto-slot="assignment-history"`.
 
 ### 3.11 Meeting session
 
@@ -685,10 +695,10 @@ Amendment rules:
 | --- | --- | --- | --- |
 | `Subject.stage` (field + label + `data-subject-stage` row slot + list filter) | §3.6 | `allocation_category` (`data-subject-allocation-category`) and `activity_type` (`data-subject-activity-type`); the subject list filters on allocation category | 2026-07-30 |
 | `HourRequirement.teaching_group_id` / `subject_id` / `required_hours` / `requirement_type` / `flags` / `notes`, manual CRUD dialogs, selection and `data-requirement-type` / `data-requirement-hours` | §3.8 | generated `teaching_activity_id` + `position_index` + `required_teacher_hours` + generation lineage; read-only activity/position groups in §3.17 | 2026-08-02 |
+| `Assignment.assigned_hours` / `assignment_type` / `override_reason` / `overridden_by_user_id`, the `draft`/`confirmed`/`overridden` statuses, the assignment row `delete` action, the whole `assignmentSelection.*` bulk-delete surface and `error.hoursExceed` | §3.10 | the slot's own `required_teacher_hours` shown read-only; `status` `active`/`cancelled`; reason-required `undo` and `reassign` actions; an over-target assignment is prevented, not overridden (authorize `extra_weekly_hours` first) | 2026-08-02 |
 
 Still to retire, with the bullet that owns each (listed so a reader does not
 mistake the silence for approval): `total-required-hours`,
 `teacher-available-hours`, `pending-required-hours` and `requirement-count`
 (single-balance slots — the planning balance header and dashboard bullets),
-`assigned_hours` / `assignment_type` / `override_reason` (the assignment-board bullet),
 `available_hours` (the teacher LAN view and participants bullets).

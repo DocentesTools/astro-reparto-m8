@@ -66,9 +66,11 @@ export {
   useUpdateRepartoProcessTeacher,
   useDeleteRepartoProcessTeacher,
   useRepartoAssignments,
+  useRepartoAssignmentValidations,
   useCreateRepartoAssignment,
   useUpdateRepartoAssignment,
-  useDeleteRepartoAssignment,
+  useUndoRepartoAssignment,
+  useReassignRepartoAssignment,
   useRepartoDirectChoiceAssignment,
   useRepartoAuditEvents
 } from "./hooks.js";

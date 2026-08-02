@@ -9,7 +9,10 @@ import {
   AssignmentProcessCreateSchema,
   AssignmentProcessPublicSchema,
   AssignmentPublicSchema,
+  AssignmentReassignSchema,
+  AssignmentUndoSchema,
   AssignmentUpdateSchema,
+  AssignmentValidationReportSchema,
   AuditEventPublicSchema,
   AuditEventsPublicSchema,
   ClassroomStageCreateSchema,
@@ -218,7 +221,7 @@ describe("reparto schemas", () => {
       AssignmentDirectChoiceSchema.parse({
         meeting_session_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
         hour_requirement_id: requirementId,
-        assigned_hours: -1
+        assigned_hours: 1
       })
     ).toThrow();
 
@@ -451,15 +454,12 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     id: assignmentId,
     assignment_process_id: processId,
     hour_requirement_id: requirementId,
+    teaching_activity_id: teachingActivityId,
     process_teacher_id: processTeacherId,
-    assigned_hours: 4,
-    assignment_type: "main",
     source: "department_head",
-    status: "confirmed",
+    status: "active",
     chosen_by_user_id: userId,
     confirmed_by_user_id: userId,
-    override_reason: null,
-    overridden_by_user_id: null,
     notes: null,
     created_at: now,
     updated_at: now
@@ -601,36 +601,115 @@ describe("process-scoped entity schemas (Phase 3 step 1)", () => {
     ).toBe(1);
   });
 
-  it("parses assignment update schema and validates update shapes", () => {
+  it("parses the complete-slot assignment family and rejects two-stage fields", () => {
     const parsed = AssignmentPublicSchema.parse(assignmentBody);
-    expect(parsed.assignment_type).toBe("main");
+    expect(parsed.status).toBe("active");
+    // Denormalised from the requirement by the service so the board can detect
+    // a sibling position without a second lookup.
+    expect(parsed.teaching_activity_id).toBe(teachingActivityId);
     expect(() =>
       AssignmentPublicSchema.parse({ ...assignmentBody, surprise: 1 })
     ).toThrow();
+    expect(() =>
+      AssignmentPublicSchema.parse({ ...assignmentBody, status: "confirmed" })
+    ).toThrow();
+
+    // Create carries the slot and the teacher, and nothing else: the hours are
+    // the slot's own, and the activity is never trusted from the client.
     expect(
       AssignmentCreateSchema.parse({
-        assignment_process_id: processId,
         hour_requirement_id: requirementId,
-        process_teacher_id: processTeacherId,
-        assigned_hours: 2
-      }).assigned_hours
-    ).toBe(2);
+        process_teacher_id: processTeacherId
+      })
+    ).toEqual({
+      hour_requirement_id: requirementId,
+      process_teacher_id: processTeacherId
+    });
+    for (const rejected of [
+      { assigned_hours: 2 },
+      { assignment_type: "shared" },
+      { override_reason: "Head decision" },
+      { teaching_activity_id: teachingActivityId },
+      { assignment_process_id: processId }
+    ]) {
+      expect(() =>
+        AssignmentCreateSchema.parse({
+          hour_requirement_id: requirementId,
+          process_teacher_id: processTeacherId,
+          ...rejected
+        })
+      ).toThrow();
+    }
+
+    expect(AssignmentUpdateSchema.parse({ notes: "Agreed" }).notes).toBe(
+      "Agreed"
+    );
+    expect(() => AssignmentUpdateSchema.parse({ assigned_hours: 5 })).toThrow();
+    expect(() => AssignmentUpdateSchema.parse({ status: "cancelled" })).toThrow();
+
     expect(
-      AssignmentUpdateSchema.parse({ assigned_hours: 5 }).assigned_hours
-    ).toBe(5);
+      AssignmentDirectChoiceSchema.parse({
+        meeting_session_id: groupId,
+        hour_requirement_id: requirementId
+      })
+    ).toEqual({
+      meeting_session_id: groupId,
+      hour_requirement_id: requirementId
+    });
     expect(() =>
-      AssignmentUpdateSchema.parse({ assigned_hours: 0 })
-    ).toThrow();
-    expect(() =>
-      AssignmentUpdateSchema.parse({ status: "removed" })
-    ).toThrow();
-    expect(
       AssignmentDirectChoiceSchema.parse({
         meeting_session_id: groupId,
         hour_requirement_id: requirementId,
         assigned_hours: 1
-      }).assigned_hours
+      })
+    ).toThrow();
+
+    // Undo and reassignment are audited actions: a reasonless payload cannot
+    // leave the client.
+    expect(AssignmentUndoSchema.parse({ reason: "Wrong teacher" }).reason).toBe(
+      "Wrong teacher"
+    );
+    expect(() => AssignmentUndoSchema.parse({ reason: "" })).toThrow();
+    expect(() =>
+      AssignmentUndoSchema.parse({ reason: "x".repeat(501) })
+    ).toThrow();
+    expect(
+      AssignmentReassignSchema.parse({
+        process_teacher_id: processTeacherId,
+        reason: "Teacher unavailable"
+      }).process_teacher_id
+    ).toBe(processTeacherId);
+    expect(() =>
+      AssignmentReassignSchema.parse({ process_teacher_id: processTeacherId })
+    ).toThrow();
+
+    expect(
+      AssignmentValidationReportSchema.parse({
+        assignment_process_id: processId,
+        is_final_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: [
+          {
+            severity: "blocking",
+            code: "ASSIGNMENT_SLOT_UNASSIGNED",
+            message: "One live slot has no teacher.",
+            entity_type: "hour_requirement",
+            entity_id: requirementId
+          }
+        ]
+      }).blocking_count
     ).toBe(1);
+    expect(() =>
+      AssignmentValidationReportSchema.parse({
+        assignment_process_id: processId,
+        is_final_ready: true,
+        blocking_count: 0,
+        warning_count: 0,
+        messages: [],
+        teaching_plan_id: processId
+      })
+    ).toThrow();
   });
 
   it("parses audit-event payloads strictly and rejects drift", () => {

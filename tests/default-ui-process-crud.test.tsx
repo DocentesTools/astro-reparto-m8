@@ -31,6 +31,7 @@ const queryState = vi.hoisted(() => ({
   planBalance: null as unknown,
   teachingPlan: null as unknown,
   planValidations: null as unknown,
+  assignmentValidations: null as unknown,
   groupSubjects: [] as unknown[],
   teachingActivities: [] as unknown[]
 }));
@@ -63,6 +64,14 @@ vi.mock("@tanstack/react-query", () => ({
         if (entityScope === "teaching-plan" && queryKey[5] === "validations") {
           return {
             data: queryState.planValidations,
+            error: null,
+            isError: false,
+            isLoading: false
+          };
+        }
+        if (entityScope === "assignments" && queryKey[5] === "validations") {
+          return {
+            data: queryState.assignmentValidations,
             error: null,
             isError: false,
             isLoading: false
@@ -495,7 +504,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(createMatch?.[0]).toContain("disabled");
   });
 
-  it("assignments view renders assignment rows with edit/delete actions and names joined from FK lookups", async () => {
+  it("assignment board renders complete slots, no hour or share controls, and reason-required actions", async () => {
     reset();
     queryState.groups = [
       { id: teachingGroupId, assignment_process_id: processId, classroom_stage_id: classroomStageId, classroom_stage: classroomStage, grade: 1, group_code: "A", label: "1° ESO A", notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -507,7 +516,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: profileId, display_name: "Profesora Ana", user_id: null, active: true, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.requirements = [
-      { id: requirementId, assignment_process_id: processId, teaching_activity_id: teachingActivityId, position_index: 0, required_teacher_hours: "4.00", status: "available", created_generation: 1, last_validated_generation: 1, retired_generation: null, superseded_by_requirement_id: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: requirementId, assignment_process_id: processId, teaching_activity_id: teachingActivityId, position_index: 0, required_teacher_hours: "4.00", status: "assigned", created_generation: 1, last_validated_generation: 1, retired_generation: null, superseded_by_requirement_id: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.teachingActivities = [
       { id: teachingActivityId, teaching_plan_id: teachingPlanId, subject_id: subjectId, allocation_category: "main", activity_type: "ordinary", group_weekly_hours_per_group: "4.00", teacher_weekly_hours_per_position: "4.00", required_teacher_count: 1, notes: null, source: "main_generated", source_group_subject_id: null, sync_state: "current", retired_at: null, group_subject_ids: [], linked_group_count: 0, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
@@ -516,39 +525,122 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
       { id: participantId, assignment_process_id: processId, teacher_profile_id: profileId, available_hours: 18, participates_in_selection: true, selection_position: null, selection_points: null, selection_criteria_label: null, selection_notes: null, order_locked: false, status: "active", created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
     queryState.assignments = [
-      { id: assignmentId, assignment_process_id: processId, hour_requirement_id: requirementId, process_teacher_id: participantId, assigned_hours: 4, assignment_type: "main", source: "department_head", status: "draft", chosen_by_user_id: null, confirmed_by_user_id: null, override_reason: null, overridden_by_user_id: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
+      { id: assignmentId, assignment_process_id: processId, hour_requirement_id: requirementId, teaching_activity_id: teachingActivityId, process_teacher_id: participantId, source: "department_head", status: "active", chosen_by_user_id: null, confirmed_by_user_id: null, notes: null, created_at: "2026-07-04T10:00:00Z", updated_at: "2026-07-04T10:00:00Z" }
     ];
+    queryState.assignmentValidations = {
+      assignment_process_id: processId,
+      is_final_ready: false,
+      blocking_count: 1,
+      warning_count: 0,
+      messages: [
+        {
+          severity: "blocking",
+          code: "ASSIGNMENT_PARTICIPANT_BELOW_TARGET",
+          message: "Profesora Ana is below target.",
+          entity_type: "teacher",
+          entity_id: participantId
+        }
+      ]
+    };
     const { RepartoAssignmentsView } = await import("../src/runtime/react/default-ui/index.js");
     const html = renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />);
     expect(html).toContain('data-reparto-route="assignments"');
     expect(html).toContain('data-reparto-table="assignments"');
     expect(html).toContain("Matemáticas · Ordinary · Position 1");
     expect(html).toContain("Profesora Ana");
-    expect(html).toContain('data-reparto-row-action="delete"');
+    // The slot's own hours, read-only; never an editable assigned-hours value.
+    expect(html).toContain("4.00 teacher hours");
+    expect(html).toContain('data-assignment-status="active"');
+    expect(html).toContain('data-reparto-row-action="undo"');
+    expect(html).toContain('data-reparto-row-action="reassign"');
+    expect(html).toContain('data-validation-code="ASSIGNMENT_PARTICIPANT_BELOW_TARGET"');
+    expect(html).toContain('data-assignment-final-ready="false"');
+    // Retired with this bullet: no reasonless delete, no bulk cancellation and
+    // no share/override controls anywhere on the board.
+    expect(html).not.toContain('data-reparto-row-action="delete"');
+    expect(html).not.toContain('data-reparto-action="delete-selected"');
+    expect(html).not.toContain("Override reason");
+    // Every live slot is taken, so assigning is disabled with a stated reason.
+    const createMatch = html.match(/<button[^>]*data-reparto-action="create"[^>]*>/);
+    expect(createMatch?.[0]).toContain("disabled");
+    expect(createMatch?.[0]).toContain("Every live slot is already assigned.");
   });
 
-  it("assignment add form shows create-missing-prerequisite links when requirements+participants are empty (D-7)", async () => {
+  it("assignment add form shows create-missing-prerequisite links when no slot is assignable (D-7)", async () => {
     reset();
-    queryState.requirements = [];
-    queryState.participants = [];
     const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
     const dict = useDict("en");
     const { AssignmentAdd } = await import("../src/runtime/react/default-ui/process-crud/assignments/add.js");
     const html = renderToStaticMarkup(
       <AssignmentAdd
         dict={dict}
-        processId={processId}
-        requirementsHref={`/reparto/processes/${processId}/requirements`}
-        participantsHref={`/reparto/processes/${processId}/participants`}
-        requirementLabel={() => "—"}
-        participantName={() => "—"}
         onDone={() => undefined}
+        participantName={() => "—"}
+        participantsHref={`/reparto/processes/${processId}/participants`}
+        processId={processId}
+        requirementLabel={() => "—"}
+        requirementsHref={`/reparto/processes/${processId}/requirements`}
+        slots={[]}
+        teacherOptionsForSlot={() => []}
       />
     );
     expect(html).toContain('data-reparto-form="assignment"');
     expect(html).toContain('data-reparto-action="create-missing-prerequisite"');
     expect(html).toContain(`/reparto/processes/${processId}/requirements`);
-    expect(html).toContain(`/reparto/processes/${processId}/participants`);
+    // No hour, share type or override input survives on the assign form.
+    expect(html).not.toContain('data-reparto-field="assigned-hours"');
+    expect(html).not.toContain('data-reparto-field="assignment-type"');
+    expect(html).not.toContain('data-reparto-field="override-reason"');
+  });
+
+  it("assign form lists eligible participants and states why the others cannot take the slot", async () => {
+    reset();
+    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
+    const dict = useDict("en");
+    const { AssignmentAdd } = await import("../src/runtime/react/default-ui/process-crud/assignments/add.js");
+    const slot = {
+      slotId: requirementId,
+      activityId: teachingActivityId,
+      positionIndex: 0,
+      teacherHours: "4.00",
+      status: "available" as const,
+      assignmentId: null,
+      canAssign: true,
+      disabledReason: null
+    };
+    const html = renderToStaticMarkup(
+      <AssignmentAdd
+        dict={dict}
+        onDone={() => undefined}
+        participantName={(id) => (id === participantId ? "Profesora Ana" : "Profesor Beto")}
+        participantsHref={`/reparto/processes/${processId}/participants`}
+        processId={processId}
+        requirementLabel={() => "Matemáticas · Position 1"}
+        requirementsHref={`/reparto/processes/${processId}/requirements`}
+        slots={[slot]}
+        teacherOptionsForSlot={() => [
+          {
+            processTeacherId: participantId,
+            assignedSlotCount: 0,
+            assignedHours: "0.00",
+            remainingTargetHours: null,
+            canAssign: true,
+            disabledReason: null
+          },
+          {
+            processTeacherId: "99999999-9999-4999-8999-999999999999",
+            assignedSlotCount: 1,
+            assignedHours: "4.00",
+            remainingTargetHours: null,
+            canAssign: false,
+            disabledReason: "duplicate_activity_position" as const
+          }
+        ]}
+      />
+    );
+    expect(html).toContain("Matemáticas · Position 1 · 4.00 teacher hours");
+    expect(html).toContain('data-participant-disabled-reason="duplicate_activity_position"');
+    expect(html).toContain("Already holds a position of this activity.");
   });
 
   it("audit view is read-only: no Create, Edit, or Delete actions; rows list the event type", async () => {

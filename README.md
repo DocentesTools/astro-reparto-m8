@@ -157,6 +157,24 @@ requirement create, edit, bulk-create and delete APIs, hooks and dialogs are not
 exported: slot identity and hours change only through generation or explicit
 reconciliation.
 
+The `/assignments` starter route is the assignment board. A row states that one
+participant holds one complete requirement slot in full, so the board has no
+hour input, no share type and no over-assignment override: the hours shown come
+from the generated slot and are read-only. Assigning offers only free live slots
+and, for the selected slot, only participants the service would accept — an
+inactive participant, one who already holds another position of the same
+teaching activity, and (where the view knows the target) one the slot would push
+past their remaining target are listed with the reason instead of being silently
+dropped. The same eligibility helpers are exported from
+`@mano8/astro-reparto-m8/ui` (`buildAssignmentSlotOptions`,
+`buildAssignmentTeacherOptions`, `buildReassignmentTeacherOptions`) so a host UI
+disables the same choices for the same reason. Cancelling is the reason-required
+`undo` action, which releases the slot and re-enters the teacher's completed
+meeting turn; moving a slot is the reason-required `reassign` action, a single
+atomic service operation rather than a delete plus a create. Cancelled rows stay
+visible as history without actions, and the board reads the service's
+assignment-stage validation report rather than inferring findings from the table.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

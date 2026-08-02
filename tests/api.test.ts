@@ -174,15 +174,12 @@ const assignmentBody = {
   id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
   assignment_process_id: processId,
   hour_requirement_id: requirementId,
+  teaching_activity_id: teachingActivityId,
   process_teacher_id: teacherId,
-  assigned_hours: 4,
-  assignment_type: "main",
   source: "teacher_direct",
-  status: "confirmed",
+  status: "active",
   chosen_by_user_id: userId,
   confirmed_by_user_id: userId,
-  override_reason: null,
-  overridden_by_user_id: null,
   notes: null,
   created_at: now,
   updated_at: now
@@ -360,10 +357,8 @@ describe("selection turn API", () => {
     await expect(
       selectionTurns.complete(processId, sessionId, turnId, {
         assignment: {
-          assignment_process_id: processId,
           hour_requirement_id: requirementId,
-          process_teacher_id: teacherId,
-          assigned_hours: 4
+          process_teacher_id: teacherId
         }
       })
     ).resolves.toMatchObject({ status: "completed" });
@@ -390,12 +385,11 @@ describe("selection turn API", () => {
     expect(() =>
       selectionTurns.complete(processId, sessionId, turnId, {
         assignment: {
-          assignment_process_id: processId,
           hour_requirement_id: requirementId,
           process_teacher_id: teacherId,
-          assigned_hours: 0
+          assigned_hours: 4
         }
-      })
+      } as never)
     ).toThrow();
   });
 });
@@ -406,8 +400,7 @@ describe("assignment direct choice API", () => {
     await expect(
       assignments.directChoice(processId, {
         meeting_session_id: sessionId,
-        hour_requirement_id: requirementId,
-        assigned_hours: 4
+        hour_requirement_id: requirementId
       })
     ).resolves.toMatchObject({ source: "teacher_direct" });
     expect(fetchMock.mock.calls[0][0]).toContain(
@@ -420,8 +413,8 @@ describe("assignment direct choice API", () => {
       assignments.directChoice(processId, {
         meeting_session_id: sessionId,
         hour_requirement_id: requirementId,
-        assigned_hours: 0
-      })
+        assigned_hours: 4
+      } as never)
     ).toThrow();
   });
 });
@@ -752,15 +745,12 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: assignmentId,
     assignment_process_id: processId,
     hour_requirement_id: requirementId,
+    teaching_activity_id: teachingActivityId,
     process_teacher_id: processTeacherId,
-    assigned_hours: 4,
-    assignment_type: "main",
     source: "department_head",
-    status: "confirmed",
+    status: "active",
     chosen_by_user_id: userId,
     confirmed_by_user_id: userId,
-    override_reason: null,
-    overridden_by_user_id: null,
     notes: null,
     created_at: now,
     updated_at: now
@@ -1113,7 +1103,7 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     ).toThrow();
   });
 
-  it("assignments list/get/create/update/remove + direct-choice", async () => {
+  it("assignments list/get/validations/create/update + undo/reassign", async () => {
     fetchMock.mockResolvedValueOnce(response({ data: [assignmentBody], count: 1 }));
     await expect(assignments.list(processId)).resolves.toMatchObject({
       count: 1
@@ -1125,24 +1115,49 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     fetchMock.mockResolvedValueOnce(response(assignmentBody));
     await expect(
       assignments.get(processId, assignmentId)
-    ).resolves.toMatchObject({ id: assignmentId });
+    ).resolves.toMatchObject({ id: assignmentId, status: "active" });
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        assignment_process_id: processId,
+        is_final_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: [
+          {
+            severity: "blocking",
+            code: "ASSIGNMENT_SLOT_UNASSIGNED",
+            message: "One live slot has no teacher.",
+            entity_type: "hour_requirement",
+            entity_id: requirementId
+          }
+        ]
+      })
+    );
+    await expect(assignments.validations(processId)).resolves.toMatchObject({
+      blocking_count: 1,
+      is_final_ready: false
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/assignments/validations`
+    );
 
     fetchMock.mockResolvedValueOnce(response(assignmentBody));
     await expect(
       assignments.create(processId, {
-        assignment_process_id: processId,
         hour_requirement_id: requirementId,
-        process_teacher_id: processTeacherId,
-        assigned_hours: 4
+        process_teacher_id: processTeacherId
       })
-    ).resolves.toMatchObject({ assignment_type: "main" });
+    ).resolves.toMatchObject({ teaching_activity_id: teachingActivityId });
 
     fetchMock.mockResolvedValueOnce(
-      response({ ...assignmentBody, assigned_hours: 5 })
+      response({ ...assignmentBody, notes: "Swapped at the meeting" })
     );
     await expect(
-      assignments.update(processId, assignmentId, { assigned_hours: 5 })
-    ).resolves.toMatchObject({ assigned_hours: 5 });
+      assignments.update(processId, assignmentId, {
+        notes: "Swapped at the meeting"
+      })
+    ).resolves.toMatchObject({ notes: "Swapped at the meeting" });
     expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
       `/assignment-processes/${processId}/assignments/${assignmentId}`
     );
@@ -1150,24 +1165,62 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       "PATCH"
     );
 
-    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    fetchMock.mockResolvedValueOnce(
+      response({ ...assignmentBody, status: "cancelled" })
+    );
     await expect(
-      assignments.remove(processId, assignmentId)
-    ).resolves.toMatchObject({ id: assignmentId });
+      assignments.undo(processId, assignmentId, { reason: "Wrong teacher" })
+    ).resolves.toMatchObject({ status: "cancelled" });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignments/${assignmentId}/undo`
+    );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
+      "POST"
     );
 
-    expect(() =>
-      assignments.update(processId, assignmentId, { assigned_hours: 0 } as never)
-    ).toThrow();
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.reassign(processId, assignmentId, {
+        process_teacher_id: processTeacherId,
+        reason: "Teacher unavailable"
+      })
+    ).resolves.toMatchObject({ id: assignmentId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignments/${assignmentId}/reassign`
+    );
+
+    // The hour, share and override inputs are gone from the contract: a slot is
+    // indivisible, so a client can no longer even build those payloads.
     expect(() =>
       assignments.create(processId, {
-        assignment_process_id: processId,
         hour_requirement_id: requirementId,
         process_teacher_id: processTeacherId,
-        assigned_hours: 0
+        assigned_hours: 4
       } as never)
+    ).toThrow();
+    expect(() =>
+      assignments.update(processId, assignmentId, {
+        assignment_type: "shared"
+      } as never)
+    ).toThrow();
+    expect(() =>
+      assignments.directChoice(processId, {
+        meeting_session_id: meetingSessionId,
+        hour_requirement_id: requirementId,
+        assigned_hours: 4
+      } as never)
+    ).toThrow();
+    // Undo and reassignment are reason-required actions, never reasonless
+    // deletes — there is no `remove` wrapper to reach the compatibility alias.
+    expect(assignments).not.toHaveProperty("remove");
+    expect(() =>
+      assignments.undo(processId, assignmentId, { reason: "" })
+    ).toThrow();
+    expect(() =>
+      assignments.reassign(processId, assignmentId, {
+        process_teacher_id: processTeacherId,
+        reason: ""
+      })
     ).toThrow();
   });
 

@@ -211,23 +211,41 @@ Notes: `status` enum: `active | inactive`. Uniqueness
 
 ### 2.6 Assignment — `prefix=/…/assignments`
 
+Re-verified 2026-08-02 against `reparto-docente-m8`
+`reparto_service/app/routes/assignments.py`,
+`controllers/assignments.py` and `db_models/assignments.py` on branch
+`feat/auth-role-superuser-consistency`.
+
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `AssignmentsPublic` | list | ✓ |
-| Create | `POST /` → `201` `AssignmentPublic` (process writer) | create | ✓ |
-| Direct choice | `POST /direct-choice` body `AssignmentDirectChoice` → `AssignmentPublic` (auth) | direct-choice | ✓ |
+| Create | `POST /` → `201` `AssignmentPublic` (admin) | create | ✓ |
+| Direct choice | `POST /direct-choice` body `AssignmentDirectChoice` → `201` `AssignmentPublic` (writer, own participation) | direct-choice | ✓ |
+| Validations | `GET /validations` → `AssignmentValidationReport` | three-stage §6.3/§6.4 | ✓ |
 | Get | `GET /{assignment_id}` → `AssignmentPublic` | get | ✓ |
-| Patch | `PATCH /{assignment_id}` → `AssignmentPublic` (process writer) | patch | ✓ (Phase 1) |
-| Delete | `DELETE /{assignment_id}` → `AssignmentPublic` (process writer) | delete | ✓ (Phase 1) |
-| Create required | `hour_requirement_id, process_teacher_id, assigned_hours: float>0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Patch | `PATCH /{assignment_id}` → `AssignmentPublic` (admin) — **notes only** | patch | ✓ |
+| Undo | `POST /{assignment_id}/undo` body `{reason}` → `AssignmentPublic` (admin) | three-stage §20.13 | ✓ |
+| Reassign | `POST /{assignment_id}/reassign` body `{process_teacher_id, reason, notes?}` → `201` `AssignmentPublic` (admin) | three-stage §20.13 | ✓ |
+| Delete | hidden, deprecated compatibility alias for `undo` and still reason-required; **no client wrapper** | three-stage §20.13 | ✓ |
+| Create required | `hour_requirement_id, process_teacher_id` | matches plan | ✓ |
+| Public shape | `id, assignment_process_id, hour_requirement_id, teaching_activity_id, process_teacher_id, source, status, chosen_by_user_id, confirmed_by_user_id, notes, created_at, updated_at` | three-stage §5.10/§20.9 | ✓ |
 
-Notes: `assignment_type` enum: `main, shared, reinforcement, split_group,
-other`. `source` enum: `department_head, teacher_direct,
-imported_from_previous_year, system_copy`. `status` enum: `draft, confirmed,
-overridden, cancelled`. `override_reason` is **required** when the sum of
-assignments for a requirement would exceed `required_hours` (backend
-validates).
+Notes: an assignment is one teacher occupying **one complete, indivisible
+requirement slot in full**, so it carries no hours of its own — the hours are
+the slot's `required_teacher_hours`. `source` enum: `department_head,
+teacher_direct, imported_from_previous_year, system_copy`. `status` enum:
+`active | cancelled`. `teaching_activity_id` is denormalised from the
+requirement by the service (composite FK), never accepted from the client.
+
+Service-enforced rules the client mirrors as pre-filters but never replaces:
+one `ACTIVE` assignment per slot; a teacher never holds two `ACTIVE` positions
+of the same activity (plan §3.7); the whole slot must fit the participant's
+`target_weekly_hours` — an overload is authorized in advance through
+`extra_weekly_hours`, never overridden at assignment time (plan §3.8);
+assignment operations are refused while the plan is `STALE` or
+`RECONCILIATION_REQUIRED`. Retired (`assigned_hours`, `assignment_type`,
+`override_reason`, `overridden_by_user_id`, and the `draft`/`confirmed`/
+`overridden` statuses): see the freeze §12 amendment table.
 
 ### 2.7 Meeting session — `prefix=/…/meeting-sessions`
 
@@ -620,7 +638,7 @@ omitted; anything listed MUST be `required()`.
 | Teaching group | `stage, grade, group_code, label` | `stage, grade, group_code, label, notes` |
 | Requirement slot | — (generated from the teaching plan) | — (read-only; generation/reconciliation only) |
 | Process teacher | `teacher_profile_id, available_hours` | `available_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` |
-| Assignment | `hour_requirement_id, process_teacher_id, assigned_hours` | `assigned_hours, assignment_type, source, status, confirmed_by_user_id, override_reason, overridden_by_user_id, notes` |
+| Assignment | `hour_requirement_id, process_teacher_id` | `notes` (undo and reassignment are their own reason-required actions) |
 | Meeting session | *(none — `assignment_process_id` from URL)* | `status, lan_access_enabled, direct_teacher_selection_enabled, selection_mode, notes` |
 | Selection turn | `meeting_session_id, process_teacher_id, position` (manual create rare; usually `initialize`) | `status, skip_reason, forced_by_user_id, notes` (mutation is via `start` / `complete` / `skip` / `override` actions) |
 | Audit event | — | — (read-only) |
@@ -638,7 +656,9 @@ Special operations:
 - `POST /…/turns/{id}/complete` — body `SelectionTurnComplete { assignment?, notes? }`
 - `POST /…/turns/{id}/skip` — body `SelectionTurnAction { reason, notes? }`
 - `POST /…/turns/{id}/override` — body `SelectionTurnAction { reason, notes? }`
-- `POST /…/assignments/direct-choice` — body `AssignmentDirectChoice { meeting_session_id, hour_requirement_id, assigned_hours, assignment_type?, notes? }`
+- `POST /…/assignments/direct-choice` — body `AssignmentDirectChoice { meeting_session_id, hour_requirement_id, notes? }`
+- `POST /…/assignments/{id}/undo` — body `AssignmentUndo { reason: str[1..500] }`
+- `POST /…/assignments/{id}/reassign` — body `AssignmentReassign { process_teacher_id, reason: str[1..500], notes? }`
 - `POST /…/allocation-revisions/` — body `{allocated_group_weekly_hours, reason, source?, source_reference?, received_at?}`
 - `POST /…/group-subjects/bulk-preview` — body `GroupSubjectBulkRequest { subject_id, mode, stage?, minimum_grade?, maximum_grade?, group_weekly_hours?, teacher_weekly_hours_per_position?, required_teacher_count? }`
 - `POST /…/group-subjects/bulk-apply` — same body plus `expected_affected_count` (409 when stale)

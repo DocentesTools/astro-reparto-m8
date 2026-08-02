@@ -8,6 +8,17 @@ export {
   type TeacherChoiceState
 } from "./lan.js";
 export {
+  activeAssignments,
+  buildAssignmentSlotOptions,
+  buildAssignmentTeacherOptions,
+  buildReassignmentTeacherOptions,
+  type AssignmentSlotDisabledReason,
+  type AssignmentSlotOption,
+  type AssignmentTeacherDisabledReason,
+  type AssignmentTeacherOption,
+  type RemainingTargetLookup
+} from "./assignments.js";
+export {
   buildExportCenterState,
   buildVersionComparisonLabel,
   canCompareVersions,

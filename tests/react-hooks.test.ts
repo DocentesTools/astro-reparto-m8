@@ -110,9 +110,11 @@ const mocks = vi.hoisted(() => ({
   },
   assignments: {
     list: vi.fn(),
+    validations: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    remove: vi.fn(),
+    undo: vi.fn(),
+    reassign: vi.fn(),
     directChoice: vi.fn()
   },
   auditEvents: {
@@ -228,9 +230,11 @@ describe("reparto React hooks", () => {
     mocks.processTeachers.update.mockClear();
     mocks.processTeachers.remove.mockClear();
     mocks.assignments.list.mockClear();
+    mocks.assignments.validations.mockClear();
     mocks.assignments.create.mockClear();
     mocks.assignments.update.mockClear();
-    mocks.assignments.remove.mockClear();
+    mocks.assignments.undo.mockClear();
+    mocks.assignments.reassign.mockClear();
     mocks.assignments.directChoice.mockClear();
     mocks.auditEvents.list.mockClear();
   });
@@ -393,9 +397,11 @@ describe("reparto React hooks", () => {
       useUpdateRepartoProcessTeacher,
       useDeleteRepartoProcessTeacher,
       useRepartoAssignments,
+      useRepartoAssignmentValidations,
       useCreateRepartoAssignment,
       useUpdateRepartoAssignment,
-      useDeleteRepartoAssignment,
+      useUndoRepartoAssignment,
+      useReassignRepartoAssignment,
       useRepartoDirectChoiceAssignment,
       useRepartoAuditEvents
     } = await import("../src/runtime/react/hooks.js");
@@ -408,6 +414,7 @@ describe("reparto React hooks", () => {
     useRepartoHourRequirements("p1");
     useRepartoProcessTeachers("p1");
     useRepartoAssignments("p1");
+    useRepartoAssignmentValidations("p1");
     useRepartoAuditEvents("p1");
 
     expect(mocks.subjects.list).toHaveBeenCalledWith("p1");
@@ -418,8 +425,9 @@ describe("reparto React hooks", () => {
     expect(mocks.hourRequirements.list).toHaveBeenCalledWith("p1");
     expect(mocks.processTeachers.list).toHaveBeenCalledWith("p1");
     expect(mocks.assignments.list).toHaveBeenCalledWith("p1");
+    expect(mocks.assignments.validations).toHaveBeenCalledWith("p1");
     expect(mocks.auditEvents.list).toHaveBeenCalledWith("p1");
-    expect(mocks.useQuery).toHaveBeenCalledTimes(9);
+    expect(mocks.useQuery).toHaveBeenCalledTimes(10);
 
     const createSubject = useCreateRepartoSubject();
     createSubject.mutate({ processId: "p1", body: { name: "Maths" } });
@@ -517,27 +525,34 @@ describe("reparto React hooks", () => {
     createAssignment.mutate({
       processId: "p1",
       body: {
-        assignment_process_id: "p1",
         hour_requirement_id: "r1",
-        process_teacher_id: "pt1",
-        assigned_hours: 4
+        process_teacher_id: "pt1"
       }
     });
     const updateAssignment = useUpdateRepartoAssignment();
     updateAssignment.mutate({
       processId: "p1",
       assignmentId: "a1",
-      body: { assigned_hours: 5 }
+      body: { notes: "Agreed at the meeting" }
     });
-    const deleteAssignment = useDeleteRepartoAssignment();
-    deleteAssignment.mutate({ processId: "p1", assignmentId: "a1" });
+    const undoAssignment = useUndoRepartoAssignment();
+    undoAssignment.mutate({
+      processId: "p1",
+      assignmentId: "a1",
+      body: { reason: "Wrong teacher" }
+    });
+    const reassignAssignment = useReassignRepartoAssignment();
+    reassignAssignment.mutate({
+      processId: "p1",
+      assignmentId: "a1",
+      body: { process_teacher_id: "pt2", reason: "Teacher unavailable" }
+    });
     const directChoice = useRepartoDirectChoiceAssignment();
     directChoice.mutate({
       processId: "p1",
       body: {
         meeting_session_id: "ms1",
-        hour_requirement_id: "r1",
-        assigned_hours: 3
+        hour_requirement_id: "r1"
       }
     });
 
@@ -579,19 +594,22 @@ describe("reparto React hooks", () => {
     });
     expect(mocks.processTeachers.remove).toHaveBeenCalledWith("p1", "pt1");
     expect(mocks.assignments.create).toHaveBeenCalledWith("p1", {
-      assignment_process_id: "p1",
       hour_requirement_id: "r1",
-      process_teacher_id: "pt1",
-      assigned_hours: 4
+      process_teacher_id: "pt1"
     });
     expect(mocks.assignments.update).toHaveBeenCalledWith("p1", "a1", {
-      assigned_hours: 5
+      notes: "Agreed at the meeting"
     });
-    expect(mocks.assignments.remove).toHaveBeenCalledWith("p1", "a1");
+    expect(mocks.assignments.undo).toHaveBeenCalledWith("p1", "a1", {
+      reason: "Wrong teacher"
+    });
+    expect(mocks.assignments.reassign).toHaveBeenCalledWith("p1", "a1", {
+      process_teacher_id: "pt2",
+      reason: "Teacher unavailable"
+    });
     expect(mocks.assignments.directChoice).toHaveBeenCalledWith("p1", {
       meeting_session_id: "ms1",
-      hour_requirement_id: "r1",
-      assigned_hours: 3
+      hour_requirement_id: "r1"
     });
     expect(mocks.teachingActivities.create).toHaveBeenCalledWith("p1", {
       subject_id: "s1",
@@ -607,7 +625,7 @@ describe("reparto React hooks", () => {
       group_subject_ids: ["gs1", "gs2"]
     });
     expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
-    expect(mocks.useMutation).toHaveBeenCalledTimes(19);
+    expect(mocks.useMutation).toHaveBeenCalledTimes(20);
   });
 
   it("wires plan validation and requirement-generation workflow hooks", async () => {

@@ -11,7 +11,7 @@ export const es: RepartoDictionary = {
     classroom: { singular: "Grupo", plural: "Grupos", status: {} },
     hourRequirement: { singular: "Puesto horario", plural: "Puestos horarios", status: { available: "Disponible", assigned: "Asignado", stale: "Obsoleto", reconciliation_required: "Conciliación requerida" } },
     processParticipant: { singular: "Participante en el proceso", plural: "Participantes en el proceso", status: { active: "Activo", inactive: "Inactivo" } },
-    assignment: { singular: "Reparto", plural: "Repartos", status: { draft: "Borrador", confirmed: "Confirmado", overridden: "Forzado", cancelled: "Cancelado" } },
+    assignment: { singular: "Reparto", plural: "Repartos", status: { active: "Activo", cancelled: "Cancelado" } },
     meetingSession: { singular: "Sesión de reparto", plural: "Sesiones de reparto", status: { prepared: "Preparado", open: "Abierto", selecting: "Seleccionando", paused: "En pausa", closed: "Cerrado", reopened: "Reabierta" } },
     selectionTurn: { singular: "Turno de selección", plural: "Turnos de selección", status: { pending: "Pendiente", active: "Activo", completed: "Completado", skipped: "Saltado", overridden: "Forzado" } },
     auditEvent: { singular: "Evento de auditoría", plural: "Eventos de auditoría", status: {} },
@@ -42,7 +42,6 @@ export const es: RepartoDictionary = {
     department: "Departamento",
     departmentHead: "Jefe de departamento",
     availableHours: "Horas disponibles",
-    assignedHours: "Horas asignadas",
     defaultTeacherHoursReference: "Horas de referencia",
     selectionOrderEnabled: "Orden de selección activado",
     selectionOrderMode: "Modo de orden",
@@ -53,15 +52,14 @@ export const es: RepartoDictionary = {
     teacher: "Docente",
     hourRequirement: "Puesto horario",
     processParticipant: "Participante",
-    assignmentType: "Tipo",
     source: "Origen",
+    reason: "Motivo",
     participatesInSelection: "Participa en la selección",
     selectionPosition: "Posición",
     selectionPoints: "Puntos de selección",
     selectionCriteria: "Criterio de selección",
     selectionNotes: "Notas de selección",
     orderLocked: "Orden bloqueado",
-    overrideReason: "Motivo de la excepción",
     allocationCategory: "Categoría de asignación",
     activityType: "Tipo de actividad",
     groupWeeklyHours: "Horas de grupo",
@@ -69,7 +67,6 @@ export const es: RepartoDictionary = {
     requiredTeacherCount: "Puestos docentes"
   },
   option: {
-    assignmentType: { main: "Principal", shared: "Compartida", reinforcement: "Refuerzo", split_group: "Desdoble", other: "Otra" },
     allocationCategory: { main: "Principal", secondary: "Secundaria" },
     activityType: { ordinary: "Ordinaria", tutoring: "Tutoría", co_teaching: "Codocencia", support: "Apoyo", department_level: "Nivel de departamento", other: "Otra" },
     boolean: { yes: "Sí", no: "No" }
@@ -95,7 +92,7 @@ export const es: RepartoDictionary = {
   },
   audit: {
     pageTitle: "Auditoría del reparto", description: "Consulta los eventos de auditoría del proceso activo.",
-    action: { created: "Creado", updated: "Modificado", deleted: "Eliminado", transitioned: "Estado modificado", reopened: "Reabierto", copied_from_previous_year: "Copiado del curso anterior", direct_choice: "Elección directa registrada", started: "Iniciado", completed: "Completado", skipped: "Omitido", overridden: "Forzado" },
+    action: { created: "Creado", updated: "Modificado", deleted: "Eliminado", transitioned: "Estado modificado", reopened: "Reabierto", copied_from_previous_year: "Copiado del curso anterior", direct_choice: "Elección directa registrada", started: "Iniciado", completed: "Completado", skipped: "Omitido", overridden: "Forzado", undone: "Deshecho", reassigned: "Reasignado", reentered: "Reincorporado", recomputed: "Recalculado" },
     entity: { process: "Proceso de reparto", assignment_process: "Proceso de reparto", assignment: "Reparto", subject: "Materia", hour_requirement: "Puesto horario", selection_turn: "Turno de elección", teaching_group: "Grupo", process_teacher: "Participante en el proceso" },
     role: { superadmin: "Superadministrador", department_head: "Jefatura de departamento", teacher: "Docente", school_leadership: "Dirección del centro" }, event: "{entity}: {action}"
   },
@@ -135,6 +132,53 @@ export const es: RepartoDictionary = {
     generationLineage: "Creado en la generación {created}; validado en la generación {validated}.",
     retiredLineage: "Retirado en la generación {generation}.",
     superseded: "Se registró un puesto de sustitución."
+  },
+  assignments: {
+    pageTitle: "Tablero de repartos",
+    description: "Asigne cada puesto docente completo a un participante elegible. Las horas del puesto proceden de la generación y no se editan aquí.",
+    metric: { slots: "Puestos vivos", assigned: "Asignados", available: "Disponibles" },
+    hoursColumn: "Horas del puesto",
+    teacherHours: "{hours} horas docentes",
+    unknownSlotHours: "Horas del puesto no disponibles",
+    source: {
+      department_head: "Jefatura de departamento",
+      teacher_direct: "Elección directa del docente",
+      imported_from_previous_year: "Importado del curso anterior",
+      system_copy: "Copia del sistema"
+    },
+    empty: "Todavía no se ha asignado ningún puesto.",
+    historyRow: "Cancelado; se conserva para la auditoría.",
+    assignAction: "Asignar puesto",
+    assignTitle: "Asignar un puesto horario",
+    assignDescription: "Elija un puesto libre y un participante elegible. El puesto siempre se ocupa por completo.",
+    selectSlotFirst: "Elija un puesto para ver los participantes elegibles.",
+    noAssignableSlots: "Todos los puestos vivos ya están asignados.",
+    noEligibleTeachers: "Ningún participante es elegible para este puesto.",
+    teacherDisabled: {
+      participant_inactive: "No es un participante activo.",
+      duplicate_activity_position: "Ya ocupa un puesto de esta actividad.",
+      exceeds_remaining_target: "El puesto completo no cabe en las horas objetivo restantes."
+    },
+    notesAction: "Notas",
+    notesTitle: "Editar las notas del reparto",
+    undoAction: "Deshacer",
+    undoTitle: "¿Deshacer este reparto?",
+    undoBody: "{slot} vuelve a los puestos disponibles y {teacher} regresa a la cola de selección. El motivo queda registrado en la auditoría.",
+    undoConfirm: "Deshacer el reparto",
+    undone: "El reparto se deshizo y el puesto quedó libre.",
+    undoError: "No se pudo deshacer el reparto.",
+    reassignAction: "Reasignar",
+    reassignTitle: "Reasignar este puesto",
+    reassignBody: "{slot} pasa de {teacher} al sustituto que elija, en una sola operación. El motivo queda registrado en la auditoría.",
+    reassignConfirm: "Reasignar el puesto",
+    replacement: "Participante sustituto",
+    reassigned: "El puesto se reasignó.",
+    reassignError: "No se pudo reasignar el puesto.",
+    validationsTitle: "Validaciones de reparto",
+    validationsSummary: "{blocking} hallazgo(s) bloqueante(s) y {warnings} aviso(s).",
+    validationsLoading: "Cargando las validaciones de reparto.",
+    validationsUnavailable: "Las validaciones de reparto no están disponibles.",
+    noValidations: "No hay hallazgos de validación de reparto."
   },
   planning: {
     pageTitle: "Planificación del reparto",
@@ -465,7 +509,6 @@ export const es: RepartoDictionary = {
     fkMissing: "El {field} seleccionado ya no existe. Elija otro.",
     fkViolation: "No se puede eliminar: {count} elemento(s) siguen dependiendo de este registro.",
     hoursInvalid: "Las horas deben ser un número positivo.",
-    hoursExceed: "Las horas asignadas ({assigned}) superan las horas necesarias ({required}). Indique un motivo de excepción.",
     processState: "El proceso está en {status}; esta acción no está permitida en ese estado.",
     permission: "No tiene permiso para realizar esta acción.",
     unauthorized: "Su sesión ha caducado. Inicie sesión de nuevo.",
@@ -571,15 +614,6 @@ export const es: RepartoDictionary = {
     deleteBody: "Participantes seleccionados para eliminar: {count}. Esta acción no se puede deshacer.",
     deleted: "Participantes eliminados: {count}",
     deleteError: "No se pudieron eliminar los participantes seleccionados"
-  },
-  assignmentSelection: {
-    selectAllVisible: "Seleccionar todas las asignaciones visibles",
-    selectRow: "Seleccionar {name}",
-    deleteSelected: "Eliminar seleccionadas ({count})",
-    deleteTitle: "Eliminar las asignaciones seleccionadas",
-    deleteBody: "Asignaciones seleccionadas para eliminar: {count}. Esta acción no se puede deshacer.",
-    deleted: "Asignaciones eliminadas: {count}",
-    deleteError: "No se pudieron eliminar las asignaciones seleccionadas"
   },
   classroomStages: {
     pageTitle: "Etapas educativas",

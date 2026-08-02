@@ -254,6 +254,12 @@ describe("reparto query keys", () => {
       "p1",
       "assignments"
     ]);
+    // Nested under the assignment prefix so one invalidation covers the board
+    // and the findings it reads.
+    expect(repartoKeys.assignmentValidations("p1")).toEqual([
+      ...repartoKeys.assignments("p1"),
+      "validations"
+    ]);
     expect(repartoKeys.auditEvents("p1")).toEqual([
       "reparto",
       "processes",

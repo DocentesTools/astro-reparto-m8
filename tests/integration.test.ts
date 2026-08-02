@@ -157,7 +157,35 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/requirements/reconcile",
       response: "RequirementReconciliationResult"
     });
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(53);
+    expect(REPARTO_CONTRACT_OPERATIONS["assignments.create"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/assignments/",
+      response: "AssignmentPublic"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["assignments.undo"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/assignments/{assignment_id}/undo",
+      response: "AssignmentPublic"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["assignments.reassign"]).toEqual({
+      method: "POST",
+      path:
+        "/assignment-processes/{process_id}/assignments/{assignment_id}/reassign",
+      response: "AssignmentPublic"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["assignments.validations"]).toEqual({
+      method: "GET",
+      path: "/assignment-processes/{process_id}/assignments/validations",
+      response: "AssignmentValidationReport"
+    });
+    // No DELETE assignment operation: cancelling is the reason-required undo.
+    expect(
+      Object.values(REPARTO_CONTRACT_OPERATIONS).some(
+        (operation) =>
+          operation.method === "DELETE" && operation.path.includes("/assignments/")
+      )
+    ).toBe(false);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(60);
   });
 });
 

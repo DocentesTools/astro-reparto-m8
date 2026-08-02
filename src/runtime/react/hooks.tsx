@@ -23,6 +23,8 @@ import type {
   AssignmentCreate,
   AssignmentDirectChoice,
   AssignmentProcessCreate,
+  AssignmentReassign,
+  AssignmentUndo,
   AssignmentUpdate,
   ClassroomStageCreate,
   ClassroomStageUpdate,
@@ -848,15 +850,44 @@ export function useRepartoAssignments(processId?: string) {
   });
 }
 
+export function useRepartoAssignmentValidations(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.assignmentValidations(processId),
+    queryFn: () => assignments.validations(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId)
+  });
+}
+
+/**
+ * Every occupancy change moves more than the assignment list: the slot's own
+ * status flips between available and assigned, the assignment-stage findings
+ * change with it, and both process projections plus the audit trail follow. One
+ * shared invalidation keeps a board from showing a slot as free while its row
+ * already has a teacher.
+ */
+function invalidateAssignmentProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string
+) {
+  for (const queryKey of [
+    repartoKeys.assignments(processId),
+    repartoKeys.hourRequirements(processId),
+    repartoKeys.dashboard(processId),
+    repartoKeys.summary(processId),
+    repartoKeys.auditEvents(processId)
+  ]) {
+    void queryClient.invalidateQueries({ queryKey });
+  }
+}
+
 export function useCreateRepartoAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ processId, body }: { processId: string; body: AssignmentCreate }) =>
       assignments.create(processId, body),
     onSuccess: (_data, { processId }) => {
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.assignments(processId)
-      });
+      invalidateAssignmentProjections(queryClient, processId);
     }
   });
 }
@@ -874,6 +905,7 @@ export function useUpdateRepartoAssignment() {
       body: AssignmentUpdate;
     }) => assignments.update(processId, assignmentId, body),
     onSuccess: (_data, { processId }) => {
+      // Notes only: no slot, teacher or lifecycle state can change here.
       void queryClient.invalidateQueries({
         queryKey: repartoKeys.assignments(processId)
       });
@@ -881,19 +913,44 @@ export function useUpdateRepartoAssignment() {
   });
 }
 
-export function useDeleteRepartoAssignment() {
+export function useUndoRepartoAssignment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       processId,
-      assignmentId
+      assignmentId,
+      body
     }: {
       processId: string;
       assignmentId: string;
-    }) => assignments.remove(processId, assignmentId),
+      body: AssignmentUndo;
+    }) => assignments.undo(processId, assignmentId, body),
     onSuccess: (_data, { processId }) => {
+      invalidateAssignmentProjections(queryClient, processId);
+      // An undo re-enters the completed meeting turn of the released teacher.
       void queryClient.invalidateQueries({
-        queryKey: repartoKeys.assignments(processId)
+        queryKey: repartoKeys.meetingSessions(processId)
+      });
+    }
+  });
+}
+
+export function useReassignRepartoAssignment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      assignmentId,
+      body
+    }: {
+      processId: string;
+      assignmentId: string;
+      body: AssignmentReassign;
+    }) => assignments.reassign(processId, assignmentId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateAssignmentProjections(queryClient, processId);
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.meetingSessions(processId)
       });
     }
   });
@@ -905,8 +962,9 @@ export function useRepartoDirectChoiceAssignment() {
     mutationFn: ({ processId, body }: { processId: string; body: AssignmentDirectChoice }) =>
       assignments.directChoice(processId, body),
     onSuccess: (_data, { processId }) => {
+      invalidateAssignmentProjections(queryClient, processId);
       void queryClient.invalidateQueries({
-        queryKey: repartoKeys.assignments(processId)
+        queryKey: repartoKeys.teacherLan(processId)
       });
     }
   });

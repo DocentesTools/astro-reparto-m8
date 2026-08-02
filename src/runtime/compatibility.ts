@@ -122,6 +122,42 @@ export const REPARTO_CONTRACT_OPERATIONS = {
       "/assignment-processes/{process_id}/meeting-sessions/{meeting_session_id}/turns/{turn_id}/override",
     response: "SelectionTurnPublic"
   },
+  "assignments.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/assignments/",
+    response: "AssignmentsPublic"
+  },
+  "assignments.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/assignments/{assignment_id}",
+    response: "AssignmentPublic"
+  },
+  "assignments.validations": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/assignments/validations",
+    response: "AssignmentValidationReport"
+  },
+  "assignments.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/assignments/",
+    response: "AssignmentPublic"
+  },
+  "assignments.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/assignments/{assignment_id}",
+    response: "AssignmentPublic"
+  },
+  "assignments.undo": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/assignments/{assignment_id}/undo",
+    response: "AssignmentPublic"
+  },
+  "assignments.reassign": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/assignments/{assignment_id}/reassign",
+    response: "AssignmentPublic"
+  },
   "assignments.directChoice": {
     method: "POST",
     path: "/assignment-processes/{process_id}/assignments/direct-choice",

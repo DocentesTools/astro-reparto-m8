@@ -24,9 +24,8 @@ export type RepartoFieldKey =
   | "teacher"
   | "hourRequirement"
   | "processParticipant"
-  | "assignmentType"
   | "source"
-  | "assignedHours"
+  | "reason"
   | "availableHours"
   | "participatesInSelection"
   | "selectionPosition"
@@ -34,7 +33,6 @@ export type RepartoFieldKey =
   | "selectionCriteria"
   | "selectionNotes"
   | "orderLocked"
-  | "overrideReason"
   | "allocationCategory"
   | "activityType"
   | "mode"
@@ -105,9 +103,10 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   hour_requirement_id: "hourRequirement",
   process_teacher_id: "processParticipant",
   teacher_profile_id: "teacher",
-  assignment_type: "assignmentType",
   source: "source",
-  assigned_hours: "assignedHours",
+  // Undo and reassignment are reason-required actions (backend plan §20.13),
+  // so a rejected reason must land on its own field rather than the form.
+  reason: "reason",
   available_hours: "availableHours",
   participates_in_selection: "participatesInSelection",
   selection_position: "selectionPosition",
@@ -115,7 +114,6 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   selection_criteria_label: "selectionCriteria",
   selection_notes: "selectionNotes",
   order_locked: "orderLocked",
-  override_reason: "overrideReason",
   allocation_category: "allocationCategory",
   activity_type: "activityType",
   mode: "mode",

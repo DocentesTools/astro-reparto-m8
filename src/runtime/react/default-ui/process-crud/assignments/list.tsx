@@ -1,16 +1,8 @@
+import { formatRepartoMessage } from "../../../../i18n/index.js";
+import type { AssignmentPublic } from "../../../../schemas.js";
 import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
-import { formatRepartoMessage } from "../../../../i18n/index.js";
-import type {
-  AssignmentPublic,
-  HourRequirementPublic,
-  ProcessTeacherPublic,
-  SubjectPublic,
-  TeacherProfilePublic,
-  TeachingGroupPublic
-} from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
-import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type AssignmentsListProps = {
   dict: Dict;
@@ -20,59 +12,114 @@ export type AssignmentsListProps = {
   isLoading: boolean;
   hasActiveForm: boolean;
   requirementLabel: (id: string) => string;
+  slotHours: (id: string) => string | null;
   participantName: (id: string) => string;
-  onDeleteSelected: () => void;
-  onSelectedIdsChange: (selectedIds: Set<string>) => void;
-  onEdit: (assignment: AssignmentPublic) => void;
-  onDelete: (assignment: AssignmentPublic) => void;
-  selectedIds: ReadonlySet<string>;
+  onEditNotes: (assignment: AssignmentPublic) => void;
+  onReassign: (assignment: AssignmentPublic) => void;
+  onUndo: (assignment: AssignmentPublic) => void;
 };
 
+/**
+ * The live occupancy table.
+ *
+ * There are no hour, share or override columns: a row *is* the statement that
+ * one teacher covers one slot in full, so the hours shown come from the
+ * generated slot and are never editable here. Cancelled rows stay visible as
+ * history and carry no actions — undoing or reassigning a row that is already
+ * historical is refused by the service, so the board does not offer it.
+ */
 export function AssignmentsList({
-  dict, rows, error, isError, isLoading, hasActiveForm,
-  requirementLabel, participantName, onDeleteSelected, onSelectedIdsChange,
-  onEdit, onDelete, selectedIds
+  dict,
+  rows,
+  error,
+  isError,
+  isLoading,
+  hasActiveForm,
+  requirementLabel,
+  slotHours,
+  participantName,
+  onEditNotes,
+  onReassign,
+  onUndo
 }: AssignmentsListProps) {
   if (isLoading || isError) {
-    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.assignment.plural} />;
+    return (
+      <QueryState
+        dict={dict}
+        error={error}
+        isError={isError}
+        isLoading={isLoading}
+        label={dict.entity.assignment.plural}
+      />
+    );
   }
+
   const statusLabel = (assignment: AssignmentPublic) =>
-    assignment.status ? dict.entity.assignment.status[assignment.status] : "";
-  const typeLabel = (assignment: AssignmentPublic) =>
-    assignment.assignment_type ? dict.option.assignmentType[assignment.assignment_type] : "";
+    dict.entity.assignment.status[assignment.status];
+  const sourceLabel = (assignment: AssignmentPublic) =>
+    dict.assignments.source[assignment.source];
+  const hoursLabel = (assignment: AssignmentPublic) => {
+    const hours = slotHours(assignment.hour_requirement_id);
+    return hours === null
+      ? dict.assignments.unknownSlotHours
+      : formatRepartoMessage(dict.assignments.teacherHours, { hours });
+  };
   const columns: DataTableColumn<AssignmentPublic>[] = [
-    { id: "requirement", label: dict.field.hourRequirement, value: (assignment) => requirementLabel(assignment.hour_requirement_id) },
+    {
+      id: "requirement",
+      label: dict.field.hourRequirement,
+      value: (assignment) => requirementLabel(assignment.hour_requirement_id)
+    },
     {
       id: "actions",
       label: dict.table.actions,
-      value: (assignment) => `${requirementLabel(assignment.hour_requirement_id)} ${dict.table.actions}`,
+      value: (assignment) =>
+        `${requirementLabel(assignment.hour_requirement_id)} ${dict.table.actions}`,
       hideable: false,
       sortable: false,
-      cell: (assignment) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(assignment)} row />
-          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(assignment)} row />
-        </RowActions>
-      )
+      cell: (assignment) =>
+        assignment.status === "active" ? (
+          <RowActions>
+            <ActionButton
+              action="edit"
+              disabled={hasActiveForm}
+              label={dict.assignments.notesAction}
+              onClick={() => onEditNotes(assignment)}
+              row
+            />
+            <ActionButton
+              action="reassign"
+              disabled={hasActiveForm}
+              label={dict.assignments.reassignAction}
+              onClick={() => onReassign(assignment)}
+              row
+            />
+            <ActionButton
+              action="undo"
+              disabled={hasActiveForm}
+              label={dict.assignments.undoAction}
+              onClick={() => onUndo(assignment)}
+              row
+            />
+          </RowActions>
+        ) : (
+          <span data-reparto-slot="assignment-history">
+            {dict.assignments.historyRow}
+          </span>
+        )
     },
-    { id: "participant", label: dict.field.processParticipant, value: (assignment) => participantName(assignment.process_teacher_id) },
-    { id: "assigned_hours", label: dict.field.assignedHours, value: (assignment) => assignment.assigned_hours },
-    { id: "assignment_type", label: dict.field.assignmentType, value: typeLabel },
+    {
+      id: "participant",
+      label: dict.field.processParticipant,
+      value: (assignment) => participantName(assignment.process_teacher_id)
+    },
+    { id: "teacher_hours", label: dict.assignments.hoursColumn, value: hoursLabel },
+    { id: "source", label: dict.field.source, value: sourceLabel },
     { id: "status", label: dict.field.status, value: statusLabel }
   ];
-  const statuses = [...new Set(rows.map(statusLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b));
-  const selectedCount = selectedIds.size;
-  const deleteSelectedAction = selectedCount > 0 ? (
-    <button
-      className={repartoBulkDeleteButtonClass}
-      data-reparto-action="delete-selected"
-      disabled={hasActiveForm}
-      onClick={onDeleteSelected}
-      type="button"
-    >
-      {formatRepartoMessage(dict.assignmentSelection.deleteSelected, { count: selectedCount })}
-    </button>
-  ) : undefined;
+  const statuses = [...new Set(rows.map(statusLabel))].sort((a, b) =>
+    a.localeCompare(b)
+  );
 
   return (
     <>
@@ -80,7 +127,7 @@ export function AssignmentsList({
       <DataTable
         columns={columns}
         data={rows}
-        emptyLabel={dict.table.noResults}
+        emptyLabel={dict.assignments.empty}
         filter={{ label: dict.field.status, options: statuses, value: statusLabel }}
         labels={{
           columns: dict.table.columns,
@@ -95,7 +142,9 @@ export function AssignmentsList({
         }}
         rowAttributes={(assignment) => ({
           "data-assignment-id": assignment.id,
-          "data-assignment-status": assignment.status ?? ""
+          "data-assignment-status": assignment.status,
+          "data-assignment-source": assignment.source,
+          "data-teaching-activity-id": assignment.teaching_activity_id
         })}
         rowKey={(assignment) => assignment.id}
         rowName="assignment"
@@ -103,20 +152,8 @@ export function AssignmentsList({
           (assignment) => requirementLabel(assignment.hour_requirement_id),
           (assignment) => participantName(assignment.process_teacher_id)
         ]}
-        selection={{
-          actions: deleteSelectedAction,
-          onSelectedKeysChange: onSelectedIdsChange,
-          selectedKeys: selectedIds,
-          selectAllVisibleLabel: dict.assignmentSelection.selectAllVisible,
-          selectRowLabel: (assignment) => formatRepartoMessage(dict.assignmentSelection.selectRow, {
-            name: `${requirementLabel(assignment.hour_requirement_id)} · ${participantName(assignment.process_teacher_id)}`
-          })
-        }}
         tableName="assignments"
       />
-      {isLoading ? (
-        <section data-reparto-state="loading">{dict.table.loading}</section>
-      ) : null}
       {isError ? (
         <section data-reparto-state="error">
           {mapRepartoError(error).formError?.message ?? dict.table.noResults}
@@ -125,11 +162,3 @@ export function AssignmentsList({
     </>
   );
 }
-
-export type AssignmentLookup = {
-  requirements: HourRequirementPublic[];
-  participants: ProcessTeacherPublic[];
-  classrooms: TeachingGroupPublic[];
-  subjects: SubjectPublic[];
-  teacherProfiles: TeacherProfilePublic[];
-};

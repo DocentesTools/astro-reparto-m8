@@ -11,7 +11,7 @@ export const fr: RepartoDictionary = {
     classroom: { singular: "Classe", plural: "Classes", status: {} },
     hourRequirement: { singular: "Créneau de besoin", plural: "Créneaux de besoin", status: { available: "Disponible", assigned: "Affecté", stale: "Obsolète", reconciliation_required: "Réconciliation requise" } },
     processParticipant: { singular: "Participant au processus", plural: "Participants au processus", status: { active: "Actif", inactive: "Inactif" } },
-    assignment: { singular: "Affectation", plural: "Affectations", status: { draft: "Brouillon", confirmed: "Confirmé", overridden: "Forcé", cancelled: "Annulé" } },
+    assignment: { singular: "Affectation", plural: "Affectations", status: { active: "Active", cancelled: "Annulée" } },
     meetingSession: { singular: "Séance", plural: "Séances", status: { prepared: "Préparé", open: "Ouvert", selecting: "Sélection en cours", paused: "En pause", closed: "Clos", reopened: "Rouverte" } },
     selectionTurn: { singular: "Tour de sélection", plural: "Tours de sélection", status: { pending: "En attente", active: "Actif", completed: "Terminé", skipped: "Passé", overridden: "Forcé" } },
     auditEvent: { singular: "Événement d'audit", plural: "Événements d'audit", status: {} },
@@ -42,7 +42,6 @@ export const fr: RepartoDictionary = {
     department: "Département",
     departmentHead: "Chef de département",
     availableHours: "Heures disponibles",
-    assignedHours: "Heures affectées",
     defaultTeacherHoursReference: "Heures de référence",
     selectionOrderEnabled: "Ordre de sélection activé",
     selectionOrderMode: "Mode d'ordre",
@@ -53,15 +52,14 @@ export const fr: RepartoDictionary = {
     teacher: "Enseignant",
     hourRequirement: "Créneau de besoin",
     processParticipant: "Participant",
-    assignmentType: "Type",
     source: "Source",
+    reason: "Motif",
     participatesInSelection: "Participe à la sélection",
     selectionPosition: "Position",
     selectionPoints: "Points de sélection",
     selectionCriteria: "Critère de sélection",
     selectionNotes: "Notes de sélection",
     orderLocked: "Ordre verrouillé",
-    overrideReason: "Motif de dérogation",
     allocationCategory: "Catégorie d'attribution",
     activityType: "Type d'activité",
     groupWeeklyHours: "Heures groupe",
@@ -69,7 +67,6 @@ export const fr: RepartoDictionary = {
     requiredTeacherCount: "Postes enseignants"
   },
   option: {
-    assignmentType: { main: "Principale", shared: "Partagée", reinforcement: "Renforcement", split_group: "Groupe dédoublé", other: "Autre" },
     allocationCategory: { main: "Principale", secondary: "Secondaire" },
     activityType: { ordinary: "Ordinaire", tutoring: "Tutorat", co_teaching: "Co-enseignement", support: "Soutien", department_level: "Niveau département", other: "Autre" },
     boolean: { yes: "Oui", no: "Non" }
@@ -95,7 +92,7 @@ export const fr: RepartoDictionary = {
   },
   audit: {
     pageTitle: "Audit de la répartition", description: "Consultez les événements d'audit du processus actif.",
-    action: { created: "Créé", updated: "Modifié", deleted: "Supprimé", transitioned: "État modifié", reopened: "Rouvert", copied_from_previous_year: "Copié depuis l'année précédente", direct_choice: "Choix direct enregistré", started: "Démarré", completed: "Terminé", skipped: "Passé", overridden: "Forcé" },
+    action: { created: "Créé", updated: "Modifié", deleted: "Supprimé", transitioned: "État modifié", reopened: "Rouvert", copied_from_previous_year: "Copié depuis l'année précédente", direct_choice: "Choix direct enregistré", started: "Démarré", completed: "Terminé", skipped: "Passé", overridden: "Forcé", undone: "Annulée", reassigned: "Réaffectée", reentered: "Remise en file", recomputed: "Recalculé" },
     entity: { process: "Processus d'affectation", assignment_process: "Processus d'affectation", assignment: "Affectation", subject: "Matière", hour_requirement: "Créneau de besoin", selection_turn: "Tour de sélection", teaching_group: "Classe", process_teacher: "Participant au processus" },
     role: { superadmin: "Super-administrateur", department_head: "Chef de département", teacher: "Enseignant", school_leadership: "Direction de l'établissement" }, event: "{entity} : {action}"
   },
@@ -135,6 +132,53 @@ export const fr: RepartoDictionary = {
     generationLineage: "Créé à la génération {created} ; validé à la génération {validated}.",
     retiredLineage: "Retiré à la génération {generation}.",
     superseded: "Un créneau de remplacement a été enregistré."
+  },
+  assignments: {
+    pageTitle: "Tableau des affectations",
+    description: "Attribuez chaque poste enseignant complet à un participant éligible. Les heures d'un créneau proviennent de la génération et ne se modifient pas ici.",
+    metric: { slots: "Créneaux actifs", assigned: "Affectés", available: "Disponibles" },
+    hoursColumn: "Heures du créneau",
+    teacherHours: "{hours} heures enseignant",
+    unknownSlotHours: "Heures du créneau indisponibles",
+    source: {
+      department_head: "Chef de département",
+      teacher_direct: "Choix direct de l'enseignant",
+      imported_from_previous_year: "Importée de l'année précédente",
+      system_copy: "Copie système"
+    },
+    empty: "Aucun créneau n'est encore affecté.",
+    historyRow: "Annulée ; conservée pour l'audit.",
+    assignAction: "Affecter le créneau",
+    assignTitle: "Affecter un créneau de besoin",
+    assignDescription: "Choisissez un créneau libre et un participant éligible. Le créneau est toujours pris en entier.",
+    selectSlotFirst: "Choisissez un créneau pour voir les participants éligibles.",
+    noAssignableSlots: "Tous les créneaux actifs sont déjà affectés.",
+    noEligibleTeachers: "Aucun participant n'est éligible pour ce créneau.",
+    teacherDisabled: {
+      participant_inactive: "Participant non actif.",
+      duplicate_activity_position: "Occupe déjà un poste de cette activité.",
+      exceeds_remaining_target: "Le créneau entier dépasse les heures cibles restantes."
+    },
+    notesAction: "Notes",
+    notesTitle: "Modifier les notes de l'affectation",
+    undoAction: "Annuler",
+    undoTitle: "Annuler cette affectation ?",
+    undoBody: "{slot} redevient disponible et {teacher} revient dans la file de sélection. Le motif est enregistré dans la piste d'audit.",
+    undoConfirm: "Annuler l'affectation",
+    undone: "L'affectation a été annulée et le créneau libéré.",
+    undoError: "Impossible d'annuler l'affectation.",
+    reassignAction: "Réaffecter",
+    reassignTitle: "Réaffecter ce créneau",
+    reassignBody: "{slot} passe de {teacher} au remplaçant choisi, en une seule opération. Le motif est enregistré dans la piste d'audit.",
+    reassignConfirm: "Réaffecter le créneau",
+    replacement: "Participant remplaçant",
+    reassigned: "Le créneau a été réaffecté.",
+    reassignError: "Impossible de réaffecter le créneau.",
+    validationsTitle: "Validations d'affectation",
+    validationsSummary: "{blocking} anomalie(s) bloquante(s) et {warnings} avertissement(s).",
+    validationsLoading: "Chargement des validations d'affectation.",
+    validationsUnavailable: "Validations d'affectation indisponibles.",
+    noValidations: "Aucune anomalie d'affectation."
   },
   planning: {
     pageTitle: "Planification de la répartition",
@@ -465,7 +509,6 @@ export const fr: RepartoDictionary = {
     fkMissing: "Le {field} sélectionné n'existe plus. Veuillez en choisir un autre.",
     fkViolation: "Suppression impossible : {count} élément(s) dépendent encore de cette entrée.",
     hoursInvalid: "Les heures doivent être un nombre positif.",
-    hoursExceed: "Le total des heures affectées ({assigned}) dépasse les heures requises ({required}). Indiquez un motif de dérogation.",
     processState: "Le processus est en {status} ; cette action n'est pas autorisée dans cet état.",
     permission: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
     unauthorized: "Votre session a expiré. Veuillez vous reconnecter.",
@@ -571,15 +614,6 @@ export const fr: RepartoDictionary = {
     deleteBody: "Participants sélectionnés à supprimer : {count}. Cette action est irréversible.",
     deleted: "Participants supprimés : {count}",
     deleteError: "Impossible de supprimer les participants sélectionnés"
-  },
-  assignmentSelection: {
-    selectAllVisible: "Sélectionner toutes les affectations visibles",
-    selectRow: "Sélectionner {name}",
-    deleteSelected: "Supprimer la sélection ({count})",
-    deleteTitle: "Supprimer les affectations sélectionnées",
-    deleteBody: "Affectations sélectionnées à supprimer : {count}. Cette action est irréversible.",
-    deleted: "Affectations supprimées : {count}",
-    deleteError: "Impossible de supprimer les affectations sélectionnées"
   },
   classroomStages: {
     pageTitle: "Niveaux scolaires",

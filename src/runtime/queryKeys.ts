@@ -159,8 +159,13 @@ export const repartoKeys = {
     [...repartoKeys.allocationRevisions(processId), "current"] as const,
   processTeachers: (processId?: string) =>
     [...repartoKeys.process(processId), "teachers"] as const,
+  // Slot occupancy for the process. The assignment-stage validations are nested
+  // underneath, so one prefix invalidates the board and the findings it reads
+  // together — an occupancy change always changes both.
   assignments: (processId?: string) =>
     [...repartoKeys.process(processId), "assignments"] as const,
+  assignmentValidations: (processId?: string) =>
+    [...repartoKeys.assignments(processId), "validations"] as const,
   auditEvents: (processId?: string) =>
     [...repartoKeys.process(processId), "audit-events"] as const
 } as const;

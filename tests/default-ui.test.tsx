@@ -32,19 +32,33 @@ function ContextReader() {
   return <span data-api-base={context.config?.apiBase} data-has-adapter={Boolean(context.adapter)} />;
 }
 
+const planBalance = {
+  teaching_plan_id: "aaaa1111-aaaa-4aaa-8aaa-aaaaaaaa1111",
+  assignment_process_id: "11111111-1111-4111-8111-111111111111",
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "120.00",
+    teacher_load_difference: "4.00",
+    is_balanced: false
+  },
+  is_exact: false
+};
+
 const processSummary: ProcessSummary = {
   process_id: "11111111-1111-4111-8111-111111111111",
-  global_balance: {
-    total_required_hours: 4,
-    total_available_hours: 4,
-    total_assigned_hours: 0,
-    pending_required_hours: 4,
-    availability_difference: 0,
-    uncovered_requirements: 1,
-    overloaded_teachers: 0,
-    state: "pending"
-  },
-  validations: [],
+  generated_at: "2026-07-04T10:00:00Z",
+  readiness: "ready",
+  plan_status: "requirements_generated",
+  plan_balance: planBalance,
+  total_slots: 4,
+  assigned_slots: 1,
+  available_slots: 3,
   current_turn: {
     meeting_session_id: "22222222-2222-4222-8222-222222222222",
     selection_turn_id: "33333333-3333-4333-8333-333333333333",
@@ -56,13 +70,72 @@ const processSummary: ProcessSummary = {
   blocking_validation_count: 0
 };
 
+const dashboardParticipant = {
+  process_teacher_id: "44444444-4444-4444-8444-444444444444",
+  teacher_profile_id: "55555555-5555-4555-8555-555555555555",
+  display_name: "Ada Lovelace",
+  base_weekly_hours: "18.00",
+  extra_weekly_hours: "2.00",
+  target_weekly_hours: "20.00",
+  assigned_weekly_hours: "6.00",
+  remaining_weekly_hours: "14.00",
+  is_overloaded: true,
+  assignment_count: 1,
+  state: "overloaded_authorized"
+} as const;
+
 const dashboard = {
   process_id: processSummary.process_id,
   generated_at: "2026-07-04T10:00:00Z",
-  global_balance: processSummary.global_balance,
-  teacher_balances: [],
-  requirement_balances: [],
-  validations: [],
+  readiness: "recalculation_required",
+  planning: {
+    teaching_plan_id: planBalance.teaching_plan_id,
+    status: "stale",
+    balance: planBalance,
+    validations: {
+      teaching_plan_id: planBalance.teaching_plan_id,
+      assignment_process_id: processSummary.process_id,
+      is_assignment_ready: false,
+      blocking_count: 1,
+      warning_count: 0,
+      messages: [
+        {
+          severity: "blocking",
+          code: "plan.stale",
+          message: "The plan changed after generation.",
+          entity_type: "plan",
+          entity_id: planBalance.teaching_plan_id
+        }
+      ]
+    }
+  },
+  assignment: {
+    summary: {
+      assignment_process_id: processSummary.process_id,
+      total_target_hours: "20.00",
+      total_assigned_hours: "6.00",
+      total_remaining_hours: "14.00",
+      total_slots: 4,
+      assigned_slots: 1,
+      available_slots: 3,
+      participants: [dashboardParticipant]
+    },
+    validations: {
+      assignment_process_id: processSummary.process_id,
+      is_final_ready: false,
+      blocking_count: 1,
+      warning_count: 0,
+      messages: [
+        {
+          severity: "blocking",
+          code: "requirement.unassigned",
+          message: "Three positions are still unassigned.",
+          entity_type: "assignment_process",
+          entity_id: processSummary.process_id
+        }
+      ]
+    }
+  },
   current_turn: processSummary.current_turn,
   blocking_validation_count: 2
 } satisfies ProcessDashboard;
@@ -165,24 +238,77 @@ const backupExport: ExportArtifactPublic = {
 };
 
 describe("default reparto UI", () => {
-  it("renders the phase-4 dashboard panels", () => {
+  it("renders the two-stage dashboard panels", () => {
     const html = renderToStaticMarkup(
       <DepartmentHeadView
         config={{ apiBase: "/api", apiPrefix: "/reparto" }}
-        summary={processSummary}
+        dashboard={dashboard}
       />
     );
 
     expect(html).toContain('data-reparto-panel="current-turn"');
     expect(html).toContain("Turn 2");
     expect(html).toContain('data-reparto-action="start-turn"');
-    expect(html).toContain('data-reparto-panel="overview-chart"');
-    expect(html).toContain('data-reparto-panel="teacher-load-chart"');
-    expect(html).toContain('data-reparto-panel="classroom-coverage-chart"');
+    expect(html).toContain('data-reparto-panel="planning-balance"');
+    expect(html).toContain('data-reparto-panel="assignment-progress"');
+    expect(html).toContain('data-reparto-panel="participant-balances"');
     expect(html).toContain('data-reparto-panel="validation-summary"');
     expect(html).toContain('data-reparto-panel="setup-checklist"');
-    expect(html).toContain('data-reparto-slot="balance-summary"');
-    expect(html).toContain('data-reparto-chart-bar="required"');
+
+    // The three invariants are three slots, never one "ready" badge (§20.20).
+    expect(html).toContain('data-reparto-invariant="group"');
+    expect(html).toContain('data-reparto-invariant="teacher"');
+    expect(html).toContain('data-reparto-invariant="readiness"');
+    expect(html).toContain('data-reparto-invariant-state="unbalanced"');
+    expect(html).toContain('data-reparto-invariant-state="recalculation_required"');
+
+    // Both axes are shown and neither is summed into the other: 120 group hours
+    // against 124 teacher-load hours, both correct.
+    expect(html).toContain('data-reparto-balance-axis="group"');
+    expect(html).toContain('data-reparto-balance-axis="teacher"');
+    expect(html).toContain("120.00 h");
+    expect(html).toContain("124.00 h");
+    expect(html).not.toContain("244.00");
+
+    // Findings come from the service, per stage, with the stable code on the DOM.
+    expect(html).toContain('data-reparto-slot="planning-validations"');
+    expect(html).toContain('data-reparto-slot="assignment-validations"');
+    expect(html).toContain('data-reparto-validation-code="plan.stale"');
+    expect(html).toContain('data-reparto-validation-code="requirement.unassigned"');
+    expect(html).toContain("The plan changed after generation.");
+
+    // Authorized overload is a flag decided in advance, not an inference from
+    // assigned hours exceeding the target.
+    expect(html).toContain('data-reparto-participant-state="overloaded_authorized"');
+    expect(html).toContain('data-reparto-overloaded="true"');
+
+    // Nothing from the retired single-balance dashboard survives.
+    expect(html).not.toContain('data-reparto-panel="overview-chart"');
+    expect(html).not.toContain('data-reparto-panel="classroom-coverage-chart"');
+    expect(html).not.toContain('data-reparto-slot="overview-state"');
+    expect(html).not.toContain('data-reparto-slot="pending-required-hours"');
+  });
+
+  it("states that a process without a teaching plan has no balance, rather than zero", () => {
+    const html = renderToStaticMarkup(
+      <DepartmentHeadView
+        config={{ apiBase: "/api", apiPrefix: "/reparto" }}
+        dashboard={{
+          ...dashboard,
+          readiness: "not_ready",
+          planning: {
+            teaching_plan_id: null,
+            status: null,
+            balance: null,
+            validations: null
+          }
+        }}
+      />
+    );
+    expect(html).toContain('data-reparto-slot="planning-empty"');
+    expect(html).toContain('data-reparto-plan-status="none"');
+    expect(html).toContain('data-reparto-invariant-state="unknown"');
+    expect(html).not.toContain('data-reparto-balance-axis="group"');
   });
 
   it("renders Phase 2 LAN teacher and shared-screen views", () => {

@@ -31,6 +31,7 @@ export {
   type ExportCenterState,
   type LeadershipWorkflowAction
 } from "./history.js";
+export { summarizeProcessDashboard } from "./dashboard.js";
 export {
   generateClassroomLabel,
   generateGroupCodeRange,

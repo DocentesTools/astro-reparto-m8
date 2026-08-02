@@ -3,17 +3,22 @@ import type {
   AssignmentProcessStatus,
   CurrentTurnSummary,
   ExportArtifactPublic,
+  ParticipantBalance,
+  PlanBalance,
+  PlanReadiness,
+  PlanValidationMessage,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
-  ValidationMessage,
+  TeachingPlanStatus,
   VersionComparison
 } from "../schemas.js";
 import {
   buildExportCenterState,
   buildVersionComparisonLabel,
   canCompareVersions,
-  nextLeadershipWorkflowAction
+  nextLeadershipWorkflowAction,
+  summarizeProcessDashboard
 } from "../ui/index.js";
 import {
   formatRepartoMessage,
@@ -42,19 +47,22 @@ import {
   repartoTurnSummaryItemClass
 } from "./styles.js";
 
+/**
+ * What a summary-driven view shows before the service has answered.
+ *
+ * Nothing here asserts progress: readiness is `not_ready`, there is no plan and
+ * every count is zero. The placeholder must never let a head read "0 blocking
+ * findings" as "nothing blocks" — it means "the service has not been asked".
+ */
 const fallbackSummary: ProcessSummary = {
   process_id: "00000000-0000-4000-8000-000000000001",
-  global_balance: {
-    total_required_hours: 0,
-    total_available_hours: 0,
-    total_assigned_hours: 0,
-    pending_required_hours: 0,
-    availability_difference: 0,
-    uncovered_requirements: 0,
-    overloaded_teachers: 0,
-    state: "pending"
-  },
-  validations: [],
+  generated_at: "2026-07-05T00:00:00Z",
+  readiness: "not_ready",
+  plan_status: null,
+  plan_balance: null,
+  total_slots: 0,
+  assigned_slots: 0,
+  available_slots: 0,
   current_turn: null,
   blocking_validation_count: 0
 };
@@ -121,66 +129,316 @@ export function CurrentTurnCard({
   );
 }
 
-function localizedValidation(
-  validation: ValidationMessage,
-  dashboard: ProcessDashboard | null | undefined,
-  dict: ReturnType<typeof getRepartoDictionary>
-): { title: string; message: string } {
-  const title = dict.validation.title[
-    validation.entity_type === "teacher"
-      ? "teacher"
-      : validation.entity_type === "process"
-        ? "process"
-        : "requirement"
-  ];
-  const requirement = dashboard?.requirement_balances.find(
-    (item) => item.hour_requirement_id === validation.entity_id
-  );
-  const teacher = dashboard?.teacher_balances.find(
-    (item) => item.process_teacher_id === validation.entity_id
-  );
-  const values: Record<string, string | number> = requirement
-    ? {
-        assigned: requirement.assigned_hours,
-        group: requirement.teaching_group_label,
-        pending: requirement.pending_hours,
-        required: requirement.required_hours,
-        subject: requirement.subject_name
-      }
-    : teacher
-      ? {
-          assigned: teacher.assigned_hours,
-          available: teacher.available_hours,
-          teacher: teacher.display_name
-        }
-      : { count: dashboard?.global_balance.uncovered_requirements ?? 0 };
-  const template =
-    validation.code === "requirement.over_assigned"
-      ? dict.validation.requirement.overAssigned
-      : validation.code === "requirement.over_assigned_overridden"
-        ? dict.validation.requirement.overAssignedOverridden
-        : validation.code === "requirement.fully_assigned"
-          ? dict.validation.requirement.covered
-          : validation.code === "requirement.not_fully_assigned" && requirement?.state === "uncovered"
-            ? dict.validation.requirement.uncovered
-            : validation.code === "requirement.not_fully_assigned"
-              ? dict.validation.requirement.partial
-              : validation.code === "teacher.overloaded"
-                ? dict.validation.teacher.overloaded
-                : validation.code === "teacher.overloaded_overridden"
-                  ? dict.validation.teacher.overloadedOverridden
-                  : validation.code === "teacher.balanced"
-                    ? dict.validation.teacher.balanced
-                    : validation.code === "process.balanced"
-                      ? dict.validation.process.balanced
-                      : validation.code === "process.has_pending"
-                        ? dict.validation.process.pending
-                        : validation.code === "process.has_overage"
-                          ? dict.validation.process.overage
-                          : validation.message;
-  return { title, message: formatRepartoMessage(template, values) };
+/**
+ * An hour figure exactly as the service published it, or an explicit dash.
+ *
+ * Absent is not zero. A process with no allocation has no group target, and a
+ * process with no plan has no balance at all; rendering either as `0` would
+ * report a number the domain does not have. Nothing here parses or reformats
+ * the string — canonical two-decimal hours are the service's own (§3.9).
+ */
+function displayHours(value: string | null | undefined): string {
+  return value === null || value === undefined ? "—" : `${value} h`;
 }
 
+/**
+ * The three invariants, side by side, never collapsed into one badge.
+ *
+ * Backend plan §20.20 is explicit: group balance, teacher-load balance and
+ * readiness are independent, and a single "ready" pill — which is what the
+ * retired `overview-state` slot was — hides which of the three is the reason.
+ * §3.2's co-teaching example is 120 group hours against 124 teacher-load hours
+ * with *both* correct, so the two balances cannot even be compared with each
+ * other, let alone summed.
+ *
+ * The third invariant is reported as `readiness`, the coarse role-safe
+ * projection the service publishes; the raw feasibility status is planning-stage
+ * detail and is not on this payload by design.
+ */
+export function ProcessInvariantRow({
+  balance,
+  dict,
+  readiness
+}: {
+  balance: PlanBalance | null;
+  dict: ReturnType<typeof getRepartoDictionary>;
+  readiness: PlanReadiness;
+}) {
+  const invariants = [
+    {
+      key: "group",
+      label: dict.dashboard.invariant.group,
+      state: balance ? (balance.group.is_balanced ? "balanced" : "unbalanced") : "unknown",
+      value: balance
+        ? dict.dashboard.balanceState[balance.group.is_balanced ? "balanced" : "unbalanced"]
+        : dict.dashboard.balanceState.unknown
+    },
+    {
+      key: "teacher",
+      label: dict.dashboard.invariant.teacher,
+      state: balance
+        ? balance.teacher.is_balanced
+          ? "balanced"
+          : "unbalanced"
+        : "unknown",
+      value: balance
+        ? dict.dashboard.balanceState[balance.teacher.is_balanced ? "balanced" : "unbalanced"]
+        : dict.dashboard.balanceState.unknown
+    },
+    {
+      key: "readiness",
+      label: dict.dashboard.invariant.readiness,
+      state: readiness,
+      value: dict.dashboard.readiness[readiness]
+    }
+  ] as const;
+  return (
+    <dl className={repartoMetricsClass} data-reparto-slot="process-invariants">
+      {invariants.map((invariant) => (
+        <div
+          className={repartoMetricItemClass}
+          data-reparto-invariant={invariant.key}
+          data-reparto-invariant-state={invariant.state}
+          key={invariant.key}
+        >
+          <dt className={repartoMetricLabelClass}>{invariant.label}</dt>
+          <dd className={repartoMetricValueClass}>{invariant.value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/**
+ * Both planning axes, as two labelled groups rather than one row of numbers.
+ *
+ * They are read from the payload the view already has: the dashboard is one
+ * round trip by design, so re-querying the teaching-plan summary here would ask
+ * the service the same question twice and let the two answers disagree on
+ * screen. `PlanningBalanceHeader` remains the query-driven header for the
+ * planning route, which has no dashboard payload to read from.
+ */
+export function PlanningBalancePanel({
+  balance,
+  dict,
+  planStatus
+}: {
+  balance: PlanBalance | null;
+  dict: ReturnType<typeof getRepartoDictionary>;
+  planStatus: TeachingPlanStatus | null;
+}) {
+  const axes = [
+    {
+      key: "group",
+      label: dict.planning.group,
+      metrics: [
+        {
+          label: dict.planning.target,
+          slot: "group-allocation",
+          value: balance?.group.allocated_group_weekly_hours
+        },
+        {
+          label: dict.planning.planned,
+          slot: "group-load",
+          value: balance?.group.total_group_load
+        },
+        {
+          label: dict.planning.difference,
+          slot: "group-difference",
+          value: balance?.group.allocation_difference
+        }
+      ]
+    },
+    {
+      key: "teacher",
+      label: dict.planning.teacher,
+      metrics: [
+        {
+          label: dict.planning.target,
+          slot: "participant-target-total",
+          value: balance?.teacher.participant_target_total
+        },
+        {
+          label: dict.planning.planned,
+          slot: "teacher-load",
+          value: balance?.teacher.total_teacher_load
+        },
+        {
+          label: dict.planning.difference,
+          slot: "teacher-load-difference",
+          value: balance?.teacher.teacher_load_difference
+        }
+      ]
+    }
+  ] as const;
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="planning-balance">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.dashboard.section.planning}</h2>
+        <span
+          className="text-sm text-muted-foreground"
+          data-reparto-plan-status={planStatus ?? "none"}
+          data-reparto-slot="plan-status"
+        >
+          {planStatus ? dict.requirements.planStatus[planStatus] : dict.dashboard.state.noPlan}
+        </span>
+      </div>
+      {balance ? (
+        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+          {axes.map((axis) => (
+            <div
+              className="rounded-md border border-border/70 bg-muted/20 p-3"
+              data-reparto-balance-axis={axis.key}
+              key={axis.key}
+            >
+              <h3 className="text-sm font-semibold text-foreground">{axis.label}</h3>
+              <dl className="mt-2 grid grid-cols-3 gap-3">
+                {axis.metrics.map((metric) => (
+                  <div className="min-w-0" key={metric.slot}>
+                    <dt className={repartoMetricLabelClass}>{metric.label}</dt>
+                    <dd
+                      className={repartoMetricValueClass}
+                      data-reparto-slot={metric.slot}
+                    >
+                      {displayHours(metric.value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="planning-empty">
+          {dict.dashboard.state.noPlan}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * One stage's findings, printed as the service wrote them.
+ *
+ * What this replaces was a twelve-branch table that re-derived each sentence
+ * from `requirement.over_assigned`, `teacher.overloaded` and their friends,
+ * resolving `{available}` and `{pending}` out of the balance rows — a second
+ * copy of the backend's validation vocabulary, kept in a client that cannot be
+ * redeployed with it. The service now owns both the stable `code` and the human
+ * `message`: the code is stamped on the DOM for tests and skins to key off, and
+ * the sentence is printed untranslated rather than paraphrased.
+ */
+export function ProcessValidationList({
+  dict,
+  messages,
+  stage
+}: {
+  dict: ReturnType<typeof getRepartoDictionary>;
+  messages: PlanValidationMessage[];
+  stage: "planning" | "assignment";
+}) {
+  if (messages.length === 0) {
+    return (
+      <p
+        className="mt-3 text-sm text-muted-foreground"
+        data-reparto-slot={`${stage}-validations-empty`}
+      >
+        {dict.dashboard.state.noValidations}
+      </p>
+    );
+  }
+  return (
+    <ul className={repartoListClass} data-reparto-slot={`${stage}-validations`}>
+      {messages.map((message, index) => (
+        <li
+          className={repartoListItemClass}
+          data-reparto-validation-code={message.code}
+          data-reparto-validation-entity={message.entity_type}
+          data-reparto-validation-severity={message.severity}
+          key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
+        >
+          <strong className="block">{message.message}</strong>
+          <span className="text-xs text-muted-foreground">{message.code}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * Per-participant progress against an exact target.
+ *
+ * The chart this replaces drew `assigned / available` as a fill bar: a
+ * progress bar towards a capacity ceiling, which §3.8 removed. A participant
+ * has a target built from base plus authorized extra, and the honest figures
+ * are the three the service computes. Authorized overload is shown as the flag
+ * it is — `extra_weekly_hours > 0`, decided in advance — and never inferred
+ * from assigned hours exceeding the target, which cannot happen.
+ *
+ * Every process teacher is listed, including the inactive and non-participating
+ * ones, because a row that was filtered out is indistinguishable from a
+ * participant nobody added.
+ */
+function ParticipantBalanceList({
+  dict,
+  participants
+}: {
+  dict: ReturnType<typeof getRepartoDictionary>;
+  participants: ParticipantBalance[];
+}) {
+  if (participants.length === 0) {
+    return (
+      <p className="mt-3 text-sm text-muted-foreground">{dict.dashboard.state.noTeachers}</p>
+    );
+  }
+  return (
+    <ul className={repartoListClass} data-reparto-slot="participant-balances">
+      {participants.map((participant) => (
+        <li
+          className={repartoListItemClass}
+          data-process-teacher-id={participant.process_teacher_id}
+          data-reparto-overloaded={participant.is_overloaded ? "true" : "false"}
+          data-reparto-participant-state={participant.state}
+          key={participant.process_teacher_id}
+        >
+          <div className="flex items-center justify-between gap-3 text-sm">
+            <span className="truncate">{participant.display_name}</span>
+            <strong data-reparto-slot="participant-hours">
+              {formatRepartoMessage(dict.dashboard.summary.participantHours, {
+                assigned: participant.assigned_weekly_hours,
+                remaining: participant.remaining_weekly_hours,
+                target: participant.target_weekly_hours
+              })}
+            </strong>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {participant.is_overloaded
+              ? formatRepartoMessage(dict.dashboard.summary.authorizedExtra, {
+                  hours: participant.extra_weekly_hours
+                })
+              : dict.dashboard.participantState[participant.state]}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * The department-head dashboard.
+ *
+ * Two stages side by side (backend plan §3.1): what the plan commits to, and
+ * how far the meeting has got through it. The single `required / available /
+ * assigned / pending` axis this replaces described a contract where a
+ * requirement could be partly covered and a teacher could be assigned past
+ * capacity — neither is expressible now.
+ *
+ * `summary` alone is enough to render the header, the invariants, the plan
+ * balance and the slot counts; the per-participant rows and both message lists
+ * need the full `dashboard`. That split is deliberate and is what lets the
+ * meeting control and the projected screen mount this data from `/summary`
+ * without ever receiving a teacher's name.
+ */
 export function DepartmentHeadWorkspace({
   dashboard,
   locale,
@@ -193,71 +451,38 @@ export function DepartmentHeadWorkspace({
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const activeSummary = summary ?? dashboard ?? null;
-  const teacherBalances = dashboard?.teacher_balances ?? [];
-  const requirementBalances = dashboard?.requirement_balances ?? [];
-  const balance = activeSummary?.global_balance ?? null;
+  const activeSummary = summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
+  const planning = dashboard?.planning ?? null;
+  const assignment = dashboard?.assignment ?? null;
+  const participants = assignment?.summary.participants ?? [];
+  const balance = activeSummary?.plan_balance ?? null;
+  const readiness = activeSummary?.readiness ?? "not_ready";
+  const totalSlots = activeSummary?.total_slots ?? 0;
+  const assignedSlots = activeSummary?.assigned_slots ?? 0;
+  const availableSlots = activeSummary?.available_slots ?? 0;
   const checklistSteps = [
-    {
-      key: "school",
-      done: Boolean(activeSummary)
-    },
-    {
-      key: "academicYear",
-      done: Boolean(activeSummary)
-    },
-    {
-      key: "department",
-      done: Boolean(activeSummary)
-    },
-    {
-      key: "process",
-      done: Boolean(activeSummary)
-    },
-    {
-      key: "subjects",
-      done: new Set(requirementBalances.map((item) => item.subject_id)).size > 0
-    },
-    {
-      key: "classrooms",
-      done: new Set(requirementBalances.map((item) => item.teaching_group_id)).size > 0
-    },
-    {
-      key: "teacherRoster",
-      done: teacherBalances.length > 0
-    },
-    {
-      key: "requirements",
-      done: requirementBalances.length > 0
-    },
-    {
-      key: "participants",
-      done: teacherBalances.length > 0
-    }
+    { key: "school", done: Boolean(activeSummary) },
+    { key: "academicYear", done: Boolean(activeSummary) },
+    { key: "department", done: Boolean(activeSummary) },
+    { key: "process", done: Boolean(activeSummary) },
+    // The plan replaces the subject and classroom counts the old checklist
+    // derived from `requirement_balances`: a plan exists once its inputs do,
+    // and the plan status is the service's own statement about them.
+    { key: "subjects", done: planning?.teaching_plan_id !== null && planning !== null },
+    { key: "classrooms", done: Boolean(balance) },
+    { key: "teacherRoster", done: participants.length > 0 },
+    { key: "requirements", done: totalSlots > 0 },
+    { key: "participants", done: participants.length > 0 }
   ] as const;
   const checklistDoneCount = checklistSteps.filter((step) => step.done).length;
-  const chartTotal = Math.max(
-    1,
-    balance?.total_required_hours ?? 0,
-    balance?.total_available_hours ?? 0,
-    balance?.total_assigned_hours ?? 0
-  );
-  const teacherMax = Math.max(
-    1,
-    ...teacherBalances.map((item) => Math.max(item.available_hours, item.assigned_hours))
-  );
-  const requirementMax = Math.max(
-    1,
-    ...requirementBalances.map((item) => item.required_hours)
-  );
-  const topTeachers = teacherBalances.slice(0, 5);
-  const topRequirements = requirementBalances.slice(0, 5);
   const actions = [
     {
       key: "initialize-turns",
       label: dict.action.initializeTurns,
       disabled: Boolean(activeSummary?.current_turn),
-      reason: activeSummary?.current_turn ? dict.disabled.processClosed.replace("{status}", "turn-active") : null
+      reason: activeSummary?.current_turn
+        ? dict.disabled.processClosed.replace("{status}", "turn-active")
+        : null
     },
     {
       key: "start-turn",
@@ -280,8 +505,8 @@ export function DepartmentHeadWorkspace({
     {
       key: "override-turn",
       label: dict.action.overrideTurn,
-      disabled: balance?.state === "balanced",
-      reason: balance?.state === "balanced" ? dict.disabled.noData : null
+      disabled: !activeSummary?.current_turn,
+      reason: !activeSummary?.current_turn ? dict.disabled.noData : null
     }
   ] as const;
 
@@ -300,51 +525,14 @@ export function DepartmentHeadWorkspace({
         <section className={repartoPanelClass} data-reparto-panel="current-turn">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.meetingReadiness}</h2>
-            <span
-              className="text-sm text-muted-foreground"
-              data-reparto-slot="turn-status"
-            >
+            <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status">
               {activeSummary?.current_turn
                 ? dict.entity.selectionTurn.status[activeSummary.current_turn.status]
                 : dict.dashboard.state.noDashboard}
             </span>
           </div>
           <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} locale={locale} />
-          {balance ? (
-            <dl className={repartoMetricsClass}>
-              <div className={repartoMetricItemClass}>
-                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.required}</dt>
-                <dd
-                  className={repartoMetricValueLargeClass}
-                  data-reparto-slot="total-required-hours"
-                >
-                  {balance.total_required_hours}
-                </dd>
-              </div>
-              <div className={repartoMetricItemClass}>
-                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assigned}</dt>
-                <dd
-                  className={repartoMetricValueLargeClass}
-                  data-reparto-slot="total-assigned-hours"
-                >
-                  {balance.total_assigned_hours}
-                </dd>
-              </div>
-              <div className={repartoMetricItemClass}>
-                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.blocking}</dt>
-                <dd
-                  className={repartoMetricValueLargeClass}
-                  data-reparto-slot="blocking-count"
-                >
-                  {activeSummary?.blocking_validation_count ?? 0}
-                </dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {dict.dashboard.state.noDashboard}
-            </p>
-          )}
+          <ProcessInvariantRow balance={balance} dict={dict} readiness={readiness} />
           {mode === "admin" ? (
             <div className={repartoActionRowClass}>
               {actions.map((action) => (
@@ -361,207 +549,112 @@ export function DepartmentHeadWorkspace({
               ))}
             </div>
           ) : null}
-          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="balance-summary">
-            {balance
-              ? formatRepartoMessage(dict.dashboard.summary.balance, {
-                  assigned: balance.total_assigned_hours,
-                  pending: balance.pending_required_hours,
-                  required: balance.total_required_hours
-                })
-              : dict.dashboard.state.noDashboard}
-          </p>
         </section>
-        <section className={repartoPanelClass} data-reparto-panel="overview-chart">
+        <PlanningBalancePanel
+          balance={balance}
+          dict={dict}
+          planStatus={activeSummary?.plan_status ?? null}
+        />
+        <section className={repartoPanelClass} data-reparto-panel="assignment-progress">
           <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.overview}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="overview-state">
-              {dict.dashboard.balanceState[balance?.state ?? "pending"]}
+            <h2>{dict.dashboard.section.assignment}</h2>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="slot-progress">
+              {formatRepartoMessage(dict.dashboard.summary.slotProgress, {
+                assigned: assignedSlots,
+                total: totalSlots
+              })}
             </span>
           </div>
-          <div className="mt-3 grid gap-3">
-            {balance
-              ? [
-                  {
-                    key: "required",
-                    label: dict.dashboard.metric.required,
-                    value: balance.total_required_hours
-                  },
-                  {
-                    key: "assigned",
-                    label: dict.dashboard.metric.assigned,
-                    value: balance.total_assigned_hours
-                  },
-                  {
-                    key: "available",
-                    label: dict.dashboard.metric.available,
-                    value: balance.total_available_hours
-                  },
-                  {
-                    key: "pending",
-                    label: dict.dashboard.metric.pending,
-                    value: balance.pending_required_hours
-                  }
-                ].map((item) => (
-                  <div key={item.key}>
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span>{item.label}</span>
-                      <strong data-reparto-chart-value={item.key}>{item.value}</strong>
-                    </div>
-                    <div className="mt-1 h-2 rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-primary"
-                        data-reparto-chart-bar={item.key}
-                        style={{
-                          width: `${Math.max(
-                            8,
-                            Math.min(100, Math.round((item.value / chartTotal) * 100))
-                          )}%`
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))
-              : null}
-          </div>
-        </section>
-        <section className={repartoPanelClass} data-reparto-panel="teacher-load-chart">
-          <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.teacherLoad}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="teacher-count">
-              {teacherBalances.length}
-            </span>
-          </div>
-          {topTeachers.length > 0 ? (
-            <div className="mt-3 grid gap-3">
-              {topTeachers.map((teacher) => (
-                <div key={teacher.process_teacher_id}>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">{teacher.display_name}</span>
-                    <strong>
-                      {teacher.assigned_hours}/{teacher.available_hours}
-                    </strong>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      data-reparto-chart-bar="teacher-load"
-                      style={{
-                        width: `${Math.max(
-                          8,
-                          Math.min(
-                            100,
-                            Math.round(
-                              (Math.max(teacher.assigned_hours, 1) / teacherMax) * 100
-                            )
-                          )
-                        )}%`
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+          <dl className={repartoMetricsClass}>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.totalSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-slots">
+                {totalSlots}
+              </dd>
             </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {dict.dashboard.state.noTeachers}
-            </p>
-          )}
-          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="teacher-summary">
-            {formatRepartoMessage(dict.dashboard.summary.teacherLoad, {
-              count: teacherBalances.length,
-              overloaded: teacherBalances.filter((item) => item.state === "overloaded").length
-            })}
-          </p>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assignedSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-slots">
+                {assignedSlots}
+              </dd>
+            </div>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.availableSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="available-slots">
+                {availableSlots}
+              </dd>
+            </div>
+          </dl>
+          {assignment ? (
+            <dl className={repartoMetricsClass}>
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.targetHours}</dt>
+                <dd className={repartoMetricValueClass} data-reparto-slot="total-target-hours">
+                  {displayHours(assignment.summary.total_target_hours)}
+                </dd>
+              </div>
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assignedHours}</dt>
+                <dd className={repartoMetricValueClass} data-reparto-slot="total-assigned-hours">
+                  {displayHours(assignment.summary.total_assigned_hours)}
+                </dd>
+              </div>
+              <div className={repartoMetricItemClass}>
+                <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.remainingHours}</dt>
+                <dd className={repartoMetricValueClass} data-reparto-slot="total-remaining-hours">
+                  {displayHours(assignment.summary.total_remaining_hours)}
+                </dd>
+              </div>
+            </dl>
+          ) : null}
         </section>
-        <section className={repartoPanelClass} data-reparto-panel="classroom-coverage-chart">
+        <section className={repartoPanelClass} data-reparto-panel="participant-balances">
           <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.classroomCoverage}</h2>
-            <span
-              className="text-sm text-muted-foreground"
-              data-reparto-slot="requirement-count"
-            >
-              {requirementBalances.length}
+            <h2>{dict.dashboard.section.participants}</h2>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="participant-count">
+              {participants.length}
             </span>
           </div>
-          {topRequirements.length > 0 ? (
-            <div className="mt-3 grid gap-3">
-              {topRequirements.map((requirement) => (
-                <div key={requirement.hour_requirement_id}>
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="truncate">
-                      {requirement.teaching_group_label} · {requirement.subject_name}
-                    </span>
-                    <strong>
-                      {requirement.assigned_hours}/{requirement.required_hours}
-                    </strong>
-                  </div>
-                  <div className="mt-1 h-2 rounded-full bg-muted">
-                    <div
-                      className="h-2 rounded-full bg-primary"
-                      data-reparto-chart-bar="requirement-coverage"
-                      style={{
-                        width: `${Math.max(
-                          8,
-                          Math.min(
-                            100,
-                            Math.round(
-                              (Math.max(requirement.assigned_hours, 1) / requirementMax) * 100
-                            )
-                          )
-                        )}%`
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {dict.dashboard.state.noRequirements}
-            </p>
-          )}
-          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="coverage-summary">
-            {formatRepartoMessage(dict.dashboard.summary.classroomCoverage, {
-              count: requirementBalances.length,
-              uncovered: balance?.uncovered_requirements ?? 0
+          <ParticipantBalanceList dict={dict} participants={participants} />
+          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="participant-summary">
+            {formatRepartoMessage(dict.dashboard.summary.participants, {
+              count: participants.length,
+              overloaded: participants.filter((item) => item.is_overloaded).length
             })}
           </p>
         </section>
         <section className={repartoPanelClass} data-reparto-panel="validation-summary">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.validations}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="validation-count">
-              {activeSummary?.validations.length ?? 0}
+            <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
+              {activeSummary?.blocking_validation_count ?? 0}
             </span>
           </div>
-          {activeSummary?.validations.length ? (
-            <ul className={repartoListClass} data-reparto-slot="validations">
-              {activeSummary.validations.map((validation, index) => {
-                const localized = localizedValidation(validation, dashboard, dict);
-                return (
-                  <li
-                    className={repartoListItemClass}
-                    data-reparto-validation-code={validation.code}
-                    data-reparto-validation-severity={validation.severity}
-                    key={`${validation.code}-${index}`}
-                  >
-                    <strong className="block">{localized.title}</strong>
-                    <span className="text-sm text-muted-foreground">
-                      {localized.message}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+          {dashboard ? (
+            <>
+              <h3 className="mt-3 text-sm font-semibold">{dict.dashboard.section.planning}</h3>
+              <ProcessValidationList
+                dict={dict}
+                messages={planning?.validations?.messages ?? []}
+                stage="planning"
+              />
+              <h3 className="mt-3 text-sm font-semibold">{dict.dashboard.section.assignment}</h3>
+              <ProcessValidationList
+                dict={dict}
+                messages={assignment?.validations.messages ?? []}
+                stage="assignment"
+              />
+            </>
           ) : (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {dict.dashboard.state.noValidations}
+            <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="validations-summary-only">
+              {dict.dashboard.state.summaryOnly}
             </p>
           )}
           <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="validation-summary">
             {formatRepartoMessage(dict.dashboard.summary.validations, {
-              blocking: activeSummary?.blocking_validation_count ?? 0,
-              total: activeSummary?.validations.length ?? 0
+              assignment: assignment?.validations.blocking_count ?? 0,
+              planning: planning?.validations?.blocking_count ?? 0,
+              total: activeSummary?.blocking_validation_count ?? 0
             })}
           </p>
         </section>
@@ -576,8 +669,8 @@ export function DepartmentHeadWorkspace({
             {checklistSteps.map((step) => (
               <li
                 className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
-                data-reparto-checklist-step={step.key}
                 data-reparto-checklist-state={step.done ? "done" : "pending"}
+                data-reparto-checklist-step={step.key}
                 key={step.key}
               >
                 <span>{dict.flow.bootstrap.step[step.key]}</span>

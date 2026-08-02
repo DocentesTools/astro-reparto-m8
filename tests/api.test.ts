@@ -98,65 +98,35 @@ const turnBody = {
   updated_at: now
 };
 
-const globalBalanceBody = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 4,
-  pending_required_hours: 0,
-  availability_difference: 0,
-  uncovered_requirements: 0,
-  overloaded_teachers: 0,
-  state: "balanced"
-};
-
-const teacherBalanceBody = {
-  process_teacher_id: teacherId,
-  teacher_profile_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-  display_name: "Linked Teacher",
-  available_hours: 4,
-  assigned_hours: 4,
-  remaining_hours: 0,
-  excess_hours: 0,
-  assignment_count: 1,
-  has_override: false,
-  state: "balanced"
+const planBalanceBody = {
+  teaching_plan_id: "b1b1b1b1-b1b1-4b1b-8b1b-b1b1b1b1b1b1",
+  assignment_process_id: processId,
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "124.00",
+    teacher_load_difference: "0.00",
+    is_balanced: true
+  },
+  is_exact: true
 };
 
 const summaryBody = {
   process_id: processId,
-  global_balance: globalBalanceBody,
-  validations: [
-    {
-      severity: "info",
-      code: "process.balanced",
-      message: "Process hours are balanced.",
-      entity_type: "process",
-      entity_id: processId
-    }
-  ],
+  generated_at: now,
+  readiness: "ready",
+  plan_status: "requirements_generated",
+  plan_balance: planBalanceBody,
+  total_slots: 6,
+  assigned_slots: 4,
+  available_slots: 2,
   current_turn: null,
   blocking_validation_count: 0
-};
-
-const dashboardBody = {
-  ...summaryBody,
-  generated_at: now,
-  teacher_balances: [teacherBalanceBody],
-  requirement_balances: [
-    {
-      hour_requirement_id: requirementId,
-      teaching_group_id: "12121212-1212-4121-8121-121212121212",
-      teaching_group_label: "1 ESO A",
-      subject_id: "34343434-3434-4343-8343-343434343434",
-      subject_name: "Mathematics",
-      required_hours: 4,
-      assigned_hours: 1,
-      pending_hours: 3,
-      assignment_count: 1,
-      has_override: false,
-      state: "partial"
-    }
-  ]
 };
 
 const participantBalanceBody = {
@@ -171,6 +141,54 @@ const participantBalanceBody = {
   is_overloaded: false,
   assignment_count: 1,
   state: "pending"
+};
+
+const dashboardBody = {
+  process_id: processId,
+  generated_at: now,
+  readiness: "ready",
+  planning: {
+    teaching_plan_id: planBalanceBody.teaching_plan_id,
+    status: "requirements_generated",
+    balance: planBalanceBody,
+    validations: {
+      teaching_plan_id: planBalanceBody.teaching_plan_id,
+      assignment_process_id: processId,
+      is_assignment_ready: true,
+      blocking_count: 0,
+      warning_count: 0,
+      messages: []
+    }
+  },
+  assignment: {
+    summary: {
+      assignment_process_id: processId,
+      total_target_hours: "18.00",
+      total_assigned_hours: "4.00",
+      total_remaining_hours: "14.00",
+      total_slots: 6,
+      assigned_slots: 4,
+      available_slots: 2,
+      participants: [participantBalanceBody]
+    },
+    validations: {
+      assignment_process_id: processId,
+      is_final_ready: false,
+      blocking_count: 0,
+      warning_count: 1,
+      messages: [
+        {
+          severity: "warning",
+          code: "requirement.unassigned",
+          message: "Two positions are still unassigned.",
+          entity_type: "assignment_process",
+          entity_id: processId
+        }
+      ]
+    }
+  },
+  current_turn: null,
+  blocking_validation_count: 0
 };
 
 const teacherLanSummaryBody = {
@@ -302,8 +320,11 @@ describe("assignment process API", () => {
     });
     fetchMock.mockResolvedValueOnce(response(dashboardBody));
     await expect(assignmentProcesses.dashboard(processId)).resolves.toMatchObject({
-      teacher_balances: [{ display_name: "Linked Teacher" }],
-      requirement_balances: [{ subject_name: "Mathematics" }]
+      assignment: {
+        summary: { participants: [{ display_name: "Linked Teacher" }] }
+      },
+      planning: { status: "requirements_generated" },
+      readiness: "ready"
     });
     fetchMock.mockResolvedValueOnce(response(teacherLanSummaryBody));
     await expect(assignmentProcesses.myLanSummary(processId)).resolves.toMatchObject({

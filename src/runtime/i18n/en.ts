@@ -144,12 +144,6 @@ export const en = {
       }
     }
   },
-  validation: {
-    title: { requirement: "Requirement warning", teacher: "Teacher warning", process: "Process warning" },
-    requirement: { overAssigned: "Requirement {subject} for {group} is over-assigned ({assigned} h assigned for {required} h required).", overAssignedOverridden: "Requirement {subject} for {group} is over-assigned, but an override has been recorded.", uncovered: "Requirement {subject} for {group} has no assignment yet.", partial: "Requirement {subject} for {group} is partially covered ({pending} h still pending).", covered: "Requirement {subject} for {group} is fully covered." },
-    teacher: { overloaded: "{teacher} is overloaded ({assigned} h assigned for {available} h available).", overloadedOverridden: "{teacher} is overloaded, but an override has been recorded.", balanced: "{teacher} has a balanced workload." },
-    process: { balanced: "Process hours are balanced.", pending: "{count} requirement(s) still need hours.", overage: "The process has unresolved over-assignments." }
-  },
   audit: {
     pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
     action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden", undone: "Undone", reassigned: "Reassigned", reentered: "Re-entered", recomputed: "Recomputed" },
@@ -530,42 +524,57 @@ export const en = {
     }
   },
   dashboard: {
-    balanceState: { balanced: "Balanced", pending: "Pending", exceeded: "Exceeded", warning: "Warning" },
+    balanceState: { balanced: "Balanced", unbalanced: "Not balanced", unknown: "Unknown" },
+    readiness: {
+      ready: "Ready",
+      not_ready: "Not ready",
+      recalculation_required: "Recalculation required"
+    },
+    invariant: { group: "Group hours", teacher: "Teacher load", readiness: "Readiness" },
     title: "Reparto dashboard",
-    subtitleAdmin: "Follow balance, coverage, and meeting readiness before the live session.",
+    subtitleAdmin: "Follow both balances, assignment progress, and meeting readiness before the live session.",
     subtitleReadonly: "Project a calm read-only view for the live meeting.",
     pickerLabel: "Current process",
     pickerHint: "Switch process when the route is not locked to a specific id.",
     mode: { admin: "Admin mode", readonly: "Read-only mode" },
     section: {
-      overview: "Overview",
-      teacherLoad: "Teacher load",
-      classroomCoverage: "Classroom coverage",
+      planning: "Planning",
+      assignment: "Assignment",
+      participants: "Participants",
       validations: "Validations",
       checklist: "Setup checklist",
       meetingReadiness: "Meeting readiness"
     },
     metric: {
-      required: "Required",
-      assigned: "Assigned",
-      available: "Available",
-      pending: "Pending",
-      blocking: "Blocking",
-      participants: "Participants",
-      requirements: "Requirements"
+      totalSlots: "Positions",
+      assignedSlots: "Taken",
+      availableSlots: "Free",
+      targetHours: "Target",
+      assignedHours: "Assigned",
+      remainingHours: "Remaining",
+      blocking: "Blocking"
+    },
+    participantState: {
+      pending: "Has not reached the target yet.",
+      balanced: "Assigned hours match the target.",
+      overloaded_authorized: "The target includes authorized extra hours.",
+      inactive: "Not active in this process.",
+      not_participating: "Not part of the selection order."
     },
     state: {
       noDashboard: "Dashboard data will appear once the process is ready.",
-      noTeachers: "Add process participants to see teacher balance.",
-      noRequirements: "Add requirements to see classroom coverage.",
-      noValidations: "No blocking validations.",
+      noPlan: "This process has no teaching plan yet.",
+      noTeachers: "Add process participants to see their assignment progress.",
+      noValidations: "No findings.",
+      summaryOnly: "This view reads the aggregate summary, which carries no per-teacher findings.",
       lockedToRoute: "This route is pinned to the current URL process."
     },
     summary: {
-      balance: "{assigned} of {required} hours assigned. {pending} hours still pending.",
-      teacherLoad: "{count} participant(s) tracked; {overloaded} overloaded.",
-      classroomCoverage: "{count} requirement(s), {uncovered} uncovered.",
-      validations: "{blocking} blocking validation(s) and {total} total message(s).",
+      slotProgress: "{assigned} of {total} positions taken.",
+      participantHours: "{assigned} of {target} h, {remaining} h remaining",
+      authorizedExtra: "{hours} extra hours authorized.",
+      participants: "{count} participant(s) tracked; {overloaded} with authorized extra hours.",
+      validations: "{total} blocking finding(s): {planning} in planning, {assignment} in assignment.",
       checklist: "{done} of {total} setup steps complete."
     }
   },

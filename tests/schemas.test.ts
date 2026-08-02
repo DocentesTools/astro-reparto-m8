@@ -46,6 +46,7 @@ import {
   PlanBalanceSchema,
   PlanValidationReportSchema,
   ProcessDashboardSchema,
+  ProcessSummarySchema,
   ProcessTeacherCreateSchema,
   ProcessTeacherExtraHoursSchema,
   ProcessTeacherPublicSchema,
@@ -123,15 +124,22 @@ const processBody = {
   updated_at: now
 };
 
-const globalBalance = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 1,
-  pending_required_hours: 3,
-  availability_difference: 0,
-  uncovered_requirements: 1,
-  overloaded_teachers: 0,
-  state: "pending"
+const planBalance = {
+  teaching_plan_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+  assignment_process_id: processId,
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "120.00",
+    teacher_load_difference: "4.00",
+    is_balanced: false
+  },
+  is_exact: false
 };
 
 const participantBalance = {
@@ -148,18 +156,6 @@ const participantBalance = {
   state: "overloaded_authorized"
 };
 
-const teacherBalance = {
-  process_teacher_id: teacherId,
-  teacher_profile_id: "88888888-8888-4888-8888-888888888888",
-  display_name: "Teacher",
-  available_hours: 4,
-  assigned_hours: 1,
-  remaining_hours: 3,
-  excess_hours: 0,
-  assignment_count: 1,
-  has_override: false,
-  state: "pending"
-};
 
 describe("reparto schemas", () => {
   it("parses public process and dashboard payloads strictly", () => {
@@ -172,47 +168,169 @@ describe("reparto schemas", () => {
       AssignmentProcessPublicSchema.parse({ ...processBody, unexpected: true })
     ).toThrow();
 
+    const dashboard = ProcessDashboardSchema.parse({
+      process_id: processId,
+      generated_at: now,
+      readiness: "recalculation_required",
+      planning: {
+        teaching_plan_id: planBalance.teaching_plan_id,
+        status: "stale",
+        balance: planBalance,
+        validations: {
+          teaching_plan_id: planBalance.teaching_plan_id,
+          assignment_process_id: processId,
+          is_assignment_ready: false,
+          blocking_count: 1,
+          warning_count: 0,
+          messages: [
+            {
+              severity: "blocking",
+              code: "plan.stale",
+              message: "The plan changed after generation.",
+              entity_type: "plan",
+              entity_id: planBalance.teaching_plan_id
+            }
+          ]
+        }
+      },
+      assignment: {
+        summary: {
+          assignment_process_id: processId,
+          total_target_hours: "120.00",
+          total_assigned_hours: "4.00",
+          total_remaining_hours: "116.00",
+          total_slots: 10,
+          assigned_slots: 1,
+          available_slots: 9,
+          participants: [participantBalance]
+        },
+        validations: {
+          assignment_process_id: processId,
+          is_final_ready: false,
+          blocking_count: 1,
+          warning_count: 0,
+          messages: [
+            {
+              severity: "blocking",
+              code: "requirement.unassigned",
+              message: "Nine positions are still unassigned.",
+              entity_type: "assignment_process",
+              entity_id: processId
+            }
+          ]
+        }
+      },
+      current_turn: {
+        meeting_session_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        selection_turn_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+        process_teacher_id: teacherId,
+        position: 0,
+        status: "active",
+        started_at: now
+      },
+      blocking_validation_count: 2
+    });
+    // Both stages are reported side by side and are never summed: §3.2's
+    // co-teaching example is 120 group hours and 124 teacher-load hours with
+    // both figures correct.
+    expect(dashboard.planning.balance?.group.total_group_load).toBe("120.00");
+    expect(dashboard.planning.balance?.teacher.total_teacher_load).toBe("124.00");
+    expect(dashboard.assignment.summary.available_slots).toBe(9);
+    expect(dashboard.blocking_validation_count).toBe(2);
+
+    // A process still in setup has no plan at all, and the planning section says
+    // so rather than reporting a balance of zero.
     expect(
       ProcessDashboardSchema.parse({
         process_id: processId,
         generated_at: now,
-        global_balance: globalBalance,
-        teacher_balances: [teacherBalance],
-        requirement_balances: [
-          {
-            hour_requirement_id: requirementId,
-            teaching_group_id: "99999999-9999-4999-8999-999999999999",
-            teaching_group_label: "1 ESO A",
-            subject_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-            subject_name: "Mathematics",
-            required_hours: 4,
-            assigned_hours: 1,
-            pending_hours: 3,
-            assignment_count: 1,
-            has_override: false,
-            state: "partial"
-          }
-        ],
-        validations: [
-          {
-            severity: "blocking",
-            code: "hours.pending",
-            message: "Pending hours remain.",
-            entity_type: "requirement",
-            entity_id: requirementId
-          }
-        ],
-        current_turn: {
-          meeting_session_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          selection_turn_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-          process_teacher_id: teacherId,
-          position: 0,
-          status: "active",
-          started_at: now
+        readiness: "not_ready",
+        planning: {
+          teaching_plan_id: null,
+          status: null,
+          balance: null,
+          validations: null
         },
-        blocking_validation_count: 1
-      }).blocking_validation_count
-    ).toBe(1);
+        assignment: {
+          summary: {
+            assignment_process_id: processId,
+            total_target_hours: "0.00",
+            total_assigned_hours: "0.00",
+            total_remaining_hours: "0.00",
+            total_slots: 0,
+            assigned_slots: 0,
+            available_slots: 0,
+            participants: []
+          },
+          validations: {
+            assignment_process_id: processId,
+            is_final_ready: false,
+            blocking_count: 0,
+            warning_count: 0,
+            messages: []
+          }
+        },
+        current_turn: null,
+        blocking_validation_count: 0
+      }).planning.status
+    ).toBeNull();
+
+    // The obsolete single-balance dashboard no longer parses at all. With
+    // `.strict()` that is the point: a stale service fails loudly instead of
+    // half-rendering a coverage bar for a contract that has none.
+    expect(() =>
+      ProcessDashboardSchema.parse({
+        process_id: processId,
+        generated_at: now,
+        global_balance: {
+          total_required_hours: 4,
+          total_available_hours: 4,
+          total_assigned_hours: 1,
+          pending_required_hours: 3,
+          availability_difference: 0,
+          uncovered_requirements: 1,
+          overloaded_teachers: 0,
+          state: "pending"
+        },
+        teacher_balances: [],
+        requirement_balances: [],
+        validations: [],
+        current_turn: null,
+        blocking_validation_count: 0
+      })
+    ).toThrow();
+
+    const summary = ProcessSummarySchema.parse({
+      process_id: processId,
+      generated_at: now,
+      readiness: "ready",
+      plan_status: "requirements_generated",
+      plan_balance: planBalance,
+      total_slots: 10,
+      assigned_slots: 1,
+      available_slots: 9,
+      current_turn: null,
+      blocking_validation_count: 0
+    });
+    // The summary names no teacher: the aggregate the shared screen projects is
+    // aggregate at the endpoint, not by a redaction the client must remember.
+    expect(JSON.stringify(summary)).not.toContain("display_name");
+    expect(summary.available_slots).toBe(9);
+    expect(() =>
+      ProcessSummarySchema.parse({
+        process_id: processId,
+        generated_at: now,
+        readiness: "ready",
+        plan_status: null,
+        plan_balance: null,
+        total_slots: 0,
+        assigned_slots: 0,
+        available_slots: 0,
+        current_turn: null,
+        blocking_validation_count: 0,
+        participants: []
+      })
+    ).toThrow();
   });
 
   it("validates create, meeting, LAN, direct-choice, and export contracts", () => {
@@ -273,8 +391,8 @@ describe("reparto schemas", () => {
         teacher_profile_id: participantBalance.teacher_profile_id,
         process_teacher_id: teacherId,
         generated_at: now,
-        global_balance: globalBalance,
-        teacher_balance: teacherBalance,
+        global_balance: {},
+        teacher_balance: {},
         current_turn: null,
         blocking_validation_count: 0
       })

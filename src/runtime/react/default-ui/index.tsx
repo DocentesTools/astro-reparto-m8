@@ -20,6 +20,7 @@ import {
   useRepartoVersions
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
+import { summarizeProcessDashboard } from "../../ui/index.js";
 import { repartoPanelClass } from "../styles.js";
 import {
   Shell,
@@ -115,14 +116,7 @@ function QueryState({
 }
 
 function dashboardSummary(dashboard?: ProcessDashboard | null): ProcessSummary | null {
-  if (!dashboard) return null;
-  return {
-    process_id: dashboard.process_id,
-    global_balance: dashboard.global_balance,
-    validations: dashboard.validations,
-    current_turn: dashboard.current_turn,
-    blocking_validation_count: dashboard.blocking_validation_count
-  };
+  return dashboard ? summarizeProcessDashboard(dashboard) : null;
 }
 
 function latestMeetingSession(

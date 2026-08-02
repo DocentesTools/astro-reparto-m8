@@ -7,15 +7,42 @@ const teacherId = "22222222-2222-4222-8222-222222222222";
 const sessionId = "33333333-3333-4333-8333-333333333333";
 const now = "2026-07-04T10:00:00Z";
 
-const globalBalance = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 1,
-  pending_required_hours: 3,
-  availability_difference: 0,
-  uncovered_requirements: 1,
-  overloaded_teachers: 0,
-  state: "pending"
+const planBalance = {
+  teaching_plan_id: "55555555-5555-4555-8555-555555555555",
+  assignment_process_id: processId,
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "124.00",
+    teacher_load_difference: "0.00",
+    is_balanced: true
+  },
+  is_exact: true
+};
+
+const assignmentSection = {
+  summary: {
+    assignment_process_id: processId,
+    total_target_hours: "124.00",
+    total_assigned_hours: "4.00",
+    total_remaining_hours: "120.00",
+    total_slots: 4,
+    assigned_slots: 1,
+    available_slots: 3,
+    participants: []
+  },
+  validations: {
+    assignment_process_id: processId,
+    is_final_ready: false,
+    blocking_count: 1,
+    warning_count: 0,
+    messages: []
+  }
 };
 
 const currentTurn = {
@@ -37,10 +64,21 @@ function dataForKey(queryKey: readonly unknown[]) {
     return {
       process_id: processId,
       generated_at: now,
-      global_balance: globalBalance,
-      teacher_balances: [],
-      requirement_balances: [],
-      validations: [],
+      readiness: "ready",
+      planning: {
+        teaching_plan_id: planBalance.teaching_plan_id,
+        status: "requirements_generated",
+        balance: planBalance,
+        validations: {
+          teaching_plan_id: planBalance.teaching_plan_id,
+          assignment_process_id: processId,
+          is_assignment_ready: true,
+          blocking_count: 0,
+          warning_count: 0,
+          messages: []
+        }
+      },
+      assignment: assignmentSection,
       current_turn: currentTurn,
       blocking_validation_count: 1
     };
@@ -48,8 +86,13 @@ function dataForKey(queryKey: readonly unknown[]) {
   if (last === "summary") {
     return {
       process_id: processId,
-      global_balance: globalBalance,
-      validations: [],
+      generated_at: now,
+      readiness: "ready",
+      plan_status: "requirements_generated",
+      plan_balance: planBalance,
+      total_slots: 4,
+      assigned_slots: 1,
+      available_slots: 3,
       current_turn: currentTurn,
       blocking_validation_count: 1
     };

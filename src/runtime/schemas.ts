@@ -63,22 +63,13 @@ export const SelectionTurnStatusSchema = z.enum([
 ]);
 export type SelectionTurnStatus = z.infer<typeof SelectionTurnStatusSchema>;
 
-export const GlobalBalanceStateSchema = z.enum([
-  "balanced",
-  "pending",
-  "exceeded",
-  "warning"
-]);
-export type GlobalBalanceState = z.infer<typeof GlobalBalanceStateSchema>;
-
-export const TeacherBalanceStateSchema = z.enum([
-  "balanced",
-  "pending",
-  "overloaded",
-  "inactive",
-  "not_participating"
-]);
-export type TeacherBalanceState = z.infer<typeof TeacherBalanceStateSchema>;
+// `GlobalBalanceStateSchema` and `TeacherBalanceStateSchema` used to sit here.
+// Both described the two-stage single balance — one `required vs available`
+// axis with an `exceeded` state, and a per-teacher `overloaded` state that meant
+// "assigned past capacity, possibly overridden". Neither concept survives §3.1
+// (two independent balances) or §3.8 (an over-target assignment cannot happen,
+// only authorized extra hours can). `ParticipantBalanceStateSchema` replaces the
+// second; the first has no successor because a state is no longer a single axis.
 
 /**
  * The coarse, role-safe projection of the teaching-plan status (backend plan
@@ -274,69 +265,21 @@ export type AssignmentProcessesPublic = z.infer<
   typeof AssignmentProcessesPublicSchema
 >;
 
-export const GlobalBalanceSchema = z
-  .object({
-    total_required_hours: z.number().nonnegative(),
-    total_available_hours: z.number().nonnegative(),
-    total_assigned_hours: z.number().nonnegative(),
-    pending_required_hours: z.number(),
-    availability_difference: z.number(),
-    uncovered_requirements: z.number().int().nonnegative(),
-    overloaded_teachers: z.number().int().nonnegative(),
-    state: GlobalBalanceStateSchema
-  })
-  .strict();
-export type GlobalBalance = z.infer<typeof GlobalBalanceSchema>;
-
-export const TeacherBalanceSchema = z
-  .object({
-    process_teacher_id: uuidSchema,
-    teacher_profile_id: uuidSchema,
-    display_name: z.string(),
-    available_hours: z.number().nonnegative(),
-    assigned_hours: z.number().nonnegative(),
-    remaining_hours: z.number(),
-    excess_hours: z.number().nonnegative(),
-    assignment_count: z.number().int().nonnegative(),
-    has_override: z.boolean(),
-    state: TeacherBalanceStateSchema
-  })
-  .strict();
-export type TeacherBalance = z.infer<typeof TeacherBalanceSchema>;
-
-export const RequirementBalanceSchema = z
-  .object({
-    hour_requirement_id: uuidSchema,
-    teaching_group_id: uuidSchema,
-    teaching_group_label: z.string(),
-    subject_id: uuidSchema,
-    subject_name: z.string(),
-    required_hours: z.number().nonnegative(),
-    assigned_hours: z.number().nonnegative(),
-    pending_hours: z.number(),
-    assignment_count: z.number().int().nonnegative(),
-    has_override: z.boolean(),
-    state: z.enum([
-      "uncovered",
-      "partial",
-      "covered",
-      "over_assigned",
-      "explicitly_shared"
-    ])
-  })
-  .strict();
-export type RequirementBalance = z.infer<typeof RequirementBalanceSchema>;
-
-export const ValidationMessageSchema = z
-  .object({
-    severity: ValidationSeveritySchema,
-    code: z.string(),
-    message: z.string(),
-    entity_type: z.string(),
-    entity_id: uuidSchema.nullable()
-  })
-  .strict();
-export type ValidationMessage = z.infer<typeof ValidationMessageSchema>;
+// `GlobalBalanceSchema`, `TeacherBalanceSchema`, `RequirementBalanceSchema` and
+// `ValidationMessageSchema` used to sit here. They were the single-balance
+// payload family: one aggregate `required vs available vs assigned` axis, a
+// per-requirement *partial coverage* row and a per-teacher *override* row. All
+// three describe a contract that no longer exists (§3.6, §5.10) — a slot is
+// indivisible, an assignment carries no hours of its own, and an over-target
+// assignment is impossible rather than overridable.
+//
+// Their successors are `PlanBalance` (both independent axes),
+// `ParticipantBalance` / `AssignmentSummary` (per-participant slot occupancy)
+// and the two `PlanValidationMessage`-based reports, all declared with the
+// planning schemas further down. `ProcessSummarySchema`, `ProcessDashboardSchema`
+// and `TeacherLanSummarySchema` moved down with them for the same reason: a
+// `z.object` literal evaluates its shape eagerly, so a payload embedding them
+// cannot be declared before them.
 
 export const CurrentTurnSummarySchema = z
   .object({
@@ -349,37 +292,6 @@ export const CurrentTurnSummarySchema = z
   })
   .strict();
 export type CurrentTurnSummary = z.infer<typeof CurrentTurnSummarySchema>;
-
-export const ProcessSummarySchema = z
-  .object({
-    process_id: uuidSchema,
-    global_balance: GlobalBalanceSchema,
-    validations: z.array(ValidationMessageSchema),
-    current_turn: CurrentTurnSummarySchema.nullable(),
-    blocking_validation_count: z.number().int().nonnegative()
-  })
-  .strict();
-export type ProcessSummary = z.infer<typeof ProcessSummarySchema>;
-
-export const ProcessDashboardSchema = z
-  .object({
-    process_id: uuidSchema,
-    generated_at: dateTimeSchema,
-    global_balance: GlobalBalanceSchema,
-    teacher_balances: z.array(TeacherBalanceSchema),
-    requirement_balances: z.array(RequirementBalanceSchema),
-    validations: z.array(ValidationMessageSchema),
-    current_turn: CurrentTurnSummarySchema.nullable(),
-    blocking_validation_count: z.number().int().nonnegative()
-  })
-  .strict();
-export type ProcessDashboard = z.infer<typeof ProcessDashboardSchema>;
-
-// `TeacherLanSummarySchema` used to sit here, next to the two obsolete
-// single-balance payloads above. It now embeds `PlanBalance` and
-// `ParticipantBalance`, so it is declared with them further down: a `z.object`
-// literal evaluates its shape eagerly, and referring to a `const` declared
-// later in the module would throw at import time rather than at parse time.
 
 export const MeetingSessionPublicSchema = z
   .object({
@@ -1669,6 +1581,34 @@ export const ParticipantBalanceSchema = z
 export type ParticipantBalance = z.infer<typeof ParticipantBalanceSchema>;
 
 /**
+ * The aggregate assignment view for one process (backend plan §6.2).
+ *
+ * The hour totals and the slot counts answer two different questions and are
+ * both kept: hours say how far the participants are from their targets, slots
+ * say how much of the meeting is left to run. They are not derivable from each
+ * other — two slots of unequal teacher hours are one count and two totals — so
+ * neither is computed here from the other.
+ *
+ * `participants` lists **every** process teacher, including the inactive and
+ * non-participating ones, while only active participants feed the totals. A row
+ * that is present but excluded is visible as such; a row that was filtered out
+ * would be indistinguishable from a missing participant.
+ */
+export const AssignmentSummarySchema = z
+  .object({
+    assignment_process_id: uuidSchema,
+    total_target_hours: HoursSchema,
+    total_assigned_hours: HoursSchema,
+    total_remaining_hours: SignedHoursSchema,
+    total_slots: z.number().int().nonnegative(),
+    assigned_slots: z.number().int().nonnegative(),
+    available_slots: z.number().int().nonnegative(),
+    participants: z.array(ParticipantBalanceSchema)
+  })
+  .strict();
+export type AssignmentSummary = z.infer<typeof AssignmentSummarySchema>;
+
+/**
  * The authenticated teacher's own LAN payload (backend plan §8.6, §20.25).
  *
  * Everything identifying here is the caller's own: `participant` is their row
@@ -1746,6 +1686,88 @@ export const AssignmentValidationReportSchema = z
 export type AssignmentValidationReport = z.infer<
   typeof AssignmentValidationReportSchema
 >;
+
+/**
+ * The planning half of the dashboard (backend plan §3.1, §6.1, §6.3).
+ *
+ * Every field is nullable together: a process that has not entered the planning
+ * stage has no plan, no balance and no findings, and that is a legitimate state
+ * for a process still in setup rather than an error. A client renders the
+ * section as "not started"; it must not read an absent balance as zero, which is
+ * exactly what the payload this replaces forced it to do.
+ */
+export const PlanningSectionSchema = z
+  .object({
+    teaching_plan_id: uuidSchema.nullable(),
+    status: TeachingPlanStatusSchema.nullable(),
+    balance: PlanBalanceSchema.nullable(),
+    validations: PlanValidationReportSchema.nullable()
+  })
+  .strict();
+export type PlanningSection = z.infer<typeof PlanningSectionSchema>;
+
+/**
+ * The assignment half of the dashboard (backend plan §3.6, §6.2, §6.3).
+ *
+ * Always present, unlike the planning section: the participant rows and the slot
+ * counts are meaningful before any requirement is generated, when every count is
+ * simply zero.
+ */
+export const AssignmentSectionSchema = z
+  .object({
+    summary: AssignmentSummarySchema,
+    validations: AssignmentValidationReportSchema
+  })
+  .strict();
+export type AssignmentSection = z.infer<typeof AssignmentSectionSchema>;
+
+/**
+ * The full department-head dashboard for one process (backend plan §3.1, §6.3).
+ *
+ * Two sections side by side, never summed: §3.2's co-teaching example is 120
+ * group hours and 124 teacher-load hours and *both are correct*, so a client
+ * that adds them reports a number the domain does not have.
+ * `blocking_validation_count` is the one figure that spans both, and it is the
+ * service's own sum — the head can tell whether anything blocks without walking
+ * either message list.
+ */
+export const ProcessDashboardSchema = z
+  .object({
+    process_id: uuidSchema,
+    generated_at: dateTimeSchema,
+    readiness: PlanReadinessSchema,
+    planning: PlanningSectionSchema,
+    assignment: AssignmentSectionSchema,
+    current_turn: CurrentTurnSummarySchema.nullable(),
+    blocking_validation_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ProcessDashboard = z.infer<typeof ProcessDashboardSchema>;
+
+/**
+ * The dashboard without the message lists and the per-participant rows.
+ *
+ * Suited to a header, a poll and — decisively — the projected shared screen,
+ * which must show the meeting state without naming a single teacher. It carries
+ * no `display_name` and no per-participant hours at all, so the aggregate is not
+ * a redaction a client has to remember to apply: the endpoint simply never
+ * returns the identifying rows.
+ */
+export const ProcessSummarySchema = z
+  .object({
+    process_id: uuidSchema,
+    generated_at: dateTimeSchema,
+    readiness: PlanReadinessSchema,
+    plan_status: TeachingPlanStatusSchema.nullable(),
+    plan_balance: PlanBalanceSchema.nullable(),
+    total_slots: z.number().int().nonnegative(),
+    assigned_slots: z.number().int().nonnegative(),
+    available_slots: z.number().int().nonnegative(),
+    current_turn: CurrentTurnSummarySchema.nullable(),
+    blocking_validation_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type ProcessSummary = z.infer<typeof ProcessSummarySchema>;
 
 // ── Requirement generation (backend plan §7.5, §20.8) ──────────────────────
 //

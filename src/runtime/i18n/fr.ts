@@ -143,12 +143,6 @@ export const fr: RepartoDictionary = {
       }
     }
   },
-  validation: {
-    title: { requirement: "Alerte sur le besoin horaire", teacher: "Alerte enseignant", process: "Alerte processus" },
-    requirement: { overAssigned: "Le besoin {subject} pour {group} est suraffecté ({assigned} h affectées pour {required} h requises).", overAssignedOverridden: "Le besoin {subject} pour {group} est suraffecté, mais une dérogation a été enregistrée.", uncovered: "Le besoin {subject} pour {group} n'a encore aucune affectation.", partial: "Le besoin {subject} pour {group} est partiellement couvert ({pending} h restantes).", covered: "Le besoin {subject} pour {group} est entièrement couvert." },
-    teacher: { overloaded: "{teacher} est en surcharge ({assigned} h affectées pour {available} h disponibles).", overloadedOverridden: "{teacher} est en surcharge, mais une dérogation a été enregistrée.", balanced: "La charge de {teacher} est équilibrée." },
-    process: { balanced: "Les heures du processus sont équilibrées.", pending: "{count} besoin(s) nécessitent encore des heures.", overage: "Le processus contient des suraffectations non résolues." }
-  },
   audit: {
     pageTitle: "Audit de la répartition", description: "Consultez les événements d'audit du processus actif.",
     action: { created: "Créé", updated: "Modifié", deleted: "Supprimé", transitioned: "État modifié", reopened: "Rouvert", copied_from_previous_year: "Copié depuis l'année précédente", direct_choice: "Choix direct enregistré", started: "Démarré", completed: "Terminé", skipped: "Passé", overridden: "Forcé", undone: "Annulée", reassigned: "Réaffectée", reentered: "Remise en file", recomputed: "Recalculé" },
@@ -529,42 +523,57 @@ export const fr: RepartoDictionary = {
     }
   },
   dashboard: {
-    balanceState: { balanced: "Équilibré", pending: "En attente", exceeded: "Dépassé", warning: "Avertissement" },
+    balanceState: { balanced: "Équilibré", unbalanced: "Non équilibré", unknown: "Inconnu" },
+    readiness: {
+      ready: "Prêt",
+      not_ready: "Pas prêt",
+      recalculation_required: "Recalcul requis"
+    },
+    invariant: { group: "Heures de classe", teacher: "Charge enseignante", readiness: "Préparation" },
     title: "Tableau de bord du reparto",
-    subtitleAdmin: "Suivez l'equilibre, la couverture et l'etat de la seance avant le direct.",
+    subtitleAdmin: "Suivez les deux équilibres, l'avancement des affectations et la préparation de la séance avant le direct.",
     subtitleReadonly: "Projetez une vue calme en lecture seule pour la seance en direct.",
     pickerLabel: "Processus courant",
     pickerHint: "Changez de processus quand la route n'est pas verrouillee sur un id precis.",
     mode: { admin: "Mode admin", readonly: "Mode lecture seule" },
     section: {
-      overview: "Vue d'ensemble",
-      teacherLoad: "Charge des enseignants",
-      classroomCoverage: "Couverture des classes",
+      planning: "Planification",
+      assignment: "Affectation",
+      participants: "Participants",
       validations: "Validations",
       checklist: "Checklist de configuration",
       meetingReadiness: "Preparation de la seance"
     },
     metric: {
-      required: "Requises",
-      assigned: "Affectees",
-      available: "Disponibles",
-      pending: "En attente",
-      blocking: "Bloquantes",
-      participants: "Participants",
-      requirements: "Besoins"
+      totalSlots: "Postes",
+      assignedSlots: "Pris",
+      availableSlots: "Libres",
+      targetHours: "Cible",
+      assignedHours: "Affectées",
+      remainingHours: "Restantes",
+      blocking: "Bloquantes"
+    },
+    participantState: {
+      pending: "N'a pas encore atteint sa cible.",
+      balanced: "Les heures affectées correspondent à la cible.",
+      overloaded_authorized: "La cible inclut des heures supplémentaires autorisées.",
+      inactive: "N'est pas actif dans ce processus.",
+      not_participating: "Ne fait pas partie de l'ordre de choix."
     },
     state: {
       noDashboard: "Les donnees du tableau de bord apparaitront quand le processus sera pret.",
-      noTeachers: "Ajoutez des participants au processus pour voir la charge des enseignants.",
-      noRequirements: "Ajoutez des besoins horaires pour voir la couverture des classes.",
-      noValidations: "Aucune validation bloquante.",
+      noPlan: "Ce processus n'a pas encore de plan pédagogique.",
+      noTeachers: "Ajoutez des participants au processus pour voir leur avancement.",
+      noValidations: "Aucun constat.",
+      summaryOnly: "Cette vue lit le résumé agrégé, qui ne porte aucun constat par enseignant.",
       lockedToRoute: "Cette route est fixee au processus de l'URL courante."
     },
     summary: {
-      balance: "{assigned} heures affectees sur {required}. {pending} heures restent a couvrir.",
-      teacherLoad: "{count} participant(s) suivis ; {overloaded} en surcharge.",
-      classroomCoverage: "{count} besoin(s), {uncovered} non couverts.",
-      validations: "{blocking} validation(s) bloquante(s) et {total} message(s) au total.",
+      slotProgress: "{assigned} postes pris sur {total}.",
+      participantHours: "{assigned} h sur {target} h, {remaining} h restantes",
+      authorizedExtra: "{hours} heures supplémentaires autorisées.",
+      participants: "{count} participant(s) suivis ; {overloaded} avec des heures supplémentaires autorisées.",
+      validations: "{total} constat(s) bloquant(s) : {planning} en planification, {assignment} en affectation.",
       checklist: "{done} etape(s) terminee(s) sur {total}."
     }
   },

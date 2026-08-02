@@ -10,7 +10,8 @@ import type {
 } from "../schemas.js";
 import {
   buildTeacherChoiceState,
-  classifyDirectChoiceConflict
+  classifyDirectChoiceConflict,
+  summarizeProcessDashboard
 } from "../ui/index.js";
 import {
   formatRepartoMessage,
@@ -18,7 +19,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../i18n/index.js";
-import { CurrentTurnCard } from "./DepartmentHeadWorkspace.js";
+import { CurrentTurnCard, ProcessInvariantRow } from "./DepartmentHeadWorkspace.js";
 import {
   repartoActionRowClass,
   repartoButtonClass,
@@ -436,10 +437,9 @@ export function SharedScreenWorkspace({
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const eventsUrl = eventStreamUrl(processId);
-  const activeSummary = summary ?? dashboard ?? null;
-  const balance = activeSummary?.global_balance ?? null;
-  const teacherCount = dashboard?.teacher_balances.length ?? 0;
-  const requirementCount = dashboard?.requirement_balances.length ?? 0;
+  const activeSummary =
+    summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
+  const balance = activeSummary?.plan_balance ?? null;
   return (
     <main
       className={repartoShellClass}
@@ -456,67 +456,51 @@ export function SharedScreenWorkspace({
       <div className={repartoMainGridClass}>
         <section className={repartoPanelClass} data-reparto-panel="global-state">
           <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.overview}</h2>
+            <h2>{dict.dashboard.section.planning}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
           </div>
+          <ProcessInvariantRow
+            balance={balance}
+            dict={dict}
+            readiness={activeSummary?.readiness ?? "not_ready"}
+          />
           <dl className={repartoMetricsClass}>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.required}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-required-hours">
-                {balance?.total_required_hours ?? 0}
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.totalSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-slots">
+                {activeSummary?.total_slots ?? 0}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assigned}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-assigned-hours">
-                {balance?.total_assigned_hours ?? 0}
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assignedSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-slots">
+                {activeSummary?.assigned_slots ?? 0}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
-              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.pending}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="pending-required-hours">
-                {balance?.pending_required_hours ?? 0}
+              <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.availableSlots}</dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="available-slots">
+                {activeSummary?.available_slots ?? 0}
               </dd>
             </div>
           </dl>
-          <p className="text-sm text-muted-foreground" data-reparto-slot="global-balance">
-            {balance
-              ? formatRepartoMessage(dict.dashboard.summary.balance, {
-                  assigned: balance.total_assigned_hours,
-                  pending: balance.pending_required_hours,
-                  required: balance.total_required_hours
+          <p className="text-sm text-muted-foreground" data-reparto-slot="slot-progress">
+            {activeSummary
+              ? formatRepartoMessage(dict.dashboard.summary.slotProgress, {
+                  assigned: activeSummary.assigned_slots,
+                  total: activeSummary.total_slots
                 })
               : dict.dashboard.state.noDashboard}
           </p>
         </section>
         <section className={repartoPanelClass} data-reparto-panel="turn-state">
           <div className={repartoPanelHeaderClass}>
-            <h2>{dict.dashboard.section.validations}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="turn-status">
+            <h2>{dict.dashboard.section.meetingReadiness}</h2>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
               {activeSummary?.blocking_validation_count ?? 0}
             </span>
           </div>
-          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} locale={locale} />
-          <div className="mt-3 grid gap-2 text-sm" data-reparto-slot="validations">
-            <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-              {formatRepartoMessage(dict.dashboard.summary.teacherLoad, {
-                count: teacherCount,
-                overloaded: activeSummary?.global_balance.overloaded_teachers ?? 0
-              })}
-            </div>
-            <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-              {formatRepartoMessage(dict.dashboard.summary.classroomCoverage, {
-                count: requirementCount,
-                uncovered: activeSummary?.global_balance.uncovered_requirements ?? 0
-              })}
-            </div>
-            <div className="rounded-md border border-border/70 bg-muted/20 px-3 py-2">
-              {formatRepartoMessage(dict.dashboard.summary.validations, {
-                blocking: activeSummary?.blocking_validation_count ?? 0,
-                total: activeSummary?.validations.length ?? 0
-              })}
-            </div>
-          </div>
+          <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} locale={locale} />
         </section>
       </div>
     </main>

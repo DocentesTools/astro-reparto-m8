@@ -109,8 +109,8 @@ a free-form bool, not a status enum.
 | Transition | `POST /{process_id}/transition` body `{target_status}` | transition | ✓ |
 | Reopen | `POST /{process_id}/reopen` body `{reason: str[1..500]}` | reopen | ✓ |
 | Copy-from | `POST /{process_id}/copy-from/{source_process_id}` body `{copy_assignments: bool=false}` | (not listed) | NEW §3.1 |
-| Summary | `GET /{process_id}/summary` → `ProcessSummary` | summary | ✓ |
-| Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` | dashboard | ✓ |
+| Summary | `GET /{process_id}/summary` → `ProcessSummary` (reader floor) — `readiness`, `plan_status`, aggregate `plan_balance`, the three live-slot counts and `blocking_validation_count`; **names no teacher**, which is what makes it the shared-screen source | summary | ✓ |
+| Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` — `readiness` plus a `planning` section (`teaching_plan_id`, `status`, `PlanBalance`, `PlanValidationReport`, all nullable together when no plan exists) and an always-present `assignment` section (`AssignmentSummary` + `AssignmentValidationReport`). The two sections are reported side by side and are never summed | dashboard | ✓ |
 | LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (reader floor) — `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's **own** `participant` balance and `available_slots` | lan/me | ✓ |
 | Events (SSE) | `GET /{process_id}/events` → `text/event-stream` `event: process.summary` | events | ✓ |
 | Create required | `academic_year_id, school_id, department_id` (all `uuid`) | `academic_year_id*`, `school_id*`, `department_id*` | ✓ |

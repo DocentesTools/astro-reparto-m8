@@ -1,11 +1,16 @@
 export {
   buildCurrentTurnDisplay,
   buildTeacherChoiceState,
-  directChoiceConflictMessage,
+  classifyDirectChoiceConflict,
   getLanConnectionState,
   type CurrentTurnDisplayState,
+  type DirectChoiceConflict,
+  type DirectChoiceConflictReason,
   type LanConnectionState,
-  type TeacherChoiceState
+  type TeacherChoiceDisabledReason,
+  type TeacherChoiceInput,
+  type TeacherChoiceState,
+  type TeacherSlotChoice
 } from "./lan.js";
 export {
   activeAssignments,

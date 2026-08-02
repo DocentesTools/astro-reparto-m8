@@ -82,7 +82,40 @@ export const es: RepartoDictionary = {
     currentTurn: { status: "Estado", turn: "Turno", teacher: "Docente", started: "Inicio", waiting: "En espera", noPosition: "Sin posición", noActiveTurn: "Sin turno activo", notStarted: "Sin iniciar", position: "Turno {position}", teacherValue: "Docente {teacher}" },
     versions: { title: "Versiones", item: "Versión {number}", comparison: "Comparación", noChanges: "Sin cambios", requiredDelta: "Diferencia de horas requeridas", assignedDelta: "Diferencia de horas asignadas", teacherDelta: "Docentes", create: "Crear versión", compare: "Comparar versiones" },
     exports: { title: "Centro de exportación", finalBlocked: "Cierre bloqueado", finalReady: "Cierre listo", closeout: "Cierre", finalExport: "Exportación final", leadershipWorkflow: "Flujo de dirección", markReturned: "Marcar como devuelto", startRevision: "Iniciar revisión", reopenFinal: "Reabrir versión final", type: { internal_draft: "Borrador interno", school_leadership: "Dirección del centro", final: "Final", teacher_summary: "Resumen docente", backup: "Copia de seguridad" } },
-    choice: { title: "Elegir grupo", confirmation: "Confirmación", choose: "Elegir", pass: "Pasar", ready: "Listo para elegir.", impact: "Se te asignarán {hours} horas.", meetingClosed: "La sesión no está abierta.", directDisabled: "La selección directa está desactivada.", otherTurn: "Es el turno de otro docente.", covered: "Las horas ya están cubiertas.", alreadyCovered: "Estas horas ya estaban cubiertas.", turnChanged: "El turno activo ha cambiado. Actualiza el estado de la sesión." }
+    choice: {
+      title: "Elegir un puesto",
+      confirmation: "Confirmación",
+      choose: "Tomar este puesto",
+      pass: "Pasar",
+      ready: "Listo para tomar el puesto seleccionado.",
+      noSlots: "No hay ningún puesto vivo disponible.",
+      position: "Puesto {position}",
+      hours: "{hours} horas docentes",
+      impact: "Tomar este puesto le asigna {hours} horas docentes completas.",
+      remainingTarget: "Le quedan {hours} horas antes de su objetivo.",
+      disabled: {
+        meeting_not_open: "La reunión no está abierta.",
+        direct_selection_disabled: "La selección directa está desactivada.",
+        plan_not_ready: "El plan todavía no está listo para la selección.",
+        reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la selección.",
+        selection_blocked: "El servicio está bloqueando las selecciones ahora mismo.",
+        not_your_turn: "Es el turno de otro docente.",
+        no_slot_chosen: "Elija primero un puesto.",
+        slot_occupied: "Este puesto ya está ocupado.",
+        slot_not_available: "Este puesto no está disponible para la selección.",
+        duplicate_activity_position: "Ya ocupa un puesto de esta actividad.",
+        exceeds_remaining_target: "El puesto completo no cabe en sus horas objetivo restantes."
+      },
+      conflict: {
+        state_changed: "El reparto cambió. Actualice el estado de la reunión y elija de nuevo.",
+        refused: "El servicio rechazó esta elección.",
+        not_found: "Este puesto ya no existe.",
+        not_allowed: "No tiene permiso para hacer esta elección.",
+        signed_out: "Su sesión ha caducado. Inicie sesión de nuevo.",
+        network: "No se puede contactar con el servidor. Inténtelo de nuevo.",
+        server: "Algo falló por nuestra parte. Inténtelo de nuevo."
+      }
+    }
   },
   validation: {
     title: { requirement: "Aviso de horas necesarias", teacher: "Aviso de docente", process: "Aviso del proceso" },

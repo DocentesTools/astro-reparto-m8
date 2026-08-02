@@ -290,15 +290,12 @@ describe("default UI query states", () => {
     expect(renderToStaticMarkup(<RepartoMeetingView processId={processId} />)).toContain(
       "Turn 1"
     );
+    // The island renders from its own queries; with no service readiness in
+    // this fixture the panel is present and closed, which is the fail-closed
+    // answer rather than a missing panel.
     expect(
-      renderToStaticMarkup(
-        <RepartoMyView
-          processId={processId}
-          requirementAssignedHours={1}
-          requirementRequiredHours={4}
-        />
-      )
-    ).toContain('data-reparto-choice-state="ready"');
+      renderToStaticMarkup(<RepartoMyView processId={processId} />)
+    ).toContain('data-reparto-choice-reason="plan_not_ready"');
     expect(renderToStaticMarkup(<RepartoSharedView processId={processId} />)).toContain(
       'data-reparto-route="shared-screen"'
     );

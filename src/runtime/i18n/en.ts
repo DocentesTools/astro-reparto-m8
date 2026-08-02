@@ -83,7 +83,40 @@ export const en = {
     currentTurn: { status: "Status", turn: "Turn", teacher: "Teacher", started: "Started", waiting: "Waiting", noPosition: "No position", noActiveTurn: "No active turn", notStarted: "Not started", position: "Turn {position}", teacherValue: "Teacher {teacher}" },
     versions: { title: "Versions", item: "Version {number}", comparison: "Comparison", noChanges: "No changes", requiredDelta: "Required delta", assignedDelta: "Assigned delta", teacherDelta: "Teachers", create: "Create version", compare: "Compare versions" },
     exports: { title: "Export center", finalBlocked: "Final blocked", finalReady: "Final ready", closeout: "Closeout", finalExport: "Final export", leadershipWorkflow: "Leadership workflow", markReturned: "Mark returned", startRevision: "Start revision", reopenFinal: "Reopen final", type: { internal_draft: "Internal draft", school_leadership: "School leadership", final: "Final", teacher_summary: "Teacher summary", backup: "Backup" } },
-    choice: { title: "Choose group", confirmation: "Confirmation", choose: "Choose", pass: "Pass", ready: "Ready to choose.", impact: "{hours} hours will be assigned to you.", meetingClosed: "The meeting is not open.", directDisabled: "Direct selection is disabled.", otherTurn: "It is another teacher's turn.", covered: "The requirement is already covered.", alreadyCovered: "This requirement was already covered.", turnChanged: "The active turn changed. Refresh the meeting state." }
+    choice: {
+      title: "Choose a position",
+      confirmation: "Confirmation",
+      choose: "Take this position",
+      pass: "Pass",
+      ready: "Ready to take the selected position.",
+      noSlots: "No live position is available.",
+      position: "Position {position}",
+      hours: "{hours} teacher hours",
+      impact: "Taking this position assigns {hours} teacher hours to you in full.",
+      remainingTarget: "{hours} hours remain before your target.",
+      disabled: {
+        meeting_not_open: "The meeting is not open.",
+        direct_selection_disabled: "Direct selection is disabled.",
+        plan_not_ready: "The plan is not ready for selection yet.",
+        reconciliation_required: "An allocation change must be reconciled before selection continues.",
+        selection_blocked: "The service is blocking selections right now.",
+        not_your_turn: "It is another teacher's turn.",
+        no_slot_chosen: "Choose a position first.",
+        slot_occupied: "This position is already taken.",
+        slot_not_available: "This position is not available for selection.",
+        duplicate_activity_position: "You already hold a position of this activity.",
+        exceeds_remaining_target: "The whole position does not fit your remaining target hours."
+      },
+      conflict: {
+        state_changed: "The reparto changed. Refresh the meeting state and choose again.",
+        refused: "The service refused this choice.",
+        not_found: "This position no longer exists.",
+        not_allowed: "You are not allowed to make this choice.",
+        signed_out: "Your session has expired. Please sign in again.",
+        network: "The server is unreachable. Please retry.",
+        server: "Something went wrong on our side. Please retry."
+      }
+    }
   },
   validation: {
     title: { requirement: "Requirement warning", teacher: "Teacher warning", process: "Process warning" },

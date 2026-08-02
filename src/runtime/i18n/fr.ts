@@ -82,7 +82,40 @@ export const fr: RepartoDictionary = {
     currentTurn: { status: "État", turn: "Tour", teacher: "Enseignant", started: "Début", waiting: "En attente", noPosition: "Aucune position", noActiveTurn: "Aucun tour actif", notStarted: "Non démarré", position: "Tour {position}", teacherValue: "Enseignant {teacher}" },
     versions: { title: "Versions", item: "Version {number}", comparison: "Comparaison", noChanges: "Aucune modification", requiredDelta: "Écart des heures requises", assignedDelta: "Écart des heures affectées", teacherDelta: "Enseignants", create: "Créer une version", compare: "Comparer les versions" },
     exports: { title: "Centre d'export", finalBlocked: "Finalisation bloquée", finalReady: "Finalisation prête", closeout: "Clôture", finalExport: "Export final", leadershipWorkflow: "Circuit de direction", markReturned: "Marquer comme renvoyé", startRevision: "Démarrer la révision", reopenFinal: "Rouvrir la version finale", type: { internal_draft: "Brouillon interne", school_leadership: "Direction de l'établissement", final: "Final", teacher_summary: "Récapitulatif enseignant", backup: "Sauvegarde" } },
-    choice: { title: "Choisir un groupe", confirmation: "Confirmation", choose: "Choisir", pass: "Passer", ready: "Prêt à choisir.", impact: "{hours} heures vous seront affectées.", meetingClosed: "La séance n'est pas ouverte.", directDisabled: "La sélection directe est désactivée.", otherTurn: "C'est le tour d'un autre enseignant.", covered: "Le besoin est déjà couvert.", alreadyCovered: "Ce besoin était déjà couvert.", turnChanged: "Le tour actif a changé. Actualisez l'état de la séance." }
+    choice: {
+      title: "Choisir un poste",
+      confirmation: "Confirmation",
+      choose: "Prendre ce poste",
+      pass: "Passer",
+      ready: "Prêt à prendre le poste sélectionné.",
+      noSlots: "Aucun poste actif n'est disponible.",
+      position: "Poste {position}",
+      hours: "{hours} heures enseignant",
+      impact: "Prendre ce poste vous affecte {hours} heures enseignant en entier.",
+      remainingTarget: "Il reste {hours} heures avant votre cible.",
+      disabled: {
+        meeting_not_open: "La réunion n'est pas ouverte.",
+        direct_selection_disabled: "La sélection directe est désactivée.",
+        plan_not_ready: "Le plan n'est pas encore prêt pour la sélection.",
+        reconciliation_required: "Un changement d'attribution doit être réconcilié avant de poursuivre la sélection.",
+        selection_blocked: "Le service bloque les sélections pour le moment.",
+        not_your_turn: "C'est le tour d'un autre enseignant.",
+        no_slot_chosen: "Choisissez d'abord un poste.",
+        slot_occupied: "Ce poste est déjà pris.",
+        slot_not_available: "Ce poste n'est pas disponible pour la sélection.",
+        duplicate_activity_position: "Vous occupez déjà un poste de cette activité.",
+        exceeds_remaining_target: "Le poste entier dépasse vos heures cibles restantes."
+      },
+      conflict: {
+        state_changed: "La répartition a changé. Actualisez l'état de la réunion et choisissez à nouveau.",
+        refused: "Le service a refusé ce choix.",
+        not_found: "Ce poste n'existe plus.",
+        not_allowed: "Vous n'êtes pas autorisé à faire ce choix.",
+        signed_out: "Votre session a expiré. Veuillez vous reconnecter.",
+        network: "Le serveur est injoignable. Veuillez réessayer.",
+        server: "Une erreur est survenue de notre côté. Veuillez réessayer."
+      }
+    }
   },
   validation: {
     title: { requirement: "Alerte sur le besoin horaire", teacher: "Alerte enseignant", process: "Alerte processus" },

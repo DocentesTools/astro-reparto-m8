@@ -1,11 +1,17 @@
 import { assignmentProcesses } from "../api/assignmentProcesses.js";
 import type {
+  AssignmentPublic,
+  HourRequirementPublic,
   MeetingSessionPublic,
+  PlanReadiness,
   ProcessDashboard,
   ProcessSummary,
   TeacherLanSummary
 } from "../schemas.js";
-import { buildTeacherChoiceState } from "../ui/index.js";
+import {
+  buildTeacherChoiceState,
+  classifyDirectChoiceConflict
+} from "../ui/index.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -65,67 +71,133 @@ const fallbackTeacherSummary: TeacherLanSummary = {
   blocking_validation_count: 0
 };
 
+/**
+ * Teacher direct-selection panel.
+ *
+ * Takes the live positions rather than a required/assigned hour pair: under the
+ * three-stage contract a teacher picks a whole position, so the panel lists the
+ * positions and shows, for each one, whether it can be taken and why not. The
+ * verdicts come from the shared framework-neutral helper, so the LAN panel and
+ * the department-head board refuse the same choice for the same reason.
+ */
 function TeacherDirectChoicePanel({
+  assignments = [],
+  conflict = null,
   locale,
   meetingSession = null,
-  requirementAssignedHours = 0,
-  requirementRequiredHours = 0,
+  readiness = null,
+  remainingTargetHours = null,
+  requirements = [],
+  selectedSlotId = null,
+  selectionBlocked = null,
+  slotLabel,
   summary
 }: {
+  assignments?: AssignmentPublic[];
+  conflict?: unknown;
   locale?: RepartoLocale;
   meetingSession?: MeetingSessionPublic | null;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
+  slotLabel?: (slotId: string) => string;
   summary: TeacherLanSummary;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const choice = buildTeacherChoiceState({
+    assignments,
+    currentTurn: summary.current_turn,
     meetingSession,
-    requirementAssignedHours,
-    requirementRequiredHours,
-    summary
+    processTeacherId: summary.process_teacher_id,
+    readiness,
+    remainingTargetHours,
+    requirements,
+    selectedSlotId,
+    selectionBlocked
   });
-  const conflictMessage = choice.disabledReason === "Meeting is not open."
-    ? dict.view.choice.meetingClosed
-    : choice.disabledReason === "Direct selection is disabled."
-      ? dict.view.choice.directDisabled
-      : choice.disabledReason === "It is another teacher's turn."
-        ? dict.view.choice.otherTurn
-        : choice.disabledReason === "Requirement is already covered."
-          ? dict.view.choice.covered
-          : dict.view.choice.ready;
-  const confirmationLabel = formatRepartoMessage(dict.view.choice.impact, {
-    hours: choice.impactHours
-  });
+  const stateLabel = choice.disabledReason
+    ? dict.view.choice.disabled[choice.disabledReason]
+    : dict.view.choice.ready;
+  const confirmationLabel =
+    choice.impactHours === null
+      ? dict.view.choice.disabled.no_slot_chosen
+      : formatRepartoMessage(dict.view.choice.impact, {
+          hours: choice.impactHours
+        });
+  const conflictState = conflict ? classifyDirectChoiceConflict(conflict) : null;
   return (
     <section
       className={repartoPanelClass}
       data-reparto-panel="direct-choice-workflow"
       data-reparto-choice-state={choice.canChoose ? "ready" : "blocked"}
+      data-reparto-choice-reason={choice.disabledReason ?? ""}
     >
       <div className={repartoPanelHeaderClass}>
         <h2>{dict.view.choice.title}</h2>
         <span className="text-sm text-muted-foreground" data-reparto-slot="choice-state">
-          {conflictMessage}
+          {stateLabel}
         </span>
       </div>
       <div className={repartoChoiceLayoutClass}>
-        <div data-reparto-slot="available-requirements-table" />
+        <ul data-reparto-slot="available-requirements-table">
+          {choice.slots.length === 0 ? (
+            <li data-reparto-state="no-slots">{dict.view.choice.noSlots}</li>
+          ) : (
+            choice.slots.map((slot) => (
+              <li
+                data-hour-requirement-id={slot.slotId}
+                data-reparto-slot-choice={slot.canChoose ? "selectable" : "blocked"}
+                data-slot-disabled-reason={slot.disabledReason ?? ""}
+                key={slot.slotId}
+              >
+                <span data-reparto-slot="choice-slot-label">
+                  {slotLabel
+                    ? slotLabel(slot.slotId)
+                    : formatRepartoMessage(dict.view.choice.position, {
+                        position: slot.positionIndex + 1
+                      })}
+                </span>
+                <span data-reparto-slot="choice-slot-hours">
+                  {formatRepartoMessage(dict.view.choice.hours, {
+                    hours: slot.teacherHours
+                  })}
+                </span>
+                {slot.disabledReason ? (
+                  <span data-reparto-slot="choice-slot-reason">
+                    {dict.view.choice.disabled[slot.disabledReason]}
+                  </span>
+                ) : null}
+              </li>
+            ))
+          )}
+        </ul>
         <aside className={repartoConfirmationClass} data-reparto-slot="choice-confirmation">
           <span className="block text-xs text-muted-foreground">{dict.view.choice.confirmation}</span>
           <strong className="mt-1 block text-sm font-semibold text-foreground">
             {confirmationLabel}
           </strong>
-          <p className="mt-2 text-sm text-muted-foreground" data-reparto-slot="choice-conflict">
-            {conflictMessage}
+          <p className="mt-2 text-sm text-muted-foreground" data-reparto-slot="choice-state-detail">
+            {stateLabel}
           </p>
+          {choice.remainingTargetHours !== null ? (
+            <p
+              className="mt-2 text-sm text-muted-foreground"
+              data-reparto-slot="choice-remaining-target"
+            >
+              {formatRepartoMessage(dict.view.choice.remainingTarget, {
+                hours: choice.remainingTargetHours
+              })}
+            </p>
+          ) : null}
         </aside>
       </div>
       <div className={repartoActionRowClass}>
         <button
           className={repartoButtonClass}
           data-reparto-action="direct-choice"
-          data-reparto-impact-hours={choice.impactHours}
+          data-reparto-selectable-slots={choice.selectableCount}
           disabled={!choice.canChoose}
           type="button"
         >
@@ -140,24 +212,47 @@ function TeacherDirectChoicePanel({
           {dict.view.choice.pass}
         </button>
       </div>
+      {conflictState ? (
+        <div
+          data-reparto-conflict-reason={conflictState.reason}
+          data-reparto-slot="choice-conflict"
+        >
+          <p>{dict.view.choice.conflict[conflictState.reason]}</p>
+          {conflictState.message ? (
+            <p data-reparto-slot="choice-conflict-detail">{conflictState.message}</p>
+          ) : null}
+        </div>
+      ) : null}
       <div data-reparto-slot="choice-result" />
     </section>
   );
 }
 
 export function TeacherLanWorkspace({
+  assignments = [],
+  conflict = null,
   locale,
   meetingSession = null,
   processId,
-  requirementAssignedHours = 0,
-  requirementRequiredHours = 0,
+  readiness = null,
+  remainingTargetHours = null,
+  requirements = [],
+  selectedSlotId = null,
+  selectionBlocked = null,
+  slotLabel,
   summary = null
 }: {
+  assignments?: AssignmentPublic[];
+  conflict?: unknown;
   locale?: RepartoLocale;
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
+  slotLabel?: (slotId: string) => string;
   summary?: TeacherLanSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
@@ -217,10 +312,18 @@ export function TeacherLanWorkspace({
           <CurrentTurnCard currentTurn={safeSummary.current_turn ?? null} locale={locale} />
         </section>
         <TeacherDirectChoicePanel
+          assignments={assignments}
+          conflict={conflict}
           locale={locale}
           meetingSession={meetingSession}
-          requirementAssignedHours={requirementAssignedHours}
-          requirementRequiredHours={requirementRequiredHours}
+          readiness={readiness}
+          remainingTargetHours={
+            remainingTargetHours ?? safeSummary.teacher_balance.remaining_hours
+          }
+          requirements={requirements}
+          selectedSlotId={selectedSlotId}
+          selectionBlocked={selectionBlocked}
+          slotLabel={slotLabel}
           summary={safeSummary}
         />
       </div>

@@ -222,21 +222,92 @@ describe("default reparto UI", () => {
     }
   });
 
-  it("renders Phase 4 direct-choice readiness and confirmation UI", () => {
-    const html = renderToStaticMarkup(
+  it("renders direct-choice state per position and fails closed without plan readiness", () => {
+    const positions = [
+      {
+        id: "aaaaaaa1-1111-4111-8111-111111111111",
+        assignment_process_id: processSummary.process_id,
+        teaching_activity_id: "aaaaaaa2-2222-4222-8222-222222222222",
+        position_index: 0,
+        required_teacher_hours: "3.00",
+        status: "available" as const,
+        created_generation: 1,
+        last_validated_generation: 1,
+        retired_generation: null,
+        superseded_by_requirement_id: null,
+        created_at: "2026-07-04T10:00:00Z",
+        updated_at: "2026-07-04T10:00:00Z"
+      }
+    ];
+    const ready = renderToStaticMarkup(
       <TeacherLanView
+        assignments={[]}
         meetingSession={meetingSession}
         processId={processSummary.process_id}
-        requirementAssignedHours={1}
-        requirementRequiredHours={4}
+        readiness="ready"
+        remainingTargetHours="3.00"
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        selectionBlocked={false}
         summary={teacherSummary}
       />
     );
+    expect(ready).toContain('data-reparto-choice-state="ready"');
+    expect(ready).toContain('data-reparto-selectable-slots="1"');
+    // The position's own hours, taken whole — never a required-minus-assigned
+    // remainder.
+    expect(ready).toContain("Taking this position assigns 3.00 teacher hours to you in full.");
+    expect(ready).toContain('data-reparto-slot-choice="selectable"');
+    expect(ready).toContain('data-reparto-slot="choice-result"');
+    expect(ready).not.toContain("data-reparto-impact-hours");
 
-    expect(html).toContain('data-reparto-choice-state="ready"');
-    expect(html).toContain('data-reparto-impact-hours="3"');
-    expect(html).toContain("3 hours will be assigned to you.");
-    expect(html).toContain('data-reparto-slot="choice-result"');
+    // Without the service's readiness the panel refuses rather than assuming
+    // the assignment stage is open.
+    const unknown = renderToStaticMarkup(
+      <TeacherLanView
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={teacherSummary}
+      />
+    );
+    expect(unknown).toContain('data-reparto-choice-state="blocked"');
+    expect(unknown).toContain('data-reparto-choice-reason="plan_not_ready"');
+
+    // A position the viewer's own live assignment already covers for that
+    // activity is offered with the distinct-teacher reason attached.
+    const duplicate = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[
+          {
+            id: "aaaaaaa3-3333-4333-8333-333333333333",
+            assignment_process_id: processSummary.process_id,
+            hour_requirement_id: "aaaaaaa4-4444-4444-8444-444444444444",
+            teaching_activity_id: positions[0].teaching_activity_id,
+            process_teacher_id: teacherSummary.process_teacher_id,
+            source: "teacher_direct" as const,
+            status: "active" as const,
+            chosen_by_user_id: null,
+            confirmed_by_user_id: null,
+            notes: null,
+            created_at: "2026-07-04T10:00:00Z",
+            updated_at: "2026-07-04T10:00:00Z"
+          }
+        ]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        readiness="ready"
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        selectionBlocked={false}
+        summary={teacherSummary}
+      />
+    );
+    expect(duplicate).toContain(
+      'data-slot-disabled-reason="duplicate_activity_position"'
+    );
+    expect(duplicate).toContain("You already hold a position of this activity.");
   });
 
   it("renders prompt-style starter views for process and version routes", () => {
@@ -308,12 +379,12 @@ describe("default reparto UI", () => {
         <RepartoMyView
           meetingSession={meetingSession}
           processId={processSummary.process_id}
-          requirementAssignedHours={1}
-          requirementRequiredHours={4}
+          readiness="ready"
+          selectionBlocked={false}
           summary={teacherSummary}
         />
       )
-    ).toContain('data-reparto-choice-state="ready"');
+    ).toContain('data-reparto-panel="direct-choice-workflow"');
     expect(
       renderToStaticMarkup(
         <RepartoSharedView processId={processSummary.process_id} summary={processSummary} />

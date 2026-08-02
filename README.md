@@ -175,6 +175,25 @@ atomic service operation rather than a delete plus a create. Cancelled rows stay
 visible as history without actions, and the board reads the service's
 assignment-stage validation report rather than inferring findings from the table.
 
+The teacher direct-selection panel on `/my-view` takes the live positions
+rather than a required/assigned hour pair: a teacher takes a whole position or
+none, so the panel lists the positions with their own hours and marks each one
+selectable or blocked. `buildTeacherChoiceState` from
+`@mano8/astro-reparto-m8/ui` returns stable reason codes — never sentences —
+for both the panel (`meeting_not_open`, `direct_selection_disabled`,
+`plan_not_ready`, `reconciliation_required`, `selection_blocked`,
+`not_your_turn`, `no_slot_chosen`) and each position (`slot_occupied`,
+`slot_not_available`, `duplicate_activity_position`,
+`exceeds_remaining_target`), and the dictionary translates them. Every gate
+fails closed: without the service's `readiness` and `selection_blocked` the
+panel refuses instead of assuming the assignment stage is open. The remaining
+target is the one value it will not guess — supply
+`remainingTargetHours` and the exact-fit rule is enforced client-side, omit it
+and the rule is left to the service. `classifyDirectChoiceConflict` keys a
+refused choice off the HTTP status (409 "the reparto moved, refresh and choose
+again" versus 400/422 "this choice breaks a rule") and passes the service's own
+sentence through untranslated, instead of searching it for keywords.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

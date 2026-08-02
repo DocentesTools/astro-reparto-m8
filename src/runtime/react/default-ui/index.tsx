@@ -9,8 +9,10 @@ import {
   TeacherLanWorkspace
 } from "../LanWorkspace.js";
 import {
+  useRepartoAssignments,
   useRepartoDashboard,
   useRepartoExports,
+  useRepartoHourRequirements,
   useRepartoMeetingSessions,
   useRepartoProcesses,
   useRepartoSummary,
@@ -26,8 +28,11 @@ import {
 } from "./process-context.js";
 import type {
   AssignmentProcessStatus,
+  AssignmentPublic,
   ExportArtifactPublic,
+  HourRequirementPublic,
   MeetingSessionPublic,
+  PlanReadiness,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
@@ -331,20 +336,28 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
 }
 
 export function RepartoMyView({
+  assignments,
   config,
   locale,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
+  readiness,
+  remainingTargetHours,
+  requirements,
+  selectedSlotId,
+  selectionBlocked,
   summary
 }: {
+  assignments?: AssignmentPublic[];
   config?: ViewConfig;
   locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
   summary?: TeacherLanSummary | null;
 }) {
   return (
@@ -357,11 +370,15 @@ export function RepartoMyView({
       >
         {(resolvedProcessId) => (
           <RepartoMyContent
+            assignments={assignments}
             locale={locale}
             meetingSession={meetingSession}
             processId={resolvedProcessId}
-            requirementAssignedHours={requirementAssignedHours}
-            requirementRequiredHours={requirementRequiredHours}
+            readiness={readiness}
+            remainingTargetHours={remainingTargetHours}
+            requirements={requirements}
+            selectedSlotId={selectedSlotId}
+            selectionBlocked={selectionBlocked}
             summary={summary}
           />
         )}
@@ -371,22 +388,35 @@ export function RepartoMyView({
 }
 
 function RepartoMyContent({
+  assignments,
   locale,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
+  readiness,
+  remainingTargetHours,
+  requirements,
+  selectedSlotId,
+  selectionBlocked,
   summary
 }: {
+  assignments?: AssignmentPublic[];
   locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
   summary?: TeacherLanSummary | null;
 }) {
   const summaryQuery = useRepartoTeacherLan(processId);
   const sessionsQuery = useRepartoMeetingSessions(processId);
+  // The positions a teacher may take, and who already holds one. Neither is a
+  // blocking query: without them the panel simply offers nothing and says so,
+  // which is the right answer for a client that cannot see the live slots.
+  const requirementsQuery = useRepartoHourRequirements(processId);
+  const assignmentsQuery = useRepartoAssignments(processId);
   const activeSummary = summary ?? summaryQuery.data ?? null;
   const activeSession = meetingSession ?? latestMeetingSession(sessionsQuery.data);
   const hasProcess = Boolean(resolveProcessId(processId));
@@ -408,11 +438,15 @@ function RepartoMyContent({
   return (
     <>
       <TeacherLanWorkspace
+        assignments={assignments ?? assignmentsQuery.data?.data ?? []}
         locale={locale}
         meetingSession={activeSession}
         processId={processId}
-        requirementAssignedHours={requirementAssignedHours}
-        requirementRequiredHours={requirementRequiredHours}
+        readiness={readiness}
+        remainingTargetHours={remainingTargetHours}
+        requirements={requirements ?? requirementsQuery.data?.data ?? []}
+        selectedSlotId={selectedSlotId}
+        selectionBlocked={selectionBlocked}
         summary={activeSummary}
       />
       <QueryState

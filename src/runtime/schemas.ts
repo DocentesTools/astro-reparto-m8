@@ -80,6 +80,19 @@ export const TeacherBalanceStateSchema = z.enum([
 ]);
 export type TeacherBalanceState = z.infer<typeof TeacherBalanceStateSchema>;
 
+/**
+ * The coarse, role-safe projection of the teaching-plan status (backend plan
+ * §20.25). Shared screens and teacher clients see this three-value axis instead
+ * of the full plan lifecycle, which would leak planning detail to viewers who
+ * must not act on it.
+ */
+export const PlanReadinessSchema = z.enum([
+  "ready",
+  "not_ready",
+  "recalculation_required"
+]);
+export type PlanReadiness = z.infer<typeof PlanReadinessSchema>;
+
 export const ValidationSeveritySchema = z.enum([
   "info",
   "warning",

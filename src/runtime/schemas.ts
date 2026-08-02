@@ -2099,3 +2099,73 @@ export const MainMaterializationResultSchema = z
 export type MainMaterializationResult = z.infer<
   typeof MainMaterializationResultSchema
 >;
+
+// ── Planning import/export exchange (backend plan §3.10, §7.8, §20.25) ───────
+//
+// The planning artifact is the intermediate stage's own export. It is a
+// different document from the `ExportArtifact` family above: an artifact row is
+// a stored, checksummed process document, while a planning artifact is computed
+// on demand and returned in the response body.
+
+/**
+ * Strictness of one planning artifact.
+ *
+ * `draft` and `provisional` are **never blocked** by an inexact, unbalanced or
+ * stale plan (plan §3.10) and carry the findings that make the imbalance
+ * visible; `final` retains blocking validation (plan §7.8).
+ */
+export const PlanningExportModeSchema = z.enum([
+  "draft",
+  "provisional",
+  "final"
+]);
+export type PlanningExportMode = z.infer<typeof PlanningExportModeSchema>;
+
+/** One live activity as a planning artifact reports it. */
+export const PlanningExportActivitySchema = z
+  .object({
+    id: uuidSchema,
+    subject_id: uuidSchema,
+    source: TeachingActivitySourceSchema,
+    allocation_category: SubjectAllocationCategorySchema,
+    activity_type: ActivityTypeSchema,
+    group_weekly_hours_per_group: HoursSchema,
+    teacher_weekly_hours_per_position: HoursSchema,
+    required_teacher_count: z.number().int().positive(),
+    linked_group_count: z.number().int().nonnegative(),
+    group_subject_ids: uniqueGroupSubjectIdsSchema,
+    group_load: HoursSchema,
+    teacher_load: HoursSchema
+  })
+  .strict();
+export type PlanningExportActivity = z.infer<
+  typeof PlanningExportActivitySchema
+>;
+
+/**
+ * A draft, provisional or final planning artifact (plan §7.8).
+ *
+ * `balance` and `validations` are always present, whatever the mode: the
+ * artifact "clearly reports both balance states", so a provisional document
+ * shows the imbalance instead of hiding it behind a refusal to export.
+ * `is_final_exportable` is the service's own answer to "would the final mode
+ * succeed?" and is read as reported — the UI never recomputes it from the
+ * finding list.
+ */
+export const PlanningExportArtifactSchema = z
+  .object({
+    mode: PlanningExportModeSchema,
+    generated_at: dateTimeSchema,
+    assignment_process_id: uuidSchema,
+    teaching_plan_id: uuidSchema,
+    plan_status: TeachingPlanStatusSchema,
+    is_exact: z.boolean(),
+    is_final_exportable: z.boolean(),
+    balance: PlanBalanceSchema,
+    validations: PlanValidationReportSchema,
+    activities: z.array(PlanningExportActivitySchema)
+  })
+  .strict();
+export type PlanningExportArtifact = z.infer<
+  typeof PlanningExportArtifactSchema
+>;

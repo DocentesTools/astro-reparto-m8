@@ -200,6 +200,21 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/exports",
     response: "ExportArtifactPublic"
   },
+  "planningExchange.exportDraft": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/exports/planning-draft",
+    response: "PlanningExportArtifact"
+  },
+  "planningExchange.exportProvisional": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/exports/planning-provisional",
+    response: "PlanningExportArtifact"
+  },
+  "planningExchange.exportFinal": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/exports/planning-final",
+    response: "PlanningExportArtifact"
+  },
   "history.restoreDraft": {
     method: "POST",
     path: "/assignment-processes/{process_id}/restore-draft",

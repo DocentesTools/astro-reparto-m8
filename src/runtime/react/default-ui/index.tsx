@@ -12,7 +12,10 @@ import {
 } from "../LanWorkspace.js";
 import { MeetingControlWorkspace } from "../MeetingWorkspace.js";
 import {
+  useCreateRepartoExportArtifact,
+  useCreateRepartoPlanningExport,
   useCreateRepartoVersion,
+  useRepartoAssignmentValidations,
   useRepartoAssignments,
   useRepartoDashboard,
   useRepartoExports,
@@ -23,6 +26,8 @@ import {
   useRepartoProcesses,
   useRepartoSummary,
   useRepartoTeacherLan,
+  useRepartoTeachingPlan,
+  useRepartoTeachingPlanValidations,
   useRepartoVersionComparison,
   useRepartoVersions
 } from "../hooks.js";
@@ -41,13 +46,17 @@ import type {
   AssignmentProcessStatus,
   AssignmentPublic,
   ExportArtifactPublic,
+  ExportArtifactType,
   HourRequirementPublic,
   MeetingSessionPublic,
   PlanReadiness,
+  PlanningExportArtifact,
+  PlanningExportMode,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
   TeacherLanSummary,
+  TeachingPlanPublic,
   VersionComparison
 } from "../../schemas.js";
 import {
@@ -56,6 +65,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
+import { repartoToast } from "../ui/toast-notification.js";
 import { RepartoLoadingState } from "./loading-state.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
 export {
@@ -748,35 +758,35 @@ function RepartoVersionsContent({
 }
 
 export function RepartoExportsView({
+  artifacts,
   config,
-  exports,
   locale,
+  plan,
   processId,
-  processStatus,
-  summary
+  processStatus
 }: {
+  artifacts?: ExportArtifactPublic[];
   config?: ViewConfig;
-  exports?: ExportArtifactPublic[];
   locale?: "en" | "fr" | "es";
+  plan?: TeachingPlanPublic | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
-  summary?: ProcessSummary;
 }) {
   return (
     <Shell config={config}>
       <WithSelectedProcess
-        bypass={Boolean(exports || summary)}
+        bypass={Boolean(artifacts || plan)}
         locale={locale}
         mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (
           <RepartoExportsContent
-            exports={exports}
+            artifacts={artifacts}
             locale={locale}
+            plan={plan}
             processId={resolvedProcessId}
             processStatus={processStatus}
-            summary={summary}
           />
         )}
       </WithSelectedProcess>
@@ -784,55 +794,130 @@ export function RepartoExportsView({
   );
 }
 
+/**
+ * Wire the export center to the four reads and two writes it needs.
+ *
+ * The plan and the assignment findings are read here rather than derived from
+ * the dashboard's single blocking count: the two families gate different
+ * exports — planning findings decide the strict *planning* artifact, assignment
+ * findings and feasibility decide the final *assignment* export — and a summed
+ * count cannot tell them apart.
+ */
 function RepartoExportsContent({
-  exports,
+  artifacts,
   locale,
+  plan,
   processId,
-  processStatus,
-  summary
+  processStatus
 }: {
-  exports?: ExportArtifactPublic[];
+  artifacts?: ExportArtifactPublic[];
   locale?: RepartoLocale;
+  plan?: TeachingPlanPublic | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
-  summary?: ProcessSummary;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const exportsQuery = useRepartoExports(processId);
-  const summaryQuery = useRepartoSummary(processId);
+  const planQuery = useRepartoTeachingPlan(processId);
+  const planValidationsQuery = useRepartoTeachingPlanValidations(processId);
+  const assignmentValidationsQuery = useRepartoAssignmentValidations(processId);
+  const processQuery = useRepartoProcess(processId);
+  const planningExport = useCreateRepartoPlanningExport();
+  const documentExport = useCreateRepartoExportArtifact();
+  const [planningArtifact, setPlanningArtifact] =
+    useState<PlanningExportArtifact | null>(null);
+  const [pendingPlanningMode, setPendingPlanningMode] =
+    useState<PlanningExportMode | null>(null);
+  const [pendingDocumentType, setPendingDocumentType] =
+    useState<ExportArtifactType | null>(null);
+  const [finalConfirming, setFinalConfirming] = useState(false);
   const hasProcess = Boolean(resolveProcessId(processId));
-  const isLoading =
-    ((exportsQuery.isLoading && !exports) ||
-      (summaryQuery.isLoading && !summary)) &&
-    hasProcess;
-  if (isLoading || exportsQuery.isError || summaryQuery.isError) {
+  const isLoading = exportsQuery.isLoading && !artifacts && hasProcess;
+  if (isLoading || exportsQuery.isError) {
     return (
       <QueryState
-        error={exportsQuery.error ?? summaryQuery.error}
-        isError={exportsQuery.isError || summaryQuery.isError}
+        error={exportsQuery.error}
+        isError={exportsQuery.isError}
         isLoading={isLoading}
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        label={dict.nav.item.exports}
         locale={locale}
       />
     );
   }
+
+  function runPlanningExport(mode: PlanningExportMode) {
+    if (!processId || pendingPlanningMode !== null) return;
+    setPendingPlanningMode(mode);
+    planningExport.mutate(
+      { processId, mode },
+      {
+        onSuccess: (artifact) => setPlanningArtifact(artifact),
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.planning.error,
+            error instanceof Error ? error.message : undefined
+          ),
+        onSettled: () => setPendingPlanningMode(null)
+      }
+    );
+  }
+
+  function runDocumentExport(exportType: ExportArtifactType) {
+    if (!processId || pendingDocumentType !== null) return;
+    setPendingDocumentType(exportType);
+    documentExport.mutate(
+      {
+        processId,
+        body: { export_type: exportType, format: exportType === "backup" ? "json" : "pdf" }
+      },
+      {
+        onSuccess: () => {
+          setFinalConfirming(false);
+          repartoToast.success(
+            exportType === "final"
+              ? dict.view.exports.final.success
+              : formatRepartoMessage(dict.view.exports.documents.success, {
+                  document: dict.view.exports.type[exportType]
+                })
+          );
+        },
+        onError: (error) =>
+          repartoToast.error(
+            exportType === "final"
+              ? dict.view.exports.final.error
+              : dict.view.exports.documents.error,
+            error instanceof Error ? error.message : undefined
+          ),
+        onSettled: () => setPendingDocumentType(null)
+      }
+    );
+  }
+
   return (
     <>
       <ExportCenterView
-        exports={exports ?? exportsQuery.data?.data ?? []}
+        artifacts={artifacts ?? exportsQuery.data?.data ?? []}
+        assignmentValidations={assignmentValidationsQuery.data ?? null}
+        finalConfirming={finalConfirming}
         locale={locale}
+        onCancelFinalExport={() => setFinalConfirming(false)}
+        onCreateDocumentExport={runDocumentExport}
+        onCreateFinalExport={() => runDocumentExport("final")}
+        onCreatePlanningExport={runPlanningExport}
+        onReviewFinalExport={() => setFinalConfirming(true)}
+        pendingDocumentType={pendingDocumentType}
+        pendingPlanningMode={pendingPlanningMode}
+        plan={plan ?? planQuery.data ?? null}
+        planValidations={planValidationsQuery.data ?? null}
+        planningArtifact={planningArtifact}
         processId={processId}
-        processStatus={processStatus}
-        summary={summary ?? summaryQuery.data}
+        processStatus={processStatus ?? processQuery.data?.status}
       />
       <QueryState
-        error={exportsQuery.error ?? summaryQuery.error}
-        isError={exportsQuery.isError || summaryQuery.isError}
-        isLoading={
-          ((exportsQuery.isLoading && !exports) ||
-            (summaryQuery.isLoading && !summary)) &&
-          hasProcess
-        }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        error={exportsQuery.error}
+        isError={exportsQuery.isError}
+        isLoading={exportsQuery.isLoading && !artifacts && hasProcess}
+        label={dict.nav.item.exports}
         locale={locale}
       />
     </>

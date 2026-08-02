@@ -89,6 +89,29 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/dashboard",
       response: "ProcessDashboard"
     });
+    // Draft and provisional planning artifacts are their own operations, not a
+    // mode parameter on one: only the final mode may be refused (plan §7.8).
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["planningExchange.exportDraft"]
+    ).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/exports/planning-draft",
+      response: "PlanningExportArtifact"
+    });
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["planningExchange.exportProvisional"]
+    ).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/exports/planning-provisional",
+      response: "PlanningExportArtifact"
+    });
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["planningExchange.exportFinal"]
+    ).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/exports/planning-final",
+      response: "PlanningExportArtifact"
+    });
     expect(REPARTO_CONTRACT_OPERATIONS["history.restoreDraft"]).toEqual({
       method: "POST",
       path: "/assignment-processes/{process_id}/restore-draft",
@@ -191,7 +214,7 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(61);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(64);
   });
 });
 

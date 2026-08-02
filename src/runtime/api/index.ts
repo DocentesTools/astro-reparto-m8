@@ -3,6 +3,7 @@ export { assignmentProcesses } from "./assignmentProcesses.js";
 export { assignments } from "./assignments.js";
 export { history } from "./history.js";
 export { meetingSessions } from "./meetingSessions.js";
+export { planningExchange, planningExportRequest } from "./planningExchange.js";
 export { selectionTurns } from "./selectionTurns.js";
 export { schools } from "./schools.js";
 export { academicYears } from "./academicYears.js";

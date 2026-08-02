@@ -15,6 +15,8 @@ export {
   useCreateRepartoAllocationRevision,
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
+  useCreateRepartoExportArtifact,
+  useCreateRepartoPlanningExport,
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
   useCreateRepartoVersion,

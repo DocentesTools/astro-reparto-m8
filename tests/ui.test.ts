@@ -17,12 +17,14 @@ import {
 } from "../src/runtime/errors.js";
 import type {
   AssignmentPublic,
+  AssignmentValidationReport,
   CurrentTurnSummary,
   ExportArtifactPublic,
   HourRequirementPublic,
   MeetingSessionPublic,
-  ProcessSummary,
+  PlanValidationReport,
   ProcessVersionPublic,
+  TeachingPlanPublic,
   VersionComparison
 } from "../src/runtime/schemas.js";
 
@@ -346,18 +348,6 @@ describe("LAN UI state", () => {
 });
 
 describe("history UI state", () => {
-  const processSummary: ProcessSummary = {
-    process_id: processId,
-    generated_at: now,
-    readiness: "ready",
-    plan_status: "requirements_generated",
-    plan_balance: null,
-    total_slots: 4,
-    assigned_slots: 1,
-    available_slots: 3,
-    current_turn: null,
-    blocking_validation_count: 0
-  };
   const backup: ExportArtifactPublic = {
     id: "77777777-7777-4777-8777-777777777777",
     assignment_process_id: processId,
@@ -383,22 +373,140 @@ describe("history UI state", () => {
     updated_at: now
   } satisfies ProcessVersionPublic;
 
-  it("builds export-center state", () => {
-    expect(buildExportCenterState(processSummary, [])).toMatchObject({
-      finalBlocked: false,
-      latestBackupId: null,
-      restoreDraftEnabled: false
+  const plan: TeachingPlanPublic = {
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab",
+    assignment_process_id: processId,
+    allocation_revision_id: null,
+    status: "requirements_generated",
+    current_generation_number: 1,
+    locked_at: now,
+    locked_by_user_id: "88888888-8888-4888-8888-888888888888",
+    requirements_generated_at: now,
+    stale_reason: null,
+    feasibility_status: "feasible",
+    feasibility_generation: 1,
+    feasibility_checked_at: now,
+    feasibility_input_fingerprint: "fingerprint",
+    feasibility_solver_version: "solver-v1",
+    feasibility_diagnostics_ref: null,
+    created_at: now,
+    updated_at: now
+  };
+  const planReport: PlanValidationReport = {
+    teaching_plan_id: plan.id,
+    assignment_process_id: processId,
+    is_assignment_ready: true,
+    blocking_count: 0,
+    warning_count: 0,
+    messages: []
+  };
+  const assignmentReport: AssignmentValidationReport = {
+    assignment_process_id: processId,
+    is_final_ready: true,
+    blocking_count: 0,
+    warning_count: 0,
+    messages: []
+  };
+
+  it("keeps draft and provisional planning exports open on an inexact plan", () => {
+    // §3.10: a draft or provisional artifact exists to *show* an imbalance, so
+    // blocking findings may not withhold it. Only the final mode is strict.
+    const state = buildExportCenterState({
+      plan: { ...plan, status: "unbalanced", feasibility_status: "not_evaluated" },
+      planValidations: { ...planReport, is_assignment_ready: false, blocking_count: 2 },
+      assignmentValidations: assignmentReport
     });
+    expect(state.planningExports).toEqual([
+      { mode: "draft", blocked: false, reason: null, printsFeasibility: true },
+      { mode: "provisional", blocked: false, reason: null, printsFeasibility: true },
+      {
+        mode: "final",
+        blocked: true,
+        reason: "blocking_validations",
+        printsFeasibility: false
+      }
+    ]);
+    // §20.25: a provisional document prints the status; it must be readable
+    // from the state rather than re-derived from the plan by every caller.
+    expect(state.feasibilityStatus).toBe("not_evaluated");
+  });
+
+  it("reports a missing plan as its own reason, on every planning mode", () => {
+    const state = buildExportCenterState();
+    expect(state.planningExports.map((offer) => offer.reason)).toEqual([
+      "plan_missing",
+      "plan_missing",
+      "plan_missing"
+    ]);
+    // No plan is not "not evaluated": there is nothing to evaluate yet.
+    expect(state.feasibilityStatus).toBeNull();
+    expect(state.planStatus).toBeNull();
+  });
+
+  it("gates the final assignment export on a complete reparto and feasibility", () => {
     expect(
-      buildExportCenterState(
-        { ...processSummary, blocking_validation_count: 1 },
-        [backup]
-      )
-    ).toMatchObject({
-      finalBlocked: true,
-      latestBackupId: backup.id,
-      restoreDraftEnabled: true
+      buildExportCenterState({
+        plan,
+        planValidations: planReport,
+        assignmentValidations: assignmentReport
+      }).finalExport
+    ).toEqual({
+      allowed: true,
+      reasons: [],
+      archivesProcess: true,
+      blockingCount: 0
     });
+    // Every refusal is listed, not only the first: a head who clears the
+    // findings must already know feasibility is the next gate (§20.25).
+    expect(
+      buildExportCenterState({
+        plan: { ...plan, feasibility_status: "unknown" },
+        assignmentValidations: {
+          ...assignmentReport,
+          is_final_ready: false,
+          blocking_count: 3
+        }
+      }).finalExport
+    ).toMatchObject({
+      allowed: false,
+      reasons: ["assignment_blocking", "feasibility_not_confirmed"],
+      blockingCount: 3
+    });
+    // A plan that never generated slots cannot close, whatever the findings say.
+    expect(
+      buildExportCenterState({
+        plan: { ...plan, status: "balanced" },
+        assignmentValidations: assignmentReport
+      }).finalExport.reasons
+    ).toEqual(["requirements_not_generated"]);
+    // Fail closed: an unread report is not an empty one.
+    expect(buildExportCenterState({ plan }).finalExport.reasons).toEqual([
+      "findings_unavailable"
+    ]);
+  });
+
+  it("offers the stored documents unconditionally and counts the backups", () => {
+    const state = buildExportCenterState({
+      plan,
+      assignmentValidations: {
+        ...assignmentReport,
+        is_final_ready: false,
+        blocking_count: 1
+      },
+      artifacts: [backup, { ...backup, id: "77777777-7777-4777-8777-777777777778" }]
+    });
+    // `final` is the strict export above, never one button in a document row.
+    expect(state.documentExportTypes).toEqual([
+      "internal_draft",
+      "school_leadership",
+      "teacher_summary",
+      "backup"
+    ]);
+    expect(state.backupCount).toBe(2);
+    expect(state.latestBackupId).toBe("77777777-7777-4777-8777-777777777778");
+    expect(
+      buildExportCenterState({ artifacts: [{ ...backup, format: "pdf" }] })
+    ).toMatchObject({ backupCount: 0, latestBackupId: null });
   });
 
   const comparison: VersionComparison = {

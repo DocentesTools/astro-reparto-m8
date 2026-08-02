@@ -169,7 +169,92 @@ export const en = {
         processParticipants: "Process participants"
       }
     },
-    exports: { title: "Export center", finalBlocked: "Final blocked", finalReady: "Final ready", closeout: "Closeout", finalExport: "Final export", leadershipWorkflow: "Leadership workflow", markReturned: "Mark returned", startRevision: "Start revision", reopenFinal: "Reopen final", type: { internal_draft: "Internal draft", school_leadership: "School leadership", final: "Final", teacher_summary: "Teacher summary", backup: "Backup" } },
+    exports: {
+      title: "Export center",
+      closeout: "Closeout",
+      leadershipWorkflow: "Leadership workflow",
+      markReturned: "Mark returned",
+      startRevision: "Start revision",
+      reopenFinal: "Reopen final",
+      type: {
+        internal_draft: "Internal draft",
+        school_leadership: "School leadership",
+        final: "Final",
+        teacher_summary: "Teacher summary",
+        backup: "Backup"
+      },
+      documents: {
+        title: "Process documents",
+        description: "Stored copies of the current process state.",
+        action: "Export {document}",
+        empty: "No document has been exported yet.",
+        item: "{document} · {format}",
+        success: "{document} exported.",
+        error: "The export failed."
+      },
+      planning: {
+        title: "Planning exports",
+        description:
+          "The teaching plan as a document. A draft or provisional copy is never withheld because the plan is inexact.",
+        mode: {
+          draft: "Planning draft",
+          provisional: "Provisional plan",
+          final: "Final plan"
+        },
+        modeDescription: {
+          draft: "Working copy for the department.",
+          provisional: "Shareable copy that says it is not validated.",
+          final: "Strict copy, refused while a blocking finding stands."
+        },
+        action: "Export",
+        neverBlocked: "Available whatever the balances say.",
+        blocked: {
+          plan_missing: "Planning has not started for this process.",
+          blocking_validations:
+            "Resolve every blocking finding before exporting the final plan."
+        },
+        feasibilityLabel: "Assignment feasibility: {status}",
+        feasibility: {
+          not_evaluated: "NOT EVALUATED",
+          feasible: "FEASIBLE",
+          infeasible: "INFEASIBLE",
+          unknown: "UNKNOWN"
+        },
+        feasibilityMissing: "Assignment feasibility: no plan",
+        notValidated: "A provisional document is not a validated plan.",
+        resultTitle: "Planning artifact",
+        resultSummary: "{mode} artifact generated on {generated}.",
+        activities: "{count} activities",
+        exact: "Both balances are exact.",
+        inexact:
+          "The plan is not exact. The artifact carries both balances and every finding.",
+        findings: "{blocking} blocking · {warning} warning",
+        error: "The planning export failed."
+      },
+      final: {
+        title: "Final assignment export",
+        description:
+          "Needs a complete reparto and confirmed feasibility, and archives the process.",
+        action: "Export final",
+        ready: "Ready to export.",
+        blocked: {
+          plan_missing: "Planning has not started for this process.",
+          requirements_not_generated:
+            "No requirement slot has been generated yet.",
+          findings_unavailable: "The assignment findings could not be read.",
+          assignment_blocking:
+            "The reparto is incomplete: {count} blocking finding(s) remain.",
+          feasibility_not_confirmed:
+            "Assignment feasibility is not confirmed on the current state."
+        },
+        confirmTitle: "Export and archive?",
+        confirmBody:
+          "The final export archives the process. Reopening it is the only way back.",
+        confirmAction: "Export and archive",
+        success: "Final export created.",
+        error: "The final export failed."
+      }
+    },
     choice: {
       title: "Choose a position",
       confirmation: "Confirmation",

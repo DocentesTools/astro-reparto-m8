@@ -168,7 +168,93 @@ export const fr: RepartoDictionary = {
         processParticipants: "Participants au processus"
       }
     },
-    exports: { title: "Centre d'export", finalBlocked: "Finalisation bloquée", finalReady: "Finalisation prête", closeout: "Clôture", finalExport: "Export final", leadershipWorkflow: "Circuit de direction", markReturned: "Marquer comme renvoyé", startRevision: "Démarrer la révision", reopenFinal: "Rouvrir la version finale", type: { internal_draft: "Brouillon interne", school_leadership: "Direction de l'établissement", final: "Final", teacher_summary: "Récapitulatif enseignant", backup: "Sauvegarde" } },
+    exports: {
+      title: "Centre d'export",
+      closeout: "Clôture",
+      leadershipWorkflow: "Circuit de direction",
+      markReturned: "Marquer comme renvoyé",
+      startRevision: "Démarrer la révision",
+      reopenFinal: "Rouvrir la version finale",
+      type: {
+        internal_draft: "Brouillon interne",
+        school_leadership: "Direction de l'établissement",
+        final: "Final",
+        teacher_summary: "Récapitulatif enseignant",
+        backup: "Sauvegarde"
+      },
+      documents: {
+        title: "Documents du processus",
+        description: "Copies enregistrées de l'état actuel du processus.",
+        action: "Exporter : {document}",
+        empty: "Aucun document n'a encore été exporté.",
+        item: "{document} · {format}",
+        success: "Document exporté : {document}.",
+        error: "L'export a échoué."
+      },
+      planning: {
+        title: "Exports de planification",
+        description:
+          "Le plan d'enseignement sous forme de document. Une copie brouillon ou provisoire n'est jamais refusée parce que le plan n'est pas exact.",
+        mode: {
+          draft: "Brouillon de plan",
+          provisional: "Plan provisoire",
+          final: "Plan final"
+        },
+        modeDescription: {
+          draft: "Copie de travail pour le département.",
+          provisional: "Copie partageable qui indique qu'elle n'est pas validée.",
+          final: "Copie stricte, refusée tant qu'un constat bloquant subsiste."
+        },
+        action: "Exporter",
+        neverBlocked: "Disponible quel que soit l'état des équilibres.",
+        blocked: {
+          plan_missing: "La planification n'a pas commencé pour ce processus.",
+          blocking_validations:
+            "Résolvez chaque constat bloquant avant d'exporter le plan final."
+        },
+        feasibilityLabel: "Faisabilité de la répartition : {status}",
+        feasibility: {
+          not_evaluated: "NON ÉVALUÉE",
+          feasible: "FAISABLE",
+          infeasible: "INFAISABLE",
+          unknown: "INCONNUE"
+        },
+        feasibilityMissing: "Faisabilité de la répartition : aucun plan",
+        notValidated: "Un document provisoire n'est pas un plan validé.",
+        resultTitle: "Document de planification",
+        resultSummary: "Document {mode} généré le {generated}.",
+        activities: "{count} activités",
+        exact: "Les deux équilibres sont exacts.",
+        inexact:
+          "Le plan n'est pas exact. Le document porte les deux équilibres et tous les constats.",
+        findings: "{blocking} bloquants · {warning} avertissements",
+        error: "L'export de planification a échoué."
+      },
+      final: {
+        title: "Export final de la répartition",
+        description:
+          "Exige une répartition complète et une faisabilité confirmée ; il archive le processus.",
+        action: "Exporter la version finale",
+        ready: "Prêt à être exporté.",
+        blocked: {
+          plan_missing: "La planification n'a pas commencé pour ce processus.",
+          requirements_not_generated:
+            "Aucun créneau de besoin n'a encore été généré.",
+          findings_unavailable:
+            "Les constats de répartition n'ont pas pu être lus.",
+          assignment_blocking:
+            "La répartition est incomplète : {count} constat(s) bloquant(s) subsistent.",
+          feasibility_not_confirmed:
+            "La faisabilité de la répartition n'est pas confirmée sur l'état actuel."
+        },
+        confirmTitle: "Exporter et archiver ?",
+        confirmBody:
+          "L'export final archive le processus. Seule une réouverture permet de revenir en arrière.",
+        confirmAction: "Exporter et archiver",
+        success: "Export final créé.",
+        error: "L'export final a échoué."
+      }
+    },
     choice: {
       title: "Choisir un poste",
       confirmation: "Confirmation",

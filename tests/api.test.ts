@@ -11,6 +11,8 @@ import {
   history,
   hourRequirements,
   meetingSessions,
+  planningExchange,
+  planningExportRequest,
   processTeachers,
   schools,
   selectionTurns,
@@ -512,6 +514,99 @@ describe("history API", () => {
     await expect(
       history.restoreDraft(processId, { content: artifactBody.content })
     ).resolves.toMatchObject({ id: processId });
+  });
+
+  it("produces a planning artifact in each of the three modes", async () => {
+    const activityId = "18181818-1818-4181-8181-181818181818";
+    const subjectId = "19191919-1919-4191-8191-191919191919";
+    const groupSubjectId = "20202020-2020-4020-8020-202020202020";
+    const artifactBody = (mode: string) => ({
+      mode,
+      generated_at: now,
+      assignment_process_id: processId,
+      teaching_plan_id: planBalanceBody.teaching_plan_id,
+      plan_status: "unbalanced",
+      is_exact: false,
+      is_final_exportable: false,
+      balance: planBalanceBody,
+      validations: {
+        teaching_plan_id: planBalanceBody.teaching_plan_id,
+        assignment_process_id: processId,
+        is_assignment_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: []
+      },
+      activities: [
+        {
+          id: activityId,
+          subject_id: subjectId,
+          source: "secondary_manual",
+          allocation_category: "secondary",
+          activity_type: "tutoring",
+          group_weekly_hours_per_group: "2.00",
+          teacher_weekly_hours_per_position: "2.00",
+          required_teacher_count: 1,
+          linked_group_count: 1,
+          group_subject_ids: [groupSubjectId],
+          group_load: "2.00",
+          teacher_load: "2.00"
+        }
+      ]
+    });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("draft")));
+    await expect(planningExchange.exportDraft(processId)).resolves.toMatchObject({
+      mode: "draft",
+      is_exact: false
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain("/exports/planning-draft");
+    fetchMock.mockResolvedValueOnce(response(artifactBody("provisional")));
+    await expect(
+      planningExchange.exportProvisional(processId)
+    ).resolves.toMatchObject({ mode: "provisional" });
+    expect(fetchMock.mock.calls[1][0]).toContain("/exports/planning-provisional");
+    fetchMock.mockResolvedValueOnce(response(artifactBody("final")));
+    await expect(planningExchange.exportFinal(processId)).resolves.toMatchObject({
+      mode: "final"
+    });
+    expect(fetchMock.mock.calls[2][0]).toContain("/exports/planning-final");
+    // A draft artifact is produced for an unbalanced plan and carries the
+    // imbalance in both balances plus the finding count (plan §3.10, §7.8).
+    fetchMock.mockResolvedValueOnce(response(artifactBody("draft")));
+    await expect(
+      planningExportRequest("draft")(processId)
+    ).resolves.toMatchObject({ mode: "draft" });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("provisional")));
+    await expect(
+      planningExportRequest("provisional")(processId)
+    ).resolves.toMatchObject({ mode: "provisional" });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("final")));
+    await expect(
+      planningExportRequest("final")(processId)
+    ).resolves.toMatchObject({ mode: "final" });
+    // Every hour in a planning artifact reaches the UI as a canonical
+    // two-place string, whatever the wire carried (plan §3.9).
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...artifactBody("draft"),
+        activities: [
+          { ...artifactBody("draft").activities[0], group_load: 2 }
+        ]
+      })
+    );
+    await expect(planningExchange.exportDraft(processId)).resolves.toMatchObject(
+      { activities: [{ group_load: "2.00" }] }
+    );
+    // An activity with no teacher position is not a position to fill.
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...artifactBody("draft"),
+        activities: [
+          { ...artifactBody("draft").activities[0], required_teacher_count: 0 }
+        ]
+      })
+    );
+    await expect(planningExchange.exportDraft(processId)).rejects.toThrow();
   });
 
   it("validates export calls", () => {

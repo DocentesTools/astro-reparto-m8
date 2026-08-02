@@ -168,7 +168,92 @@ export const es: RepartoDictionary = {
         processParticipants: "Participantes del proceso"
       }
     },
-    exports: { title: "Centro de exportación", finalBlocked: "Cierre bloqueado", finalReady: "Cierre listo", closeout: "Cierre", finalExport: "Exportación final", leadershipWorkflow: "Flujo de dirección", markReturned: "Marcar como devuelto", startRevision: "Iniciar revisión", reopenFinal: "Reabrir versión final", type: { internal_draft: "Borrador interno", school_leadership: "Dirección del centro", final: "Final", teacher_summary: "Resumen docente", backup: "Copia de seguridad" } },
+    exports: {
+      title: "Centro de exportación",
+      closeout: "Cierre",
+      leadershipWorkflow: "Flujo de dirección",
+      markReturned: "Marcar como devuelto",
+      startRevision: "Iniciar revisión",
+      reopenFinal: "Reabrir versión final",
+      type: {
+        internal_draft: "Borrador interno",
+        school_leadership: "Dirección del centro",
+        final: "Final",
+        teacher_summary: "Resumen docente",
+        backup: "Copia de seguridad"
+      },
+      documents: {
+        title: "Documentos del proceso",
+        description: "Copias guardadas del estado actual del proceso.",
+        action: "Exportar: {document}",
+        empty: "Todavía no se ha exportado ningún documento.",
+        item: "{document} · {format}",
+        success: "Documento exportado: {document}.",
+        error: "La exportación ha fallado."
+      },
+      planning: {
+        title: "Exportaciones de planificación",
+        description:
+          "El plan docente como documento. Una copia en borrador o provisional nunca se retiene porque el plan no sea exacto.",
+        mode: {
+          draft: "Borrador del plan",
+          provisional: "Plan provisional",
+          final: "Plan final"
+        },
+        modeDescription: {
+          draft: "Copia de trabajo para el departamento.",
+          provisional: "Copia compartible que indica que no está validada.",
+          final: "Copia estricta, rechazada mientras haya un aviso bloqueante."
+        },
+        action: "Exportar",
+        neverBlocked: "Disponible sea cual sea el estado de los equilibrios.",
+        blocked: {
+          plan_missing: "La planificación no ha empezado en este proceso.",
+          blocking_validations:
+            "Resuelve cada aviso bloqueante antes de exportar el plan final."
+        },
+        feasibilityLabel: "Viabilidad del reparto: {status}",
+        feasibility: {
+          not_evaluated: "SIN EVALUAR",
+          feasible: "VIABLE",
+          infeasible: "INVIABLE",
+          unknown: "DESCONOCIDA"
+        },
+        feasibilityMissing: "Viabilidad del reparto: sin plan",
+        notValidated: "Un documento provisional no es un plan validado.",
+        resultTitle: "Documento de planificación",
+        resultSummary: "Documento {mode} generado el {generated}.",
+        activities: "{count} actividades",
+        exact: "Ambos equilibrios son exactos.",
+        inexact:
+          "El plan no es exacto. El documento incluye ambos equilibrios y todos los avisos.",
+        findings: "{blocking} bloqueantes · {warning} advertencias",
+        error: "La exportación de planificación ha fallado."
+      },
+      final: {
+        title: "Exportación final del reparto",
+        description:
+          "Requiere un reparto completo y viabilidad confirmada, y archiva el proceso.",
+        action: "Exportar versión final",
+        ready: "Listo para exportar.",
+        blocked: {
+          plan_missing: "La planificación no ha empezado en este proceso.",
+          requirements_not_generated:
+            "Todavía no se ha generado ningún puesto horario.",
+          findings_unavailable: "No se han podido leer los avisos del reparto.",
+          assignment_blocking:
+            "El reparto está incompleto: quedan {count} aviso(s) bloqueante(s).",
+          feasibility_not_confirmed:
+            "La viabilidad del reparto no está confirmada sobre el estado actual."
+        },
+        confirmTitle: "¿Exportar y archivar?",
+        confirmBody:
+          "La exportación final archiva el proceso. Solo se puede deshacer reabriéndolo.",
+        confirmAction: "Exportar y archivar",
+        success: "Exportación final creada.",
+        error: "La exportación final ha fallado."
+      }
+    },
     choice: {
       title: "Elegir un puesto",
       confirmation: "Confirmación",

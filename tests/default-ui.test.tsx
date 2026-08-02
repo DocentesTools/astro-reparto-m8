@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.js";
 import {
+  ExportCenterView,
   ProcessListView,
   VersionsView
 } from "../src/runtime/react/DepartmentHeadWorkspace.js";
@@ -27,6 +28,7 @@ import type {
   ProcessSummary,
   ProcessVersionPublic,
   TeacherLanSummary,
+  TeachingPlanPublic,
   VersionComparison
 } from "../src/runtime/schemas.js";
 
@@ -236,6 +238,26 @@ const comparison: VersionComparison = {
   teacher_count_delta: -1,
   activity_count_delta: 0,
   requirement_count_delta: 2
+};
+
+const exportPlan: TeachingPlanPublic = {
+  id: "aaaa2222-aaaa-4aaa-8aaa-aaaaaaaa2222",
+  assignment_process_id: processSummary.process_id,
+  allocation_revision_id: null,
+  status: "unbalanced",
+  current_generation_number: 0,
+  locked_at: null,
+  locked_by_user_id: null,
+  requirements_generated_at: null,
+  stale_reason: null,
+  feasibility_status: "not_evaluated",
+  feasibility_generation: null,
+  feasibility_checked_at: null,
+  feasibility_input_fingerprint: null,
+  feasibility_solver_version: null,
+  feasibility_diagnostics_ref: null,
+  created_at: "2026-07-04T10:00:00Z",
+  updated_at: "2026-07-04T10:00:00Z"
 };
 
 const backupExport: ExportArtifactPublic = {
@@ -741,35 +763,112 @@ describe("default reparto UI", () => {
     );
     expect(sameVersion).toContain('data-disabled-reason="same_version"');
 
+    // The export center is three families, not one menu: planning artifacts,
+    // stored documents, and the strict final export that archives the process.
     const exports = renderToStaticMarkup(
-      <RepartoExportCenterView
-        exports={[backupExport]}
+      <ExportCenterView
+        artifacts={[backupExport]}
+        assignmentValidations={{
+          assignment_process_id: processSummary.process_id,
+          is_final_ready: false,
+          blocking_count: 2,
+          warning_count: 0,
+          messages: []
+        }}
+        plan={exportPlan}
+        planValidations={{
+          teaching_plan_id: exportPlan.id,
+          assignment_process_id: processSummary.process_id,
+          is_assignment_ready: false,
+          blocking_count: 2,
+          warning_count: 0,
+          messages: []
+        }}
         processId={processSummary.process_id}
         processStatus="final"
-        summary={{ ...processSummary, blocking_validation_count: 1 }}
       />
     );
     expect(exports).toContain('data-reparto-route="exports"');
+    expect(exports).toContain('data-reparto-panel="planning-exports"');
     expect(exports).toContain('data-reparto-panel="export-center"');
+    expect(exports).toContain('data-reparto-panel="final-close"');
     expect(exports).toContain('data-reparto-action="create-final-export"');
-    expect(exports).toContain('data-reparto-action="restore-draft"');
     expect(exports).toContain('data-reparto-action="reopen-final"');
     expect(exports).toContain('data-reparto-active="true"');
+    // §3.10: the open modes stay open under a blocking finding; only the final
+    // planning artifact is refused, and with a stable reason.
+    expect(exports).toContain('data-planning-export-mode="draft"');
+    expect(exports).toContain('data-planning-export-blocked="false"');
+    expect(exports).toContain('data-disabled-reason="blocking_validations"');
+    // §20.25: the feasibility status is on the face of the document offer.
+    expect(exports).toContain('data-feasibility-status="not_evaluated"');
+    expect(exports).toContain("NOT EVALUATED");
+    // Every refusal of the final export is listed, not only the first.
+    expect(exports).toContain('data-final-export-allowed="false"');
+    expect(exports).toContain('data-final-blocked-reason="assignment_blocking"');
+    expect(exports).toContain(
+      'data-final-blocked-reason="feasibility_not_confirmed"'
+    );
+    expect(exports).toContain('data-export-artifact-type="backup"');
+    // Restore keeps its action and its backup id; its own states are the next
+    // bullet's work.
+    expect(exports).toContain('data-reparto-action="restore-draft"');
+    expect(exports).toContain(
+      'data-reparto-backup-id="99999999-9999-4999-8999-999999999999"'
+    );
 
-    const defaultExports = renderToStaticMarkup(<RepartoExportCenterView exports={[]} />);
+    const defaultExports = renderToStaticMarkup(<ExportCenterView artifacts={[]} />);
     expect(defaultExports).toContain('data-reparto-workflow-action="none"');
-    expect(defaultExports).toContain("Final ready");
+    // No plan at all: reported as itself, never as "not evaluated".
+    expect(defaultExports).toContain('data-feasibility-status="none"');
     expect(defaultExports).toContain('data-reparto-backup-id=""');
+    expect(defaultExports).toContain('data-final-blocked-reason="plan_missing"');
+
+    // The public alias still renders the container form of the same view.
+    expect(
+      renderToStaticMarkup(<RepartoExportCenterView artifacts={[]} plan={exportPlan} />)
+    ).toContain('data-reparto-panel="planning-exports"');
 
     const returned = renderToStaticMarkup(
-      <RepartoExportCenterView exports={[]} processStatus="sent_to_school_leadership" />
+      <ExportCenterView artifacts={[]} processStatus="sent_to_school_leadership" />
     );
     expect(returned).toContain('data-reparto-workflow-action="mark-returned"');
 
     const revision = renderToStaticMarkup(
-      <RepartoExportCenterView exports={[]} processStatus="returned_by_school_leadership" />
+      <ExportCenterView artifacts={[]} processStatus="returned_by_school_leadership" />
     );
     expect(revision).toContain('data-reparto-workflow-action="start-revision"');
+
+    // A produced artifact reports both balances and the finding counts, so a
+    // provisional document shows the imbalance rather than hiding it.
+    const withArtifact = renderToStaticMarkup(
+      <ExportCenterView
+        artifacts={[]}
+        plan={exportPlan}
+        planningArtifact={{
+          mode: "provisional",
+          generated_at: "2026-08-02T10:00:00Z",
+          assignment_process_id: processSummary.process_id,
+          teaching_plan_id: exportPlan.id,
+          plan_status: "unbalanced",
+          is_exact: false,
+          is_final_exportable: false,
+          balance: planBalance,
+          validations: {
+            teaching_plan_id: exportPlan.id,
+            assignment_process_id: processSummary.process_id,
+            is_assignment_ready: false,
+            blocking_count: 1,
+            warning_count: 2,
+            messages: []
+          },
+          activities: []
+        }}
+      />
+    );
+    expect(withArtifact).toContain('data-planning-artifact-mode="provisional"');
+    expect(withArtifact).toContain('data-plan-exact="false"');
+    expect(withArtifact).toContain("1 blocking · 2 warning");
   });
 
   it("exports Phase 3 island-root names for full and headless consumers", () => {
@@ -798,9 +897,9 @@ describe("default reparto UI", () => {
     expect(
       renderToStaticMarkup(
         <RepartoExportsView
-          exports={[backupExport]}
+          artifacts={[backupExport]}
+          plan={exportPlan}
           processId={processSummary.process_id}
-          summary={processSummary}
         />
       )
     ).toContain('data-export-artifact-type="backup"');

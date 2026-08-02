@@ -1,17 +1,85 @@
 import { hoursSign } from "../decimals.js";
 import type {
   AssignmentProcessStatus,
+  AssignmentValidationReport,
   ExportArtifactPublic,
-  ProcessSummary,
+  ExportArtifactType,
+  FeasibilityStatus,
+  PlanningExportMode,
+  PlanValidationReport,
   ProcessVersionPublic,
+  TeachingPlanPublic,
   VersionComparison
 } from "../schemas.js";
 
+/**
+ * Why one planning artifact cannot be produced right now, as a stable code.
+ *
+ * Only the `final` mode can carry one: plan §3.10 is explicit that a draft or a
+ * provisional artifact "must never be blocked only because the plan is
+ * inexact", so the two open modes have no blocked state to name at all.
+ */
+export type PlanningExportBlockedReason =
+  | "plan_missing"
+  | "blocking_validations";
+
+/**
+ * One planning-export offer as the export center renders it (plan §7.8).
+ *
+ * `printsFeasibility` marks the documents §20.25 requires to carry the
+ * feasibility status label: a draft or provisional document must say
+ * `NOT EVALUATED` / `INFEASIBLE` / `FEASIBLE` on its face rather than let a
+ * reader assume the plan was validated. The strict final artifact is produced
+ * only from a plan the service already accepted, so it makes no such claim.
+ */
+export type PlanningExportOffer = {
+  readonly mode: PlanningExportMode;
+  readonly blocked: boolean;
+  readonly reason: PlanningExportBlockedReason | null;
+  readonly printsFeasibility: boolean;
+};
+
+/**
+ * Why the strict final *assignment* export is refused, as a stable code.
+ *
+ * The order is the order a head fixes them in: there is no plan, then the plan
+ * has produced no slots, then the reparto is incomplete, then feasibility is
+ * not confirmed on the current state.
+ */
+export type FinalExportBlockedReason =
+  | "plan_missing"
+  | "requirements_not_generated"
+  | "findings_unavailable"
+  | "assignment_blocking"
+  | "feasibility_not_confirmed";
+
+export type FinalExportState = {
+  readonly allowed: boolean;
+  readonly reasons: readonly FinalExportBlockedReason[];
+  /** Producing it archives the process, so it needs its own confirmation. */
+  readonly archivesProcess: true;
+  readonly blockingCount: number | null;
+};
+
 export type ExportCenterState = {
-  finalBlocked: boolean;
-  availableExportTypes: string[];
-  latestBackupId: string | null;
-  restoreDraftEnabled: boolean;
+  /**
+   * The label a provisional document prints (§20.25); `null` while no plan
+   * exists, which is *not* the same as `not_evaluated` — there is nothing to
+   * evaluate yet.
+   */
+  readonly feasibilityStatus: FeasibilityStatus | null;
+  readonly planStatus: TeachingPlanPublic["status"] | null;
+  readonly planningExports: readonly PlanningExportOffer[];
+  /**
+   * Stored process documents that are never gated: an internal draft, a
+   * leadership copy, a participant summary and the backup. `final` is
+   * deliberately absent — it is the strict export below, not one option in a
+   * row of buttons.
+   */
+  readonly documentExportTypes: readonly ExportArtifactType[];
+  readonly finalExport: FinalExportState;
+  readonly latestBackupId: string | null;
+  readonly backupCount: number;
 };
 
 export type LeadershipWorkflowAction =
@@ -20,21 +88,130 @@ export type LeadershipWorkflowAction =
   | "reopen-final"
   | null;
 
+/** Plan statuses that mean requirement slots have been generated at least once. */
+const GENERATED_PLAN_STATUSES = new Set<TeachingPlanPublic["status"]>([
+  "requirements_generated",
+  "stale",
+  "reconciliation_required"
+]);
+
+/** Stored document types the export center offers unconditionally. */
+const DOCUMENT_EXPORT_TYPES: readonly ExportArtifactType[] = [
+  "internal_draft",
+  "school_leadership",
+  "teacher_summary",
+  "backup"
+];
+
+export type ExportCenterInput = {
+  /** The process's plan, or `null` while planning has not started. */
+  readonly plan?: TeachingPlanPublic | null;
+  /** Planning findings; gate the strict *planning* artifact only. */
+  readonly planValidations?: PlanValidationReport | null;
+  /** Assignment findings; gate the strict *assignment* export. */
+  readonly assignmentValidations?: AssignmentValidationReport | null;
+  readonly artifacts?: readonly ExportArtifactPublic[];
+};
+
+/**
+ * Split the export center into the three families plan §3.10/§20.25 separates.
+ *
+ * The rule the retired state broke: it derived one `finalBlocked` boolean from
+ * the dashboard's blocking count and then *removed* `final` from a list of
+ * otherwise equal export types, so a planning draft and a final closure looked
+ * like two entries in the same menu. They are not. A draft or provisional
+ * planning artifact is always available — an unbalanced plan is exactly what it
+ * exists to show — while the final assignment export sits behind a complete
+ * reparto *and* confirmed feasibility, and archives the process when it runs.
+ *
+ * Every refusal is a stable code, never a sentence: the caller localizes it and
+ * the tests assert on it.
+ */
 export function buildExportCenterState(
-  summary: ProcessSummary,
-  exports: ExportArtifactPublic[]
+  input: ExportCenterInput = {}
 ): ExportCenterState {
-  const latestBackup = [...exports]
-    .filter((item) => item.export_type === "backup" && item.format === "json")
-    .at(-1);
-  const finalBlocked = summary.blocking_validation_count > 0;
+  const plan = input.plan ?? null;
+  const planValidations = input.planValidations ?? null;
+  const assignmentValidations = input.assignmentValidations ?? null;
+  const artifacts = input.artifacts ?? [];
+  const backups = artifacts.filter(
+    (item) => item.export_type === "backup" && item.format === "json"
+  );
   return {
-    finalBlocked,
-    availableExportTypes: finalBlocked
-      ? ["internal_draft", "school_leadership", "teacher_summary", "backup"]
-      : ["internal_draft", "school_leadership", "final", "teacher_summary", "backup"],
-    latestBackupId: latestBackup?.id ?? null,
-    restoreDraftEnabled: latestBackup !== undefined
+    feasibilityStatus: plan?.feasibility_status ?? null,
+    planStatus: plan?.status ?? null,
+    planningExports: buildPlanningExportOffers(plan, planValidations),
+    documentExportTypes: DOCUMENT_EXPORT_TYPES,
+    finalExport: buildFinalExportState(plan, assignmentValidations),
+    latestBackupId: backups.at(-1)?.id ?? null,
+    backupCount: backups.length
+  };
+}
+
+function buildPlanningExportOffers(
+  plan: TeachingPlanPublic | null,
+  report: PlanValidationReport | null
+): readonly PlanningExportOffer[] {
+  // A missing plan is the one thing that stops even a draft: there is no plan
+  // to describe, which is not the same as a plan that fails its balances.
+  const planMissing = plan === null;
+  const openReason: PlanningExportBlockedReason | null = planMissing
+    ? "plan_missing"
+    : null;
+  const finalReason: PlanningExportBlockedReason | null = planMissing
+    ? "plan_missing"
+    : report !== null && report.blocking_count > 0
+      ? "blocking_validations"
+      : null;
+  return [
+    {
+      mode: "draft",
+      blocked: openReason !== null,
+      reason: openReason,
+      printsFeasibility: true
+    },
+    {
+      mode: "provisional",
+      blocked: openReason !== null,
+      reason: openReason,
+      printsFeasibility: true
+    },
+    {
+      mode: "final",
+      blocked: finalReason !== null,
+      reason: finalReason,
+      printsFeasibility: false
+    }
+  ];
+}
+
+function buildFinalExportState(
+  plan: TeachingPlanPublic | null,
+  report: AssignmentValidationReport | null
+): FinalExportState {
+  const reasons: FinalExportBlockedReason[] = [];
+  if (plan === null) {
+    reasons.push("plan_missing");
+  } else if (!GENERATED_PLAN_STATUSES.has(plan.status)) {
+    reasons.push("requirements_not_generated");
+  }
+  if (report === null) {
+    // Fail closed: an unread report is not an empty one.
+    reasons.push("findings_unavailable");
+  } else if (!report.is_final_ready) {
+    reasons.push("assignment_blocking");
+  }
+  // §20.25 puts the final export in the tier that needs a complete reparto *in
+  // addition to* confirmed feasibility, so a complete reparto whose feasibility
+  // was invalidated is still refused here.
+  if (plan !== null && plan.feasibility_status !== "feasible") {
+    reasons.push("feasibility_not_confirmed");
+  }
+  return {
+    allowed: reasons.length === 0,
+    reasons,
+    archivesProcess: true,
+    blockingCount: report?.blocking_count ?? null
   };
 }
 

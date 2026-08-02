@@ -1,15 +1,22 @@
 import type {
   AssignmentProcessPublic,
   AssignmentProcessStatus,
+  AssignmentValidationReport,
   CurrentTurnSummary,
   ExportArtifactPublic,
+  ExportArtifactType,
+  FeasibilityStatus,
   ParticipantBalance,
   PlanBalance,
   PlanReadiness,
   PlanValidationMessage,
+  PlanValidationReport,
+  PlanningExportArtifact,
+  PlanningExportMode,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
+  TeachingPlanPublic,
   TeachingPlanStatus,
   VersionComparison
 } from "../schemas.js";
@@ -20,6 +27,8 @@ import {
   nextLeadershipWorkflowAction,
   summarizeProcessDashboard,
   versionSectionLabelKey,
+  type ExportCenterState,
+  type PlanningExportBlockedReason,
   type VersionComparisonDelta,
   type VersionComparisonView
 } from "../ui/index.js";
@@ -27,6 +36,7 @@ import {
   formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
+  type RepartoDictionary,
   type RepartoLocale
 } from "../i18n/index.js";
 import {
@@ -52,26 +62,6 @@ import {
   repartoTurnSummaryClass,
   repartoTurnSummaryItemClass
 } from "./styles.js";
-
-/**
- * What a summary-driven view shows before the service has answered.
- *
- * Nothing here asserts progress: readiness is `not_ready`, there is no plan and
- * every count is zero. The placeholder must never let a head read "0 blocking
- * findings" as "nothing blocks" — it means "the service has not been asked".
- */
-const fallbackSummary: ProcessSummary = {
-  process_id: "00000000-0000-4000-8000-000000000001",
-  generated_at: "2026-07-05T00:00:00Z",
-  readiness: "not_ready",
-  plan_status: null,
-  plan_balance: null,
-  total_slots: 0,
-  assigned_slots: 0,
-  available_slots: 0,
-  current_turn: null,
-  blocking_validation_count: 0
-};
 
 /** Where the rendered comparison came from — two captures, or last year. */
 export type VersionComparisonSource = "versions" | "previous_year";
@@ -1124,21 +1114,54 @@ export function VersionsView({
   );
 }
 
+/**
+ * The export center, split into the three families plan §3.10/§20.25 keeps
+ * apart: planning artifacts (draft and provisional never withheld), stored
+ * process documents, and the strict final assignment export that archives the
+ * process. Presentational only — every mutation is the container's.
+ */
 export function ExportCenterView({
-  exports = [],
+  artifacts = [],
+  assignmentValidations = null,
+  finalConfirming = false,
   locale,
+  onCancelFinalExport,
+  onCreateDocumentExport,
+  onCreateFinalExport,
+  onCreatePlanningExport,
+  onReviewFinalExport,
+  pendingDocumentType = null,
+  pendingPlanningMode = null,
+  plan = null,
+  planValidations = null,
+  planningArtifact = null,
   processId,
-  processStatus = "draft",
-  summary = fallbackSummary
+  processStatus = "draft"
 }: {
-  exports?: ExportArtifactPublic[];
+  artifacts?: ExportArtifactPublic[];
+  assignmentValidations?: AssignmentValidationReport | null;
+  finalConfirming?: boolean;
   locale?: RepartoLocale;
+  onCancelFinalExport?: () => void;
+  onCreateDocumentExport?: (exportType: ExportArtifactType) => void;
+  onCreateFinalExport?: () => void;
+  onCreatePlanningExport?: (mode: PlanningExportMode) => void;
+  onReviewFinalExport?: () => void;
+  pendingDocumentType?: ExportArtifactType | null;
+  pendingPlanningMode?: PlanningExportMode | null;
+  plan?: TeachingPlanPublic | null;
+  planValidations?: PlanValidationReport | null;
+  planningArtifact?: PlanningExportArtifact | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
-  summary?: ProcessSummary;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const state = buildExportCenterState(summary, exports);
+  const state = buildExportCenterState({
+    plan,
+    planValidations,
+    assignmentValidations,
+    artifacts
+  });
   const workflowAction = nextLeadershipWorkflowAction(processStatus);
   return (
     <main
@@ -1148,71 +1171,29 @@ export function ExportCenterView({
       data-reparto-workflow-action={workflowAction ?? "none"}
     >
       <div className={repartoMainGridClass}>
-        <section className={repartoPanelClass} data-reparto-panel="export-center">
-          <div className={repartoPanelHeaderClass}>
-            <h2>{dict.view.exports.title}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="export-state">
-              {state.finalBlocked ? dict.view.exports.finalBlocked : dict.view.exports.finalReady}
-            </span>
-          </div>
-          <div className={repartoActionRowClass}>
-            {state.availableExportTypes.map((exportType) => (
-              <button
-                className={repartoButtonClass}
-                data-reparto-action="create-export"
-                data-reparto-export-type={exportType}
-                key={exportType}
-                type="button"
-              >
-                {dict.view.exports.type[exportType as keyof typeof dict.view.exports.type]}
-              </button>
-            ))}
-          </div>
-          <div data-reparto-slot="export-list">
-            {exports.length > 0 ? (
-              <ul className={repartoListClass}>
-                {exports.map((artifact) => (
-                  <li
-                    className={repartoListItemClass}
-                    data-export-artifact-id={artifact.id}
-                    data-export-artifact-type={artifact.export_type}
-                    key={artifact.id}
-                  >
-                    {dict.view.exports.type[artifact.export_type]} {artifact.format.toUpperCase()}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </section>
-        <section className={repartoPanelClass} data-reparto-panel="final-close">
-          <div className={repartoPanelHeaderClass}>
-            <h2>{dict.view.exports.closeout}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
-              {summary.blocking_validation_count}
-            </span>
-          </div>
-          <div className={repartoActionRowClass}>
-            <button
-              className={repartoButtonClass}
-              data-reparto-action="create-final-export"
-              disabled={state.finalBlocked}
-              type="button"
-            >
-              {dict.view.exports.finalExport}
-            </button>
-            <button
-              className={repartoButtonClass}
-              data-reparto-action="restore-draft"
-              data-reparto-backup-id={state.latestBackupId ?? ""}
-              disabled={!state.restoreDraftEnabled}
-              type="button"
-            >
-              {dict.action.restore}
-            </button>
-          </div>
-          <div data-reparto-slot="restore-result" />
-        </section>
+        <PlanningExportPanel
+          artifact={planningArtifact}
+          dict={dict}
+          onExport={onCreatePlanningExport}
+          pendingMode={pendingPlanningMode}
+          state={state}
+        />
+        <ProcessDocumentPanel
+          artifacts={artifacts}
+          dict={dict}
+          onExport={onCreateDocumentExport}
+          pendingType={pendingDocumentType}
+          state={state}
+        />
+        <FinalAssignmentExportPanel
+          confirming={finalConfirming}
+          dict={dict}
+          onCancel={onCancelFinalExport}
+          onConfirm={onCreateFinalExport}
+          onReview={onReviewFinalExport}
+          pending={pendingDocumentType === "final"}
+          state={state}
+        />
         <section className={repartoPanelClass} data-reparto-panel="leadership-workflow">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.view.exports.leadershipWorkflow}</h2>
@@ -1250,5 +1231,330 @@ export function ExportCenterView({
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * The feasibility label §20.25 requires on a provisional document.
+ *
+ * Printed from the plan's own status, never inferred: a document that does not
+ * say `NOT EVALUATED` where it applies is a document that presents itself as
+ * validated. With no plan at all there is no status to print, and saying so is
+ * not the same as printing `not_evaluated`.
+ */
+function FeasibilityLabel({
+  dict,
+  status
+}: {
+  dict: RepartoDictionary;
+  status: FeasibilityStatus | null;
+}) {
+  return (
+    <p
+      className="text-sm text-muted-foreground"
+      data-feasibility-status={status ?? "none"}
+      data-reparto-slot="planning-feasibility"
+    >
+      {status === null
+        ? dict.view.exports.planning.feasibilityMissing
+        : formatRepartoMessage(dict.view.exports.planning.feasibilityLabel, {
+            status: dict.view.exports.planning.feasibility[status]
+          })}
+    </p>
+  );
+}
+
+function PlanningExportPanel({
+  artifact,
+  dict,
+  onExport,
+  pendingMode,
+  state
+}: {
+  artifact: PlanningExportArtifact | null;
+  dict: RepartoDictionary;
+  onExport?: (mode: PlanningExportMode) => void;
+  pendingMode: PlanningExportMode | null;
+  state: ExportCenterState;
+}) {
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="planning-exports">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.exports.planning.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="plan-status">
+          {state.planStatus
+            ? dict.requirements.planStatus[state.planStatus]
+            : dict.view.exports.planning.blocked.plan_missing}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {dict.view.exports.planning.description}
+      </p>
+      <FeasibilityLabel dict={dict} status={state.feasibilityStatus} />
+      <ul className={repartoListClass} data-reparto-slot="planning-export-modes">
+        {state.planningExports.map((offer) => (
+          <li
+            className={repartoListItemClass}
+            data-planning-export-blocked={offer.blocked ? "true" : "false"}
+            data-planning-export-mode={offer.mode}
+            key={offer.mode}
+          >
+            <p className="font-medium">{dict.view.exports.planning.mode[offer.mode]}</p>
+            <p className="text-sm text-muted-foreground">
+              {dict.view.exports.planning.modeDescription[offer.mode]}
+            </p>
+            {offer.printsFeasibility ? (
+              <p className="text-sm text-muted-foreground" data-reparto-slot="not-validated">
+                {dict.view.exports.planning.notValidated}
+              </p>
+            ) : null}
+            <div className={repartoActionRowClass}>
+              <button
+                className={repartoButtonClass}
+                data-disabled-reason={offer.reason ?? undefined}
+                data-reparto-action="export-planning"
+                data-reparto-export-mode={offer.mode}
+                disabled={offer.blocked || pendingMode !== null}
+                onClick={() => onExport?.(offer.mode)}
+                type="button"
+              >
+                {dict.view.exports.planning.action}
+              </button>
+            </div>
+            {offer.blocked ? (
+              <p className="text-sm text-destructive" data-reparto-slot="planning-export-blocked">
+                {dict.view.exports.planning.blocked[offer.reason as PlanningExportBlockedReason]}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {offer.mode === "final" ? "" : dict.view.exports.planning.neverBlocked}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+      {artifact ? (
+        <section
+          className="space-y-2 rounded-md border border-border/70 p-4"
+          data-plan-exact={artifact.is_exact ? "true" : "false"}
+          data-planning-artifact-mode={artifact.mode}
+          data-reparto-slot="planning-artifact"
+          role="status"
+        >
+          <h3 className="font-semibold">{dict.view.exports.planning.resultTitle}</h3>
+          <p>
+            {formatRepartoMessage(dict.view.exports.planning.resultSummary, {
+              mode: dict.view.exports.planning.mode[artifact.mode],
+              generated: artifact.generated_at
+            })}
+          </p>
+          <p data-reparto-slot="planning-artifact-activities">
+            {formatRepartoMessage(dict.view.exports.planning.activities, {
+              count: artifact.activities.length
+            })}
+          </p>
+          <p data-reparto-slot="planning-artifact-exactness">
+            {artifact.is_exact
+              ? dict.view.exports.planning.exact
+              : dict.view.exports.planning.inexact}
+          </p>
+          <p data-reparto-slot="planning-artifact-findings">
+            {formatRepartoMessage(dict.view.exports.planning.findings, {
+              blocking: artifact.validations.blocking_count,
+              warning: artifact.validations.warning_count
+            })}
+          </p>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+function ProcessDocumentPanel({
+  artifacts,
+  dict,
+  onExport,
+  pendingType,
+  state
+}: {
+  artifacts: ExportArtifactPublic[];
+  dict: RepartoDictionary;
+  onExport?: (exportType: ExportArtifactType) => void;
+  pendingType: ExportArtifactType | null;
+  state: ExportCenterState;
+}) {
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="export-center">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.exports.documents.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="backup-count">
+          {state.backupCount}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {dict.view.exports.documents.description}
+      </p>
+      <div className={repartoActionRowClass}>
+        {state.documentExportTypes.map((exportType) => (
+          <button
+            className={repartoButtonClass}
+            data-reparto-action="create-export"
+            data-reparto-export-type={exportType}
+            disabled={pendingType !== null}
+            key={exportType}
+            onClick={() => onExport?.(exportType)}
+            type="button"
+          >
+            {formatRepartoMessage(dict.view.exports.documents.action, {
+              document: dict.view.exports.type[exportType]
+            })}
+          </button>
+        ))}
+      </div>
+      <div className={repartoActionRowClass}>
+        {/*
+          Restore stays where it was, pointed at the latest JSON backup. The
+          backup/restore states themselves are the next §13.2 bullet's work;
+          this bullet only moved the button out of the final-export panel it
+          never belonged in.
+        */}
+        <button
+          className={repartoButtonClass}
+          data-reparto-action="restore-draft"
+          data-reparto-backup-id={state.latestBackupId ?? ""}
+          disabled={state.latestBackupId === null}
+          type="button"
+        >
+          {dict.action.restore}
+        </button>
+      </div>
+      <div data-reparto-slot="export-list">
+        {artifacts.length > 0 ? (
+          <ul className={repartoListClass}>
+            {artifacts.map((artifact) => (
+              <li
+                className={repartoListItemClass}
+                data-export-artifact-id={artifact.id}
+                data-export-artifact-type={artifact.export_type}
+                key={artifact.id}
+              >
+                {formatRepartoMessage(dict.view.exports.documents.item, {
+                  document: dict.view.exports.type[artifact.export_type],
+                  format: artifact.format.toUpperCase()
+                })}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p data-reparto-state="empty">{dict.view.exports.documents.empty}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The strict final export (plan §3.10, §20.25).
+ *
+ * Every refusal is listed, not just the first: a head who fixes the blocking
+ * findings and then discovers feasibility was never confirmed has been told
+ * half the truth twice. The confirmation exists because the service archives
+ * the process as it writes the artifact.
+ */
+function FinalAssignmentExportPanel({
+  confirming,
+  dict,
+  onCancel,
+  onConfirm,
+  onReview,
+  pending,
+  state
+}: {
+  confirming: boolean;
+  dict: RepartoDictionary;
+  onCancel?: () => void;
+  onConfirm?: () => void;
+  onReview?: () => void;
+  pending: boolean;
+  state: ExportCenterState;
+}) {
+  const { finalExport } = state;
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="final-close">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.view.exports.final.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
+          {finalExport.blockingCount ?? "—"}
+        </span>
+      </div>
+      <p className="text-sm text-muted-foreground">{dict.view.exports.final.description}</p>
+      <div
+        data-final-export-allowed={finalExport.allowed ? "true" : "false"}
+        data-reparto-slot="final-export-state"
+      >
+        {finalExport.allowed ? (
+          <p>{dict.view.exports.final.ready}</p>
+        ) : (
+          <ul className={repartoListClass}>
+            {finalExport.reasons.map((reason) => (
+              <li
+                className={repartoListItemClass}
+                data-final-blocked-reason={reason}
+                key={reason}
+              >
+                {formatRepartoMessage(dict.view.exports.final.blocked[reason], {
+                  count: finalExport.blockingCount ?? 0
+                })}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div className={repartoActionRowClass}>
+        <button
+          className={repartoButtonClass}
+          data-disabled-reason={finalExport.reasons[0] ?? undefined}
+          data-reparto-action="create-final-export"
+          disabled={!finalExport.allowed || pending}
+          onClick={() => onReview?.()}
+          type="button"
+        >
+          {dict.view.exports.final.action}
+        </button>
+      </div>
+      {confirming && finalExport.allowed ? (
+        <section
+          aria-labelledby="final-export-confirmation-title"
+          className="space-y-3 rounded-lg border border-primary/40 bg-muted/30 p-4"
+          data-reparto-dialog="final-export-confirmation"
+          role="alertdialog"
+        >
+          <h3 className="font-semibold" id="final-export-confirmation-title">
+            {dict.view.exports.final.confirmTitle}
+          </h3>
+          <p>{dict.view.exports.final.confirmBody}</p>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="confirm-final-export"
+              disabled={pending}
+              onClick={() => onConfirm?.()}
+              type="button"
+            >
+              {dict.view.exports.final.confirmAction}
+            </button>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="cancel"
+              disabled={pending}
+              onClick={() => onCancel?.()}
+              type="button"
+            >
+              {dict.action.cancel}
+            </button>
+          </div>
+        </section>
+      ) : null}
+    </section>
   );
 }

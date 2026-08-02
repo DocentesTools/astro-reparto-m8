@@ -36,7 +36,13 @@ const mocks = vi.hoisted(() => ({
     createVersion: vi.fn(),
     compareVersions: vi.fn(),
     comparePreviousYear: vi.fn(),
-    listExports: vi.fn()
+    listExports: vi.fn(),
+    createExport: vi.fn()
+  },
+  planningExchange: {
+    exportDraft: vi.fn(),
+    exportProvisional: vi.fn(),
+    exportFinal: vi.fn()
   },
   meetingSessions: {
     list: vi.fn()
@@ -142,6 +148,15 @@ vi.mock("../src/runtime/api/history.js", () => ({
 vi.mock("../src/runtime/api/meetingSessions.js", () => ({
   meetingSessions: mocks.meetingSessions
 }));
+vi.mock("../src/runtime/api/planningExchange.js", () => ({
+  planningExchange: mocks.planningExchange,
+  planningExportRequest: (mode: "draft" | "provisional" | "final") =>
+    mode === "draft"
+      ? mocks.planningExchange.exportDraft
+      : mode === "provisional"
+        ? mocks.planningExchange.exportProvisional
+        : mocks.planningExchange.exportFinal
+}));
 vi.mock("../src/runtime/api/schools.js", () => ({
   schools: mocks.schools
 }));
@@ -201,6 +216,10 @@ describe("reparto React hooks", () => {
     mocks.history.compareVersions.mockClear();
     mocks.history.comparePreviousYear.mockClear();
     mocks.history.listExports.mockClear();
+    mocks.history.createExport.mockClear();
+    mocks.planningExchange.exportDraft.mockClear();
+    mocks.planningExchange.exportProvisional.mockClear();
+    mocks.planningExchange.exportFinal.mockClear();
     mocks.meetingSessions.list.mockClear();
     mocks.schools.list.mockClear();
     mocks.academicYears.list.mockClear();
@@ -354,6 +373,49 @@ describe("reparto React hooks", () => {
 
     useRepartoPreviousYearComparison("process-1");
     expect(mocks.history.comparePreviousYear).toHaveBeenCalledWith("process-1");
+  });
+
+  it("wires the three planning exports and the stored documents (§7.8, §20.25)", async () => {
+    const { useCreateRepartoExportArtifact, useCreateRepartoPlanningExport } =
+      await import("../src/runtime/react/hooks.js");
+
+    // One hook, three endpoints: the mode picks the wrapper rather than
+    // becoming a request parameter the service does not have.
+    for (const mode of ["draft", "provisional", "final"] as const) {
+      useCreateRepartoPlanningExport().mutate({ processId: "process-1", mode });
+    }
+    expect(mocks.planningExchange.exportDraft).toHaveBeenCalledWith("process-1");
+    expect(mocks.planningExchange.exportProvisional).toHaveBeenCalledWith(
+      "process-1"
+    );
+    expect(mocks.planningExchange.exportFinal).toHaveBeenCalledWith("process-1");
+    // A planning artifact changes nothing, so nothing is invalidated.
+    expect(mocks.invalidateQueries).not.toHaveBeenCalled();
+
+    useCreateRepartoExportArtifact().mutate({
+      processId: "process-1",
+      body: { export_type: "backup", format: "json" }
+    });
+    expect(mocks.history.createExport).toHaveBeenCalledWith("process-1", {
+      export_type: "backup",
+      format: "json"
+    });
+    expect(mocks.invalidateQueries).toHaveBeenCalledTimes(1);
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["reparto", "processes", "detail", "process-1", "exports"]
+    });
+
+    // The final document archives the process on the service side, so the
+    // process itself and both projections go with the artifact list.
+    mocks.invalidateQueries.mockClear();
+    useCreateRepartoExportArtifact().mutate({
+      processId: "process-1",
+      body: { export_type: "final", format: "pdf" }
+    });
+    expect(mocks.invalidateQueries).toHaveBeenCalledTimes(5);
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["reparto", "processes", "detail", "process-1", "summary"]
+    });
   });
 
   it("refuses a comparison that would answer nothing", async () => {

@@ -10,6 +10,7 @@ import { groupSubjects } from "../api/groupSubjects.js";
 import { history } from "../api/history.js";
 import { hourRequirements } from "../api/hourRequirements.js";
 import { meetingSessions } from "../api/meetingSessions.js";
+import { planningExportRequest } from "../api/planningExchange.js";
 import { processTeachers } from "../api/processTeachers.js";
 import { schools } from "../api/schools.js";
 import { subjects } from "../api/subjects.js";
@@ -37,6 +38,8 @@ import type {
   ProcessTeacherExtraHoursInput,
   ProcessTeacherUpdateInput,
   ProcessVersionCreate,
+  ExportArtifactCreate,
+  PlanningExportMode,
   RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
@@ -224,6 +227,60 @@ export function useRepartoExports(processId?: string) {
     queryKey: repartoKeys.exports(processId),
     queryFn: () => history.listExports(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+/**
+ * Produce one planning artifact (§7.8).
+ *
+ * A mutation rather than a query even though it changes nothing: the service
+ * exposes it as `POST`, the artifact is generated on demand, and a head asks
+ * for it deliberately — caching yesterday's draft under a query key would show
+ * a plan that has since moved. Nothing is invalidated for the same reason.
+ */
+export function useCreateRepartoPlanningExport() {
+  return useMutation({
+    mutationFn: ({
+      processId,
+      mode
+    }: {
+      processId: string;
+      mode: PlanningExportMode;
+    }) => planningExportRequest(mode)(processId)
+  });
+}
+
+/**
+ * Store one process document (`POST /exports`).
+ *
+ * The `final` type archives the process on the service side, so the process
+ * detail and both projections are invalidated with the artifact list rather
+ * than only the list the new row lands in.
+ */
+export function useCreateRepartoExportArtifact() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: ExportArtifactCreate;
+    }) => history.createExport(processId, body),
+    onSuccess: (_artifact, { processId, body }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.exports(processId)
+      });
+      if (body.export_type !== "final") return;
+      for (const queryKey of [
+        repartoKeys.process(processId),
+        repartoKeys.processes(),
+        repartoKeys.dashboard(processId),
+        repartoKeys.summary(processId)
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    }
   });
 }
 

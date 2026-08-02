@@ -601,6 +601,49 @@ Runtime surface: `src/runtime/api/history.ts` (unchanged paths),
 `buildVersionComparisonView` / `buildVersionSelectionState` /
 `versionSectionLabelKey` in `src/runtime/ui/history.ts`.
 
+### 3.2b Planning exchange — `/assignment-processes/{process_id}/exports/planning-*`
+
+Added to the runtime **2026-08-02** with the export-center bullet (backend plan
+§3.10, §7.8, §20.25). Three separate operations, not one with a mode parameter,
+because the three make three different promises:
+
+- `POST /exports/planning-draft` → `PlanningExportArtifact`
+- `POST /exports/planning-provisional` → `PlanningExportArtifact`
+- `POST /exports/planning-final` → `PlanningExportArtifact`
+- `POST /imports/planning` — body `PlanningImportRequest` → `PlanningImportResult`
+  (**not yet wrapped**; it belongs to the backup/restore bullet)
+
+Draft and provisional artifacts are produced whatever the balances say — an
+inexact, unbalanced or stale plan may not withhold them (§3.10) — while the
+final mode answers **400** while any blocking finding stands (§7.8). The
+artifact is computed on demand and returned in the body; nothing is stored,
+which is what separates it from the checksummed `ExportArtifact` documents of
+§3.2.
+
+| Field | Type | Note |
+| --- | --- | --- |
+| `mode` | `draft\|provisional\|final` | the strictness the artifact was produced under |
+| `plan_status`, `generated_at`, `teaching_plan_id` | — | the plan the artifact describes |
+| `is_exact` | `bool` | both balances equal their targets (§3.10) |
+| `is_final_exportable` | `bool` | the service's own answer to "would the final mode succeed?"; read as reported, never recomputed from the finding list |
+| `balance` | `PlanBalance` | both independent axes, always present whatever the mode |
+| `validations` | `PlanValidationReport` | blocking/warning findings, always present |
+| `activities` | `PlanningExportActivity[]` | per-activity group/teacher loads; every hour a canonical two-place string |
+
+§20.25 additionally requires a provisional document to **print the feasibility
+status**. The artifact does not carry it, so the UI prints it from
+`TeachingPlanPublic.feasibility_status` beside the offer, and a process with no
+plan renders `none` rather than `not_evaluated` — absent is not "evaluated to
+nothing".
+
+Runtime surface: `src/runtime/api/planningExchange.ts`
+(`planningExchange.exportDraft` / `exportProvisional` / `exportFinal` and the
+`planningExportRequest(mode)` selector), hooks
+`useCreateRepartoPlanningExport` and `useCreateRepartoExportArtifact`, and the
+view-state helper `buildExportCenterState` in `src/runtime/ui/history.ts`.
+A planning export is a mutation with no invalidation: it changes nothing, and
+caching it would show a plan that has since moved.
+
 ### 3.3 Streaming summary — `GET /assignment-processes/{process_id}/events`
 
 - Content-Type: `text/event-stream`

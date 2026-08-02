@@ -421,6 +421,32 @@ The editor freezes these surface slots:
 | Not comparable | `data-reparto-delta-sign="none"` | `allocation_delta: null` — no allocation on one side; never rendered as `0.00` |
 | Changed sections | `data-reparto-slot="changed-sections"` / `data-reparto-section` | snapshot section names; the service's `teachers` section is labelled **Process participants** (§5.4), and an unrecognized section is shown as its own raw code |
 
+### 3.19 Export center
+
+> Added **2026-08-02** by the three-stage adaptation. The centre holds three
+> families that plan §3.10/§20.25 keeps apart and one older workflow, and the
+> separation is the point: a **planning artifact** describes the plan (draft and
+> provisional are never withheld for an inexact plan), a **process document** is
+> a stored checksummed copy, and the **final assignment export** is strict and
+> archives the process. A single "export type" menu with `final` as one entry is
+> retired — see §12.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="exports"` | package-owned export centre |
+| Planning exports | `data-reparto-panel="planning-exports"` | the three §7.8 planning modes |
+| Planning mode row | `data-planning-export-mode="draft\|provisional\|final"` with `data-planning-export-blocked` | one row per mode; `draft`/`provisional` are blocked only when there is no plan at all |
+| Planning export action | `data-reparto-action="export-planning"` + `data-reparto-export-mode` | `POST /exports/planning-{mode}`; refusal on `data-disabled-reason` (`plan_missing`, `blocking_validations`) |
+| Feasibility label | `data-reparto-slot="planning-feasibility"` + `data-feasibility-status` | §20.25: a provisional document prints `NOT EVALUATED` / `INFEASIBLE` / `FEASIBLE`; **no plan** is `none`, never `not_evaluated` |
+| Not validated | `data-reparto-slot="not-validated"` | a provisional document must not present itself as validated |
+| Produced artifact | `data-reparto-slot="planning-artifact"` with `data-planning-artifact-mode` / `data-plan-exact` | both balances and the finding counts travel *inside* the artifact |
+| Process documents | `data-reparto-panel="export-center"` with `data-reparto-action="create-export"` + `data-reparto-export-type` | `POST /exports`; `internal_draft`, `school_leadership`, `teacher_summary`, `backup` — never `final` |
+| Document list | `data-reparto-slot="export-list"` / `data-export-artifact-id` / `data-export-artifact-type` | stored artifacts; `data-reparto-slot="backup-count"` counts JSON backups |
+| Final assignment export | `data-reparto-panel="final-close"` with `data-final-export-allowed` | §20.25's top tier: complete reparto **and** confirmed feasibility |
+| Final refusals | `data-final-blocked-reason` | every refusal listed, not only the first: `plan_missing`, `requirements_not_generated`, `findings_unavailable`, `assignment_blocking`, `feasibility_not_confirmed` |
+| Final confirmation | `data-reparto-dialog="final-export-confirmation"` with `data-reparto-action="confirm-final-export"` | producing it archives the process |
+| Leadership workflow | `data-reparto-panel="leadership-workflow"` | unchanged: `mark-returned`, `start-revision`, `reopen-final` |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)
@@ -743,6 +769,7 @@ Amendment rules:
 | `TeacherLanSummary.global_balance` / `teacher_balance` / `blocking_validation_count` and the `data-reparto-slot="teacher-available-hours"` / `teacher-balance` slots | teacher LAN view | `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's own `participant` (`ParticipantBalance`) and `available_slots`; slots `teacher-base-hours`, `teacher-extra-hours`, `teacher-target-hours`, `teacher-assigned-hours`, `teacher-remaining-hours`, `teacher-overload`, `teacher-state`, `available-slots`, `lan-plan-balance` | 2026-08-02 |
 | `ProcessSummary.global_balance` / `validations` and `ProcessDashboard.global_balance` / `teacher_balances` / `requirement_balances` / `validations` (with `GlobalBalance`, `TeacherBalance`, `RequirementBalance`, `ValidationMessage` and the `GlobalBalanceState` / `TeacherBalanceState` enums), plus the `overview-chart` / `teacher-load-chart` / `classroom-coverage-chart` panels and the `total-required-hours`, `pending-required-hours`, `overview-state`, `balance-summary`, `requirement-count`, `teacher-count`, `teacher-summary`, `coverage-summary`, `validation-count` slots, `data-reparto-chart-value` / `data-reparto-chart-bar`, and the whole `validation.*` dictionary branch | dashboard / shared screen | `ProcessSummary` (`readiness`, `plan_status`, `plan_balance`, `total_slots`/`assigned_slots`/`available_slots`) and `ProcessDashboard` (`readiness` + `planning`/`assignment` sections). Panels `planning-balance`, `assignment-progress`, `participant-balances`; slots `plan-status`, `planning-empty`, `total-slots`, `assigned-slots`, `available-slots`, `slot-progress`, `total-target-hours`, `total-assigned-hours`, `total-remaining-hours`, `participant-balances`, `participant-hours`, `participant-count`, `participant-summary`, `blocking-count`, `planning-validations`, `assignment-validations`, `validation-summary`; the three invariants as `data-reparto-invariant` / `data-reparto-invariant-state` and never one badge; both axes as `data-reparto-balance-axis`; findings printed from the service's own `message` with `data-reparto-validation-code` | 2026-08-02 |
 | `VersionComparison.required_hours_delta` / `assigned_hours_delta` / `assignment_count_delta` and the `required-hours-delta` / `assigned-hours-delta` / `teacher-count-delta` slots, the `comparison-detail` placeholder, and the `view.versions.requiredDelta` / `assignedDelta` / `teacherDelta` / `noChanges`-as-a-section-list labels | versions & comparison | the plan §10.3 contract: nine change flags and eight signed deltas (`allocation_delta` nullable, hour deltas canonical strings), rendered as §3.18's dimension rows with `data-reparto-delta` / `data-reparto-delta-sign`; `changed_sections` becomes a labelled list, never a comma-joined string | 2026-08-02 |
+| `ExportCenterState.finalBlocked` / `availableExportTypes` / `restoreDraftEnabled`, the `view.exports.finalBlocked` / `finalReady` / `finalExport` labels, the `data-reparto-slot="export-state"` slot and `final` as one entry in the export-type button row | export center | §3.19: three families with their own panels — planning artifacts (`planning-exports`, never withheld for an inexact plan), stored documents (`export-center`) and the strict final assignment export (`final-close`) with `data-final-blocked-reason` per refusal and a confirmation, because it archives the process | 2026-08-02 |
 | Shared-screen panels `global-state` / `turn-state` and the `dashboard` prop on `SharedScreenWorkspace` / `RepartoSharedView`; the meeting route rendering the dashboard a second time | shared screen / meeting control | `shared-balance`, `shared-slots` and a `turn-state` panel fed only by `ProcessSummary`, plus the meeting-control panels `meeting-turn-control`, `pending-slots`, `reconciliation-state`, `authorized-overloads`; slots `shared-state`, `shared-plan-balance`, `meeting-state`, `lifecycle-state`, `lifecycle-detail`, `pending-slots`, `overload-count`, `overload-hours`, `authorized-overloads`, `no-authorized-overloads`; attributes `data-reparto-lifecycle-state`, `data-reparto-selection-blocked`, `data-reparto-plan-stale`, `data-reparto-reconciliation-required`; disabled reasons as stable codes on `data-disabled-reason` | 2026-08-02 |
 
 The versions bullet closed the last surface that still parsed a float hour

@@ -96,13 +96,9 @@ export function RepartoMyView({
   config,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
   summary
 }: RepartoStarterViewProps & {
   meetingSession?: MeetingSessionPublic | null;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
   summary?: TeacherLanSummary | null;
 }) {
   return (
@@ -110,8 +106,6 @@ export function RepartoMyView({
       config={config}
       meetingSession={meetingSession}
       processId={processId}
-      requirementAssignedHours={requirementAssignedHours}
-      requirementRequiredHours={requirementRequiredHours}
       summary={summary}
     />
   );

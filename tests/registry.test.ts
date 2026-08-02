@@ -98,6 +98,28 @@ describe("reparto shadcn registry", () => {
     );
   });
 
+  it("keeps obsolete partial and shared assignment inputs out of starter skins", () => {
+    const source = readFileSync(
+      join(root, "registry/blocks/views/reparto-starter-views.tsx"),
+      "utf8"
+    );
+    const generated = readJson<RegistryItem>(
+      "registry/r/reparto-starter-views.json"
+    ).files.map((file) => file.content).join("\n");
+    const obsoleteInputs = [
+      "requirementAssignedHours",
+      "requirementRequiredHours",
+      "assigned_hours",
+      "assignment_type",
+      "override_reason"
+    ];
+
+    for (const input of obsoleteInputs) {
+      expect(source).not.toContain(input);
+      expect(generated).not.toContain(input);
+    }
+  });
+
   it("ships Phase 1 admin CRUD skins that compose reparto hooks + i18n", () => {
     const registry = readJson<RegistryFile>("registry.json");
     const names = registry.items.map((item) => item.name);

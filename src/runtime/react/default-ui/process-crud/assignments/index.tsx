@@ -36,6 +36,7 @@ import { AssignmentsList } from "./list.js";
 import { AssignmentAdd } from "./add.js";
 import { AssignmentEdit } from "./edit.js";
 import { AssignmentUndoDialog } from "./undo.js";
+import { AssignmentBulkUndo } from "./bulk-undo.js";
 import { AssignmentReassignDialog } from "./reassign.js";
 
 export function RepartoAssignmentsView({ config, locale, processId }: EntityViewProps) {
@@ -120,7 +121,18 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AssignmentPublic | null>(null);
   const [undoing, setUndoing] = useState<AssignmentPublic | null>(null);
+  const [undoingSelected, setUndoingSelected] = useState(false);
   const [reassigning, setReassigning] = useState<AssignmentPublic | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+
+  // Only live rows can be undone; a cancelled row selected before its status
+  // arrived is dropped here rather than sent to a refusal.
+  const selectedAssignments = rows.filter(
+    (assignment) => selectedIds.has(assignment.id) && assignment.status === "active"
+  );
+  const currentSelectedIds = new Set(
+    selectedAssignments.map((assignment) => assignment.id)
+  );
 
   const hasProcess = Boolean(concreteProcessId);
   const assignableSlots = slots.filter((slot) => slot.canAssign);
@@ -135,12 +147,17 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
           )
         : null;
   const hasActiveForm =
-    adding || Boolean(editing) || Boolean(undoing) || Boolean(reassigning);
+    adding ||
+    undoingSelected ||
+    Boolean(editing) ||
+    Boolean(undoing) ||
+    Boolean(reassigning);
 
   function closeDialogs() {
     setAdding(false);
     setEditing(null);
     setUndoing(null);
+    setUndoingSelected(false);
     setReassigning(null);
   }
 
@@ -256,13 +273,19 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
             closeDialogs();
             setReassigning(assignment);
           }}
+          onSelectedIdsChange={setSelectedIds}
           onUndo={(assignment) => {
             closeDialogs();
             setUndoing(assignment);
           }}
+          onUndoSelected={() => {
+            closeDialogs();
+            setUndoingSelected(true);
+          }}
           participantName={participantName}
           requirementLabel={requirementLabel}
           rows={rows}
+          selectedIds={currentSelectedIds}
           slotHours={slotHours}
         />
         {adding ? (
@@ -302,6 +325,22 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
             participantName={participantName}
             processId={processId ?? ""}
             requirementLabel={requirementLabel(reassigning.hour_requirement_id)}
+          />
+        ) : null}
+        {undoingSelected ? (
+          <AssignmentBulkUndo
+            assignments={selectedAssignments}
+            dict={dict}
+            onDone={(undoneIds) => {
+              setUndoingSelected(false);
+              setSelectedIds(
+                new Set(
+                  [...currentSelectedIds].filter((id) => !undoneIds.includes(id))
+                )
+              );
+            }}
+            processId={processId ?? ""}
+            requirementLabel={requirementLabel}
           />
         ) : null}
         {undoing ? (

@@ -171,9 +171,12 @@ dropped. The same eligibility helpers are exported from
 disables the same choices for the same reason. Cancelling is the reason-required
 `undo` action, which releases the slot and re-enters the teacher's completed
 meeting turn; moving a slot is the reason-required `reassign` action, a single
-atomic service operation rather than a delete plus a create. Cancelled rows stay
-visible as history without actions, and the board reads the service's
-assignment-stage validation report rather than inferring findings from the table.
+atomic service operation rather than a delete plus a create. Several live rows can be undone together from
+a table selection: one dialog collects one reason, records it on each row and
+applies them one at a time, stopping at the first refusal and reporting how many
+went through — the rows already undone stay undone. Cancelled rows stay visible
+as history without actions, and the board reads the service's assignment-stage
+validation report rather than inferring findings from the table.
 
 The teacher direct-selection panel on `/my-view` takes the live positions
 rather than a required/assigned hour pair: a teacher takes a whole position or

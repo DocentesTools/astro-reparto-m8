@@ -226,10 +226,11 @@ names this replaced.
 | `notes` | Notes | Notes | Notas | no | textarea; the only editable field of a live assignment |
 
 Board actions: `create` (assign), row `edit` (notes), row `reassign`, row
-`undo`. There is no row `delete` and no bulk cancellation: cancelling is the
-reason-required undo action. DOM slots: `data-reparto-slot="assignment-occupancy"`,
+`undo`, and `undo-selected` over a table selection of **live rows only** — one
+shared reason recorded on each, applied one at a time and stopped at the first
+refusal. There is no row `delete` and no reasonless bulk cancellation. DOM slots: `data-reparto-slot="assignment-occupancy"`,
 `data-reparto-slot="assignment-validations"`, `data-assignment-metric`,
-`data-assignment-source`, `data-participant-disabled-reason`,
+`data-assignment-source`, `data-participant-disabled-reason`, `data-reparto-action="undo-selected"`,
 `data-reparto-slot="ineligible-participants"`,
 `data-reparto-slot="assignment-history"`.
 

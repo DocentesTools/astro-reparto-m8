@@ -281,6 +281,12 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.assignments.undoBody).toContain("{teacher}");
     expect(en.assignments.reassignBody).toContain("{teacher}");
     expect(en.assignments.teacherHours).toContain("{hours}");
+    // The bulk undo records one reason on each selected row, so its copy must
+    // say how many rows that is.
+    expect(en.assignments.bulkUndoBody).toContain("{count}");
+    expect(en.assignments.bulkUndoConfirm).toContain("{count}");
+    expect(en.assignments.bulkUndoError).toContain("{done}");
+    expect(en.assignments.bulkUndoError).toContain("{total}");
     expect(Object.keys(en.entity.assignment.status).sort()).toEqual([
       "active",
       "cancelled"

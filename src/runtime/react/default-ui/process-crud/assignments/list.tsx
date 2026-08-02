@@ -3,6 +3,7 @@ import type { AssignmentPublic } from "../../../../schemas.js";
 import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
+import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
 export type AssignmentsListProps = {
   dict: Dict;
@@ -17,6 +18,9 @@ export type AssignmentsListProps = {
   onEditNotes: (assignment: AssignmentPublic) => void;
   onReassign: (assignment: AssignmentPublic) => void;
   onUndo: (assignment: AssignmentPublic) => void;
+  onUndoSelected: () => void;
+  onSelectedIdsChange: (selectedIds: Set<string>) => void;
+  selectedIds: ReadonlySet<string>;
 };
 
 /**
@@ -40,7 +44,10 @@ export function AssignmentsList({
   participantName,
   onEditNotes,
   onReassign,
-  onUndo
+  onUndo,
+  onUndoSelected,
+  onSelectedIdsChange,
+  selectedIds
 }: AssignmentsListProps) {
   if (isLoading || isError) {
     return (
@@ -120,6 +127,24 @@ export function AssignmentsList({
   const statuses = [...new Set(rows.map(statusLabel))].sort((a, b) =>
     a.localeCompare(b)
   );
+  // Only live rows can be undone, so only live rows are selectable: a
+  // selection that includes history would promise an action the service
+  // refuses.
+  const selectedCount = selectedIds.size;
+  const undoSelectedAction =
+    selectedCount > 0 ? (
+      <button
+        className={repartoBulkDeleteButtonClass}
+        data-reparto-action="undo-selected"
+        disabled={hasActiveForm}
+        onClick={onUndoSelected}
+        type="button"
+      >
+        {formatRepartoMessage(dict.assignments.undoSelected, {
+          count: selectedCount
+        })}
+      </button>
+    ) : undefined;
 
   return (
     <>
@@ -152,6 +177,16 @@ export function AssignmentsList({
           (assignment) => requirementLabel(assignment.hour_requirement_id),
           (assignment) => participantName(assignment.process_teacher_id)
         ]}
+        selection={{
+          actions: undoSelectedAction,
+          onSelectedKeysChange: onSelectedIdsChange,
+          selectedKeys: selectedIds,
+          selectAllVisibleLabel: dict.assignments.selectAllVisible,
+          selectRowLabel: (assignment) =>
+            formatRepartoMessage(dict.assignments.selectRow, {
+              name: `${requirementLabel(assignment.hour_requirement_id)} · ${participantName(assignment.process_teacher_id)}`
+            })
+        }}
         tableName="assignments"
       />
       {isError ? (

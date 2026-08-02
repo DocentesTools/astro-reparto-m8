@@ -552,6 +552,9 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain("4.00 teacher hours");
     expect(html).toContain('data-assignment-status="active"');
     expect(html).toContain('data-reparto-row-action="undo"');
+    // Live rows are selectable so several can be undone under one reason.
+    expect(html).toContain('data-data-table-row-selection="77777777-7777-4777-8777-777777777777"');
+    expect(html).toContain("Select all visible assignments");
     expect(html).toContain('data-reparto-row-action="reassign"');
     expect(html).toContain('data-validation-code="ASSIGNMENT_PARTICIPANT_BELOW_TARGET"');
     expect(html).toContain('data-assignment-final-ready="false"');
@@ -564,6 +567,50 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     const createMatch = html.match(/<button[^>]*data-reparto-action="create"[^>]*>/);
     expect(createMatch?.[0]).toContain("disabled");
     expect(createMatch?.[0]).toContain("Every live slot is already assigned.");
+  });
+
+  it("bulk undo collects one reason for every selected assignment", async () => {
+    reset();
+    const { useDict } = await import("../src/runtime/react/default-ui/process-crud/shared.js");
+    const dict = useDict("en");
+    const { AssignmentBulkUndo } = await import(
+      "../src/runtime/react/default-ui/process-crud/assignments/bulk-undo.js"
+    );
+    const assignment = (id: string, requirement: string) => ({
+      id,
+      assignment_process_id: processId,
+      hour_requirement_id: requirement,
+      teaching_activity_id: teachingActivityId,
+      process_teacher_id: participantId,
+      source: "department_head" as const,
+      status: "active" as const,
+      chosen_by_user_id: null,
+      confirmed_by_user_id: null,
+      notes: null,
+      created_at: "2026-07-04T10:00:00Z",
+      updated_at: "2026-07-04T10:00:00Z"
+    });
+    const html = renderToStaticMarkup(
+      <AssignmentBulkUndo
+        assignments={[
+          assignment(assignmentId, requirementId),
+          assignment("59595959-5959-4959-8959-595959595959", requirementId)
+        ]}
+        dict={dict}
+        onDone={() => undefined}
+        processId={processId}
+        requirementLabel={() => "Matemáticas · Position 1"}
+      />
+    );
+    expect(html).toContain('data-reparto-form="assignment-bulk-undo"');
+    // One reason field for the whole selection, and the confirmation says what
+    // undoing them does rather than asking "are you sure?".
+    expect(html.match(/data-reparto-field="reason"/g)).toHaveLength(1);
+    expect(html).toContain("Undo 2 assignments");
+    expect(html).toContain("re-enter the selection queue");
+    // Nothing can be undone until the shared reason is typed.
+    const saveMatch = html.match(/<button[^>]*data-reparto-action="save"[^>]*>/);
+    expect(saveMatch?.[0]).toContain("disabled");
   });
 
   it("assignment add form shows create-missing-prerequisite links when no slot is assignable (D-7)", async () => {

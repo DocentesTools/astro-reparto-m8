@@ -211,6 +211,37 @@ act, not a tolerance applied afterwards: they are absent from the participant
 (`useUpdateRepartoProcessTeacherExtraHours`), in either direction — withdrawing
 an authorization is the same action with `0`.
 
+The `/dashboard`, `/meeting` and `/shared-screen` routes read the two-stage
+payloads. `GET /…/dashboard` is `readiness` plus a **planning** section (the
+teaching plan, both balances and the planning findings — all null together when
+the process has no plan yet) and an always-present **assignment** section (the
+per-participant balances, the live-slot counts and the assignment findings). The
+two are shown side by side and are never summed: §3.2's co-teaching example is
+120 group hours and 124 teacher-load hours with both figures correct. The three
+invariants — group balance, teacher-load balance and readiness — render as three
+separate `data-reparto-invariant` slots rather than one "ready" badge, and an
+absent figure (no allocation, no plan) is rendered as a dash, never as zero.
+Findings are printed from the service's own message with its stable `code` on
+the DOM; the client holds no copy of the validation vocabulary.
+
+`MeetingControlWorkspace` is the control room, not the dashboard again: both
+balances, whether the plan has gone stale or needs reconciling, how many
+complete positions are still to hand out, who is carrying authorized extra
+hours, and the turn controls. `buildMeetingControlState` from
+`@mano8/astro-reparto-m8/ui` gates those controls on the same lifecycle state
+the service consults and returns stable reason codes (`no_process_data`,
+`plan_not_ready`, `reconciliation_required`, plus `turn_active` /
+`no_active_turn` per action). It fails closed: with no payload every control is
+disabled and says why.
+
+`SharedScreenWorkspace` takes a `ProcessSummary` and nothing else. The aggregate
+endpoint carries no participant name or per-teacher hours at all, so the
+projected screen cannot show one — the redaction is the endpoint's, not a rule
+the client has to remember. It shows the same two balances (they name nobody),
+the three invariants, the pending positions, the lifecycle state and whose turn
+it is by position. The `dashboard` prop is gone from both the workspace and
+`RepartoSharedView`.
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend

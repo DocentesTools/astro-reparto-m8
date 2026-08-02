@@ -523,6 +523,29 @@ export const en = {
       open: "Open"
     }
   },
+  meeting: {
+    title: "Meeting control",
+    open: "Selection is open.",
+    openDetail: "The plan is current; positions can be handed out.",
+    blocked: {
+      no_process_data: "No process data has been loaded yet.",
+      plan_not_ready: "The plan is not ready for selection yet.",
+      reconciliation_required: "An allocation change must be reconciled before selection continues."
+    },
+    lifecycleTitle: "Plan lifecycle",
+    lifecycle: {
+      open: "Current",
+      stale: "Stale",
+      reconciliation_required: "Reconciliation required",
+      blocked: "Blocked"
+    },
+    staleDetail: "The plan changed after generation. The service decides what happens to the existing positions.",
+    reconciliationDetail: "An allocation change invalidated the plan. Reconcile it before the meeting continues.",
+    pendingTitle: "Positions",
+    overloadTitle: "Authorized extra hours",
+    overloadDetail: "{base} h base + {extra} h authorized = {target} h target",
+    noOverloads: "No participant is carrying authorized extra hours."
+  },
   dashboard: {
     balanceState: { balanced: "Balanced", unbalanced: "Not balanced", unknown: "Unknown" },
     readiness: {

@@ -522,6 +522,29 @@ export const es: RepartoDictionary = {
       open: "Abrir"
     }
   },
+  meeting: {
+    title: "Control de la sesión",
+    open: "La elección está abierta.",
+    openDetail: "El plan está al día; los puestos pueden repartirse.",
+    blocked: {
+      no_process_data: "Todavía no se han cargado datos del proceso.",
+      plan_not_ready: "El plan todavía no está listo para la elección.",
+      reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la elección."
+    },
+    lifecycleTitle: "Ciclo de vida del plan",
+    lifecycle: {
+      open: "Al día",
+      stale: "Obsoleto",
+      reconciliation_required: "Requiere reconciliación",
+      blocked: "Bloqueado"
+    },
+    staleDetail: "El plan cambió después de la generación. El servicio decide qué ocurre con los puestos existentes.",
+    reconciliationDetail: "Un cambio de asignación invalidó el plan. Reconcílielo antes de continuar la sesión.",
+    pendingTitle: "Puestos",
+    overloadTitle: "Horas extra autorizadas",
+    overloadDetail: "{base} h de base + {extra} h autorizadas = {target} h de objetivo",
+    noOverloads: "Ningún participante lleva horas extra autorizadas."
+  },
   dashboard: {
     balanceState: { balanced: "Equilibrado", unbalanced: "No equilibrado", unknown: "Desconocido" },
     readiness: {

@@ -33,6 +33,12 @@ export {
 } from "./history.js";
 export { summarizeProcessDashboard } from "./dashboard.js";
 export {
+  buildMeetingControlState,
+  type MeetingControlBlockedReason,
+  type MeetingControlState,
+  type MeetingTurnAction
+} from "./meeting.js";
+export {
   generateClassroomLabel,
   generateGroupCodeRange,
   gradeInStageRange,

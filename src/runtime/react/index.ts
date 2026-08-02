@@ -1,9 +1,13 @@
 export {
   DepartmentHeadWorkspace,
   ExportCenterView,
+  PlanningBalancePanel,
+  ProcessInvariantRow,
   ProcessListView,
+  ProcessValidationList,
   VersionsView
 } from "./DepartmentHeadWorkspace.js";
+export { MeetingControlWorkspace } from "./MeetingWorkspace.js";
 export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
 export {
   useArchiveRepartoAcademicYear,

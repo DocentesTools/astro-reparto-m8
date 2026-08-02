@@ -522,6 +522,29 @@ export const fr: RepartoDictionary = {
       open: "Ouvrir"
     }
   },
+  meeting: {
+    title: "Conduite de la séance",
+    open: "Les choix sont ouverts.",
+    openDetail: "Le plan est à jour ; les postes peuvent être distribués.",
+    blocked: {
+      no_process_data: "Aucune donnée de processus n'a encore été chargée.",
+      plan_not_ready: "Le plan n'est pas encore prêt pour les choix.",
+      reconciliation_required: "Un changement d'allocation doit être réconcilié avant la poursuite des choix."
+    },
+    lifecycleTitle: "Cycle de vie du plan",
+    lifecycle: {
+      open: "À jour",
+      stale: "Obsolète",
+      reconciliation_required: "Réconciliation requise",
+      blocked: "Bloqué"
+    },
+    staleDetail: "Le plan a changé après la génération. Le service décide du sort des postes existants.",
+    reconciliationDetail: "Un changement d'allocation a invalidé le plan. Réconciliez-le avant de poursuivre la séance.",
+    pendingTitle: "Postes",
+    overloadTitle: "Heures supplémentaires autorisées",
+    overloadDetail: "{base} h de base + {extra} h autorisées = {target} h de cible",
+    noOverloads: "Aucun participant ne porte d'heures supplémentaires autorisées."
+  },
   dashboard: {
     balanceState: { balanced: "Équilibré", unbalanced: "Non équilibré", unknown: "Inconnu" },
     readiness: {

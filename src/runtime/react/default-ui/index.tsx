@@ -8,6 +8,7 @@ import {
   SharedScreenWorkspace,
   TeacherLanWorkspace
 } from "../LanWorkspace.js";
+import { MeetingControlWorkspace } from "../MeetingWorkspace.js";
 import {
   useRepartoAssignments,
   useRepartoDashboard,
@@ -215,11 +216,13 @@ function RepartoDashboardContent({
 
 export function RepartoMeetingView({
   config,
+  dashboard,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
+  dashboard?: ProcessDashboard | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
@@ -227,13 +230,14 @@ export function RepartoMeetingView({
   return (
     <Shell config={config}>
       <WithSelectedProcess
-        bypass={Boolean(summary)}
+        bypass={Boolean(dashboard || summary)}
         locale={locale}
         mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (
           <RepartoMeetingContent
+            dashboard={dashboard}
             locale={locale}
             processId={resolvedProcessId}
             summary={summary}
@@ -244,24 +248,38 @@ export function RepartoMeetingView({
   );
 }
 
+/**
+ * The meeting control reads the **dashboard**, not the summary.
+ *
+ * It is the head's own admin surface, and the two things it needs beyond the
+ * aggregate — who is carrying authorized extra hours, and how far each
+ * participant has got — are per-participant rows that only the dashboard
+ * carries. The projected screen makes the opposite call for the opposite
+ * reason.
+ */
 function RepartoMeetingContent({
+  dashboard,
   locale,
   processId,
   summary
 }: {
+  dashboard?: ProcessDashboard | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
-  const summaryQuery = useRepartoSummary(processId);
-  const activeSummary = summary ?? summaryQuery.data ?? null;
+  const dashboardQuery = useRepartoDashboard(processId);
+  const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const isLoading =
-    summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary;
-  if (isLoading || summaryQuery.isError) {
+    dashboardQuery.isLoading &&
+    Boolean(resolveProcessId(processId)) &&
+    !dashboard &&
+    !summary;
+  if (isLoading || dashboardQuery.isError) {
     return (
       <QueryState
-        error={summaryQuery.error}
-        isError={summaryQuery.isError}
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
         isLoading={isLoading}
         label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
         locale={locale}
@@ -270,12 +288,20 @@ function RepartoMeetingContent({
   }
   return (
     <>
-      <DepartmentHeadWorkspace locale={locale} mode="admin" summary={activeSummary} />
+      <MeetingControlWorkspace
+        dashboard={activeDashboard}
+        locale={locale}
+        processId={processId}
+        summary={summary}
+      />
       <QueryState
-        error={summaryQuery.error}
-        isError={summaryQuery.isError}
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
         isLoading={
-          summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
+          dashboardQuery.isLoading &&
+          Boolean(resolveProcessId(processId)) &&
+          !dashboard &&
+          !summary
         }
         label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
         locale={locale}
@@ -460,13 +486,11 @@ function RepartoMyContent({
 
 export function RepartoSharedView({
   config,
-  dashboard,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
-  dashboard?: ProcessDashboard | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
@@ -474,14 +498,13 @@ export function RepartoSharedView({
   return (
     <Shell config={config}>
       <WithSelectedProcess
-        bypass={Boolean(dashboard || summary)}
+        bypass={Boolean(summary)}
         locale={locale}
         mode="readonly"
         processId={processId}
       >
         {(resolvedProcessId) => (
           <RepartoSharedContent
-            dashboard={dashboard}
             locale={locale}
             processId={resolvedProcessId}
             summary={summary}
@@ -492,31 +515,34 @@ export function RepartoSharedView({
   );
 }
 
+/**
+ * The projected screen reads `/summary`, and the `dashboard` prop is gone.
+ *
+ * `RBAC-07`: this view used to call `useRepartoDashboard` — every participant's
+ * name and hours — for a screen pointed at a room. The aggregate endpoint it
+ * should have used already existed and was already wrapped. Removing the prop as
+ * well as the query is deliberate: as long as a caller can hand the identifying
+ * payload in, the redaction is a convention rather than a boundary.
+ */
 function RepartoSharedContent({
-  dashboard,
   locale,
   processId,
   summary
 }: {
-  dashboard?: ProcessDashboard | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const dashboardQuery = useRepartoDashboard(processId);
-  const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
-  const activeSummary = summary ?? dashboardSummary(activeDashboard);
+  const summaryQuery = useRepartoSummary(processId);
+  const activeSummary = summary ?? summaryQuery.data ?? null;
   const isLoading =
-    dashboardQuery.isLoading &&
-    Boolean(resolveProcessId(processId)) &&
-    !dashboard &&
-    !summary;
-  if (isLoading || dashboardQuery.isError) {
+    summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary;
+  if (isLoading || summaryQuery.isError) {
     return (
       <QueryState
-        error={dashboardQuery.error}
-        isError={dashboardQuery.isError}
+        error={summaryQuery.error}
+        isError={summaryQuery.isError}
         isLoading={isLoading}
         label={dict.nav.item.shared}
         locale={locale}
@@ -526,21 +552,17 @@ function RepartoSharedContent({
   return (
     <>
       <SharedScreenWorkspace
-        dashboard={activeDashboard}
         locale={locale}
         processId={processId}
         summary={activeSummary}
       />
       <QueryState
-        error={dashboardQuery.error}
-        isError={dashboardQuery.isError}
+        error={summaryQuery.error}
+        isError={summaryQuery.isError}
         isLoading={
-          dashboardQuery.isLoading &&
-          Boolean(resolveProcessId(processId)) &&
-          !dashboard &&
-          !summary
+          summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
         }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.shared}
+        label={dict.nav.item.shared}
         locale={locale}
       />
     </>

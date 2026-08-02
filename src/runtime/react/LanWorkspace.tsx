@@ -4,14 +4,13 @@ import type {
   HourRequirementPublic,
   MeetingSessionPublic,
   PlanReadiness,
-  ProcessDashboard,
   ProcessSummary,
   TeacherLanSummary
 } from "../schemas.js";
 import {
+  buildMeetingControlState,
   buildTeacherChoiceState,
-  classifyDirectChoiceConflict,
-  summarizeProcessDashboard
+  classifyDirectChoiceConflict
 } from "../ui/index.js";
 import {
   formatRepartoMessage,
@@ -424,83 +423,137 @@ export function TeacherLanWorkspace({
   );
 }
 
+/**
+ * The projected screen.
+ *
+ * It takes a `ProcessSummary` and nothing else, on purpose. The version this
+ * replaces called the dashboard query — the full payload, every participant's
+ * display name and hours — to render a screen pointed at a room, which is
+ * `RBAC-07` verbatim. Aggregate-at-the-endpoint is not the same as aggregate
+ * after arrival: a redaction the client has to remember to apply is one refactor
+ * away from not being applied. `plan_balance` is the one balance that names
+ * nobody, which is exactly why plan §8.7 puts it on this screen.
+ *
+ * What it shows is what a room needs: both balances and the three invariants,
+ * how many complete positions are left, whether an allocation change has stopped
+ * selection, and whose turn it is — by position, because the aggregate carries
+ * no name to display and this screen must not learn one.
+ */
 export function SharedScreenWorkspace({
-  dashboard,
   locale,
   processId,
   summary = null
 }: {
-  dashboard?: ProcessDashboard | null;
   locale?: RepartoLocale;
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const eventsUrl = eventStreamUrl(processId);
-  const activeSummary =
-    summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
-  const balance = activeSummary?.plan_balance ?? null;
+  const control = buildMeetingControlState(summary);
+  const lifecycleState = control.reconciliationRequired
+    ? "reconciliation_required"
+    : control.planStale
+      ? "stale"
+      : control.selectionBlocked
+        ? "blocked"
+        : "open";
   return (
     <main
       className={repartoShellClass}
       data-process-id={processId}
       data-reparto-control="projected-summary"
       data-reparto-events-url={eventsUrl}
+      data-reparto-lifecycle-state={lifecycleState}
       data-reparto-route="shared-screen"
+      data-reparto-selection-blocked={control.selectionBlocked ? "true" : "false"}
     >
       <header className={repartoHeaderClass}>
         <p className={repartoEyebrowClass}>{dict.dashboard.mode.readonly}</p>
         <h1>{dict.nav.item.shared}</h1>
-        <p className="text-sm text-muted-foreground">{dict.dashboard.subtitleReadonly}</p>
+        <p className="text-sm text-muted-foreground" data-reparto-slot="shared-state">
+          {control.blockedReason
+            ? dict.meeting.blocked[control.blockedReason]
+            : dict.meeting.open}
+        </p>
       </header>
       <div className={repartoMainGridClass}>
-        <section className={repartoPanelClass} data-reparto-panel="global-state">
+        <section className={repartoPanelClass} data-reparto-panel="shared-balance">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.planning}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="connection-state" />
           </div>
           <ProcessInvariantRow
-            balance={balance}
+            balance={summary?.plan_balance ?? null}
             dict={dict}
-            readiness={activeSummary?.readiness ?? "not_ready"}
+            readiness={summary?.readiness ?? "not_ready"}
           />
+          <p className="text-sm text-muted-foreground" data-reparto-slot="shared-plan-balance">
+            {summary?.plan_balance
+              ? formatRepartoMessage(dict.view.lan.planBalance, {
+                  group: summary.plan_balance.group.total_group_load,
+                  allocation:
+                    summary.plan_balance.group.allocated_group_weekly_hours ??
+                    dict.view.lan.noAllocation,
+                  teacher: summary.plan_balance.teacher.total_teacher_load,
+                  target: summary.plan_balance.teacher.participant_target_total
+                })
+              : dict.dashboard.state.noPlan}
+          </p>
+        </section>
+        <section className={repartoPanelClass} data-reparto-panel="shared-slots">
+          <div className={repartoPanelHeaderClass}>
+            <h2>{dict.meeting.pendingTitle}</h2>
+            <span className="text-sm text-muted-foreground" data-reparto-slot="slot-progress">
+              {formatRepartoMessage(dict.dashboard.summary.slotProgress, {
+                assigned: control.assignedSlots,
+                total: control.totalSlots
+              })}
+            </span>
+          </div>
           <dl className={repartoMetricsClass}>
             <div className={repartoMetricItemClass}>
               <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.totalSlots}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="total-slots">
-                {activeSummary?.total_slots ?? 0}
+                {control.totalSlots}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
               <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.assignedSlots}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="assigned-slots">
-                {activeSummary?.assigned_slots ?? 0}
+                {control.assignedSlots}
               </dd>
             </div>
             <div className={repartoMetricItemClass}>
               <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.availableSlots}</dt>
-              <dd className={repartoMetricValueLargeClass} data-reparto-slot="available-slots">
-                {activeSummary?.available_slots ?? 0}
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="pending-slots">
+                {control.pendingSlots}
               </dd>
             </div>
           </dl>
-          <p className="text-sm text-muted-foreground" data-reparto-slot="slot-progress">
-            {activeSummary
-              ? formatRepartoMessage(dict.dashboard.summary.slotProgress, {
-                  assigned: activeSummary.assigned_slots,
-                  total: activeSummary.total_slots
-                })
-              : dict.dashboard.state.noDashboard}
-          </p>
         </section>
-        <section className={repartoPanelClass} data-reparto-panel="turn-state">
+        <section
+          className={repartoPanelClass}
+          data-reparto-panel="turn-state"
+          data-reparto-plan-stale={control.planStale ? "true" : "false"}
+          data-reparto-reconciliation-required={control.reconciliationRequired ? "true" : "false"}
+        >
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.meetingReadiness}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="blocking-count">
-              {activeSummary?.blocking_validation_count ?? 0}
+            <span className="text-sm text-muted-foreground" data-reparto-slot="lifecycle-state">
+              {dict.meeting.lifecycle[lifecycleState]}
             </span>
           </div>
-          <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} locale={locale} />
+          <CurrentTurnCard currentTurn={summary?.current_turn ?? null} locale={locale} />
+          <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="lifecycle-detail">
+            {control.reconciliationRequired
+              ? dict.meeting.reconciliationDetail
+              : control.planStale
+                ? dict.meeting.staleDetail
+                : control.selectionBlocked
+                  ? dict.meeting.blocked[control.blockedReason ?? "no_process_data"]
+                  : dict.meeting.openDetail}
+          </p>
         </section>
       </div>
     </main>

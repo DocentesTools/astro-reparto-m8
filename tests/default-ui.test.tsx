@@ -334,9 +334,8 @@ describe("default reparto UI", () => {
       />
     );
     expect(sharedHtml).toContain('data-reparto-route="shared-screen"');
-    expect(sharedHtml).toContain('data-reparto-panel="global-state"');
+    expect(sharedHtml).toContain('data-reparto-panel="shared-balance"');
     expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
-    expect(sharedHtml).toContain("Teacher 44444444-4444-4444-8444-444444444444");
   });
 
   it("shows the process picker when no process is selected", () => {
@@ -640,7 +639,7 @@ describe("default reparto UI", () => {
       'data-reparto-route="dashboard"'
     );
     expect(renderToStaticMarkup(<RepartoMeetingView summary={processSummary} />)).toContain(
-      'data-reparto-panel="current-turn"'
+      'data-reparto-panel="meeting-turn-control"'
     );
     expect(
       renderToStaticMarkup(

@@ -556,6 +556,38 @@ export const fr: RepartoDictionary = {
       resultSummary: "La génération {generation} a créé {created}, conservé {preserved}, retiré {retired} et compte maintenant {count} postes actifs.",
       totalSlots: "Nombre de postes actifs générés"
     },
+    feasibility: {
+      title: "Diagnostics de faisabilité",
+      description: "Vue chef de département de la dernière évaluation bornée : son état, ses constats et la remédiation suggérée. Les constats ne quittent jamais ce niveau.",
+      planLoading: "Chargement du plan d'enseignement.",
+      planUnavailable: "Le plan d'enseignement est indisponible.",
+      noPlan: "La planification n'a pas commencé pour ce processus ; il n'y a rien à évaluer.",
+      statusTitle: "Dernière évaluation",
+      evaluatedAt: "Dernière évaluation : {timestamp}",
+      solverVersion: "Version du solveur : {version}",
+      notEvaluated: "Aucune évaluation actuelle n'existe. Exécutez-en une après les modifications de planification ; chaque changement pertinent réinitialise le résultat enregistré.",
+      evaluatedNone: "L'évaluation actuelle ne signale aucun constat.",
+      diagnosticsLoading: "Chargement des constats de l'évaluation.",
+      diagnosticsUnavailable: "Les constats de l'évaluation sont indisponibles ; une nouvelle évaluation est requise.",
+      findingsTitle: "Constats",
+      affectedTitle: "Concernés",
+      affectedSlot: "{activity} · {position}",
+      unresolvedReferences: "{count} référence(s) concernée(s) ne peuvent pas être résolues vers une activité ou un poste actuel.",
+      suggestionTitle: "Remédiation suggérée",
+      suggestion: {
+        incompatible_residual_totals: "Ajustez les cibles des participants ou les heures des activités pour que les totaux restants correspondent exactement.",
+        slot_exceeds_every_target: "Réduisez les heures par poste de l'activité concernée, ou augmentez la cible d'un participant par des heures supplémentaires autorisées.",
+        distinct_teacher_shortfall: "Ajoutez des participants actifs ou réduisez le nombre de postes enseignants de l'activité concernée pour que chaque poste ait un enseignant distinct.",
+        unsatisfiable_targets: "Revoyez ensemble les cibles des participants et les heures des activités : aucune répartition exacte ne peut remplir chaque participant jusqu'à sa cible.",
+        instance_size_limit: "L'instance dépasse les limites configurées du solveur. Réduisez les participants ou les postes, ou demandez à l'administrateur de la plateforme de revoir les limites.",
+        step_limit: "Relancez l'évaluation. Si elle reste indéterminée, simplifiez l'instance ou demandez à l'administrateur de la plateforme de revoir le budget du solveur.",
+        time_limit: "Relancez l'évaluation. Si elle reste indéterminée, simplifiez l'instance ou demandez à l'administrateur de la plateforme de revoir le budget du solveur."
+      },
+      evaluateAction: "Exécuter l'évaluation de faisabilité",
+      evaluateDisabledNoPlan: "Créez le plan d'enseignement avant d'exécuter une évaluation.",
+      evaluateSuccess: "Évaluation de faisabilité terminée : {status}.",
+      evaluateError: "L'évaluation de faisabilité n'a pas pu être exécutée."
+    },
     reconciliation: {
       title: "Modifications d'allocation et réconciliation",
       description: "Enregistrez les révisions d'allocation immuables, vérifiez le plan obsolète et résolvez explicitement chaque poste affecté.",

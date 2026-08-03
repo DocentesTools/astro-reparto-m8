@@ -92,6 +92,8 @@ const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     summary: vi.fn(),
     validations: vi.fn(),
+    evaluateFeasibility: vi.fn(),
+    feasibilityDiagnostics: vi.fn(),
     lock: vi.fn(),
     materializeMain: vi.fn()
   },
@@ -242,6 +244,8 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.summary.mockClear();
     mocks.teachingPlans.get.mockClear();
     mocks.teachingPlans.validations.mockClear();
+    mocks.teachingPlans.evaluateFeasibility.mockClear();
+    mocks.teachingPlans.feasibilityDiagnostics.mockClear();
     mocks.teachingPlans.lock.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
@@ -868,6 +872,56 @@ describe("reparto React hooks", () => {
     ).toEqual([
       ["reparto", "processes", "detail", "p1", "teaching-plan"],
       ["reparto", "processes", "detail", "p1", "requirements"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
+  });
+
+  it("wires feasibility diagnostics queries and the evaluate mutation", async () => {
+    const {
+      useEvaluateRepartoFeasibility,
+      useRepartoFeasibilityDiagnostics
+    } = await import("../src/runtime/react/hooks.js");
+
+    mocks.useQuery.mockClear();
+    useRepartoFeasibilityDiagnostics("p1");
+    expect(mocks.teachingPlans.feasibilityDiagnostics).toHaveBeenCalledWith(
+      "p1"
+    );
+    const enabledCall = mocks.useQuery.mock.calls.at(-1)?.[0];
+    expect(enabledCall.queryKey).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-diagnostics"
+    ]);
+    expect(enabledCall.enabled).toBe(true);
+
+    // The caller's gate composes with the process-id gate: a panel that knows
+    // the status is not negative never fires the department-head-only request.
+    useRepartoFeasibilityDiagnostics("p1", false);
+    const disabledCall = mocks.useQuery.mock.calls.at(-1)?.[0];
+    expect(disabledCall.enabled).toBe(false);
+
+    mocks.invalidateQueries.mockClear();
+    const evaluate = useEvaluateRepartoFeasibility();
+    evaluate.mutate("p1");
+    expect(mocks.teachingPlans.evaluateFeasibility).toHaveBeenCalledWith("p1");
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan", "validations"],
+      [
+        "reparto",
+        "processes",
+        "detail",
+        "p1",
+        "teaching-plan",
+        "feasibility-diagnostics"
+      ],
       ["reparto", "processes", "detail", "p1", "dashboard"],
       ["reparto", "processes", "detail", "p1", "summary"]
     ]);

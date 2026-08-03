@@ -600,6 +600,44 @@ export function useRepartoTeachingPlanValidations(processId?: string) {
   });
 }
 
+export function useRepartoFeasibilityDiagnostics(
+  processId?: string,
+  enabled = true
+) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingPlanFeasibilityDiagnostics(processId),
+    queryFn: () =>
+      teachingPlans.feasibilityDiagnostics(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId) && enabled
+  });
+}
+
+export function useEvaluateRepartoFeasibility() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) =>
+      teachingPlans.evaluateFeasibility(processId),
+    onSuccess: (_data, processId) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlan(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlanValidations(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlanFeasibilityDiagnostics(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.dashboard(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.summary(processId)
+      });
+    }
+  });
+}
+
 export function useLockRepartoTeachingPlan() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -156,6 +156,11 @@ export const repartoKeys = {
     [...repartoKeys.teachingPlan(processId), "summary"] as const,
   teachingPlanValidations: (processId?: string) =>
     [...repartoKeys.teachingPlan(processId), "validations"] as const,
+  // The latest evaluation's findings; nested under the plan so any plan
+  // invalidation also drops a diagnostics projection the mutation just made
+  // stale (the backend resets feasibility to NOT_EVALUATED on the same paths).
+  teachingPlanFeasibilityDiagnostics: (processId?: string) =>
+    [...repartoKeys.teachingPlan(processId), "feasibility-diagnostics"] as const,
   teachingActivities: (processId?: string) =>
     [...repartoKeys.process(processId), "teaching-activities"] as const,
   teachingActivity: (processId?: string, activityId?: string) =>

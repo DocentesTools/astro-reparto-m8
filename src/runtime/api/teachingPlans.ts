@@ -1,9 +1,13 @@
 import { request } from "../client.js";
 import {
+  FeasibilityDiagnosticsReportSchema,
+  FeasibilityEvaluationSchema,
   MainMaterializationResultSchema,
   PlanBalanceSchema,
   PlanValidationReportSchema,
   TeachingPlanPublicSchema,
+  type FeasibilityDiagnosticsReport,
+  type FeasibilityEvaluation,
   type MainMaterializationResult,
   type PlanBalance,
   type PlanValidationReport,
@@ -57,6 +61,32 @@ export const teachingPlans = {
       method: "POST",
       path: `/assignment-processes/${processId}/teaching-plan/lock`,
       schema: TeachingPlanPublicSchema,
+      auth: true
+    }),
+  /**
+   * Run or reuse the serialized bounded solver for the exact current
+   * fingerprint (department-head/admin only). Teachers can never trigger a
+   * full evaluation; the endpoint reuses a matching cached result instead of
+   * re-solving.
+   */
+  evaluateFeasibility: (processId: string) =>
+    request<FeasibilityEvaluation>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/teaching-plan/feasibility/evaluate`,
+      schema: FeasibilityEvaluationSchema,
+      auth: true
+    }),
+  /**
+   * Read the latest current evaluation's findings (department-head/admin
+   * only). The backend fails closed with 409 when no fingerprint- and
+   * generation-matching evaluation exists, so callers must treat an error as
+   * "a fresh evaluation is required", never as "no findings".
+   */
+  feasibilityDiagnostics: (processId: string) =>
+    request<FeasibilityDiagnosticsReport>({
+      method: "GET",
+      path: `/assignment-processes/${processId}/teaching-plan/feasibility/diagnostics`,
+      schema: FeasibilityDiagnosticsReportSchema,
       auth: true
     }),
   /**

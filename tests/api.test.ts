@@ -1701,6 +1701,54 @@ describe("teaching-plan and activity API wrappers", () => {
 
     fetchMock.mockResolvedValueOnce(
       response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        status: "infeasible",
+        input_fingerprint: "fingerprint",
+        solver_version: "bounded-dfs-v1",
+        checked_at: now,
+        cache_reused: false,
+        witness_available: false,
+        states_explored: 12,
+        memoization_hits: 3
+      })
+    );
+    await expect(
+      teachingPlans.evaluateFeasibility(processId)
+    ).resolves.toMatchObject({ status: "infeasible", cache_reused: false });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/evaluate`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        status: "infeasible",
+        checked_at: now,
+        diagnostics: [
+          {
+            code: "slot_exceeds_every_target",
+            message:
+              "A remaining slot exceeds every participant's remaining target.",
+            related_ids: [requirementId]
+          }
+        ]
+      })
+    );
+    await expect(
+      teachingPlans.feasibilityDiagnostics(processId)
+    ).resolves.toMatchObject({
+      status: "infeasible",
+      diagnostics: [{ code: "slot_exceeds_every_target" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/diagnostics`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
         created: [activityBody],
         created_count: 1,
         skipped_source_ids: [],

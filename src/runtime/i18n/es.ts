@@ -555,6 +555,38 @@ export const es: RepartoDictionary = {
       resultSummary: "La generación {generation} creó {created}, conservó {preserved}, retiró {retired} y ahora tiene {count} puestos activos.",
       totalSlots: "Número de puestos activos generados"
     },
+    feasibility: {
+      title: "Diagnósticos de viabilidad",
+      description: "Vista del jefe de departamento de la última evaluación acotada: su estado, sus hallazgos y la remediación sugerida. Los hallazgos nunca salen de este nivel.",
+      planLoading: "Cargando el plan docente.",
+      planUnavailable: "El plan docente no está disponible.",
+      noPlan: "La planificación no ha comenzado para este proceso, así que no hay nada que evaluar.",
+      statusTitle: "Última evaluación",
+      evaluatedAt: "Última evaluación: {timestamp}",
+      solverVersion: "Versión del solucionador: {version}",
+      notEvaluated: "No existe ninguna evaluación actual. Ejecuta una tras los cambios de planificación; cada cambio relevante restablece el resultado almacenado.",
+      evaluatedNone: "La evaluación actual no informa de ningún hallazgo.",
+      diagnosticsLoading: "Cargando los hallazgos de la evaluación.",
+      diagnosticsUnavailable: "Los hallazgos de la evaluación no están disponibles; se requiere una nueva evaluación.",
+      findingsTitle: "Hallazgos",
+      affectedTitle: "Afectados",
+      affectedSlot: "{activity} · {position}",
+      unresolvedReferences: "{count} referencia(s) afectada(s) no se pueden resolver a una actividad o puesto actual.",
+      suggestionTitle: "Remediación sugerida",
+      suggestion: {
+        incompatible_residual_totals: "Ajusta las metas de los participantes o las horas de las actividades para que los totales restantes coincidan exactamente.",
+        slot_exceeds_every_target: "Reduce las horas por puesto de la actividad afectada, o aumenta la meta de un participante con horas extra autorizadas.",
+        distinct_teacher_shortfall: "Añade participantes activos o reduce el número de puestos docentes de la actividad afectada para que cada puesto tenga un docente distinto.",
+        unsatisfiable_targets: "Revisa juntas las metas de los participantes y las horas de las actividades: ningún reparto exacto puede cubrir a cada participante hasta su meta.",
+        instance_size_limit: "La instancia supera los límites configurados del solucionador. Reduce participantes o puestos, o pide al administrador de la plataforma que revise los límites.",
+        step_limit: "Vuelve a ejecutar la evaluación. Si sigue indeterminada, simplifica la instancia o pide al administrador de la plataforma que revise el presupuesto del solucionador.",
+        time_limit: "Vuelve a ejecutar la evaluación. Si sigue indeterminada, simplifica la instancia o pide al administrador de la plataforma que revise el presupuesto del solucionador."
+      },
+      evaluateAction: "Ejecutar la evaluación de viabilidad",
+      evaluateDisabledNoPlan: "Crea el plan docente antes de ejecutar una evaluación.",
+      evaluateSuccess: "Evaluación de viabilidad terminada: {status}.",
+      evaluateError: "No se pudo ejecutar la evaluación de viabilidad."
+    },
     reconciliation: {
       title: "Cambios de asignación horaria y conciliación",
       description: "Registra revisiones inmutables de la asignación horaria, revisa el plan obsoleto y resuelve explícitamente cada puesto afectado.",

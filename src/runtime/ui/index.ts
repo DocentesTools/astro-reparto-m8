@@ -54,6 +54,17 @@ export {
 } from "./history.js";
 export { summarizeProcessDashboard } from "./dashboard.js";
 export {
+  buildFeasibilityDiagnosticRows,
+  buildFeasibilityPanelState,
+  EMPTY_FEASIBILITY_LOOKUP,
+  feasibilityRelatedKind,
+  isFeasibilityDiagnosticsExpected,
+  type FeasibilityDiagnosticRow,
+  type FeasibilityDiagnosticsLookup,
+  type FeasibilityPanelState,
+  type FeasibilityRelatedKind
+} from "./feasibility.js";
+export {
   buildProcessInvariants,
   type BalanceInvariantState,
   type FeasibilityInvariantSource,

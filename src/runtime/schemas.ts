@@ -1787,6 +1787,82 @@ export type PlanValidationReport = z.infer<
 >;
 
 /**
+ * The stable solver diagnostic vocabulary (backend plan §20.20).
+ *
+ * Closed on purpose, like every other service vocabulary in this package: a
+ * code outside this set is a newer backend the package does not understand
+ * yet, and failing loudly beats half-rendering a finding the department head
+ * is about to act on.
+ */
+export const FeasibilityDiagnosticCodeSchema = z.enum([
+  "incompatible_residual_totals",
+  "slot_exceeds_every_target",
+  "distinct_teacher_shortfall",
+  "unsatisfiable_targets",
+  "instance_size_limit",
+  "step_limit",
+  "time_limit"
+]);
+export type FeasibilityDiagnosticCode = z.infer<
+  typeof FeasibilityDiagnosticCodeSchema
+>;
+
+/**
+ * One administration-only solver finding. `code` is the stable machine key;
+ * `related_ids` carries the affected slot or activity identifiers when the
+ * code has any — never the witness, which stays server-side (§20.24).
+ */
+export const FeasibilityDiagnosticSchema = z
+  .object({
+    code: FeasibilityDiagnosticCodeSchema,
+    message: z.string().min(1),
+    related_ids: z.array(uuidSchema)
+  })
+  .strict();
+export type FeasibilityDiagnostic = z.infer<typeof FeasibilityDiagnosticSchema>;
+
+/**
+ * The latest current evaluation's findings (department-head/admin only).
+ *
+ * The endpoint fails closed with 409 whenever no current fingerprint- and
+ * generation-matching evaluation exists, so a parsed report always describes
+ * the state the head is looking at — never a stale one.
+ */
+export const FeasibilityDiagnosticsReportSchema = z
+  .object({
+    teaching_plan_id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    status: FeasibilityStatusSchema,
+    checked_at: dateTimeSchema,
+    diagnostics: z.array(FeasibilityDiagnosticSchema)
+  })
+  .strict();
+export type FeasibilityDiagnosticsReport = z.infer<
+  typeof FeasibilityDiagnosticsReportSchema
+>;
+
+/**
+ * Result of the administrator-only bounded evaluation action (§20.23): the
+ * endpoint runs or reuses the serialized solver for the exact current
+ * fingerprint and reports provenance and telemetry, never the witness.
+ */
+export const FeasibilityEvaluationSchema = z
+  .object({
+    teaching_plan_id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    status: FeasibilityStatusSchema,
+    input_fingerprint: z.string(),
+    solver_version: z.string(),
+    checked_at: dateTimeSchema,
+    cache_reused: z.boolean(),
+    witness_available: z.boolean(),
+    states_explored: z.number().int().nonnegative(),
+    memoization_hits: z.number().int().nonnegative()
+  })
+  .strict();
+export type FeasibilityEvaluation = z.infer<typeof FeasibilityEvaluationSchema>;
+
+/**
  * Assignment-stage findings for one process (backend plan §6.3, §6.4).
  *
  * The assignment twin of {@link PlanValidationReportSchema}: it reuses the same

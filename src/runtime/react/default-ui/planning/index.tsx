@@ -17,6 +17,7 @@ import { PlanningBalanceHeader } from "./balance-header.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
 import { SecondaryActivityEditor } from "./secondary-activities.js";
 import { PlanLockAndRequirementGeneration } from "./plan-generation.js";
+import { FeasibilityDiagnosticsPanel } from "./feasibility-diagnostics.js";
 import { AllocationChangeReconciliation } from "./allocation-reconciliation.js";
 
 function PlanningContent({
@@ -53,6 +54,7 @@ function PlanningContent({
       <MainSubjectMaterialization locale={locale} processId={processId} />
       <SecondaryActivityEditor locale={locale} processId={processId} />
       <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
+      <FeasibilityDiagnosticsPanel locale={locale} processId={processId} />
       <AllocationChangeReconciliation locale={locale} processId={processId} />
     </main>
   );
@@ -102,6 +104,11 @@ export {
   isPlanLockAvailable,
   isRequirementGenerationAvailable
 } from "./plan-generation.js";
+export {
+  buildFeasibilityDiagnosticsLookup,
+  FeasibilityDiagnosticsPanel,
+  FeasibilityDiagnosticsView
+} from "./feasibility-diagnostics.js";
 export {
   AllocationChangeReconciliation,
   AllocationRevisionHistory,

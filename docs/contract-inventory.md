@@ -420,13 +420,27 @@ valid preview, requires a separate confirmation and discards the preview on
 | Validations | `GET /validations` → `PlanValidationReport` |
 | Lock | `POST /lock` → `TeachingPlanPublic` (admin); no request body; requires a balanced plan and a matching current feasible witness |
 | Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
+| Feasibility evaluate | `POST /feasibility/evaluate` → `FeasibilityEvaluationPublic` (admin); no request body; runs the solver on the intended next requirement generation |
+| Feasibility diagnostics | `GET /feasibility/diagnostics` → `FeasibilityDiagnosticsPublic` (admin); **409** when no current fingerprint- and generation-matching evaluation exists |
 | Patch / delete | **not exposed** |
 | Public shape | `id, assignment_process_id, allocation_revision_id, status, current_generation_number, locked_at, locked_by_user_id, requirements_generated_at, stale_reason, feasibility_status, feasibility_generation, feasibility_checked_at, feasibility_input_fingerprint, feasibility_solver_version, feasibility_diagnostics_ref, created_at, updated_at` |
 
 Plan status values: `draft, unbalanced, balanced, locked,
 requirements_generated, stale, reconciliation_required`. Feasibility is an
-independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted
-solver witness is deliberately absent from the browser contract.
+independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted solver witness is deliberately absent from the browser contract.
+
+`FeasibilityEvaluationPublic` carries `feasibility_status`,
+`feasibility_generation`, `feasibility_checked_at`,
+`feasibility_input_fingerprint` and `feasibility_solver_version`.
+
+`FeasibilityDiagnosticsPublic` carries `teaching_plan_id`,
+`assignment_process_id`, `status`, `checked_at` and `diagnostics` — a list of
+`{code, message, related_ids}`. The seven stable codes are
+`incompatible_residual_totals`, `slot_exceeds_every_target`,
+`distinct_teacher_shortfall`, `unsatisfiable_targets`,
+`instance_size_limit`, `step_limit`, `time_limit`. A `FEASIBLE` evaluation
+returns an empty list. `related_ids` may contain deterministic prospective ids
+(uuid5) that are unresolvable client-side — counted, never printed.
 
 This resource is also where the dashboard and meeting-control invariant row
 reads its third invariant (backend plan §20.19 8/8.7, §20.20). `ProcessDashboard`
@@ -452,6 +466,12 @@ summed or collapsed.
 `blocking_count` / `warning_count`, and messages of `severity, code, message,
 entity_type, entity_id`. `code` is the stable machine key. Reading validations
 does not trigger the feasibility solver.
+
+The frontend wraps both feasibility operations: `evaluateFeasibility`
+(`POST /feasibility/evaluate`) and `feasibilityDiagnostics`
+(`GET /feasibility/diagnostics`) in `src/runtime/api/teachingPlans.ts`.
+The diagnostics panel renders the department-head-only report through
+`FeasibilityDiagnosticsPanel`.
 
 ### 2.13 Teaching activity — `prefix=/…/teaching-activities`
 

@@ -26,6 +26,10 @@ import {
   DepartmentsPublicSchema,
   ExportArtifactPublicSchema,
   VersionComparisonSchema,
+  FeasibilityDiagnosticCodeSchema,
+  FeasibilityDiagnosticSchema,
+  FeasibilityDiagnosticsReportSchema,
+  FeasibilityEvaluationSchema,
   FeasibilityStatusSchema,
   GroupBalanceSchema,
   GroupSubjectBulkApplyRequestSchema,
@@ -1840,6 +1844,79 @@ describe("teaching-plan and activity schemas", () => {
     ).toThrow();
     expect(() =>
       TeachingPlansPublicSchema.parse({ data: [planBody], count: -1 })
+    ).toThrow();
+  });
+
+  it("validates feasibility evaluation and diagnostics payloads (§20.20)", () => {
+    expect(FeasibilityDiagnosticCodeSchema.options).toEqual([
+      "incompatible_residual_totals",
+      "slot_exceeds_every_target",
+      "distinct_teacher_shortfall",
+      "unsatisfiable_targets",
+      "instance_size_limit",
+      "step_limit",
+      "time_limit"
+    ]);
+
+    const diagnostic = {
+      code: "distinct_teacher_shortfall",
+      message: "An activity has too few distinct participants for its positions.",
+      related_ids: [activityId]
+    };
+    expect(FeasibilityDiagnosticSchema.parse(diagnostic)).toMatchObject({
+      code: "distinct_teacher_shortfall"
+    });
+    // The vocabulary is closed on purpose: a code the package does not know
+    // fails loudly rather than half-rendering a finding the head will act on.
+    expect(() =>
+      FeasibilityDiagnosticSchema.parse({ ...diagnostic, code: "new_code" })
+    ).toThrow();
+    // And the witness never travels here — an unexpected field is rejected.
+    expect(() =>
+      FeasibilityDiagnosticSchema.parse({ ...diagnostic, witness: [] })
+    ).toThrow();
+
+    const reportBody = {
+      teaching_plan_id: planId,
+      assignment_process_id: processId,
+      status: "infeasible",
+      checked_at: now,
+      diagnostics: [diagnostic]
+    };
+    expect(
+      FeasibilityDiagnosticsReportSchema.parse(reportBody)
+    ).toMatchObject({ status: "infeasible" });
+    expect(() =>
+      FeasibilityDiagnosticsReportSchema.parse({
+        ...reportBody,
+        status: "ready"
+      })
+    ).toThrow();
+
+    const evaluationBody = {
+      teaching_plan_id: planId,
+      assignment_process_id: processId,
+      status: "feasible",
+      input_fingerprint: "fingerprint",
+      solver_version: "bounded-dfs-v1",
+      checked_at: now,
+      cache_reused: true,
+      witness_available: true,
+      states_explored: 42,
+      memoization_hits: 7
+    };
+    expect(FeasibilityEvaluationSchema.parse(evaluationBody)).toMatchObject({
+      status: "feasible",
+      witness_available: true
+    });
+    expect(() =>
+      FeasibilityEvaluationSchema.parse({
+        ...evaluationBody,
+        states_explored: -1
+      })
+    ).toThrow();
+    expect(() =>
+      FeasibilityEvaluationSchema.parse({ ...evaluationBody, witness: [] })
     ).toThrow();
   });
 

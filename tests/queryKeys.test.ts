@@ -234,6 +234,17 @@ describe("reparto query keys", () => {
       "teaching-plan",
       "validations"
     ]);
+    // Nested under the plan so a plan-changing mutation drops the findings
+    // projection with one prefix — the backend resets feasibility on the same
+    // paths, so a stale diagnostics read must not survive either.
+    expect(repartoKeys.teachingPlanFeasibilityDiagnostics("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-diagnostics"
+    ]);
     expect(repartoKeys.teachingActivities("p1")).toEqual([
       "reparto",
       "processes",

@@ -556,6 +556,38 @@ export const en = {
       resultSummary: "Generation {generation} created {created}, preserved {preserved}, retired {retired}, and now has {count} live slots.",
       totalSlots: "Generated live-slot count"
     },
+    feasibility: {
+      title: "Feasibility diagnostics",
+      description: "Department-head view of the latest bounded evaluation: its status, its findings and the suggested remediation. Findings never leave this tier.",
+      planLoading: "Loading the teaching plan.",
+      planUnavailable: "The teaching plan is unavailable.",
+      noPlan: "Planning has not started for this process, so there is nothing to evaluate.",
+      statusTitle: "Latest evaluation",
+      evaluatedAt: "Last evaluated: {timestamp}",
+      solverVersion: "Solver version: {version}",
+      notEvaluated: "No current evaluation exists. Run one after planning edits; every relevant change resets the stored result.",
+      evaluatedNone: "The current evaluation reports no findings.",
+      diagnosticsLoading: "Loading the evaluation findings.",
+      diagnosticsUnavailable: "The evaluation findings are unavailable; a fresh evaluation is required.",
+      findingsTitle: "Findings",
+      affectedTitle: "Affected",
+      affectedSlot: "{activity} · {position}",
+      unresolvedReferences: "{count} affected reference(s) cannot be resolved to a current activity or slot.",
+      suggestionTitle: "Suggested remediation",
+      suggestion: {
+        incompatible_residual_totals: "Adjust participant targets or activity hours so the remaining totals match exactly.",
+        slot_exceeds_every_target: "Lower the affected activity's hours per position, or raise a participant's target through authorized extra hours.",
+        distinct_teacher_shortfall: "Add active participants or lower the affected activity's teacher-position count so every position can have a distinct teacher.",
+        unsatisfiable_targets: "Review participant targets and activity hours together: no exact assignment can fill every participant to their target.",
+        instance_size_limit: "The instance exceeds the configured solver limits. Reduce participants or slots, or ask the platform administrator to review the limits.",
+        step_limit: "Re-run the evaluation. If it stays undetermined, simplify the instance or ask the platform administrator to review the solver budget.",
+        time_limit: "Re-run the evaluation. If it stays undetermined, simplify the instance or ask the platform administrator to review the solver budget."
+      },
+      evaluateAction: "Run feasibility evaluation",
+      evaluateDisabledNoPlan: "Create the teaching plan before running an evaluation.",
+      evaluateSuccess: "Feasibility evaluation finished: {status}.",
+      evaluateError: "The feasibility evaluation could not be run."
+    },
     reconciliation: {
       title: "Allocation changes and reconciliation",
       description: "Record immutable allocation revisions, review the stale plan and explicitly resolve every affected assigned slot.",

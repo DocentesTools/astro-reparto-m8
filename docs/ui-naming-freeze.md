@@ -465,6 +465,27 @@ The editor freezes these surface slots:
 | Teacher audience | `audience=teacher` | readiness, selection blocking and the caller's own participant-hour payload only |
 | Shared-screen audience | `audience=shared_screen` | `{ readiness }` only; no process, participant or hour identifiers arrive |
 
+### 3.21 Feasibility diagnostics panel
+
+> Added **2026-08-03** by the three-stage adaptation (§20.20). The panel
+> renders the department-head-only diagnostics report: diagnostic codes with
+> directional suggestions, related activity/slot labels resolved from the
+> process data, and an evaluate action. Unresolved `related_ids` are
+> **counted, never printed** — no UUID reaches a user-visible label.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Panel | `data-reparto-component="feasibility-diagnostics"` | department-head-only diagnostics and remediation |
+| Tier boundary | `data-reparto-tier="department-head"` | admin-only; the panel never renders for other tiers |
+| Status slot | `data-reparto-slot="feasibility-evaluation-status"` + `data-feasibility-status` | `FEASIBLE` / `INFEASIBLE` / `NOT_EVALUATED` / `UNKNOWN`; absent plan renders `no-plan` |
+| Diagnostic list | `data-reparto-list="feasibility-diagnostics"` | one row per diagnostic finding |
+| Diagnostic code | `data-feasibility-diagnostic-code` | one of the seven stable codes; the dictionary provides directional suggestion text |
+| Unresolved count | `data-feasibility-unresolved-count` | count of unresolvable related ids; never prints the ids themselves |
+| Evaluate action | `data-reparto-action="evaluate-feasibility"` | `POST /feasibility/evaluate`; disabled while pending |
+| No-plan state | `data-reparto-state="no-plan"` | process has no plan; evaluate disabled with stable reason |
+| Not-evaluated state | `data-reparto-state="not-evaluated"` | plan exists but no evaluation has run |
+| No-findings state | `data-reparto-state="no-findings"` | evaluation is `FEASIBLE`; the diagnostics list is empty |
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)

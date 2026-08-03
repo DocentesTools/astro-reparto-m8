@@ -295,8 +295,11 @@ describe("default reparto UI", () => {
     // The three invariants are three slots, never one "ready" badge (§20.20).
     expect(html).toContain('data-reparto-invariant="group"');
     expect(html).toContain('data-reparto-invariant="teacher"');
-    expect(html).toContain('data-reparto-invariant="readiness"');
+    expect(html).toContain('data-reparto-invariant="feasibility"');
     expect(html).toContain('data-reparto-invariant-state="unbalanced"');
+    // With no plan payload in hand the third slot reports the coarse readiness
+    // projection and says so, rather than claiming a feasibility result.
+    expect(html).toContain('data-reparto-invariant-source="readiness"');
     expect(html).toContain('data-reparto-invariant-state="recalculation_required"');
 
     // Both axes are shown and neither is summed into the other: 120 group hours

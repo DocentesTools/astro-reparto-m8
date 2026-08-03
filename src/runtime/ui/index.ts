@@ -54,6 +54,14 @@ export {
 } from "./history.js";
 export { summarizeProcessDashboard } from "./dashboard.js";
 export {
+  buildProcessInvariants,
+  type BalanceInvariantState,
+  type FeasibilityInvariantSource,
+  type ProcessInvariant,
+  type ProcessInvariantInput,
+  type ProcessInvariantKey
+} from "./invariants.js";
+export {
   buildMeetingControlState,
   type MeetingControlBlockedReason,
   type MeetingControlState,

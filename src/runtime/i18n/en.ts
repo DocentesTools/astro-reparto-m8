@@ -728,7 +728,18 @@ export const en = {
       not_ready: "Not ready",
       recalculation_required: "Recalculation required"
     },
-    invariant: { group: "Group hours", teacher: "Teacher load", readiness: "Readiness" },
+    feasibility: {
+      not_evaluated: "Not evaluated",
+      feasible: "Feasible",
+      infeasible: "Infeasible",
+      unknown: "Undetermined"
+    },
+    invariant: {
+      group: "Group hours",
+      teacher: "Teacher load",
+      feasibility: "Assignment feasibility",
+      readiness: "Readiness"
+    },
     title: "Reparto dashboard",
     subtitleAdmin: "Follow both balances, assignment progress, and meeting readiness before the live session.",
     subtitleReadonly: "Project a calm read-only view for the live meeting.",

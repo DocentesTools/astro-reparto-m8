@@ -24,12 +24,14 @@ import type {
 import {
   buildExportCenterState,
   buildPlanningImportDraftState,
+  buildProcessInvariants,
   buildVersionComparisonView,
   buildVersionSelectionState,
   nextLeadershipWorkflowAction,
   summarizeProcessDashboard,
   versionSectionLabelKey,
   type ExportCenterState,
+  type ProcessInvariant,
   type PlanningExportBlockedReason,
   type PlanningImportDraftError,
   type VersionComparisonDelta,
@@ -133,69 +135,83 @@ function displayHours(value: string | null | undefined): string {
 }
 
 /**
+ * Label and value for one invariant, in the caller's locale.
+ *
+ * The feasibility slot carries two vocabularies rather than one, because the two
+ * sources are not the same statement: `plan` prints the service's own stored
+ * status (`INFEASIBLE` is a fact about the partition, not a degree of
+ * readiness), while `readiness` prints the coarse ready / not ready /
+ * recalculation projection that §20.25 allows a teacher or a projected screen to
+ * see. Labelling the projection "Assignment feasibility" would claim a precision
+ * the payload does not carry, so it keeps its own label.
+ */
+function invariantDisplay(
+  invariant: ProcessInvariant,
+  dict: ReturnType<typeof getRepartoDictionary>
+): { label: string; value: string } {
+  if (invariant.key === "feasibility") {
+    return invariant.source === "plan"
+      ? {
+          label: dict.dashboard.invariant.feasibility,
+          value: dict.dashboard.feasibility[invariant.state]
+        }
+      : {
+          label: dict.dashboard.invariant.readiness,
+          value: dict.dashboard.readiness[invariant.state]
+        };
+  }
+  return {
+    label: dict.dashboard.invariant[invariant.key],
+    value: dict.dashboard.balanceState[invariant.state]
+  };
+}
+
+/**
  * The three invariants, side by side, never collapsed into one badge.
  *
  * Backend plan §20.20 is explicit: group balance, teacher-load balance and
- * readiness are independent, and a single "ready" pill — which is what the
- * retired `overview-state` slot was — hides which of the three is the reason.
- * §3.2's co-teaching example is 120 group hours against 124 teacher-load hours
- * with *both* correct, so the two balances cannot even be compared with each
- * other, let alone summed.
+ * assignment feasibility are independent, and a single "ready" pill — which is
+ * what the retired `overview-state` slot was — hides which of the three is the
+ * reason. §3.2's co-teaching example is 120 group hours against 124
+ * teacher-load hours with *both* correct, so the two balances cannot even be
+ * compared with each other, let alone summed; and §20.19 4/5.2 keeps
+ * feasibility a separate field, so a balanced plan can still be infeasible.
  *
- * The third invariant is reported as `readiness`, the coarse role-safe
- * projection the service publishes; the raw feasibility status is planning-stage
- * detail and is not on this payload by design.
+ * `feasibility` is the plan's stored status and is department-head-only
+ * (§21.1): the LAN and shared-screen callers pass nothing, and the third slot
+ * then reports the role-safe readiness projection instead. The distinction is on
+ * the DOM as `data-reparto-invariant-source`, so nothing has to infer which one
+ * it is looking at.
  */
 export function ProcessInvariantRow({
   balance,
   dict,
+  feasibility = null,
   readiness
 }: {
   balance: PlanBalance | null;
   dict: ReturnType<typeof getRepartoDictionary>;
+  feasibility?: FeasibilityStatus | null;
   readiness: PlanReadiness;
 }) {
-  const invariants = [
-    {
-      key: "group",
-      label: dict.dashboard.invariant.group,
-      state: balance ? (balance.group.is_balanced ? "balanced" : "unbalanced") : "unknown",
-      value: balance
-        ? dict.dashboard.balanceState[balance.group.is_balanced ? "balanced" : "unbalanced"]
-        : dict.dashboard.balanceState.unknown
-    },
-    {
-      key: "teacher",
-      label: dict.dashboard.invariant.teacher,
-      state: balance
-        ? balance.teacher.is_balanced
-          ? "balanced"
-          : "unbalanced"
-        : "unknown",
-      value: balance
-        ? dict.dashboard.balanceState[balance.teacher.is_balanced ? "balanced" : "unbalanced"]
-        : dict.dashboard.balanceState.unknown
-    },
-    {
-      key: "readiness",
-      label: dict.dashboard.invariant.readiness,
-      state: readiness,
-      value: dict.dashboard.readiness[readiness]
-    }
-  ] as const;
+  const invariants = buildProcessInvariants({ balance, feasibility, readiness });
   return (
     <dl className={repartoMetricsClass} data-reparto-slot="process-invariants">
-      {invariants.map((invariant) => (
-        <div
-          className={repartoMetricItemClass}
-          data-reparto-invariant={invariant.key}
-          data-reparto-invariant-state={invariant.state}
-          key={invariant.key}
-        >
-          <dt className={repartoMetricLabelClass}>{invariant.label}</dt>
-          <dd className={repartoMetricValueClass}>{invariant.value}</dd>
-        </div>
-      ))}
+      {invariants.map((invariant) => {
+        const display = invariantDisplay(invariant, dict);
+        return (
+          <div
+            className={repartoMetricItemClass}
+            data-reparto-invariant={invariant.key}
+            data-reparto-invariant-source={invariant.source}
+            data-reparto-invariant-state={invariant.state}
+            key={invariant.key}
+          >
+            <dt className={repartoMetricLabelClass}>{display.label}</dt>
+            <dd className={repartoMetricValueClass}>{display.value}</dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }
@@ -432,11 +448,18 @@ function ParticipantBalanceList({
  */
 export function DepartmentHeadWorkspace({
   dashboard,
+  feasibility = null,
   locale,
   mode = "admin",
   summary = null
 }: {
   dashboard?: ProcessDashboard | null;
+  /**
+   * The teaching plan's stored feasibility status (§20.20). Department-head
+   * surfaces read it from the plan payload the dashboard does not carry; absent,
+   * the invariant row falls back to the role-safe readiness projection.
+   */
+  feasibility?: FeasibilityStatus | null;
   locale?: RepartoLocale;
   mode?: "admin" | "readonly";
   summary?: ProcessSummary | null;
@@ -523,7 +546,12 @@ export function DepartmentHeadWorkspace({
             </span>
           </div>
           <CurrentTurnCard currentTurn={activeSummary?.current_turn ?? null} locale={locale} />
-          <ProcessInvariantRow balance={balance} dict={dict} readiness={readiness} />
+          <ProcessInvariantRow
+            balance={balance}
+            dict={dict}
+            feasibility={feasibility}
+            readiness={readiness}
+          />
           {mode === "admin" ? (
             <div className={repartoActionRowClass}>
               {actions.map((action) => (

@@ -428,6 +428,17 @@ requirements_generated, stale, reconciliation_required`. Feasibility is an
 independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted
 solver witness is deliberately absent from the browser contract.
 
+This resource is also where the dashboard and meeting-control invariant row
+reads its third invariant (backend plan §20.19 8/8.7, §20.20). `ProcessDashboard`
+and `ProcessSummary` carry `readiness` and no feasibility field — by design,
+since those payloads also feed the LAN and shared-screen tiers, which §20.25
+limits to ready / not ready / recalculation required. So the department-head
+views read `feasibility_status` from this admin-only plan resource and pass it to
+`ProcessInvariantRow`; a caller that passes nothing (the teacher panel, the
+projected screen, or a head whose plan request has not answered — including the
+`404` above) renders the readiness projection instead, marked
+`data-reparto-invariant-source="readiness"`.
+
 `PlanBalance` contains `teaching_plan_id`, `assignment_process_id`, `group`,
 `teacher`, and `is_exact`. The group axis is
 `total_group_load, allocated_group_weekly_hours, allocation_difference,

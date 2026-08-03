@@ -728,7 +728,18 @@ export const fr: RepartoDictionary = {
       not_ready: "Pas prêt",
       recalculation_required: "Recalcul requis"
     },
-    invariant: { group: "Heures de classe", teacher: "Charge enseignante", readiness: "Préparation" },
+    feasibility: {
+      not_evaluated: "Non évaluée",
+      feasible: "Réalisable",
+      infeasible: "Irréalisable",
+      unknown: "Indéterminée"
+    },
+    invariant: {
+      group: "Heures de classe",
+      teacher: "Charge enseignante",
+      feasibility: "Faisabilité du reparto",
+      readiness: "Préparation"
+    },
     title: "Tableau de bord du reparto",
     subtitleAdmin: "Suivez les deux équilibres, l'avancement des affectations et la préparation de la séance avant le direct.",
     subtitleReadonly: "Projetez une vue calme en lecture seule pour la seance en direct.",

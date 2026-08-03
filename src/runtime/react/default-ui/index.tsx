@@ -51,6 +51,7 @@ import type {
   AssignmentPublic,
   ExportArtifactPublic,
   ExportArtifactType,
+  FeasibilityStatus,
   HourRequirementPublic,
   MeetingSessionPublic,
   PlanReadiness,
@@ -153,12 +154,14 @@ function latestMeetingSession(
 export function RepartoDashboardView({
   config,
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
@@ -174,6 +177,7 @@ export function RepartoDashboardView({
         {(resolvedProcessId) => (
           <RepartoDashboardContent
             dashboard={dashboard}
+            feasibility={feasibility}
             locale={locale}
             processId={resolvedProcessId}
             summary={summary}
@@ -186,16 +190,24 @@ export function RepartoDashboardView({
 
 function RepartoDashboardContent({
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dashboardQuery = useRepartoDashboard(processId);
+  // The plan carries the third invariant, and the dashboard payload does not:
+  // `feasibility_status` is department-head-only (§20.20, §21.1), so it travels
+  // on the plan resource this admin view is already entitled to read. The
+  // request is supplementary — a process with no plan 404s here, and the row
+  // then reports the readiness projection rather than blocking the dashboard.
+  const planQuery = useRepartoTeachingPlan(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
   const isLoading =
@@ -218,6 +230,7 @@ function RepartoDashboardContent({
     <>
       <DepartmentHeadWorkspace
         dashboard={activeDashboard}
+        feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
         mode="admin"
         summary={activeSummary}
@@ -241,12 +254,14 @@ function RepartoDashboardContent({
 export function RepartoMeetingView({
   config,
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
@@ -262,6 +277,7 @@ export function RepartoMeetingView({
         {(resolvedProcessId) => (
           <RepartoMeetingContent
             dashboard={dashboard}
+            feasibility={feasibility}
             locale={locale}
             processId={resolvedProcessId}
             summary={summary}
@@ -283,16 +299,21 @@ export function RepartoMeetingView({
  */
 function RepartoMeetingContent({
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dashboardQuery = useRepartoDashboard(processId);
+  // Same department-head-only source as the dashboard: the control room shows
+  // the stored feasibility status, the projected screen next door does not.
+  const planQuery = useRepartoTeachingPlan(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const isLoading =
     dashboardQuery.isLoading &&
@@ -314,6 +335,7 @@ function RepartoMeetingContent({
     <>
       <MeetingControlWorkspace
         dashboard={activeDashboard}
+        feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
         processId={processId}
         summary={summary}

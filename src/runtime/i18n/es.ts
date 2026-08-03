@@ -727,7 +727,18 @@ export const es: RepartoDictionary = {
       not_ready: "No listo",
       recalculation_required: "Requiere recálculo"
     },
-    invariant: { group: "Horas de grupo", teacher: "Carga docente", readiness: "Preparación" },
+    feasibility: {
+      not_evaluated: "Sin evaluar",
+      feasible: "Factible",
+      infeasible: "Inviable",
+      unknown: "Indeterminada"
+    },
+    invariant: {
+      group: "Horas de grupo",
+      teacher: "Carga docente",
+      feasibility: "Factibilidad del reparto",
+      readiness: "Preparación"
+    },
     title: "Panel de reparto",
     subtitleAdmin: "Siga los dos equilibrios, el avance del reparto y la preparación de la sesión antes del directo.",
     subtitleReadonly: "Proyecte una vista tranquila en solo lectura para la sesion en directo.",

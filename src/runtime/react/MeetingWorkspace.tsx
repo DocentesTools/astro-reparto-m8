@@ -1,4 +1,5 @@
 import type {
+  FeasibilityStatus,
   ParticipantBalance,
   ProcessDashboard,
   ProcessSummary
@@ -102,11 +103,19 @@ function AuthorizedOverloadList({
  */
 export function MeetingControlWorkspace({
   dashboard,
+  feasibility = null,
   locale,
   processId,
   summary = null
 }: {
   dashboard?: ProcessDashboard | null;
+  /**
+   * The plan's stored feasibility status, department-head-only (§20.20, §21.1).
+   * The control room is the head's own surface, so it shows the real status;
+   * the projected screen next door passes nothing and keeps the readiness
+   * projection.
+   */
+  feasibility?: FeasibilityStatus | null;
   locale?: RepartoLocale;
   processId?: string;
   summary?: ProcessSummary | null;
@@ -155,6 +164,7 @@ export function MeetingControlWorkspace({
           <ProcessInvariantRow
             balance={activeSummary?.plan_balance ?? null}
             dict={dict}
+            feasibility={feasibility}
             readiness={activeSummary?.readiness ?? "not_ready"}
           />
           <div className={repartoActionRowClass}>

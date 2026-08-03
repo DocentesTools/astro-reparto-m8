@@ -208,6 +208,23 @@ describe("meeting control view", () => {
     expect(html).toContain("18.00 h base + 2.00 h authorized = 20.00 h target");
   });
 
+  it("shows the head the stored feasibility status, not the readiness projection", () => {
+    const html = renderToStaticMarkup(
+      <MeetingControlWorkspace
+        dashboard={dashboard}
+        feasibility="infeasible"
+        processId={processId}
+      />
+    );
+    // A `ready` process whose partition is INFEASIBLE is exactly the case the
+    // projection cannot express, and the control room is the head's own surface.
+    expect(html).toContain('data-reparto-invariant="feasibility"');
+    expect(html).toContain('data-reparto-invariant-source="plan"');
+    expect(html).toContain('data-reparto-invariant-state="infeasible"');
+    expect(html).toContain("Infeasible");
+    expect(html).not.toContain('data-reparto-invariant-source="readiness"');
+  });
+
   it("closes the turn controls and says why when reconciliation is required", () => {
     const html = renderToStaticMarkup(
       <MeetingControlWorkspace
@@ -260,7 +277,12 @@ describe("shared screen", () => {
     expect(html).toContain('data-reparto-panel="shared-balance"');
     expect(html).toContain('data-reparto-invariant="group"');
     expect(html).toContain('data-reparto-invariant="teacher"');
-    expect(html).toContain('data-reparto-invariant="readiness"');
+    // The room gets the third invariant at readiness granularity and no finer
+    // (§20.25): the projected screen is never handed the stored feasibility
+    // status, so the slot reports its source as the projection.
+    expect(html).toContain('data-reparto-invariant="feasibility"');
+    expect(html).toContain('data-reparto-invariant-source="readiness"');
+    expect(html).not.toContain('data-reparto-invariant-source="plan"');
     expect(html).toContain('data-reparto-slot="pending-slots"');
     expect(html).toContain('data-reparto-slot="current-turn"');
 

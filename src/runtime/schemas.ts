@@ -102,6 +102,13 @@ export const SseEventTypeSchema = z.enum([
   "teaching_plan.balanced",
   "teaching_plan.locked",
   "teaching_plan.stale",
+  // A bounded solve persisted a new feasibility result, or a planning input
+  // dropped the stored one (backend plan §20.25). Both carry the department
+  // head's status and provenance in the payload the head tier receives; the
+  // teacher and shared-screen tiers see only the coarse readiness their
+  // projection derives, which is why the payload is never read for a verdict.
+  "teaching_plan.feasibility_updated",
+  "teaching_plan.feasibility_invalidated",
   "requirements.generated",
   "requirements.reconciled",
   "requirements.reconciliation_required",
@@ -2281,6 +2288,105 @@ export const MainMaterializationResultSchema = z
   );
 export type MainMaterializationResult = z.infer<
   typeof MainMaterializationResultSchema
+>;
+
+// ── Main-activity source sync (backend plan §20.10) ─────────────────────────
+//
+// Editing a source `GroupSubject` never silently overwrites the activity it
+// materialized: the activity becomes `out_of_sync`, and the values are only
+// copied across by an explicit apply that echoes the preview's fingerprint. So
+// the preview is not a convenience — it is the only way to learn what an apply
+// would change, and the only token that authorizes it.
+
+/** The three planning values the sync flow compares, on both sides. */
+export const MainActivitySyncValuesSchema = z
+  .object({
+    group_weekly_hours_per_group: HoursSchema,
+    teacher_weekly_hours_per_position: HoursSchema,
+    required_teacher_count: z.number().int().nonnegative()
+  })
+  .strict();
+export type MainActivitySyncValues = z.infer<
+  typeof MainActivitySyncValuesSchema
+>;
+
+/** Which of the three values differs, and the exact pair of values. */
+export const MainActivitySyncFieldSchema = z.enum([
+  "group_weekly_hours_per_group",
+  "teacher_weekly_hours_per_position",
+  "required_teacher_count"
+]);
+export type MainActivitySyncField = z.infer<typeof MainActivitySyncFieldSchema>;
+
+export const MainActivitySyncDifferenceSchema = z
+  .object({
+    field: MainActivitySyncFieldSchema,
+    // Two of the three fields are hours and one is a count; both arrive as JSON
+    // numbers today, so the canonical hour schema normalizes them either way and
+    // no difference is ever compared in binary floating point.
+    current_value: HoursSchema,
+    source_value: HoursSchema
+  })
+  .strict();
+export type MainActivitySyncDifference = z.infer<
+  typeof MainActivitySyncDifferenceSchema
+>;
+
+/** Live assignments an apply would disturb; the head decides with this, not a guess. */
+export const MainActivityAssignmentImpactSchema = z
+  .object({
+    active_assignment_count: z.number().int().nonnegative(),
+    affected_assignment_count: z.number().int().nonnegative(),
+    affected_requirement_ids: z.array(uuidSchema),
+    requires_reconciliation: z.boolean()
+  })
+  .strict();
+export type MainActivityAssignmentImpact = z.infer<
+  typeof MainActivityAssignmentImpactSchema
+>;
+
+export const MainActivitySyncPreviewSchema = z
+  .object({
+    group_subject_id: uuidSchema,
+    teaching_activity_id: uuidSchema,
+    sync_state: TeachingActivitySyncStateSchema,
+    source_active: z.boolean(),
+    source_values: MainActivitySyncValuesSchema,
+    current_values: MainActivitySyncValuesSchema,
+    differences: z.array(MainActivitySyncDifferenceSchema),
+    assignment_impact: MainActivityAssignmentImpactSchema,
+    /** The source cell is retired: the guarded retirement flow owns it, not sync. */
+    retirement_required: z.boolean(),
+    is_noop: z.boolean(),
+    /** Staleness token an apply must echo unchanged; the backend 409s otherwise. */
+    preview_fingerprint: z.string().length(64)
+  })
+  .strict();
+export type MainActivitySyncPreview = z.infer<
+  typeof MainActivitySyncPreviewSchema
+>;
+
+export const MainActivitySyncApplyRequestSchema = z
+  .object({ expected_preview_fingerprint: z.string().length(64) })
+  .strict();
+export type MainActivitySyncApplyRequest = z.infer<
+  typeof MainActivitySyncApplyRequestSchema
+>;
+export type MainActivitySyncApplyRequestInput = z.input<
+  typeof MainActivitySyncApplyRequestSchema
+>;
+
+export const MainActivitySyncResultSchema = z
+  .object({
+    activity: TeachingActivityPublicSchema,
+    applied_differences: z.array(MainActivitySyncDifferenceSchema),
+    assignment_impact: MainActivityAssignmentImpactSchema,
+    teaching_plan_status: TeachingPlanStatusSchema,
+    was_noop: z.boolean()
+  })
+  .strict();
+export type MainActivitySyncResult = z.infer<
+  typeof MainActivitySyncResultSchema
 >;
 
 // ── Planning import/export exchange (backend plan §3.10, §7.8, §20.25) ───────

@@ -8,6 +8,9 @@ import {
   GroupSubjectPublicSchema,
   GroupSubjectsPublicSchema,
   GroupSubjectUpdateSchema,
+  MainActivitySyncApplyRequestSchema,
+  MainActivitySyncPreviewSchema,
+  MainActivitySyncResultSchema,
   type GroupSubjectBulkApplyRequestInput,
   type GroupSubjectBulkPreview,
   type GroupSubjectBulkRequestInput,
@@ -15,7 +18,10 @@ import {
   type GroupSubjectCreateInput,
   type GroupSubjectPublic,
   type GroupSubjectsPublic,
-  type GroupSubjectUpdateInput
+  type GroupSubjectUpdateInput,
+  type MainActivitySyncApplyRequestInput,
+  type MainActivitySyncPreview,
+  type MainActivitySyncResult
 } from "../schemas.js";
 
 /**
@@ -93,6 +99,41 @@ export const groupSubjects = {
       path: `/assignment-processes/${processId}/group-subjects/bulk-apply`,
       body: GroupSubjectBulkApplyRequestSchema.parse(body),
       schema: GroupSubjectBulkResultSchema,
+      auth: true
+    }),
+  /**
+   * Compare one materialized main activity against its source cell.
+   *
+   * A POST because the service resolves and fingerprints live state rather
+   * than returning a cacheable document; it changes nothing. **409** when the
+   * cell has no live `main_generated` activity to sync.
+   */
+  syncPreview: (processId: string, groupSubjectId: string) =>
+    request<MainActivitySyncPreview>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/group-subjects/${groupSubjectId}/sync-preview`,
+      schema: MainActivitySyncPreviewSchema,
+      auth: true
+    }),
+  /**
+   * Copy the previewed source values onto the activity.
+   *
+   * The counterpart of `syncPreview`, and only ever driven by one: the request
+   * echoes `preview_fingerprint`, and the backend answers **409** both when
+   * that token is stale and when the source cell has been retired — the latter
+   * belongs to the guarded activity-retirement flow instead. Re-preview on a
+   * conflict rather than retrying the apply.
+   */
+  syncApply: (
+    processId: string,
+    groupSubjectId: string,
+    body: MainActivitySyncApplyRequestInput
+  ) =>
+    request<MainActivitySyncResult>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/group-subjects/${groupSubjectId}/sync-apply`,
+      body: MainActivitySyncApplyRequestSchema.parse(body),
+      schema: MainActivitySyncResultSchema,
       auth: true
     })
 } as const;

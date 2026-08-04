@@ -475,6 +475,7 @@ The editor freezes these surface slots:
 | Last accepted event | `data-reparto-last-event` | registered event name only; empty before the first validated frame |
 | Teacher audience | `audience=teacher` | readiness, selection blocking and the caller's own participant-hour payload only |
 | Shared-screen audience | `audience=shared_screen` | `{ readiness }` only; no process, participant or hour identifiers arrive |
+| Feasibility transitions | `teaching_plan.feasibility_updated` / `teaching_plan.feasibility_invalidated` | added 2026-08-04 (§20.25); the head payload names status, provenance, duration, diagnostic codes and affected ids, and the lower tiers receive only their derived readiness — a feasibility event names no participant, so the teacher tier's "own payload" exception never applies to it. Both drop the whole `teaching-plan` key prefix, which carries the diagnostics and witness projections with it |
 
 ### 3.21 Feasibility diagnostics panel
 
@@ -496,6 +497,29 @@ The editor freezes these surface slots:
 | No-plan state | `data-reparto-state="no-plan"` | process has no plan; evaluate disabled with stable reason |
 | Not-evaluated state | `data-reparto-state="not-evaluated"` | plan exists but no evaluation has run |
 | No-findings state | `data-reparto-state="no-findings"` | evaluation is `FEASIBLE`; the diagnostics list is empty |
+
+### 3.22 Out-of-sync main activities
+
+> Added **2026-08-04** by the three-stage adaptation (§20.10, §20.20). Editing
+> a group-subject cell never rewrites the activity it materialized: the service
+> marks the activity out of sync and waits for an explicit apply. The drift is
+> read from the service's own `sync_state` — the browser never compares values
+> to decide that something changed — and an apply is only ever driven by a
+> preview whose fingerprint it echoes.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Panel | `data-reparto-component="activity-sync"` | department-head-only source-sync review |
+| Tier boundary | `data-reparto-tier="department-head"` | planning values and assigned-slot impact are administration data |
+| Row | `data-activity-sync-row="<group_subject_id>"` | one live out-of-sync `main_generated` activity, keyed by its source cell |
+| Row state | `data-activity-sync-state="out_of_sync"` | the service's own `sync_state`; never inferred from a value comparison |
+| Review action | `data-reparto-action="review-activity-sync"` | `POST /{cell}/sync-preview`; disabled while a preview or apply is in flight |
+| Preview dialog | `data-reparto-dialog="activity-sync-preview"` | absent until a preview resolves; an absent preview is *idle*, never "already in sync" |
+| Difference row | `data-activity-sync-field` | one of `group_weekly_hours_per_group` / `teacher_weekly_hours_per_position` / `required_teacher_count`, with both exact values |
+| Assignment impact | `data-activity-sync-impact="reconciliation-required\|none"` | server-owned; the affected count is printed, the affected slot ids never are |
+| Blocked reason | `data-activity-sync-blocked` | `retirement_required` (guarded retirement owns it) or `no_changes`; no apply action is offered |
+| Apply action | `data-reparto-action="apply-activity-sync"` | `POST /{cell}/sync-apply` echoing `preview_fingerprint`; a 409 discards the preview rather than retrying |
+| Materialization state | `data-main-materialization-state="out_of_sync"` | the third row state alongside `missing` / `materialized` |
 
 ---
 

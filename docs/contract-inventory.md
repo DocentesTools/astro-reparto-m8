@@ -359,6 +359,8 @@ both through `HoursSchema` and always **sends** the canonical string.
 | Delete | `DELETE /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
 | Bulk preview | `POST /bulk-preview` → `GroupSubjectBulkPreview` (process writer, dry run) |
 | Bulk apply | `POST /bulk-apply` → `GroupSubjectBulkResult` (process writer) |
+| Sync preview | `POST /{group_subject_id}/sync-preview` → `MainActivitySyncPreview` (admin) |
+| Sync apply | `POST /{group_subject_id}/sync-apply` → `MainActivitySyncResult` (admin) |
 | Create required | `assignment_process_id` (must equal the URL id), `teaching_group_id`, `subject_id` |
 | Create optional | `group_weekly_hours: float>=0 \| null`, `teacher_weekly_hours_per_position: float>=0 \| null`, `required_teacher_count: int>=1` (default 1), `active: bool` (default true), `notes` |
 | Patch fields | the create-optional set only — `teaching_group_id`/`subject_id` are immutable identity |
@@ -403,6 +405,37 @@ surface: it maps blank hour inputs to explicit `null`, canonicalizes typed zero
 to `"0.00"`, renders every preview outcome in a table, disables apply before a
 valid preview, requires a separate confirmation and discards the preview on
 409.
+
+**Main-activity source sync (§20.10).** Editing a cell that a `MAIN_GENERATED`
+activity was materialized from never rewrites that activity: the service marks
+it `sync_state = "out_of_sync"`, blocks plan validation, and waits for an
+explicit apply. `sync-preview` is a `POST` that changes nothing — it resolves
+and fingerprints live state, so it is deliberately not a cacheable `GET` — and
+answers **409** when the cell has no live `main_generated` activity. Its shape
+is `group_subject_id`, `teaching_activity_id`, `sync_state`, `source_active`,
+`source_values`/`current_values` (the three planning values on both sides),
+`differences` (per field, both values), `assignment_impact`
+(`active_assignment_count`, `affected_assignment_count`,
+`affected_requirement_ids`, `requires_reconciliation`), `retirement_required`,
+`is_noop` and the 64-character `preview_fingerprint`.
+
+`sync-apply` echoes that fingerprint as `expected_preview_fingerprint` and
+answers **409** both when the token is stale *and* when the source cell has been
+retired — the latter belongs to the guarded activity-retirement flow, so the UI
+must not offer an apply for it. Its result carries the updated `activity`, the
+`applied_differences`, the same `assignment_impact`, the committed
+`teaching_plan_status` and `was_noop`. Assigned slots that a sync disturbs are
+routed to the reconciliation lifecycle, not rewritten in place.
+
+Frontend coverage: `usePreviewRepartoActivitySync` and
+`useApplyRepartoActivitySync` isolate the pair — preview is a mutation, not a
+query, because a cached fingerprint is a stale one. `runtime/ui/activitySync.ts`
+owns the framework-neutral state (`listOutOfSyncActivities` reads the service's
+own `sync_state` and never compares values in the browser;
+`buildActivitySyncPreviewState` decides applicable/blocked/idle). The default UI
+is `MainActivitySyncPanel` (`data-reparto-component="activity-sync"`,
+department-head tier only), and the materialization table gains `out_of_sync` as
+its own row state.
 
 ### 2.12 Teaching plan — `prefix=/…/teaching-plan`
 

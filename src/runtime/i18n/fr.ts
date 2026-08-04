@@ -454,7 +454,8 @@ export const fr: RepartoDictionary = {
       error: "Les activités principales n'ont pas pu être matérialisées.",
       state: {
         missing: "Manquante",
-        materialized: "Matérialisée"
+        materialized: "Matérialisée",
+        out_of_sync: "Désynchronisée"
       },
       column: {
         subject: "Matière",
@@ -463,6 +464,43 @@ export const fr: RepartoDictionary = {
         teacherHours: "Heures enseignant par poste",
         teacherCount: "Postes enseignants",
         state: "État"
+      }
+    },
+    sync: {
+      title: "Activités principales désynchronisées",
+      description: "Modifier une cellule matière-groupe ne réécrit jamais l'activité qu'elle a créée. Vérifiez chaque différence puis appliquez-la explicitement.",
+      empty: "Chaque activité principale matérialisée correspond à sa cellule source.",
+      loading: "Chargement de l'état de synchronisation des activités principales.",
+      unavailable: "L'état de synchronisation des activités principales est indisponible.",
+      unknownClassroom: "Classe inconnue",
+      activityLabel: "{subject} — {classroom}",
+      reviewAction: "Vérifier les différences",
+      previewTitle: "Synchroniser {subject} — {classroom} ?",
+      previewError: "L'aperçu de synchronisation n'a pas pu être chargé.",
+      noValueDifferences: "Les valeurs de planification correspondent déjà ; l'application ne fait que lever la marque de désynchronisation.",
+      reconciliationRequired: "L'application modifie {count} postes attribués. Ils passent par le flux de réconciliation.",
+      noAssignmentImpact: "Aucun poste attribué n'est concerné.",
+      applyAction: "Appliquer les valeurs source",
+      applySuccess: "{count} valeurs de planification ont été appliquées depuis la cellule source.",
+      applyError: "Les valeurs source n'ont pas pu être appliquées.",
+      staleError: "Les données de planification ont changé depuis cet aperçu. Vérifiez à nouveau les différences.",
+      state: {
+        in_sync: "Synchronisée",
+        out_of_sync: "Désynchronisée"
+      },
+      blocked: {
+        retirement_required: "La cellule source est retirée. Utilisez le flux encadré de retrait d'activité au lieu d'une synchronisation.",
+        no_changes: "Cette activité est déjà synchronisée avec sa cellule source."
+      },
+      column: {
+        field: "Valeur de planification",
+        current: "Activité actuelle",
+        source: "Cellule source"
+      },
+      field: {
+        group_weekly_hours_per_group: "Heures de groupe",
+        teacher_weekly_hours_per_position: "Heures enseignant par poste",
+        required_teacher_count: "Postes d'enseignant"
       }
     },
     secondary: {

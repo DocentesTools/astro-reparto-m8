@@ -194,4 +194,75 @@ describe("reparto SSE contract", () => {
       "teachers"
     ]);
   });
+
+  it("drops the plan projection on either feasibility transition", () => {
+    // The diagnostics and witness projections are nested under the plan prefix,
+    // so one key is what stops a stale department-head verdict from surviving a
+    // transition — and the LAN/summary payloads carry the coarse readiness the
+    // lower tiers show, so they go with it.
+    for (const eventType of [
+      "teaching_plan.feasibility_updated",
+      "teaching_plan.feasibility_invalidated"
+    ] as const) {
+      const keys = repartoSseInvalidationKeys(processId, eventType);
+      expect(keys).toEqual([
+        ["reparto", "processes", "detail", processId, "teaching-plan"],
+        ["reparto", "processes", "detail", processId, "dashboard"],
+        ["reparto", "processes", "detail", processId, "summary"],
+        ["reparto", "processes", "detail", processId, "teacher-lan"]
+      ]);
+    }
+  });
+
+  it("projects a feasibility frame per tier without leaking the head payload", () => {
+    // The backend sends each tier its own body; the client must accept the
+    // teacher and shared-screen shapes for these event names too, and must not
+    // require the department-head fields to be present (plan §20.25).
+    const teacherFrame = JSON.stringify({
+      event_type: "teaching_plan.feasibility_invalidated",
+      process_id: processId,
+      sequence: 12,
+      occurred_at: occurredAt,
+      readiness: "not_ready",
+      selection_blocked: true
+    });
+    expect(
+      parseRepartoSseEvent(
+        "teaching_plan.feasibility_invalidated",
+        teacherFrame,
+        "teacher"
+      )
+    ).toEqual({
+      eventType: "teaching_plan.feasibility_invalidated",
+      data: {
+        event_type: "teaching_plan.feasibility_invalidated",
+        process_id: processId,
+        sequence: 12,
+        occurred_at: occurredAt,
+        readiness: "not_ready",
+        selection_blocked: true
+      },
+      sequence: 12
+    });
+    expect(
+      parseRepartoSseEvent(
+        "teaching_plan.feasibility_updated",
+        JSON.stringify({ readiness: "recalculation_required" }),
+        "shared_screen"
+      )
+    ).toEqual({
+      eventType: "teaching_plan.feasibility_updated",
+      data: { readiness: "recalculation_required" },
+      sequence: null
+    });
+    // A head payload offered to a teacher subscription is still refused: the
+    // strict teacher schema has no `payload` for an event about nobody.
+    expect(() =>
+      parseRepartoSseEvent(
+        "teaching_plan.feasibility_updated",
+        departmentHeadData("teaching_plan.feasibility_updated"),
+        "teacher"
+      )
+    ).toThrow();
+  });
 });

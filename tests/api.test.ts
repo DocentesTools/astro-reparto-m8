@@ -1185,6 +1185,111 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     ).toThrow();
   });
 
+  it("group-subject sync preview/apply", async () => {
+    const activityId = "21212121-2121-4121-8121-212121212121";
+    const planId = "22222222-2222-4222-8222-222222222299";
+    const fingerprint = "c".repeat(64);
+    const syncActivityBody = {
+      id: activityId,
+      teaching_plan_id: planId,
+      subject_id: subjectId,
+      allocation_category: "main",
+      activity_type: "ordinary",
+      group_weekly_hours_per_group: 4,
+      teacher_weekly_hours_per_position: 4,
+      required_teacher_count: 2,
+      notes: null,
+      source: "main_generated",
+      source_group_subject_id: groupSubjectId,
+      sync_state: "in_sync",
+      retired_at: null,
+      group_subject_ids: [groupSubjectId],
+      linked_group_count: 1,
+      created_at: now,
+      updated_at: now
+    };
+    const impact = {
+      active_assignment_count: 0,
+      affected_assignment_count: 0,
+      affected_requirement_ids: [],
+      requires_reconciliation: false
+    };
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        group_subject_id: groupSubjectId,
+        teaching_activity_id: activityId,
+        sync_state: "out_of_sync",
+        source_active: true,
+        source_values: {
+          group_weekly_hours_per_group: 4,
+          teacher_weekly_hours_per_position: 4,
+          required_teacher_count: 2
+        },
+        current_values: {
+          group_weekly_hours_per_group: 3,
+          teacher_weekly_hours_per_position: 3,
+          required_teacher_count: 1
+        },
+        differences: [
+          {
+            field: "required_teacher_count",
+            current_value: 1,
+            source_value: 2
+          }
+        ],
+        assignment_impact: impact,
+        retirement_required: false,
+        is_noop: false,
+        preview_fingerprint: fingerprint
+      })
+    );
+    await expect(
+      groupSubjects.syncPreview(processId, groupSubjectId)
+    ).resolves.toMatchObject({ preview_fingerprint: fingerprint });
+    const previewCall = fetchMock.mock.calls.at(-1);
+    expect(previewCall?.[0]).toContain(
+      `/group-subjects/${groupSubjectId}/sync-preview`
+    );
+    expect((previewCall?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        activity: syncActivityBody,
+        applied_differences: [
+          {
+            field: "required_teacher_count",
+            current_value: 1,
+            source_value: 2
+          }
+        ],
+        assignment_impact: impact,
+        teaching_plan_status: "draft",
+        was_noop: false
+      })
+    );
+    await expect(
+      groupSubjects.syncApply(processId, groupSubjectId, {
+        expected_preview_fingerprint: fingerprint
+      })
+    ).resolves.toMatchObject({ was_noop: false });
+    const applyCall = fetchMock.mock.calls.at(-1);
+    expect(applyCall?.[0]).toContain(
+      `/group-subjects/${groupSubjectId}/sync-apply`
+    );
+    expect(
+      JSON.parse((applyCall?.[1] as RequestInit).body as string)
+    ).toEqual({ expected_preview_fingerprint: fingerprint });
+
+    // An apply that does not carry the service's own staleness token is never
+    // sent: the whole point of the pair is that the backend can refuse it.
+    expect(() =>
+      groupSubjects.syncApply(processId, groupSubjectId, {
+        expected_preview_fingerprint: "stale"
+      })
+    ).toThrow();
+  });
+
   it("teaching groups list/get/create/update/remove", async () => {
     fetchMock.mockResolvedValueOnce(response({ data: [groupBody], count: 1 }));
     await expect(teachingGroups.list(processId)).resolves.toMatchObject({

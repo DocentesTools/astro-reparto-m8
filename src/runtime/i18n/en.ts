@@ -454,7 +454,8 @@ export const en = {
       error: "Main activities could not be materialized.",
       state: {
         missing: "Missing",
-        materialized: "Materialized"
+        materialized: "Materialized",
+        out_of_sync: "Out of sync"
       },
       column: {
         subject: "Subject",
@@ -463,6 +464,43 @@ export const en = {
         teacherHours: "Teacher hours per position",
         teacherCount: "Teacher positions",
         state: "State"
+      }
+    },
+    sync: {
+      title: "Out-of-sync main activities",
+      description: "Editing a group-subject cell never rewrites the activity it created. Review each difference and apply it explicitly.",
+      empty: "Every materialized main activity matches its source cell.",
+      loading: "Loading main-activity sync state.",
+      unavailable: "Main-activity sync state is unavailable.",
+      unknownClassroom: "Unknown classroom",
+      activityLabel: "{subject} — {classroom}",
+      reviewAction: "Review differences",
+      previewTitle: "Sync {subject} — {classroom}?",
+      previewError: "The sync preview could not be loaded.",
+      noValueDifferences: "The planning values already match; applying only clears the out-of-sync mark.",
+      reconciliationRequired: "Applying changes {count} assigned positions. They are routed through the reconciliation workflow.",
+      noAssignmentImpact: "No assigned position is affected.",
+      applyAction: "Apply source values",
+      applySuccess: "{count} planning values were applied from the source cell.",
+      applyError: "The source values could not be applied.",
+      staleError: "The planning inputs changed since this preview. Review the differences again.",
+      state: {
+        in_sync: "In sync",
+        out_of_sync: "Out of sync"
+      },
+      blocked: {
+        retirement_required: "The source cell is retired. Use the guarded activity-retirement flow instead of a sync.",
+        no_changes: "This activity is already in sync with its source cell."
+      },
+      column: {
+        field: "Planning value",
+        current: "Current activity",
+        source: "Source cell"
+      },
+      field: {
+        group_weekly_hours_per_group: "Group hours",
+        teacher_weekly_hours_per_position: "Teacher hours per position",
+        required_teacher_count: "Teacher positions"
       }
     },
     secondary: {

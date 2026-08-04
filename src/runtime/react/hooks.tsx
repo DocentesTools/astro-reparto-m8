@@ -37,6 +37,7 @@ import type {
   DepartmentHourAllocationRevisionCreateInput,
   GroupSubjectBulkApplyRequestInput,
   GroupSubjectBulkRequestInput,
+  MainActivitySyncApplyRequestInput,
   ProcessTeacherCreateInput,
   ProcessTeacherExtraHoursInput,
   ProcessTeacherUpdateInput,
@@ -801,6 +802,59 @@ export function useApplyRepartoGroupSubjects() {
     onSuccess: (_data, { processId }) => {
       void queryClient.invalidateQueries({
         queryKey: repartoKeys.groupSubjects(processId)
+      });
+    }
+  });
+}
+
+/**
+ * Fetch the source/current/diff/impact preview for one materialized activity.
+ *
+ * A mutation rather than a query even though it changes nothing: the preview
+ * is fingerprinted against live state, so it must be requested deliberately at
+ * the moment the head opens the panel and must never be served from cache —
+ * a cached fingerprint is a stale one, and the apply would 409.
+ */
+export function usePreviewRepartoActivitySync() {
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupSubjectId
+    }: {
+      processId: string;
+      groupSubjectId: string;
+    }) => groupSubjects.syncPreview(processId, groupSubjectId)
+  });
+}
+
+export function useApplyRepartoActivitySync() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupSubjectId,
+      body
+    }: {
+      processId: string;
+      groupSubjectId: string;
+      body: MainActivitySyncApplyRequestInput;
+    }) => groupSubjects.syncApply(processId, groupSubjectId, body),
+    onSuccess: (_data, { processId }) => {
+      // An apply rewrites the activity's planning values and may push assigned
+      // slots into reconciliation, so the whole planning projection is stale —
+      // including feasibility, which the service resets on this path.
+      invalidateTeachingActivityProjections(queryClient, processId);
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.groupSubjects(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.teachingPlanValidations(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.assignments(processId)
+      });
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.auditEvents(processId)
       });
     }
   });

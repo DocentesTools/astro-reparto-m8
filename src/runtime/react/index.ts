@@ -65,6 +65,8 @@ export {
   useMaterializeRepartoMainActivities,
   usePreviewRepartoGroupSubjects,
   useApplyRepartoGroupSubjects,
+  usePreviewRepartoActivitySync,
+  useApplyRepartoActivitySync,
   useRepartoTeachingGroups,
   useRepartoClassroomStages,
   useCreateRepartoClassroomStage,

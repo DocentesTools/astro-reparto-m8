@@ -453,7 +453,8 @@ export const es: RepartoDictionary = {
       error: "No se pudieron materializar las actividades principales.",
       state: {
         missing: "Pendiente",
-        materialized: "Materializada"
+        materialized: "Materializada",
+        out_of_sync: "Desincronizada"
       },
       column: {
         subject: "Materia",
@@ -462,6 +463,43 @@ export const es: RepartoDictionary = {
         teacherHours: "Horas por puesto docente",
         teacherCount: "Puestos docentes",
         state: "Estado"
+      }
+    },
+    sync: {
+      title: "Actividades principales desincronizadas",
+      description: "Editar una celda materia-grupo nunca reescribe la actividad que creó. Revisa cada diferencia y aplícala de forma explícita.",
+      empty: "Todas las actividades principales materializadas coinciden con su celda de origen.",
+      loading: "Cargando el estado de sincronización de las actividades principales.",
+      unavailable: "El estado de sincronización de las actividades principales no está disponible.",
+      unknownClassroom: "Aula desconocida",
+      activityLabel: "{subject} — {classroom}",
+      reviewAction: "Revisar diferencias",
+      previewTitle: "¿Sincronizar {subject} — {classroom}?",
+      previewError: "No se pudo cargar la vista previa de sincronización.",
+      noValueDifferences: "Los valores de planificación ya coinciden; aplicar solo retira la marca de desincronización.",
+      reconciliationRequired: "Aplicar cambia {count} puestos asignados. Se encauzan por el flujo de reconciliación.",
+      noAssignmentImpact: "Ningún puesto asignado se ve afectado.",
+      applyAction: "Aplicar valores de origen",
+      applySuccess: "Se aplicaron {count} valores de planificación desde la celda de origen.",
+      applyError: "No se pudieron aplicar los valores de origen.",
+      staleError: "Los datos de planificación cambiaron desde esta vista previa. Revisa de nuevo las diferencias.",
+      state: {
+        in_sync: "Sincronizada",
+        out_of_sync: "Desincronizada"
+      },
+      blocked: {
+        retirement_required: "La celda de origen está retirada. Usa el flujo controlado de retirada de actividad en lugar de una sincronización.",
+        no_changes: "Esta actividad ya está sincronizada con su celda de origen."
+      },
+      column: {
+        field: "Valor de planificación",
+        current: "Actividad actual",
+        source: "Celda de origen"
+      },
+      field: {
+        group_weekly_hours_per_group: "Horas de grupo",
+        teacher_weekly_hours_per_position: "Horas de profesor por puesto",
+        required_teacher_count: "Puestos de profesor"
       }
     },
     secondary: {

@@ -154,6 +154,20 @@ export function repartoSseInvalidationKeys(
         repartoKeys.teacherLan(processId),
         repartoKeys.auditEvents(processId)
       ];
+    // A feasibility transition restates the third invariant, so the whole
+    // plan prefix goes — that single key already covers the department-head
+    // diagnostics and witness projections nested under it, which is exactly
+    // what must not survive an invalidation. The LAN and shared-screen views
+    // read their coarse readiness from the dashboard/summary payloads, so
+    // those are refreshed too even though the event says nothing to them.
+    case "teaching_plan.feasibility_updated":
+    case "teaching_plan.feasibility_invalidated":
+      return [
+        repartoKeys.teachingPlan(processId),
+        repartoKeys.dashboard(processId),
+        repartoKeys.summary(processId),
+        repartoKeys.teacherLan(processId)
+      ];
     case "requirements.generated":
     case "requirements.reconciled":
     case "requirements.reconciliation_required":

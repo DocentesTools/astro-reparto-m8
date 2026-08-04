@@ -15,6 +15,7 @@ import {
 import { useRepartoTeachingPlanSummary } from "../../hooks.js";
 import { PlanningBalanceHeader } from "./balance-header.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
+import { MainActivitySyncPanel } from "./activity-sync.js";
 import { SecondaryActivityEditor } from "./secondary-activities.js";
 import { PlanLockAndRequirementGeneration } from "./plan-generation.js";
 import { FeasibilityDiagnosticsPanel } from "./feasibility-diagnostics.js";
@@ -52,6 +53,7 @@ function PlanningContent({
         isLoading={balanceQuery.isLoading}
       />
       <MainSubjectMaterialization locale={locale} processId={processId} />
+      <MainActivitySyncPanel locale={locale} processId={processId} />
       <SecondaryActivityEditor locale={locale} processId={processId} />
       <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
       <FeasibilityDiagnosticsPanel locale={locale} processId={processId} />
@@ -84,6 +86,13 @@ export {
   buildMainSubjectMaterializationRows,
   type MainSubjectMaterializationRow
 } from "./main-materialization.js";
+export {
+  ActivitySyncDifferences,
+  ActivitySyncView,
+  MainActivitySyncPanel,
+  buildActivitySyncRows,
+  type ActivitySyncRow
+} from "./activity-sync.js";
 export {
   SecondaryActivityEditor,
   SecondaryActivityForm,

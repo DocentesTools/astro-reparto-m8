@@ -67,6 +67,14 @@ export {
   type FeasibilityRelatedKind
 } from "./feasibility.js";
 export {
+  buildActivitySyncPreviewState,
+  listOutOfSyncActivities,
+  type ActivitySyncBlockedReason,
+  type ActivitySyncDifferenceRow,
+  type ActivitySyncPreviewState,
+  type OutOfSyncActivity
+} from "./activitySync.js";
+export {
   buildProcessInvariants,
   type BalanceInvariantState,
   type FeasibilityInvariantSource,

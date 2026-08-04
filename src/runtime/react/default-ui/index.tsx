@@ -75,8 +75,11 @@ import { repartoToast } from "../ui/toast-notification.js";
 import { RepartoLoadingState } from "./loading-state.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
 export {
+  ActivitySyncDifferences,
+  ActivitySyncView,
   AllocationChangeReconciliation,
   AllocationRevisionHistory,
+  MainActivitySyncPanel,
   MainSubjectMaterialization,
   MainSubjectMaterializationConfirmation,
   MainSubjectMaterializationTable,
@@ -93,6 +96,7 @@ export {
   SecondaryActivityEditor,
   SecondaryActivityForm,
   SecondaryActivityTable,
+  buildActivitySyncRows,
   buildMainSubjectMaterializationRows,
   buildAllocationRevisionRequest,
   buildReconciliationConflictRows,
@@ -102,6 +106,7 @@ export {
   isRequirementGenerationAvailable,
   isAllocationReconciliationAvailable,
   isStaleRequirementReconciliationError,
+  type ActivitySyncRow,
   type AllocationRevisionFormResult,
   type AllocationRevisionFormValues,
   type MainSubjectMaterializationRow,

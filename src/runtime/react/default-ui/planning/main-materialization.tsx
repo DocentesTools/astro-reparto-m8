@@ -44,7 +44,12 @@ export type MainSubjectMaterializationRow = {
   groupHours: string | null;
   teacherHours: string | null;
   teacherCount: number;
-  state: "missing" | "materialized";
+  /**
+   * `out_of_sync` is the service's own `sync_state`, never a value comparison
+   * made here (backend plan §20.10): the row shows the drift, and the sync
+   * panel owns the preview and the explicit apply.
+   */
+  state: "missing" | "materialized" | "out_of_sync";
 };
 
 export function buildMainSubjectMaterializationRows({
@@ -106,7 +111,11 @@ export function buildMainSubjectMaterializationRows({
         teacherCount:
           activity?.required_teacher_count ??
           groupSubject.required_teacher_count,
-        state: activity ? ("materialized" as const) : ("missing" as const)
+        state: !activity
+          ? ("missing" as const)
+          : activity.sync_state === "out_of_sync"
+            ? ("out_of_sync" as const)
+            : ("materialized" as const)
       };
     })
     .sort(
@@ -243,7 +252,9 @@ export function MainSubjectMaterializationTable({
                   className={
                     row.state === "materialized"
                       ? "rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-800"
-                      : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900"
+                      : row.state === "out_of_sync"
+                        ? "rounded-full bg-rose-100 px-2 py-1 text-xs font-medium text-rose-900"
+                        : "rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900"
                   }
                 >
                   {dict.planning.materialization.state[row.state]}

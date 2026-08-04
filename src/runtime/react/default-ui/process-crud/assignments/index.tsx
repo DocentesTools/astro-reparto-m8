@@ -12,10 +12,12 @@ import {
 import {
   useRepartoAssignments,
   useRepartoAssignmentValidations,
+  useRepartoFeasibilityWitness,
   useRepartoHourRequirements,
   useRepartoProcessTeachers,
   useRepartoSubjects,
   useRepartoTeacherProfiles,
+  useRepartoTeachingPlan,
   useRepartoTeachingActivities
 } from "../../../hooks.js";
 import {
@@ -60,6 +62,9 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const subjectsQuery = useRepartoSubjects(processId);
   const activitiesQuery = useRepartoTeachingActivities(processId);
   const validationsQuery = useRepartoAssignmentValidations(processId);
+  const planQuery = useRepartoTeachingPlan(processId);
+  const witnessRequired = planQuery.data?.feasibility_status === "feasible";
+  const witnessQuery = useRepartoFeasibilityWitness(processId, witnessRequired);
   const teacherProfilesQuery = useRepartoTeacherProfiles({ limit: 100 });
 
   const rows = query.data?.data ?? [];
@@ -69,6 +74,24 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const activities = activitiesQuery.data?.data ?? [];
   const teacherProfiles = teacherProfilesQuery.data?.data ?? [];
   const validations = validationsQuery.data;
+  const witnessData = witnessQuery.data;
+  const witness =
+    witnessRequired &&
+    witnessData !== undefined &&
+    witnessData.input_fingerprint === planQuery.data?.feasibility_input_fingerprint &&
+    witnessData.solver_version === planQuery.data?.feasibility_solver_version
+      ? witnessData
+      : null;
+  const safeChoiceStatus = planQuery.isLoading
+    ? "loading"
+    : !witnessRequired
+      ? "not_required"
+      : witnessQuery.isLoading
+        ? "loading"
+        : witness === null
+          ? "unavailable"
+          : "current";
+  const safeChoiceContext = { required: witnessRequired, witness } as const;
 
   const subjectName = (id: string) =>
     subjects.find((s: SubjectPublic) => s.id === id)?.name ??
@@ -108,7 +131,8 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const slots = buildAssignmentSlotOptions(requirements, rows);
   const teacherOptionsForSlot = (slotId: string) =>
     buildAssignmentTeacherOptions(participants, requirements, rows, {
-      slot: slots.find((slot) => slot.slotId === slotId) ?? null
+      slot: slots.find((slot) => slot.slotId === slotId) ?? null,
+      safeChoice: safeChoiceContext
     });
 
   const requirementsHref = concreteProcessId
@@ -240,6 +264,13 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
             </p>
           )}
         </div>
+        <p
+          className="text-sm text-muted-foreground"
+          data-reparto-safe-choice-status={safeChoiceStatus}
+          data-reparto-slot="safe-choice-status"
+        >
+          {dict.assignments.safeChoice[safeChoiceStatus]}
+        </p>
       </section>
 
       <div className="flex justify-end gap-2 pb-4" data-reparto-actions="assignments">
@@ -318,7 +349,8 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
               reassigning,
               participants,
               requirements,
-              rows
+              rows,
+              { safeChoice: safeChoiceContext }
             )}
             dict={dict}
             onDone={() => setReassigning(null)}

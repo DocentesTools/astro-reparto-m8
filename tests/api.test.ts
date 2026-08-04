@@ -1749,6 +1749,31 @@ describe("teaching-plan and activity API wrappers", () => {
 
     fetchMock.mockResolvedValueOnce(
       response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        input_fingerprint: "fingerprint",
+        solver_version: "bounded-dfs-v1",
+        checked_at: now,
+        witness: [
+          {
+            slot_id: requirementId,
+            process_teacher_id: userId
+          }
+        ]
+      })
+    );
+    await expect(
+      teachingPlans.feasibilityWitness(processId)
+    ).resolves.toMatchObject({
+      witness: [{ slot_id: requirementId, process_teacher_id: userId }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/witness`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("GET");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
         created: [activityBody],
         created_count: 1,
         skipped_source_ids: [],

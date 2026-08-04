@@ -249,6 +249,17 @@ refusal. There is no row `delete` and no reasonless bulk cancellation. DOM slots
 `data-reparto-slot="ineligible-participants"`,
 `data-reparto-slot="assignment-history"`.
 
+For a current `FEASIBLE` plan, the board reads the administrator-only witness
+and mirrors a conservative subset of the backend's bounded cheap guards. Options
+that cannot preserve a valid remaining witness stay visible with
+`data-participant-disabled-reason="strands_remaining_participants"`; a stale or
+unavailable witness fails closed as `witness_unavailable`. The board exposes
+only `data-safe-choice-state` verdicts and
+`data-reparto-slot="safe-choice-status"`, never the slot-to-participant mapping.
+Teacher LAN and shared-screen views do not receive this input: the teacher view
+renders only its role-safe readiness status at
+`data-reparto-slot="teacher-feasibility-status"`.
+
 ### 3.11 Meeting session
 
 | Field | en | fr | es | Required? | Notes |

@@ -51,6 +51,7 @@ export function AssignmentReassignDialog({
   const [notes, setNotes] = useState("");
 
   const eligible = candidates.filter((candidate) => candidate.canAssign);
+  const blocked = candidates.filter((candidate) => !candidate.canAssign);
   const candidatesEmpty = eligible.length === 0;
   const trimmedReason = reason.trim();
   const canSave =
@@ -155,6 +156,24 @@ export function AssignmentReassignDialog({
           />
         </FormGrid>
       </FormPanelShell>
+      {blocked.length > 0 ? (
+        <ul data-reparto-slot="ineligible-participants">
+          {blocked.map((candidate) => (
+            <li
+              data-participant-disabled-reason={candidate.disabledReason ?? ""}
+              data-process-teacher-id={candidate.processTeacherId}
+              data-safe-choice-state={candidate.safeChoiceState}
+              key={candidate.processTeacherId}
+            >
+              {`${participantName(candidate.processTeacherId)} — ${
+                dict.assignments.teacherDisabled[
+                  candidate.disabledReason ?? "participant_inactive"
+                ]
+              }`}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </EntityDialogShell>
   );
 }

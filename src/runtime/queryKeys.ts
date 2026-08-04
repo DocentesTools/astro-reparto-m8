@@ -161,6 +161,10 @@ export const repartoKeys = {
   // stale (the backend resets feasibility to NOT_EVALUATED on the same paths).
   teachingPlanFeasibilityDiagnostics: (processId?: string) =>
     [...repartoKeys.teachingPlan(processId), "feasibility-diagnostics"] as const,
+  // Restricted administrator-only witness. It stays under the plan prefix so
+  // every occupancy/plan mutation invalidates the provisional mapping.
+  teachingPlanFeasibilityWitness: (processId?: string) =>
+    [...repartoKeys.teachingPlan(processId), "feasibility-witness"] as const,
   teachingActivities: (processId?: string) =>
     [...repartoKeys.process(processId), "teaching-activities"] as const,
   teachingActivity: (processId?: string, activityId?: string) =>

@@ -245,6 +245,14 @@ describe("reparto query keys", () => {
       "teaching-plan",
       "feasibility-diagnostics"
     ]);
+    expect(repartoKeys.teachingPlanFeasibilityWitness("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-witness"
+    ]);
     expect(repartoKeys.teachingActivities("p1")).toEqual([
       "reparto",
       "processes",

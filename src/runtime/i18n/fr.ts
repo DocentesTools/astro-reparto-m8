@@ -383,10 +383,18 @@ export const fr: RepartoDictionary = {
     selectSlotFirst: "Choisissez un créneau pour voir les participants éligibles.",
     noAssignableSlots: "Tous les créneaux actifs sont déjà affectés.",
     noEligibleTeachers: "Aucun participant n'est éligible pour ce créneau.",
+    safeChoice: {
+      loading: "Vérification du plan déterministe des choix sûrs en cours.",
+      current: "Les choix sont filtrés selon le témoin déterministe actuel.",
+      unavailable: "Le filtrage des choix sûrs est indisponible ; relancez l'évaluation administrative de faisabilité.",
+      not_required: "Le plan n'a pas de témoin faisable actuel ; les règles ordinaires du service s'appliquent."
+    },
     teacherDisabled: {
       participant_inactive: "Participant non actif.",
       duplicate_activity_position: "Occupe déjà un poste de cette activité.",
-      exceeds_remaining_target: "Le créneau entier dépasse les heures cibles restantes."
+      exceeds_remaining_target: "Le créneau entier dépasse les heures cibles restantes.",
+      strands_remaining_participants: "Ce choix laisserait le reparto restant sans témoin valide.",
+      witness_unavailable: "Le statut de choix sûr est indisponible jusqu'à une nouvelle évaluation de faisabilité."
     },
     notesAction: "Notes",
     notesTitle: "Modifier les notes de l'affectation",

@@ -300,6 +300,12 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/teaching-plan/lock",
     response: "TeachingPlanPublic"
   },
+  "teachingPlans.feasibilityWitness": {
+    method: "GET",
+    path:
+      "/assignment-processes/{process_id}/teaching-plan/feasibility/witness",
+    response: "FeasibilityWitnessPublic"
+  },
   "teachingPlans.materializeMain": {
     method: "POST",
     path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",

@@ -7,6 +7,7 @@ import {
 } from "../src/runtime/ui/index.js";
 import type {
   AssignmentPublic,
+  FeasibilityWitnessReport,
   HourRequirementPublic,
   ProcessTeacherPublic
 } from "../src/runtime/schemas.js";
@@ -15,6 +16,19 @@ const processId = "11111111-1111-4111-8111-111111111111";
 const mathsActivity = "22222222-2222-4222-8222-222222222222";
 const tutoringActivity = "33333333-3333-4333-8333-333333333333";
 const now = "2026-08-02T10:00:00Z";
+
+function witness(
+  entries: FeasibilityWitnessReport["witness"]
+): FeasibilityWitnessReport {
+  return {
+    teaching_plan_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    assignment_process_id: processId,
+    input_fingerprint: "fingerprint",
+    solver_version: "bounded-dfs-v1",
+    checked_at: now,
+    witness: entries
+  };
+}
 
 function slot(
   id: string,
@@ -354,5 +368,243 @@ describe("reassignment candidates", () => {
       canAssign: true
     });
     expect(candidates[1].disabledReason).toBe("participant_inactive");
+  });
+});
+
+describe("witness-informed safe-choice filtering", () => {
+  const safeSlots = [
+    slot("slot-6", { required_teacher_hours: "6.00" }),
+    slot("slot-4", {
+      teaching_activity_id: tutoringActivity,
+      required_teacher_hours: "4.00"
+    })
+  ];
+  const safeParticipants = [
+    participant("teacher-6", {
+      base_weekly_hours: "6.00",
+      target_weekly_hours: "6.00"
+    }),
+    participant("teacher-4", {
+      base_weekly_hours: "4.00",
+      target_weekly_hours: "4.00"
+    })
+  ];
+  const currentWitness = witness([
+    { slot_id: "slot-6", process_teacher_id: "teacher-6" },
+    { slot_id: "slot-4", process_teacher_id: "teacher-4" }
+  ]);
+
+  it("disables a locally fitting choice that strands the remaining participant", () => {
+    const selected = buildAssignmentSlotOptions(safeSlots, []).find(
+      (candidate) => candidate.slotId === "slot-4"
+    );
+    const options = buildAssignmentTeacherOptions(
+      safeParticipants,
+      safeSlots,
+      [],
+      {
+        slot: selected,
+        safeChoice: { required: true, witness: currentWitness }
+      }
+    );
+
+    expect(
+      options.find((option) => option.processTeacherId === "teacher-6")
+    ).toMatchObject({
+      canAssign: false,
+      disabledReason: "strands_remaining_participants",
+      safeChoiceState: "unsafe"
+    });
+    expect(
+      options.find((option) => option.processTeacherId === "teacher-4")
+    ).toMatchObject({
+      canAssign: true,
+      disabledReason: null,
+      safeChoiceState: "safe"
+    });
+  });
+
+  it("fails closed when a feasible plan's witness is unavailable", () => {
+    const selected = buildAssignmentSlotOptions(safeSlots, [])[0];
+    const options = buildAssignmentTeacherOptions(
+      safeParticipants,
+      safeSlots,
+      [],
+      {
+        slot: selected,
+        safeChoice: { required: true, witness: null }
+      }
+    );
+    expect(options.filter((option) => option.canAssign)).toEqual([]);
+    expect(options[0]).toMatchObject({
+      disabledReason: "witness_unavailable",
+      safeChoiceState: "unavailable"
+    });
+  });
+
+  it("fails closed when the selected slot or its witness entry is unavailable", () => {
+    const detached = buildAssignmentSlotOptions([slot("detached-slot")], [])[0];
+    const detachedOptions = buildAssignmentTeacherOptions(
+      safeParticipants,
+      safeSlots,
+      [],
+      {
+        slot: detached,
+        safeChoice: { required: true, witness: currentWitness }
+      }
+    );
+    expect(detachedOptions[0]).toMatchObject({
+      canAssign: false,
+      safeChoiceState: "unavailable"
+    });
+
+    const selected = buildAssignmentSlotOptions(safeSlots, []).find(
+      (candidate) => candidate.slotId === "slot-4"
+    );
+    const missingEntryOptions = buildAssignmentTeacherOptions(
+      safeParticipants,
+      safeSlots,
+      [],
+      {
+        slot: selected,
+        safeChoice: { required: true, witness: witness([]) }
+      }
+    );
+    expect(
+      missingEntryOptions.find(
+        (option) => option.processTeacherId === "teacher-4"
+      )
+    ).toMatchObject({
+      canAssign: false,
+      disabledReason: "witness_unavailable",
+      safeChoiceState: "unavailable"
+    });
+  });
+
+  it("rejects a choice when exact remaining totals diverge", () => {
+    const mismatchedSlots = [slot("slot-only")];
+    const selected = buildAssignmentSlotOptions(mismatchedSlots, [])[0];
+    const options = buildAssignmentTeacherOptions(
+      [participant("teacher-5", { target_weekly_hours: "5.00" })],
+      mismatchedSlots,
+      [],
+      {
+        slot: selected,
+        safeChoice: {
+          required: true,
+          witness: witness([
+            { slot_id: "slot-only", process_teacher_id: "teacher-5" }
+          ])
+        }
+      }
+    );
+    expect(options[0]).toMatchObject({
+      canAssign: false,
+      disabledReason: "strands_remaining_participants",
+      safeChoiceState: "unsafe"
+    });
+  });
+
+  it("releases the occupied slot and accounts for other live assignments", () => {
+    const heldSlot = slot("slot-held", {
+      required_teacher_hours: "4.00",
+      status: "assigned"
+    });
+    const otherSlot = slot("slot-other", {
+      teaching_activity_id: tutoringActivity,
+      required_teacher_hours: "2.00",
+      status: "assigned"
+    });
+    const heldAssignment = assignment("assignment-held", {
+      hour_requirement_id: heldSlot.id,
+      process_teacher_id: "teacher-current"
+    });
+    const otherAssignment = assignment("assignment-other", {
+      hour_requirement_id: otherSlot.id,
+      teaching_activity_id: tutoringActivity,
+      process_teacher_id: "teacher-other"
+    });
+    const missingRequirementAssignment = assignment("assignment-missing", {
+      hour_requirement_id: "missing-requirement",
+      teaching_activity_id: "44444444-4444-4444-8444-444444444444",
+      process_teacher_id: "teacher-missing"
+    });
+    const options = buildReassignmentTeacherOptions(
+      heldAssignment,
+      [
+        participant("teacher-current", { target_weekly_hours: "4.00" }),
+        participant("teacher-next", { target_weekly_hours: "4.00" }),
+        participant("teacher-other", { target_weekly_hours: "2.00" }),
+        participant("teacher-missing", { target_weekly_hours: "0.00" })
+      ],
+      [heldSlot, otherSlot],
+      [heldAssignment, otherAssignment, missingRequirementAssignment],
+      {
+        safeChoice: {
+          required: true,
+          witness: witness([
+            { slot_id: heldSlot.id, process_teacher_id: "teacher-next" }
+          ])
+        }
+      }
+    );
+    expect(
+      options.find((option) => option.processTeacherId === "teacher-next")
+    ).toMatchObject({ canAssign: true, safeChoiceState: "safe" });
+  });
+
+  it("leaves an alternative choice to the service's authoritative repair", () => {
+    const activityThree = "44444444-4444-4444-8444-444444444444";
+    const slots = [
+      slot("slot-a", { required_teacher_hours: "4.00" }),
+      slot("slot-b", {
+        teaching_activity_id: tutoringActivity,
+        required_teacher_hours: "4.00"
+      }),
+      slot("slot-c", {
+        teaching_activity_id: activityThree,
+        required_teacher_hours: "2.00"
+      })
+    ];
+    const participants = [
+      participant("teacher-a", {
+        base_weekly_hours: "6.00",
+        target_weekly_hours: "6.00"
+      }),
+      participant("teacher-b", {
+        base_weekly_hours: "4.00",
+        target_weekly_hours: "4.00"
+      })
+    ];
+    const repairableWitness = witness([
+      { slot_id: "slot-a", process_teacher_id: "teacher-a" },
+      { slot_id: "slot-b", process_teacher_id: "teacher-b" },
+      { slot_id: "slot-c", process_teacher_id: "teacher-a" }
+    ]);
+    const selected = buildAssignmentSlotOptions(slots, []).find(
+      (candidate) => candidate.slotId === "slot-a"
+    );
+    const options = buildAssignmentTeacherOptions(participants, slots, [], {
+      slot: selected,
+      safeChoice: { required: true, witness: repairableWitness }
+    });
+
+    expect(
+      options.find((option) => option.processTeacherId === "teacher-b")
+    ).toMatchObject({ canAssign: true, safeChoiceState: "not_checked" });
+  });
+
+  it("does not inspect or require a witness outside the feasible-plan path", () => {
+    const selected = buildAssignmentSlotOptions(safeSlots, [])[0];
+    const options = buildAssignmentTeacherOptions(
+      safeParticipants,
+      safeSlots,
+      [],
+      {
+        slot: selected,
+        safeChoice: { required: false, witness: null }
+      }
+    );
+    expect(options[0].safeChoiceState).toBe("not_checked");
   });
 });

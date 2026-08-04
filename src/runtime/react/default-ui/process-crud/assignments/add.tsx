@@ -174,6 +174,7 @@ export function AssignmentAdd({
           {blockedTeachers.map((option) => (
             <li
               data-participant-disabled-reason={option.disabledReason ?? ""}
+              data-safe-choice-state={option.safeChoiceState}
               data-process-teacher-id={option.processTeacherId}
               key={option.processTeacherId}
             >

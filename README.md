@@ -170,7 +170,14 @@ the exact-fit rule (§3.8) is pre-filtered everywhere; a `remainingTarget` looku
 may still override it per view. The same eligibility helpers are exported from
 `@mano8/astro-reparto-m8/ui` (`buildAssignmentSlotOptions`,
 `buildAssignmentTeacherOptions`, `buildReassignmentTeacherOptions`) so a host UI
-disables the same choices for the same reason. Cancelling is the reason-required
+disables the same choices for the same reason. When the plan is currently
+feasible, the administrator board also reads the restricted witness endpoint
+and applies a conservative subset of the backend's cheap guards: a choice
+that provably fails those guards is shown disabled, the witnessed
+choice is marked safe, and other choices remain subject to the authoritative
+server-side repair. A stale or unavailable witness fails closed. The mapping is never rendered or passed to
+the teacher LAN/shared-screen views; teachers see only the service's role-safe
+readiness status. Cancelling is the reason-required
 `undo` action, which releases the slot and re-enters the teacher's completed
 meeting turn; moving a slot is the reason-required `reassign` action, a single
 atomic service operation rather than a delete plus a create. Several live rows can be undone together from

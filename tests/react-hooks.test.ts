@@ -94,6 +94,7 @@ const mocks = vi.hoisted(() => ({
     validations: vi.fn(),
     evaluateFeasibility: vi.fn(),
     feasibilityDiagnostics: vi.fn(),
+    feasibilityWitness: vi.fn(),
     lock: vi.fn(),
     materializeMain: vi.fn()
   },
@@ -246,6 +247,7 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.validations.mockClear();
     mocks.teachingPlans.evaluateFeasibility.mockClear();
     mocks.teachingPlans.feasibilityDiagnostics.mockClear();
+    mocks.teachingPlans.feasibilityWitness.mockClear();
     mocks.teachingPlans.lock.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
@@ -877,10 +879,11 @@ describe("reparto React hooks", () => {
     ]);
   });
 
-  it("wires feasibility diagnostics queries and the evaluate mutation", async () => {
+  it("wires restricted feasibility queries and the evaluate mutation", async () => {
     const {
       useEvaluateRepartoFeasibility,
-      useRepartoFeasibilityDiagnostics
+      useRepartoFeasibilityDiagnostics,
+      useRepartoFeasibilityWitness
     } = await import("../src/runtime/react/hooks.js");
 
     mocks.useQuery.mockClear();
@@ -905,6 +908,21 @@ describe("reparto React hooks", () => {
     const disabledCall = mocks.useQuery.mock.calls.at(-1)?.[0];
     expect(disabledCall.enabled).toBe(false);
 
+    useRepartoFeasibilityWitness("p1");
+    expect(mocks.teachingPlans.feasibilityWitness).toHaveBeenCalledWith("p1");
+    const witnessCall = mocks.useQuery.mock.calls.at(-1)?.[0];
+    expect(witnessCall.queryKey).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-witness"
+    ]);
+    expect(witnessCall.enabled).toBe(true);
+    useRepartoFeasibilityWitness("p1", false);
+    expect(mocks.useQuery.mock.calls.at(-1)?.[0].enabled).toBe(false);
+
     mocks.invalidateQueries.mockClear();
     const evaluate = useEvaluateRepartoFeasibility();
     evaluate.mutate("p1");
@@ -925,6 +943,45 @@ describe("reparto React hooks", () => {
       ["reparto", "processes", "detail", "p1", "dashboard"],
       ["reparto", "processes", "detail", "p1", "summary"]
     ]);
+  });
+
+  it("refreshes witness, participant and recomputed-turn projections after undo/reassign", async () => {
+    const {
+      useReassignRepartoAssignment,
+      useUndoRepartoAssignment
+    } = await import("../src/runtime/react/hooks.js");
+    const expected = [
+      ["reparto", "processes", "detail", "p1", "assignments"],
+      ["reparto", "processes", "detail", "p1", "requirements"],
+      ["reparto", "processes", "detail", "p1", "teachers"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"],
+      ["reparto", "processes", "detail", "p1", "teacher-lan"],
+      ["reparto", "processes", "detail", "p1", "meeting-sessions"],
+      ["reparto", "processes", "detail", "p1", "audit-events"]
+    ];
+
+    const undo = useUndoRepartoAssignment();
+    undo.mutate({
+      processId: "p1",
+      assignmentId: "a1",
+      body: { reason: "Return the teacher to the queue" }
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual(expected);
+
+    mocks.invalidateQueries.mockClear();
+    const reassign = useReassignRepartoAssignment();
+    reassign.mutate({
+      processId: "p1",
+      assignmentId: "a1",
+      body: { process_teacher_id: "pt2", reason: "Correct the allocation" }
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual(expected);
   });
 
   it("wires allocation revisions and explicit reconciliation with broad invalidation", async () => {

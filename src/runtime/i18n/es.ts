@@ -382,10 +382,18 @@ export const es: RepartoDictionary = {
     selectSlotFirst: "Elija un puesto para ver los participantes elegibles.",
     noAssignableSlots: "Todos los puestos vivos ya están asignados.",
     noEligibleTeachers: "Ningún participante es elegible para este puesto.",
+    safeChoice: {
+      loading: "Comprobando el plan determinista de elecciones seguras.",
+      current: "Las elecciones se filtran con el testigo determinista actual.",
+      unavailable: "El filtrado de elecciones seguras no está disponible; vuelve a ejecutar la evaluación administrativa de viabilidad.",
+      not_required: "El plan no tiene un testigo viable actual; se aplican las reglas ordinarias del servicio."
+    },
     teacherDisabled: {
       participant_inactive: "No es un participante activo.",
       duplicate_activity_position: "Ya ocupa un puesto de esta actividad.",
-      exceeds_remaining_target: "El puesto completo no cabe en las horas objetivo restantes."
+      exceeds_remaining_target: "El puesto completo no cabe en las horas objetivo restantes.",
+      strands_remaining_participants: "Esta elección dejaría el reparto restante sin un testigo válido.",
+      witness_unavailable: "El estado de elección segura no está disponible hasta volver a evaluar la viabilidad."
     },
     notesAction: "Notas",
     notesTitle: "Editar las notas del reparto",

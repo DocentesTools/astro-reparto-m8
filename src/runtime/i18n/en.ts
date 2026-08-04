@@ -383,10 +383,18 @@ export const en = {
     selectSlotFirst: "Choose a slot to see the participants eligible for it.",
     noAssignableSlots: "Every live slot is already assigned.",
     noEligibleTeachers: "No participant is eligible for this slot.",
+    safeChoice: {
+      loading: "Checking the current deterministic safe-choice plan.",
+      current: "Choices are filtered against the current deterministic witness.",
+      unavailable: "Safe-choice filtering is unavailable; refresh the administrative feasibility evaluation.",
+      not_required: "The plan has no current feasible witness; ordinary server-side assignment rules apply."
+    },
     teacherDisabled: {
       participant_inactive: "Not an active participant.",
       duplicate_activity_position: "Already holds a position of this activity.",
-      exceeds_remaining_target: "The whole slot does not fit the remaining target hours."
+      exceeds_remaining_target: "The whole slot does not fit the remaining target hours.",
+      strands_remaining_participants: "This choice would leave the remaining reparto without a valid witness.",
+      witness_unavailable: "Safe-choice status is unavailable until feasibility is evaluated again."
     },
     notesAction: "Notes",
     notesTitle: "Edit assignment notes",

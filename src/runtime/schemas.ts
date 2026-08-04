@@ -1841,6 +1841,39 @@ export type FeasibilityDiagnosticsReport = z.infer<
   typeof FeasibilityDiagnosticsReportSchema
 >;
 
+/** One administration-only entry in the current deterministic witness. */
+export const FeasibilityWitnessEntrySchema = z
+  .object({
+    slot_id: uuidSchema,
+    process_teacher_id: uuidSchema
+  })
+  .strict();
+export type FeasibilityWitnessEntry = z.infer<
+  typeof FeasibilityWitnessEntrySchema
+>;
+
+/**
+ * Current deterministic witness for department-head safe-choice filtering.
+ *
+ * This restricted response is never embedded in a plan, teacher LAN, shared
+ * screen, SSE, audit or export payload. The assignment board may read it only
+ * through the administrator-gated endpoint and reduces it to local verdicts;
+ * no default UI renders the provisional mapping itself (plan §20.24).
+ */
+export const FeasibilityWitnessReportSchema = z
+  .object({
+    teaching_plan_id: uuidSchema,
+    assignment_process_id: uuidSchema,
+    input_fingerprint: z.string().min(1),
+    solver_version: z.string().min(1),
+    checked_at: dateTimeSchema,
+    witness: z.array(FeasibilityWitnessEntrySchema)
+  })
+  .strict();
+export type FeasibilityWitnessReport = z.infer<
+  typeof FeasibilityWitnessReportSchema
+>;
+
 /**
  * Result of the administrator-only bounded evaluation action (§20.23): the
  * endpoint runs or reuses the serialized solver for the exact current

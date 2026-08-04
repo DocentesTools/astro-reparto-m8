@@ -347,6 +347,15 @@ function TeacherHoursPanel({
           count: summary.available_slots
         })}
       </p>
+      <p
+        className="text-sm text-muted-foreground"
+        data-feasibility-status={summary.readiness}
+        data-reparto-slot="teacher-feasibility-status"
+      >
+        {`${dict.dashboard.invariant.readiness}: ${
+          dict.dashboard.readiness[summary.readiness]
+        }`}
+      </p>
       <p className="text-sm text-muted-foreground" data-reparto-slot="lan-plan-balance">
         {balance
           ? formatRepartoMessage(dict.view.lan.planBalance, {

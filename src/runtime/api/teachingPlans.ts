@@ -2,12 +2,14 @@ import { request } from "../client.js";
 import {
   FeasibilityDiagnosticsReportSchema,
   FeasibilityEvaluationSchema,
+  FeasibilityWitnessReportSchema,
   MainMaterializationResultSchema,
   PlanBalanceSchema,
   PlanValidationReportSchema,
   TeachingPlanPublicSchema,
   type FeasibilityDiagnosticsReport,
   type FeasibilityEvaluation,
+  type FeasibilityWitnessReport,
   type MainMaterializationResult,
   type PlanBalance,
   type PlanValidationReport,
@@ -87,6 +89,18 @@ export const teachingPlans = {
       method: "GET",
       path: `/assignment-processes/${processId}/teaching-plan/feasibility/diagnostics`,
       schema: FeasibilityDiagnosticsReportSchema,
+      auth: true
+    }),
+  /**
+   * Read the current deterministic mapping for department-head safe-choice
+   * filtering. This endpoint is administrator-only; teacher and shared-screen
+   * clients must use their coarse readiness projection and never call it.
+   */
+  feasibilityWitness: (processId: string) =>
+    request<FeasibilityWitnessReport>({
+      method: "GET",
+      path: `/assignment-processes/${processId}/teaching-plan/feasibility/witness`,
+      schema: FeasibilityWitnessReportSchema,
       auth: true
     }),
   /**

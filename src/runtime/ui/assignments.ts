@@ -1,11 +1,14 @@
 import {
   compareHours,
+  hoursToHundredths,
   subtractHours,
   sumHours,
+  type HourHundredths,
   type HourValue
 } from "../decimals.js";
 import type {
   AssignmentPublic,
+  FeasibilityWitnessReport,
   HourRequirementPublic,
   ProcessTeacherPublic
 } from "../schemas.js";
@@ -47,7 +50,29 @@ export type AssignmentSlotDisabledReason =
 export type AssignmentTeacherDisabledReason =
   | "participant_inactive"
   | "duplicate_activity_position"
-  | "exceeds_remaining_target";
+  | "exceeds_remaining_target"
+  | "strands_remaining_participants"
+  | "witness_unavailable";
+
+export type AssignmentSafeChoiceState =
+  | "not_checked"
+  | "safe"
+  | "unsafe"
+  | "unavailable";
+
+/**
+ * Restricted administrator-only safe-choice inputs.
+ *
+ * The witness comes from the department-head endpoint and is reduced to one
+ * verdict per option. Teacher LAN code never receives this context and keeps
+ * using the role-safe readiness/selection-blocked projection instead.
+ */
+export type AssignmentSafeChoiceContext = {
+  required: boolean;
+  witness: FeasibilityWitnessReport | null;
+  /** Reassignment releases this currently occupied slot before testing it. */
+  releasedSlotId?: string;
+};
 
 export type AssignmentSlotOption = {
   slotId: string;
@@ -66,6 +91,7 @@ export type AssignmentTeacherOption = {
   assignedHours: string;
   /** `target − assigned`, signed; negative would mean already over target. */
   remainingTargetHours: string;
+  safeChoiceState: AssignmentSafeChoiceState;
   canAssign: boolean;
   disabledReason: AssignmentTeacherDisabledReason | null;
 };
@@ -140,6 +166,7 @@ export function buildAssignmentTeacherOptions(
   options: {
     slot?: AssignmentSlotOption | null;
     remainingTarget?: RemainingTargetLookup;
+    safeChoice?: AssignmentSafeChoiceContext;
   } = {}
 ): AssignmentTeacherOption[] {
   const live = activeAssignments(assignments);
@@ -147,6 +174,15 @@ export function buildAssignmentTeacherOptions(
     requirements.map((slot) => [slot.id, slot.required_teacher_hours])
   );
   const slot = options.slot ?? null;
+  const safeChoiceState =
+    slot !== null && options.safeChoice?.required
+      ? buildSafeChoiceState(
+          participants,
+          requirements,
+          assignments,
+          options.safeChoice.releasedSlotId
+        )
+      : null;
   return participants.map((participant) => {
     const held = live.filter(
       (assignment) => assignment.process_teacher_id === participant.id
@@ -159,17 +195,30 @@ export function buildAssignmentTeacherOptions(
       assignedHours,
       options.remainingTarget
     );
-    const disabledReason = teacherDisabledReason({
+    const basicDisabledReason = teacherDisabledReason({
       participant,
       held,
       slot,
       remainingTargetHours
     });
+    const choiceState =
+      basicDisabledReason === null && slot !== null && options.safeChoice?.required
+        && safeChoiceState !== null
+        ? evaluateWitnessSafeChoice(
+            safeChoiceState,
+            options.safeChoice.witness,
+            slot.slotId,
+            participant.id
+          )
+        : "not_checked";
+    const disabledReason =
+      basicDisabledReason ?? safeChoiceDisabledReason(choiceState);
     return {
       processTeacherId: participant.id,
       assignedSlotCount: held.length,
       assignedHours,
       remainingTargetHours,
+      safeChoiceState: choiceState,
       canAssign: disabledReason === null,
       disabledReason
     };
@@ -185,7 +234,10 @@ export function buildReassignmentTeacherOptions(
   participants: readonly ProcessTeacherPublic[],
   requirements: readonly HourRequirementPublic[],
   assignments: readonly AssignmentPublic[],
-  options: { remainingTarget?: RemainingTargetLookup } = {}
+  options: {
+    remainingTarget?: RemainingTargetLookup;
+    safeChoice?: AssignmentSafeChoiceContext;
+  } = {}
 ): AssignmentTeacherOption[] {
   const slot = requirements.find(
     (candidate) => candidate.id === assignment.hour_requirement_id
@@ -213,8 +265,158 @@ export function buildReassignmentTeacherOptions(
     ),
     requirements,
     others,
-    { slot: slotOption, remainingTarget: options.remainingTarget }
+    {
+      slot: slotOption,
+      remainingTarget: options.remainingTarget,
+      safeChoice: options.safeChoice
+        ? { ...options.safeChoice, releasedSlotId: slot?.id }
+        : undefined
+    }
   );
+}
+
+type SafeParticipant = {
+  id: string;
+  remaining: HourHundredths;
+  occupiedActivities: ReadonlySet<string>;
+};
+
+type SafeSlot = {
+  id: string;
+  activityId: string;
+  hours: HourHundredths;
+};
+
+type SafeChoiceState = {
+  participants: readonly SafeParticipant[];
+  slots: readonly SafeSlot[];
+};
+
+/**
+ * Build a conservative subset of the service's cheap-guard inputs: exact
+ * integer hundredths, active participants, live occupancies and free slots.
+ * This is a UI prefilter only; the service repeats every guard while locked
+ * and remains authoritative for alternatives that need witness repair.
+ */
+function buildSafeChoiceState(
+  participants: readonly ProcessTeacherPublic[],
+  requirements: readonly HourRequirementPublic[],
+  assignments: readonly AssignmentPublic[],
+  releasedSlotId?: string
+): SafeChoiceState {
+  const active = activeAssignments(assignments);
+  const requirementById = new Map(requirements.map((slot) => [slot.id, slot]));
+  const assignedSlotIds = new Set(
+    active.map((assignment) => assignment.hour_requirement_id)
+  );
+  const participantState = participants
+    .filter((participant) => participant.status === "active")
+    .map((participant) => {
+      const held = active.filter(
+        (assignment) => assignment.process_teacher_id === participant.id
+      );
+      const assigned = held.reduce(
+        (total, assignment) =>
+          total +
+          hoursToHundredths(
+            requirementById.get(assignment.hour_requirement_id)
+              ?.required_teacher_hours ?? 0
+          ),
+        0
+      );
+      return {
+        id: participant.id,
+        remaining: hoursToHundredths(participant.target_weekly_hours) - assigned,
+        occupiedActivities: new Set(
+          held.map((assignment) => assignment.teaching_activity_id)
+        )
+      };
+    })
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const slots = requirements
+    .filter(
+      (slot) =>
+        slot.retired_generation === null &&
+        !assignedSlotIds.has(slot.id) &&
+        (slot.status === "available" || slot.id === releasedSlotId)
+    )
+    .map((slot) => ({
+      id: slot.id,
+      activityId: slot.teaching_activity_id,
+      hours: hoursToHundredths(slot.required_teacher_hours)
+    }));
+  return { participants: participantState, slots };
+}
+
+function evaluateWitnessSafeChoice(
+  state: SafeChoiceState,
+  witness: FeasibilityWitnessReport | null,
+  proposedSlotId: string,
+  proposedParticipantId: string
+): AssignmentSafeChoiceState {
+  if (witness === null) return "unavailable";
+  const participant = state.participants.find(
+    (candidate) => candidate.id === proposedParticipantId
+  ) as SafeParticipant;
+  const slot = state.slots.find((candidate) => candidate.id === proposedSlotId);
+  if (!slot) return "unavailable";
+
+  const prospective = applySafeChoice(state, participant, slot);
+  if (!prospectivePassesCheapGuards(prospective)) return "unsafe";
+  const witnessedChoice = witness.witness.find(
+    (entry) => entry.slot_id === proposedSlotId
+  );
+  if (witnessedChoice === undefined) return "unavailable";
+  return witnessedChoice.process_teacher_id === proposedParticipantId
+    ? "safe"
+    : "not_checked";
+}
+
+function safeChoiceDisabledReason(
+  state: AssignmentSafeChoiceState
+): AssignmentTeacherDisabledReason | null {
+  if (state === "unsafe") return "strands_remaining_participants";
+  if (state === "unavailable") return "witness_unavailable";
+  return null;
+}
+
+function applySafeChoice(
+  state: SafeChoiceState,
+  participant: SafeParticipant,
+  slot: SafeSlot
+): SafeChoiceState {
+  const updated: SafeParticipant = {
+    id: participant.id,
+    remaining: Math.max(0, participant.remaining - slot.hours),
+    occupiedActivities: new Set([
+      ...participant.occupiedActivities,
+      slot.activityId
+    ])
+  };
+  return {
+    participants: state.participants.map((candidate) =>
+      candidate.id === updated.id ? updated : candidate
+    ),
+    slots: state.slots.filter((candidate) => candidate.id !== slot.id)
+  };
+}
+
+function prospectivePassesCheapGuards(state: SafeChoiceState): boolean {
+  const targetTotal = state.participants.reduce(
+    (total, participant) => total + participant.remaining,
+    0
+  );
+  const slotTotal = state.slots.reduce((total, slot) => total + slot.hours, 0);
+  if (targetTotal !== slotTotal) return false;
+  if (state.slots.length > 0) {
+    const largestSlot = Math.max(...state.slots.map((slot) => slot.hours));
+    const largestTarget = Math.max(
+      ...state.participants.map((participant) => participant.remaining),
+      -1
+    );
+    if (largestSlot > largestTarget) return false;
+  }
+  return true;
 }
 
 function slotDisabledReason(

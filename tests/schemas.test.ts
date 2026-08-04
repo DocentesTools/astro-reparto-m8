@@ -30,6 +30,7 @@ import {
   FeasibilityDiagnosticSchema,
   FeasibilityDiagnosticsReportSchema,
   FeasibilityEvaluationSchema,
+  FeasibilityWitnessReportSchema,
   FeasibilityStatusSchema,
   GroupBalanceSchema,
   GroupSubjectBulkApplyRequestSchema,
@@ -1917,6 +1918,29 @@ describe("teaching-plan and activity schemas", () => {
     ).toThrow();
     expect(() =>
       FeasibilityEvaluationSchema.parse({ ...evaluationBody, witness: [] })
+    ).toThrow();
+
+    const witnessBody = {
+      teaching_plan_id: planId,
+      assignment_process_id: processId,
+      input_fingerprint: "fingerprint",
+      solver_version: "bounded-dfs-v1",
+      checked_at: now,
+      witness: [
+        {
+          slot_id: requirementId,
+          process_teacher_id: "25252525-2525-4525-8525-252525252525"
+        }
+      ]
+    };
+    expect(FeasibilityWitnessReportSchema.parse(witnessBody).witness).toHaveLength(
+      1
+    );
+    expect(() =>
+      FeasibilityWitnessReportSchema.parse({
+        ...witnessBody,
+        witness: [{ ...witnessBody.witness[0], participant_hours: "18.00" }]
+      })
     ).toThrow();
   });
 

@@ -61,6 +61,7 @@ export {
   useRepartoTeachingPlan,
   useRepartoTeachingPlanSummary,
   useRepartoTeachingPlanValidations,
+  useRepartoFeasibilityWitness,
   useMaterializeRepartoMainActivities,
   usePreviewRepartoGroupSubjects,
   useApplyRepartoGroupSubjects,

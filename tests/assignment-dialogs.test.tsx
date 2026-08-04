@@ -93,6 +93,7 @@ function candidate(
     assignedSlotCount: 0,
     assignedHours: "0.00",
     remainingTargetHours: "18.00",
+    safeChoiceState: "not_checked",
     canAssign: true,
     disabledReason: null,
     ...overrides
@@ -248,6 +249,10 @@ describe("assignment reassign dialog", () => {
     const select = field("process-teacher") as HTMLSelectElement;
     const offered = [...select.options].map((option) => option.value);
     expect(offered).toEqual(["", "teacher-2"]);
+    expect(document.body.textContent).toContain("Alan Turing");
+    expect(document.body.textContent).toContain(
+      dict.assignments.teacherDisabled.duplicate_activity_position
+    );
 
     expect(action("save").disabled).toBe(true);
     fireEvent.change(select, { target: { value: "teacher-2" } });

@@ -154,6 +154,14 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/teaching-plan/lock",
       response: "TeachingPlanPublic"
     });
+    expect(
+      REPARTO_CONTRACT_OPERATIONS["teachingPlans.feasibilityWitness"]
+    ).toEqual({
+      method: "GET",
+      path:
+        "/assignment-processes/{process_id}/teaching-plan/feasibility/witness",
+      response: "FeasibilityWitnessPublic"
+    });
     expect(REPARTO_CONTRACT_OPERATIONS["teachingActivities.update"]).toEqual({
       method: "PATCH",
       path:
@@ -221,7 +229,7 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(65);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(66);
   });
 });
 

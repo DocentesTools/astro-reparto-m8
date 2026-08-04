@@ -32,6 +32,7 @@ const queryState = vi.hoisted(() => ({
   teachingPlan: null as unknown,
   planValidations: null as unknown,
   assignmentValidations: null as unknown,
+  feasibilityWitness: null as unknown,
   groupSubjects: [] as unknown[],
   teachingActivities: [] as unknown[]
 }));
@@ -64,6 +65,17 @@ vi.mock("@tanstack/react-query", () => ({
         if (entityScope === "teaching-plan" && queryKey[5] === "validations") {
           return {
             data: queryState.planValidations,
+            error: null,
+            isError: false,
+            isLoading: false
+          };
+        }
+        if (
+          entityScope === "teaching-plan" &&
+          queryKey[5] === "feasibility-witness"
+        ) {
+          return {
+            data: queryState.feasibilityWitness,
             error: null,
             isError: false,
             isLoading: false
@@ -158,6 +170,8 @@ function reset() {
   queryState.planBalance = null;
   queryState.teachingPlan = null;
   queryState.planValidations = null;
+  queryState.assignmentValidations = null;
+  queryState.feasibilityWitness = null;
   queryState.groupSubjects = [];
   queryState.teachingActivities = [];
 }
@@ -578,6 +592,7 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-reparto-row-action="reassign"');
     expect(html).toContain('data-validation-code="ASSIGNMENT_PARTICIPANT_BELOW_TARGET"');
     expect(html).toContain('data-assignment-final-ready="false"');
+    expect(html).toContain('data-reparto-safe-choice-status="not_required"');
     // Retired with this bullet: no reasonless delete, no bulk cancellation and
     // no share/override controls anywhere on the board.
     expect(html).not.toContain('data-reparto-row-action="delete"');

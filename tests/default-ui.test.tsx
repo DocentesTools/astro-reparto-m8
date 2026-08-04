@@ -446,6 +446,10 @@ describe("default reparto UI", () => {
     // Complete selectable positions, and the two aggregate balances that name
     // nobody — the only process-wide figures a LAN client may see.
     expect(html).toContain('data-reparto-available-slots="2"');
+    expect(html).toContain('data-reparto-slot="teacher-feasibility-status"');
+    expect(html).toContain('data-feasibility-status="ready"');
+    expect(html).not.toContain("feasibility-witness");
+    expect(html).not.toContain("input_fingerprint");
     expect(html).toContain("120.00");
     expect(html).toContain("124.00");
 

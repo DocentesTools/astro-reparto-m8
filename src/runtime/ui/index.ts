@@ -19,6 +19,8 @@ export {
   buildReassignmentTeacherOptions,
   type AssignmentSlotDisabledReason,
   type AssignmentSlotOption,
+  type AssignmentSafeChoiceContext,
+  type AssignmentSafeChoiceState,
   type AssignmentTeacherDisabledReason,
   type AssignmentTeacherOption,
   type RemainingTargetLookup

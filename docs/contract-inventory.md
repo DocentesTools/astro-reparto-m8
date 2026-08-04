@@ -422,12 +422,17 @@ valid preview, requires a separate confirmation and discards the preview on
 | Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
 | Feasibility evaluate | `POST /feasibility/evaluate` → `FeasibilityEvaluationPublic` (admin); no request body; runs the solver on the intended next requirement generation |
 | Feasibility diagnostics | `GET /feasibility/diagnostics` → `FeasibilityDiagnosticsPublic` (admin); **409** when no current fingerprint- and generation-matching evaluation exists |
+| Feasibility witness | `GET /feasibility/witness` → `FeasibilityWitnessPublic` (admin); **409** when the witness is missing, stale, solver-incompatible or generation-mismatched |
 | Patch / delete | **not exposed** |
 | Public shape | `id, assignment_process_id, allocation_revision_id, status, current_generation_number, locked_at, locked_by_user_id, requirements_generated_at, stale_reason, feasibility_status, feasibility_generation, feasibility_checked_at, feasibility_input_fingerprint, feasibility_solver_version, feasibility_diagnostics_ref, created_at, updated_at` |
 
 Plan status values: `draft, unbalanced, balanced, locked,
 requirements_generated, stale, reconciliation_required`. Feasibility is an
-independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted solver witness is deliberately absent from the browser contract.
+independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted
+solver witness is absent from every common, teacher, shared-screen, SSE, audit,
+snapshot and export contract. Only the administrator assignment board reads the
+dedicated witness endpoint; it reduces the mapping to safe/unsafe/unavailable
+option verdicts and never renders the provisional reparto.
 
 `FeasibilityEvaluationPublic` carries `feasibility_status`,
 `feasibility_generation`, `feasibility_checked_at`,
@@ -467,9 +472,13 @@ summed or collapsed.
 entity_type, entity_id`. `code` is the stable machine key. Reading validations
 does not trigger the feasibility solver.
 
-The frontend wraps both feasibility operations: `evaluateFeasibility`
+The frontend wraps the feasibility operations: `evaluateFeasibility`
 (`POST /feasibility/evaluate`) and `feasibilityDiagnostics`
-(`GET /feasibility/diagnostics`) in `src/runtime/api/teachingPlans.ts`.
+(`GET /feasibility/diagnostics`), plus the administrator-only
+`feasibilityWitness` (`GET /feasibility/witness`) used for bounded safe-choice
+prefiltering, in `src/runtime/api/teachingPlans.ts`. The client disables only
+choices that fail its conservative exact-total/largest-slot guards; non-witness alternatives remain
+subject to the service's authoritative bounded repair.
 The diagnostics panel renders the department-head-only report through
 `FeasibilityDiagnosticsPanel`.
 

@@ -613,6 +613,19 @@ export function useRepartoFeasibilityDiagnostics(
   });
 }
 
+/** Administrator-only current witness used by the assignment-board prefilter. */
+export function useRepartoFeasibilityWitness(
+  processId?: string,
+  enabled = true
+) {
+  const resolvedProcessId = resolveProcessId(processId);
+  return useQuery({
+    queryKey: repartoKeys.teachingPlanFeasibilityWitness(processId),
+    queryFn: () => teachingPlans.feasibilityWitness(requireProcessId(processId)),
+    enabled: Boolean(resolvedProcessId) && enabled
+  });
+}
+
 export function useEvaluateRepartoFeasibility() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -1163,8 +1176,12 @@ function invalidateAssignmentProjections(
   for (const queryKey of [
     repartoKeys.assignments(processId),
     repartoKeys.hourRequirements(processId),
+    repartoKeys.processTeachers(processId),
+    repartoKeys.teachingPlan(processId),
     repartoKeys.dashboard(processId),
     repartoKeys.summary(processId),
+    repartoKeys.teacherLan(processId),
+    repartoKeys.meetingSessions(processId),
     repartoKeys.auditEvents(processId)
   ]) {
     void queryClient.invalidateQueries({ queryKey });
@@ -1217,10 +1234,6 @@ export function useUndoRepartoAssignment() {
     }) => assignments.undo(processId, assignmentId, body),
     onSuccess: (_data, { processId }) => {
       invalidateAssignmentProjections(queryClient, processId);
-      // An undo re-enters the completed meeting turn of the released teacher.
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.meetingSessions(processId)
-      });
     }
   });
 }
@@ -1239,9 +1252,6 @@ export function useReassignRepartoAssignment() {
     }) => assignments.reassign(processId, assignmentId, body),
     onSuccess: (_data, { processId }) => {
       invalidateAssignmentProjections(queryClient, processId);
-      void queryClient.invalidateQueries({
-        queryKey: repartoKeys.meetingSessions(processId)
-      });
     }
   });
 }

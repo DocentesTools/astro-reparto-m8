@@ -1,6 +1,23 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
+
+// Every reparto route is gated by the signed-in role (§8.1 route map). These
+// suites assert the administrative surface, so they sign an `ADMIN` in; the
+// per-role sweep lives in `route-gating.test.tsx`.
+beforeEach(() => {
+  signInReparto(repartoUser("admin"));
+});
+
+afterEach(() => {
+  resetRepartoAuthAdapter();
+});
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const profileId = "22222222-2222-4222-8222-222222222222";

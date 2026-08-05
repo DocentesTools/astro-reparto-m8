@@ -67,7 +67,7 @@ import {
   repartoTurnSummaryClass,
   repartoTurnSummaryItemClass
 } from "./styles.js";
-import { useRepartoViewMode } from "./useRepartoRole.js";
+import { useRepartoCanAct, useRepartoViewMode } from "./useRepartoRole.js";
 
 /** Where the rendered comparison came from — two captures, or last year. */
 export type VersionComparisonSource = "versions" | "previous_year";
@@ -725,6 +725,9 @@ export function ProcessListView({
   processes?: AssignmentProcessPublic[];
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // Opening a process is `POST /assignment-processes` — department-head-only
+  // (§21.3). The list itself is a `READER` read and stays.
+  const canAct = useRepartoCanAct("processList");
   return (
     <main className={repartoShellClass} data-reparto-route="processes">
       <section className={repartoPanelClass} data-reparto-panel="process-list">
@@ -750,9 +753,11 @@ export function ProcessListView({
             </ul>
           ) : null}
         </div>
-        <button className={repartoButtonClass} type="button" data-reparto-action="create-process">
-          {dict.action.create} {dict.entity.assignmentProcess.singular.toLowerCase()}
-        </button>
+        {canAct ? (
+          <button className={repartoButtonClass} type="button" data-reparto-action="create-process">
+            {dict.action.create} {dict.entity.assignmentProcess.singular.toLowerCase()}
+          </button>
+        ) : null}
       </section>
     </main>
   );
@@ -988,6 +993,10 @@ export function VersionsView({
   versions?: ProcessVersionPublic[];
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // Capturing a version writes (`POST /history/versions`, department-head-only
+  // per §21.3); listing and comparing them are reads any `READER` may make, so
+  // only the capture control and its reason field are withheld below `ADMIN`.
+  const canAct = useRepartoCanAct("versions");
   const selectionState = buildVersionSelectionState(versions, selection ?? {});
   const sides = [
     {
@@ -1049,31 +1058,35 @@ export function VersionsView({
               </p>
             )}
           </div>
-          <div className={repartoFieldGridClass}>
-            <label className={repartoFieldLabelClass}>
-              {dict.view.versions.createReason}
-              <input
-                className={repartoInputClass}
-                data-reparto-field="version-reason"
-                maxLength={500}
-                onChange={(event: { target: { value: string } }) =>
-                  onReasonChange?.(event.target.value)
-                }
-                type="text"
-                value={createReason}
-              />
-            </label>
-          </div>
+          {canAct ? (
+            <div className={repartoFieldGridClass}>
+              <label className={repartoFieldLabelClass}>
+                {dict.view.versions.createReason}
+                <input
+                  className={repartoInputClass}
+                  data-reparto-field="version-reason"
+                  maxLength={500}
+                  onChange={(event: { target: { value: string } }) =>
+                    onReasonChange?.(event.target.value)
+                  }
+                  type="text"
+                  value={createReason}
+                />
+              </label>
+            </div>
+          ) : null}
           <div className={repartoActionRowClass}>
-            <button
-              className={repartoButtonClass}
-              data-reparto-action="create-version"
-              disabled={createPending}
-              onClick={() => onCreateVersion?.()}
-              type="button"
-            >
-              {createPending ? dict.view.versions.createPending : dict.view.versions.create}
-            </button>
+            {canAct ? (
+              <button
+                className={repartoButtonClass}
+                data-reparto-action="create-version"
+                disabled={createPending}
+                onClick={() => onCreateVersion?.()}
+                type="button"
+              >
+                {createPending ? dict.view.versions.createPending : dict.view.versions.create}
+              </button>
+            ) : null}
             <button
               className={repartoButtonClass}
               data-disabled-reason={previousYearAvailable ? undefined : "no_previous_year"}
@@ -1215,6 +1228,13 @@ export function ExportCenterView({
   restoreConfirming?: boolean;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // The three §7.8 planning exports sit at the read floor on the service, and
+  // §21.4 keeps authentication and feasibility gating orthogonal — so a `READER`
+  // keeps the planning-export panel and the stored-document list. What goes
+  // below `ADMIN` is everything that writes: the planning import, creating a
+  // document export, restoring a draft, the final export that archives the
+  // process, and the leadership transitions.
+  const canAct = useRepartoCanAct("exports");
   const state = buildExportCenterState({
     plan,
     planValidations,
@@ -1238,17 +1258,20 @@ export function ExportCenterView({
           pendingMode={pendingPlanningMode}
           state={state}
         />
-        <PlanningImportPanel
-          content={planningImportContent}
-          dict={dict}
-          onChange={onPlanningImportContentChange}
-          onImport={onImportPlanning}
-          pending={pendingPlanningImport}
-          planStatus={plan?.status ?? null}
-          result={planningImportResult}
-        />
+        {canAct ? (
+          <PlanningImportPanel
+            content={planningImportContent}
+            dict={dict}
+            onChange={onPlanningImportContentChange}
+            onImport={onImportPlanning}
+            pending={pendingPlanningImport}
+            planStatus={plan?.status ?? null}
+            result={planningImportResult}
+          />
+        ) : null}
         <ProcessDocumentPanel
           artifacts={artifacts}
+          canAct={canAct}
           dict={dict}
           onExport={onCreateDocumentExport}
           onCancelRestore={onCancelRestore}
@@ -1261,15 +1284,18 @@ export function ExportCenterView({
           restoreConfirming={restoreConfirming}
           state={state}
         />
-        <FinalAssignmentExportPanel
-          confirming={finalConfirming}
-          dict={dict}
-          onCancel={onCancelFinalExport}
-          onConfirm={onCreateFinalExport}
-          onReview={onReviewFinalExport}
-          pending={pendingDocumentType === "final"}
-          state={state}
-        />
+        {canAct ? (
+          <FinalAssignmentExportPanel
+            confirming={finalConfirming}
+            dict={dict}
+            onCancel={onCancelFinalExport}
+            onConfirm={onCreateFinalExport}
+            onReview={onReviewFinalExport}
+            pending={pendingDocumentType === "final"}
+            state={state}
+          />
+        ) : null}
+        {canAct ? (
         <section className={repartoPanelClass} data-reparto-panel="leadership-workflow">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.view.exports.leadershipWorkflow}</h2>
@@ -1305,6 +1331,7 @@ export function ExportCenterView({
           </div>
           <div data-reparto-slot="workflow-result" />
         </section>
+        ) : null}
       </div>
     </main>
   );
@@ -1542,6 +1569,7 @@ function PlanningExportPanel({
 
 function ProcessDocumentPanel({
   artifacts,
+  canAct,
   dict,
   onExport,
   onCancelRestore,
@@ -1555,6 +1583,8 @@ function ProcessDocumentPanel({
   state
 }: {
   artifacts: ExportArtifactPublic[];
+  /** Decided once by the export centre from the session; never by a route. */
+  canAct: boolean;
   dict: RepartoDictionary;
   onExport?: (exportType: ExportArtifactType) => void;
   onCancelRestore?: () => void;
@@ -1578,42 +1608,46 @@ function ProcessDocumentPanel({
       <p className="text-sm text-muted-foreground">
         {dict.view.exports.documents.description}
       </p>
-      <div className={repartoActionRowClass}>
-        {state.documentExportTypes.map((exportType) => (
+      {canAct ? (
+        <div className={repartoActionRowClass}>
+          {state.documentExportTypes.map((exportType) => (
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="create-export"
+              data-reparto-export-type={exportType}
+              disabled={pendingType !== null}
+              key={exportType}
+              onClick={() => onExport?.(exportType)}
+              type="button"
+            >
+              {formatRepartoMessage(dict.view.exports.documents.action, {
+                document: dict.view.exports.type[exportType]
+              })}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      {canAct ? (
+        <div className={repartoActionRowClass}>
           <button
             className={repartoButtonClass}
-            data-reparto-action="create-export"
-            data-reparto-export-type={exportType}
-            disabled={pendingType !== null}
-            key={exportType}
-            onClick={() => onExport?.(exportType)}
+            data-disabled-reason={state.restore.reason ?? undefined}
+            data-reparto-action="restore-draft"
+            data-reparto-backup-id={state.latestBackupId ?? ""}
+            disabled={!state.restore.allowed || pendingRestore}
+            onClick={() => onReviewRestore?.()}
             type="button"
           >
-            {formatRepartoMessage(dict.view.exports.documents.action, {
-              document: dict.view.exports.type[exportType]
-            })}
+            {dict.action.restore}
           </button>
-        ))}
-      </div>
-      <div className={repartoActionRowClass}>
-        <button
-          className={repartoButtonClass}
-          data-disabled-reason={state.restore.reason ?? undefined}
-          data-reparto-action="restore-draft"
-          data-reparto-backup-id={state.latestBackupId ?? ""}
-          disabled={!state.restore.allowed || pendingRestore}
-          onClick={() => onReviewRestore?.()}
-          type="button"
-        >
-          {dict.action.restore}
-        </button>
-      </div>
-      {state.restore.reason ? (
+        </div>
+      ) : null}
+      {canAct && state.restore.reason ? (
         <p className="text-sm text-destructive" data-restore-blocked-reason={state.restore.reason}>
           {dict.view.exports.restore.blocked[state.restore.reason]}
         </p>
       ) : null}
-      {restoreConfirming && state.restore.allowed ? (
+      {canAct && restoreConfirming && state.restore.allowed ? (
         <section
           aria-labelledby="restore-confirmation-title"
           className="space-y-3 rounded-lg border border-primary/40 bg-muted/30 p-4"

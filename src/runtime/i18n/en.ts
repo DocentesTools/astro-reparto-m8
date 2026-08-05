@@ -111,6 +111,18 @@ export const en = {
       description: "Preparing the latest page content."
     },
     unavailable: "{entity} unavailable",
+    access: {
+      checking: "Checking your access…",
+      forbidden: "You do not have access to this page.",
+      forbiddenDetail: "This page requires the {role} role or above.",
+      role: {
+        user: "user",
+        reader: "reader",
+        writer: "writer",
+        admin: "administrator",
+        superadmin: "super administrator"
+      }
+    },
     currentTurn: { status: "Status", turn: "Turn", teacher: "Teacher", started: "Started", waiting: "Waiting", noPosition: "No position", noActiveTurn: "No active turn", notStarted: "Not started", position: "Turn {position}", teacherValue: "Teacher {teacher}" },
     versions: {
       title: "Versions",

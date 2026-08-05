@@ -1,6 +1,6 @@
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { AssignmentPublic } from "../../../../schemas.js";
-import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions, useRepartoCanAct } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
 import { repartoBulkDeleteButtonClass } from "../../../styles.js";
@@ -49,6 +49,10 @@ export function AssignmentsList({
   onSelectedIdsChange,
   selectedIds
 }: AssignmentsListProps) {
+  // Assignment notes, reassignment and undo are head/admin-only, own row or
+  // not (§21.3, §7.7): a `WRITER` takes a slot through the teacher view's
+  // direct choice, and never edits the record afterwards.
+  const canAct = useRepartoCanAct("assignments");
   if (isLoading || isError) {
     return (
       <QueryState
@@ -77,44 +81,46 @@ export function AssignmentsList({
       label: dict.field.hourRequirement,
       value: (assignment) => requirementLabel(assignment.hour_requirement_id)
     },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (assignment) =>
-        `${requirementLabel(assignment.hour_requirement_id)} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (assignment) =>
-        assignment.status === "active" ? (
-          <RowActions>
-            <ActionButton
-              action="edit"
-              disabled={hasActiveForm}
-              label={dict.assignments.notesAction}
-              onClick={() => onEditNotes(assignment)}
-              row
-            />
-            <ActionButton
-              action="reassign"
-              disabled={hasActiveForm}
-              label={dict.assignments.reassignAction}
-              onClick={() => onReassign(assignment)}
-              row
-            />
-            <ActionButton
-              action="undo"
-              disabled={hasActiveForm}
-              label={dict.assignments.undoAction}
-              onClick={() => onUndo(assignment)}
-              row
-            />
-          </RowActions>
-        ) : (
-          <span data-reparto-slot="assignment-history">
-            {dict.assignments.historyRow}
-          </span>
-        )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (assignment: AssignmentPublic) =>
+            `${requirementLabel(assignment.hour_requirement_id)} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (assignment: AssignmentPublic) =>
+            assignment.status === "active" ? (
+              <RowActions>
+                <ActionButton
+                  action="edit"
+                  disabled={hasActiveForm}
+                  label={dict.assignments.notesAction}
+                  onClick={() => onEditNotes(assignment)}
+                  row
+                />
+                <ActionButton
+                  action="reassign"
+                  disabled={hasActiveForm}
+                  label={dict.assignments.reassignAction}
+                  onClick={() => onReassign(assignment)}
+                  row
+                />
+                <ActionButton
+                  action="undo"
+                  disabled={hasActiveForm}
+                  label={dict.assignments.undoAction}
+                  onClick={() => onUndo(assignment)}
+                  row
+                />
+              </RowActions>
+            ) : (
+              <span data-reparto-slot="assignment-history">
+                {dict.assignments.historyRow}
+              </span>
+            )
+        } satisfies DataTableColumn<AssignmentPublic>]
+      : []),
     {
       id: "participant",
       label: dict.field.processParticipant,
@@ -132,7 +138,7 @@ export function AssignmentsList({
   // refuses.
   const selectedCount = selectedIds.size;
   const undoSelectedAction =
-    selectedCount > 0 ? (
+    canAct && selectedCount > 0 ? (
       <button
         className={repartoBulkDeleteButtonClass}
         data-reparto-action="undo-selected"

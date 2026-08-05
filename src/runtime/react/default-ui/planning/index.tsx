@@ -8,7 +8,9 @@ import {
   repartoShellClass
 } from "../../styles.js";
 import {
+  RepartoRouteGuard,
   Shell,
+  useRepartoCanAct,
   WithSelectedProcess,
   type EntityViewProps
 } from "../process-crud/shared.js";
@@ -29,6 +31,15 @@ function PlanningContent({
   processId: EntityViewProps["processId"];
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // Planning below `ADMIN` is the two balances and nothing else. That is not
+  // only an affordance rule: every panel underneath either writes (materialize,
+  // sync-apply, activity CRUD, lock, generate, reconcile) or reads
+  // department-head-only data — the feasibility witness and diagnostics are
+  // `CurrentAdmin` on the service — so rendering them for a `READER` would show
+  // a surface whose every request comes back 403 (§21.5). The balance header
+  // stays, because §8.3 requires both summaries to remain visible and the
+  // plan-summary read is at the `READER` floor.
+  const canAct = useRepartoCanAct("planning");
   const balanceQuery = useRepartoTeachingPlanSummary(processId);
 
   return (
@@ -52,12 +63,16 @@ function PlanningContent({
         error={balanceQuery.isError ? balanceQuery.error : null}
         isLoading={balanceQuery.isLoading}
       />
-      <MainSubjectMaterialization locale={locale} processId={processId} />
-      <MainActivitySyncPanel locale={locale} processId={processId} />
-      <SecondaryActivityEditor locale={locale} processId={processId} />
-      <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
-      <FeasibilityDiagnosticsPanel locale={locale} processId={processId} />
-      <AllocationChangeReconciliation locale={locale} processId={processId} />
+      {canAct ? (
+        <>
+          <MainSubjectMaterialization locale={locale} processId={processId} />
+          <MainActivitySyncPanel locale={locale} processId={processId} />
+          <SecondaryActivityEditor locale={locale} processId={processId} />
+          <PlanLockAndRequirementGeneration locale={locale} processId={processId} />
+          <FeasibilityDiagnosticsPanel locale={locale} processId={processId} />
+          <AllocationChangeReconciliation locale={locale} processId={processId} />
+        </>
+      ) : null}
     </main>
   );
 }
@@ -69,11 +84,13 @@ export function RepartoPlanningView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedProcessId) => (
-          <PlanningContent locale={locale} processId={resolvedProcessId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="planning">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedProcessId) => (
+            <PlanningContent locale={locale} processId={resolvedProcessId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }

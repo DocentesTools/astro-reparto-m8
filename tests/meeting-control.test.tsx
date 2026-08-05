@@ -1,9 +1,26 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
 import { buildMeetingControlState } from "../src/runtime/ui/index.js";
 import { MeetingControlWorkspace } from "../src/runtime/react/MeetingWorkspace.js";
 import { SharedScreenWorkspace } from "../src/runtime/react/LanWorkspace.js";
 import type { ProcessDashboard, ProcessSummary } from "../src/runtime/schemas.js";
+
+// The control room's turn controls are department-head affordances (§8.1 route
+// map, `meeting` → `act: admin`), so these renders sign an `ADMIN` in; the
+// read-only direction is proven per route in `route-gating.test.tsx`.
+beforeEach(() => {
+  signInReparto(repartoUser("admin"));
+});
+
+afterEach(() => {
+  resetRepartoAuthAdapter();
+});
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const planId = "22222222-2222-4222-8222-222222222222";

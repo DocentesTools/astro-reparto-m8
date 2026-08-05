@@ -110,6 +110,18 @@ export const es: RepartoDictionary = {
       description: "Preparando el contenido más reciente de la página."
     },
     unavailable: "{entity} no disponible",
+    access: {
+      checking: "Comprobando su acceso…",
+      forbidden: "No tiene acceso a esta página.",
+      forbiddenDetail: "Esta página requiere el rol {role} o superior.",
+      role: {
+        user: "usuario",
+        reader: "lector",
+        writer: "editor",
+        admin: "administrador",
+        superadmin: "superadministrador"
+      }
+    },
     currentTurn: { status: "Estado", turn: "Turno", teacher: "Docente", started: "Inicio", waiting: "En espera", noPosition: "Sin posición", noActiveTurn: "Sin turno activo", notStarted: "Sin iniciar", position: "Turno {position}", teacherValue: "Docente {teacher}" },
     versions: {
       title: "Versiones",

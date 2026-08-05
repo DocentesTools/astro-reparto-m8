@@ -39,6 +39,15 @@ absent, and never forces host source edits outside documented registration point
   arithmetic, and the hour-input parser that keeps "unset" distinct from zero.
   No hour value may be validated, compared or calculated in binary floating
   point anywhere else in the package.
+- `src/runtime/routeAccess.ts` owns the one route-to-role map: every route names
+  the minimum role that may see it (`reader` everywhere — a `USER`-role session
+  has no capability in this application) and the minimum role at which its write
+  affordances may appear (`admin`, except `teacherView` and `teacherRoster`,
+  whose own-data actions are `writer`). `authAdapter.ts` owns the single role
+  comparison behind it; no view re-derives its own. `RepartoRouteGuard` applies
+  the read floor and `useRepartoCanAct` the write floor, both from the signed-in
+  user and never from a caller-supplied prop. The guard states what to show; the
+  service remains the authorization boundary.
 - `src/runtime/react/**` owns providers and default UI. Its process picker uses
   academic year, school, and department selects with one-level inline creation;
   it never exposes raw UUID inputs. `src/runtime/ui/**` owns framework-neutral

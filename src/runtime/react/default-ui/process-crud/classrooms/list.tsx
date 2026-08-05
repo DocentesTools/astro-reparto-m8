@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions, useRepartoCanAct } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
@@ -22,31 +22,35 @@ export type ClassroomsListProps = {
 export function ClassroomsList({
   dict, rows, error, isError, isLoading, hasActiveForm, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: ClassroomsListProps) {
+  // Teaching-group create/update/delete is department-head-only (§21.3).
+  const canAct = useRepartoCanAct("classrooms");
   if (isLoading || isError) {
     return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.classroom.plural} />;
   }
   const columns: DataTableColumn<TeachingGroupPublic>[] = [
     { id: "stage", label: dict.field.stage, value: (group) => group.classroom_stage.stage },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (group) => `${group.label} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (group) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(group)} row />
-          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(group)} row />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (group: TeachingGroupPublic) => `${group.label} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (group: TeachingGroupPublic) => (
+            <RowActions>
+              <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(group)} row />
+              <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(group)} row />
+            </RowActions>
+          )
+        } satisfies DataTableColumn<TeachingGroupPublic>]
+      : []),
     { id: "grade", label: dict.field.grade, value: (group) => group.grade },
     { id: "group_code", label: dict.field.groupCode, value: (group) => group.group_code },
     { id: "label", label: dict.field.label, value: (group) => group.label }
   ];
   const stages = [...new Set(rows.map((group) => group.classroom_stage.stage))].sort((a, b) => a.localeCompare(b));
   const selectedCount = selectedIds.size;
-  const deleteSelectedAction = selectedCount > 0 ? (
+  const deleteSelectedAction = canAct && selectedCount > 0 ? (
     <button
       className={repartoBulkDeleteButtonClass}
       data-reparto-action="delete-selected"

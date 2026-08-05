@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { ActionButton, RepartoRouteGuard, resolveProcessId, Shell, useDict, useRepartoCanAct, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import {
   useRepartoProcessTeachers,
   useRepartoTeacherProfiles
@@ -20,17 +20,20 @@ import { ParticipantBulkDelete } from "./bulk-delete.js";
 export function RepartoProcessParticipantsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoParticipantsContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="participants">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoParticipantsContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
+  const canAct = useRepartoCanAct("participants");
   const query = useRepartoProcessTeachers(processId);
   const teacherProfilesQuery = useRepartoTeacherProfiles({ limit: 100 });
   const rows = query.data?.data ?? [];
@@ -68,23 +71,25 @@ function RepartoParticipantsContent({ locale, processId }: EntityViewProps) {
       data-reparto-route="participants"
       data-reparto-group="process"
     >
-      <div
-        className="flex justify-end gap-2 pb-4"
-        data-reparto-actions="participants"
-      >
-        <ActionButton
-          action="create"
-          disabled={hasActiveForm}
-          disabledReason={createReason ?? undefined}
-          label={dict.action.create}
-          onClick={() => {
-            setEditing(null);
-            setAuthorizing(null);
-            setDeleting(null);
-            setAdding(true);
-          }}
-        />
-      </div>
+      {canAct ? (
+        <div
+          className="flex justify-end gap-2 pb-4"
+          data-reparto-actions="participants"
+        >
+          <ActionButton
+            action="create"
+            disabled={hasActiveForm}
+            disabledReason={createReason ?? undefined}
+            label={dict.action.create}
+            onClick={() => {
+              setEditing(null);
+              setAuthorizing(null);
+              setDeleting(null);
+              setAdding(true);
+            }}
+          />
+        </div>
+      ) : null}
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
         data-reparto-panel="participants"

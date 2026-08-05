@@ -6,6 +6,7 @@ import {
 } from "../../../hooks.js";
 
 import {
+  RepartoRouteGuard,
   Shell,
   useDict,
   WithSelectedProcess,
@@ -20,11 +21,13 @@ export function RepartoHourRequirementsView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoRequirementsContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="requirements">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoRequirementsContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }

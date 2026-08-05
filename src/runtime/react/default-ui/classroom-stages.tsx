@@ -6,8 +6,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
-import { REPARTO_ADMIN_MINIMUM_ROLE } from "../../authAdapter.js";
-import { useRepartoMinimumRole } from "../useRepartoRole.js";
+import { useRepartoCanAct } from "../useRepartoRole.js";
 import type { ClassroomStagePublic } from "../../schemas.js";
 import {
   useCreateRepartoClassroomStage,
@@ -32,6 +31,7 @@ import {
   type Dict
 } from "./process-crud/shared.js";
 import { Shell, type ViewConfig } from "./process-context.js";
+import { RepartoRouteGuard } from "./route-guard.js";
 
 function StageForm({
   dict,
@@ -154,10 +154,12 @@ function ClassroomStagesContent({
   locale: RepartoLocale;
 }) {
   const query = useRepartoClassroomStages();
-  // Classroom stages are platform setup, so the floor is the same `ADMIN` one
-  // every department-head surface uses — read through the shared helper rather
-  // than re-derived here (`RBAC-06`). `null` is "not answered yet".
-  const allowed = useRepartoMinimumRole(REPARTO_ADMIN_MINIMUM_ROLE);
+  // Two floors, not one (§8.1 route map): the service lists stages for any
+  // `READER`, and only `ADMIN` may create, edit or delete one. This view used to
+  // refuse the whole page below `ADMIN`, which withheld data a `READER` is
+  // entitled to (§21.4); the refusal now belongs to the route guard, and what is
+  // left here is the action floor.
+  const allowed = useRepartoCanAct("classroomStages");
   const [editing, setEditing] = useState<ClassroomStagePublic | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ClassroomStagePublic | null>(null);
@@ -221,14 +223,6 @@ function ClassroomStagesContent({
         ) : null
     }
   ];
-
-  if (allowed === false) {
-    return (
-      <section data-reparto-state="forbidden">
-        {dict.classroomStages.state.unauthorized}
-      </section>
-    );
-  }
 
   return (
     <main
@@ -323,7 +317,9 @@ export function RepartoClassroomStagesView({
   const dict = getRepartoDictionary(resolvedLocale);
   return (
     <Shell config={config}>
-      <ClassroomStagesContent dict={dict} locale={resolvedLocale} />
+      <RepartoRouteGuard locale={resolvedLocale} route="classroomStages">
+        <ClassroomStagesContent dict={dict} locale={resolvedLocale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }

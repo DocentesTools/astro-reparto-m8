@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions, useRepartoCanAct } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { ProcessTeacherPublic, TeacherProfilePublic } from "../../../../schemas.js";
@@ -25,6 +25,9 @@ export function ParticipantsList({
   dict, rows, error, isError, isLoading, hasActiveForm,
   teacherName, onDeleteSelected, onSelectedIdsChange, onEdit, onExtraHours, onDelete, selectedIds
 }: ParticipantsListProps) {
+  // `ProcessTeacher` create/update/delete and the extra-hours authorization are
+  // all department-head-only (§21.3, §3.8).
+  const canAct = useRepartoCanAct("participants");
   if (isLoading || isError) {
     return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.processParticipant.plural} />;
   }
@@ -32,20 +35,23 @@ export function ParticipantsList({
     dict.entity.processParticipant.status[participant.status];
   const columns: DataTableColumn<ProcessTeacherPublic>[] = [
     { id: "teacher", label: dict.field.teacher, value: (participant) => teacherName(participant.teacher_profile_id) },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (participant) => `${teacherName(participant.teacher_profile_id)} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (participant) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(participant)} row />
-          <ActionButton action="extra-hours" disabled={hasActiveForm} label={dict.participants.extraHoursAction} onClick={() => onExtraHours(participant)} row />
-          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(participant)} row />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (participant: ProcessTeacherPublic) =>
+            `${teacherName(participant.teacher_profile_id)} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (participant: ProcessTeacherPublic) => (
+            <RowActions>
+              <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(participant)} row />
+              <ActionButton action="extra-hours" disabled={hasActiveForm} label={dict.participants.extraHoursAction} onClick={() => onExtraHours(participant)} row />
+              <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(participant)} row />
+            </RowActions>
+          )
+        } satisfies DataTableColumn<ProcessTeacherPublic>]
+      : []),
     // Base and extra are shown next to the target rather than in place of it:
     // the target is the figure the assignment stage measures against, and it is
     // only trustworthy when the reader can see the two parts it came from.
@@ -64,7 +70,7 @@ export function ParticipantsList({
   ];
   const statuses = [...new Set(rows.map(statusLabel))].sort((a, b) => a.localeCompare(b));
   const selectedCount = selectedIds.size;
-  const deleteSelectedAction = selectedCount > 0 ? (
+  const deleteSelectedAction = canAct && selectedCount > 0 ? (
     <button
       className={repartoBulkDeleteButtonClass}
       data-reparto-action="delete-selected"

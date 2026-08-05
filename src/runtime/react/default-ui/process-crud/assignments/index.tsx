@@ -3,9 +3,11 @@ import { useState } from "react";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import {
   ActionButton,
+  RepartoRouteGuard,
   resolveProcessId,
   Shell,
   useDict,
+  useRepartoCanAct,
   WithSelectedProcess,
   type EntityViewProps
 } from "../shared.js";
@@ -44,17 +46,20 @@ import { AssignmentReassignDialog } from "./reassign.js";
 export function RepartoAssignmentsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoAssignmentsContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="assignments">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoAssignmentsContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
+  const canAct = useRepartoCanAct("assignments");
   const concreteProcessId = resolveProcessId(processId);
   const query = useRepartoAssignments(processId);
   const requirementsQuery = useRepartoHourRequirements(processId);
@@ -273,18 +278,20 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
         </p>
       </section>
 
-      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="assignments">
-        <ActionButton
-          action="create"
-          disabled={hasActiveForm || createReason !== null}
-          disabledReason={createReason ?? undefined}
-          label={dict.assignments.assignAction}
-          onClick={() => {
-            closeDialogs();
-            setAdding(true);
-          }}
-        />
-      </div>
+      {canAct ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="assignments">
+          <ActionButton
+            action="create"
+            disabled={hasActiveForm || createReason !== null}
+            disabledReason={createReason ?? undefined}
+            label={dict.assignments.assignAction}
+            onClick={() => {
+              closeDialogs();
+              setAdding(true);
+            }}
+          />
+        </div>
+      ) : null}
 
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"

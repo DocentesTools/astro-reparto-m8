@@ -1,4 +1,4 @@
-import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
+import { ActionButton, mapRepartoError, QueryState, RowActions, useRepartoCanAct } from "../shared.js";
 import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { SubjectPublic } from "../../../../schemas.js";
@@ -23,24 +23,30 @@ export function SubjectsList({
   dict, rows, error, isError, isLoading, hasActiveForm, onDeleteSelected,
   onSelectedIdsChange, onEdit, onDelete, selectedIds
 }: SubjectsListProps) {
+  // Subject create/update/delete is department-head-only (§21.3), so below
+  // `ADMIN` the row actions are absent rather than disabled — the list itself
+  // stays readable, because a `READER` is entitled to the data (§21.4).
+  const canAct = useRepartoCanAct("subjects");
   if (isLoading || isError) {
     return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.subject.plural} />;
   }
   const columns: DataTableColumn<SubjectPublic>[] = [
     { id: "name", label: dict.field.name, value: (subject) => subject.name },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (subject) => `${subject.name} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (subject) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(subject)} row />
-          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(subject)} row />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (subject: SubjectPublic) => `${subject.name} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (subject: SubjectPublic) => (
+            <RowActions>
+              <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(subject)} row />
+              <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(subject)} row />
+            </RowActions>
+          )
+        } satisfies DataTableColumn<SubjectPublic>]
+      : []),
     {
       id: "allocation-category",
       label: dict.field.allocationCategory,
@@ -60,7 +66,7 @@ export function SubjectsList({
     )
   ].sort((a, b) => a.localeCompare(b));
   const selectedCount = selectedIds.size;
-  const deleteSelectedAction = selectedCount > 0 ? (
+  const deleteSelectedAction = canAct && selectedCount > 0 ? (
     <button
       className={repartoBulkDeleteButtonClass}
       data-reparto-action="delete-selected"

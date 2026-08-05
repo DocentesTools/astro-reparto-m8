@@ -1,5 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
+
+// Every reparto route is gated by the signed-in role (§8.1 route map). These
+// suites assert the administrative surface, so they sign an `ADMIN` in; the
+// per-role sweep lives in `route-gating.test.tsx`.
+beforeEach(() => {
+  signInReparto(repartoUser("admin"));
+});
+
+afterEach(() => {
+  resetRepartoAuthAdapter();
+});
 import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.js";
 import {
   ExportCenterView,
@@ -285,13 +302,13 @@ describe("default reparto UI", () => {
 
     expect(html).toContain('data-reparto-panel="current-turn"');
     expect(html).toContain("Turn 2");
-    // The turn controls are department-head affordances and the static markup
-    // has read no session, so they are correctly absent here (§21.8): the mode
-    // now comes from the signed-in role, never from a prop. The starter routes
-    // mount this view `client:only`, so the resolved role is the first paint a
-    // user sees; `tests/view-mode-role.test.tsx` proves both directions.
-    expect(html).not.toContain('data-reparto-action="start-turn"');
-    expect(html).toContain("Read-only mode");
+    // The turn controls are department-head affordances, and this suite signs
+    // an `ADMIN` in, so they are present. The mode still comes from the
+    // signed-in role and never from a prop (§21.8): `view-mode-role.test.tsx`
+    // proves the read-only direction, and `route-gating.test.tsx` proves it for
+    // every route in the §8.1 map.
+    expect(html).toContain('data-reparto-action="start-turn"');
+    expect(html).toContain("Admin mode");
     expect(html).toContain('data-reparto-panel="planning-balance"');
     expect(html).toContain('data-reparto-panel="assignment-progress"');
     expect(html).toContain('data-reparto-panel="participant-balances"');

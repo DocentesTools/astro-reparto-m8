@@ -4,7 +4,7 @@ type FormSubmitEvent = { preventDefault: () => void };
 type InputChangeEvent = { target: { value: string } };
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
-import { useRepartoViewMode } from "../useRepartoRole.js";
+import { useRepartoCanAct, useRepartoViewMode } from "../useRepartoRole.js";
 import {
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
@@ -67,6 +67,12 @@ export function ProcessPicker({
   onSelect: (processId: string) => void;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // The picker is two things at once: a list to choose from, which any `READER`
+  // may use, and a bootstrap that creates a process plus its school, year and
+  // department inline — all department-head or platform-setup writes (§21.3).
+  // Only the second half is withheld, so a `READER` with no process selected
+  // still gets somewhere rather than an empty page.
+  const canAct = useRepartoCanAct("processList");
   const processesQuery = useRepartoProcesses();
   const createProcess = useCreateRepartoProcess();
   const processes = processesQuery.data?.data ?? [];
@@ -228,6 +234,7 @@ export function ProcessPicker({
 
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
+      {canAct ? (
       <section
         className={repartoPanelClass}
         data-reparto-panel="setup-checklist"
@@ -291,6 +298,7 @@ export function ProcessPicker({
           ))}
         </ol>
       </section>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="process-picker">
         <div className={repartoPanelHeaderClass}>
           <h2>{dict.picker.selectProcess}</h2>
@@ -330,6 +338,7 @@ export function ProcessPicker({
             </p>
           )}
         </div>
+        {canAct ? (
         <form
           className={repartoFieldGridClass}
           data-reparto-form="create-process"
@@ -451,6 +460,7 @@ export function ProcessPicker({
             </p>
           ) : null}
         </form>
+        ) : null}
       </section>
     </main>
   );

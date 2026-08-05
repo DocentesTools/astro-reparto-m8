@@ -73,6 +73,7 @@ import {
 } from "../../i18n/index.js";
 import { repartoToast } from "../ui/toast-notification.js";
 import { RepartoLoadingState } from "./loading-state.js";
+import { RepartoRouteGuard } from "./route-guard.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
 export {
   ActivitySyncDifferences,
@@ -173,21 +174,23 @@ export function RepartoDashboardView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(dashboard || summary)}
-        locale={locale}
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoDashboardContent
-            dashboard={dashboard}
-            feasibility={feasibility}
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="dashboard">
+        <WithSelectedProcess
+          bypass={Boolean(dashboard || summary)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoDashboardContent
+              dashboard={dashboard}
+              feasibility={feasibility}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -271,21 +274,23 @@ export function RepartoMeetingView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(dashboard || summary)}
-        locale={locale}
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoMeetingContent
-            dashboard={dashboard}
-            feasibility={feasibility}
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="meeting">
+        <WithSelectedProcess
+          bypass={Boolean(dashboard || summary)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoMeetingContent
+              dashboard={dashboard}
+              feasibility={feasibility}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -369,7 +374,9 @@ export function RepartoProcessesView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoProcessesContent locale={locale} params={params} />
+      <RepartoRouteGuard locale={locale} route="processList">
+        <RepartoProcessesContent locale={locale} params={params} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -430,28 +437,30 @@ export function RepartoMyView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(summary)}
-        locale={locale}
-        processId={processId}
-        streamAudience="teacher"
-      >
-        {(resolvedProcessId, eventState) => (
-          <RepartoMyContent
-            assignments={assignments}
-            locale={locale}
-            meetingSession={meetingSession}
-            processId={resolvedProcessId}
-            readiness={readiness}
-            remainingTargetHours={remainingTargetHours}
-            requirements={requirements}
-            selectedSlotId={selectedSlotId}
-            selectionBlocked={selectionBlocked}
-            summary={summary}
-            eventState={eventState}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="teacherView">
+        <WithSelectedProcess
+          bypass={Boolean(summary)}
+          locale={locale}
+          processId={processId}
+          streamAudience="teacher"
+        >
+          {(resolvedProcessId, eventState) => (
+            <RepartoMyContent
+              assignments={assignments}
+              locale={locale}
+              meetingSession={meetingSession}
+              processId={resolvedProcessId}
+              readiness={readiness}
+              remainingTargetHours={remainingTargetHours}
+              requirements={requirements}
+              selectedSlotId={selectedSlotId}
+              selectionBlocked={selectionBlocked}
+              summary={summary}
+              eventState={eventState}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -550,21 +559,23 @@ export function RepartoSharedView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(summary)}
-        locale={locale}
-        processId={processId}
-        streamAudience="shared_screen"
-      >
-        {(resolvedProcessId, eventState) => (
-          <RepartoSharedContent
-            eventState={eventState}
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="sharedScreen">
+        <WithSelectedProcess
+          bypass={Boolean(summary)}
+          locale={locale}
+          processId={processId}
+          streamAudience="shared_screen"
+        >
+          {(resolvedProcessId, eventState) => (
+            <RepartoSharedContent
+              eventState={eventState}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -642,20 +653,22 @@ export function RepartoVersionsView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(versions)}
-        locale={locale}
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoVersionsContent
-            comparison={comparison}
-            locale={locale}
-            processId={resolvedProcessId}
-            versions={versions}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="versions">
+        <WithSelectedProcess
+          bypass={Boolean(versions)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoVersionsContent
+              comparison={comparison}
+              locale={locale}
+              processId={resolvedProcessId}
+              versions={versions}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -812,21 +825,23 @@ export function RepartoExportsView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(artifacts || plan)}
-        locale={locale}
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoExportsContent
-            artifacts={artifacts}
-            locale={locale}
-            plan={plan}
-            processId={resolvedProcessId}
-            processStatus={processStatus}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="exports">
+        <WithSelectedProcess
+          bypass={Boolean(artifacts || plan)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoExportsContent
+              artifacts={artifacts}
+              locale={locale}
+              plan={plan}
+              processId={resolvedProcessId}
+              processStatus={processStatus}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -1060,6 +1075,8 @@ export {
 } from "./feedback.js";
 
 export { RepartoLoadingState } from "./loading-state.js";
+
+export { RepartoRouteGuard } from "./route-guard.js";
 
 export {
   ProcessPicker,

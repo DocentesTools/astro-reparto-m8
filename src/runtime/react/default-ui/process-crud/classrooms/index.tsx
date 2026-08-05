@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { ActionButton, RepartoRouteGuard, resolveProcessId, Shell, useDict, useRepartoCanAct, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import { useRepartoClassroomStages, useRepartoTeachingGroups } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
 
@@ -15,17 +15,20 @@ import { RepartoToastHost } from "../../../ui/toast-notification.js";
 export function RepartoClassroomsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoClassroomsContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="classrooms">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoClassroomsContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
+  const canAct = useRepartoCanAct("classrooms");
   const query = useRepartoTeachingGroups(processId);
   const stagesQuery = useRepartoClassroomStages();
   const stages = stagesQuery.data?.data ?? [];
@@ -50,28 +53,30 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
       data-reparto-group="process"
     >
       <RepartoToastHost />
-      <div
-        className="flex justify-end gap-2 pb-4"
-        data-reparto-actions="classrooms"
-      >
-        <ActionButton
-          action="bulk-create"
-          disabled={hasActiveForm || stages.length === 0}
-          label={dict.classroomBulk.action}
-          onClick={() => setBulk(true)}
-        />
-        <ActionButton
-          action="create"
-          disabled={hasActiveForm}
-          disabledReason={createReason ?? undefined}
-          label={dict.action.create}
-          onClick={() => {
-            setEditing(null);
-            setDeleting(null);
-            setAdding(true);
-          }}
-        />
-      </div>
+      {canAct ? (
+        <div
+          className="flex justify-end gap-2 pb-4"
+          data-reparto-actions="classrooms"
+        >
+          <ActionButton
+            action="bulk-create"
+            disabled={hasActiveForm || stages.length === 0}
+            label={dict.classroomBulk.action}
+            onClick={() => setBulk(true)}
+          />
+          <ActionButton
+            action="create"
+            disabled={hasActiveForm}
+            disabledReason={createReason ?? undefined}
+            label={dict.action.create}
+            onClick={() => {
+              setEditing(null);
+              setDeleting(null);
+              setAdding(true);
+            }}
+          />
+        </div>
+      ) : null}
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
         data-reparto-panel="classrooms"

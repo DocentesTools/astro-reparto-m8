@@ -16,6 +16,7 @@ import {
   PlanningBalancePanel,
   ProcessInvariantRow
 } from "./DepartmentHeadWorkspace.js";
+import { useRepartoCanAct } from "./useRepartoRole.js";
 import {
   repartoActionRowClass,
   repartoButtonClass,
@@ -121,6 +122,12 @@ export function MeetingControlWorkspace({
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // The control room runs other participants' turns — initialize, start,
+  // complete, skip and override — which is department-head authority and
+  // nothing less (§21.2/§21.3). Below `ADMIN` the room is still readable: the
+  // balances, the lifecycle state and the authorized overloads are what a
+  // `READER` is entitled to, and only the controls go.
+  const canAct = useRepartoCanAct("meeting");
   const activeSummary =
     summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
   const control = buildMeetingControlState(activeSummary);
@@ -167,30 +174,32 @@ export function MeetingControlWorkspace({
             feasibility={feasibility}
             readiness={activeSummary?.readiness ?? "not_ready"}
           />
-          <div className={repartoActionRowClass}>
-            {control.actions.map((action) => (
-              <button
-                className={repartoButtonClass}
-                data-disabled-reason={action.reason ?? undefined}
-                data-reparto-action={action.key}
-                disabled={action.disabled}
-                key={action.key}
-                type="button"
-              >
-                {dict.action[
-                  action.key === "initialize-turns"
-                    ? "initializeTurns"
-                    : action.key === "start-turn"
-                      ? "startTurn"
-                      : action.key === "complete-turn"
-                        ? "completeTurn"
-                        : action.key === "skip-turn"
-                          ? "skipTurn"
-                          : "overrideTurn"
-                ]}
-              </button>
-            ))}
-          </div>
+          {canAct ? (
+            <div className={repartoActionRowClass}>
+              {control.actions.map((action) => (
+                <button
+                  className={repartoButtonClass}
+                  data-disabled-reason={action.reason ?? undefined}
+                  data-reparto-action={action.key}
+                  disabled={action.disabled}
+                  key={action.key}
+                  type="button"
+                >
+                  {dict.action[
+                    action.key === "initialize-turns"
+                      ? "initializeTurns"
+                      : action.key === "start-turn"
+                        ? "startTurn"
+                        : action.key === "complete-turn"
+                          ? "completeTurn"
+                          : action.key === "skip-turn"
+                            ? "skipTurn"
+                            : "overrideTurn"
+                  ]}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </section>
         <PlanningBalancePanel
           balance={activeSummary?.plan_balance ?? null}

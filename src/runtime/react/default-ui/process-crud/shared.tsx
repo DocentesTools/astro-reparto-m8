@@ -54,8 +54,10 @@ import {
   AlertDialogTitle
 } from "../../ui/alert-dialog.js";
 import { RepartoLoadingState } from "../loading-state.js";
+import { RepartoRouteGuard } from "../route-guard.js";
+import { useRepartoCanAct } from "../../useRepartoRole.js";
 
-export { Shell, WithSelectedProcess };
+export { RepartoRouteGuard, Shell, useRepartoCanAct, WithSelectedProcess };
 export type { ViewConfig };
 export type Dict = ReturnType<typeof getRepartoDictionary>;
 export type EntityViewProps = {

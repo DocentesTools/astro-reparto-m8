@@ -21,6 +21,7 @@ import {
   type RepartoLocale
 } from "../i18n/index.js";
 import { CurrentTurnCard, ProcessInvariantRow } from "./DepartmentHeadWorkspace.js";
+import { useRepartoCanAct } from "./useRepartoRole.js";
 import {
   repartoActionRowClass,
   repartoButtonClass,
@@ -116,6 +117,12 @@ function TeacherDirectChoicePanel({
   summary: TeacherLanSummary;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // Direct selection and passing a turn are the caller's own-data actions, and
+  // `WRITER` is the floor the service puts on both (§21.3). A `READER` reads
+  // this page — their hours, the live positions, whose turn it is — and is
+  // offered neither control: hidden, not disabled, because the action does not
+  // exist for them rather than being momentarily unavailable.
+  const canChoose = useRepartoCanAct("teacherView");
   const choice = buildTeacherChoiceState({
     assignments,
     currentTurn: summary.current_turn,
@@ -203,25 +210,27 @@ function TeacherDirectChoicePanel({
           ) : null}
         </aside>
       </div>
-      <div className={repartoActionRowClass}>
-        <button
-          className={repartoButtonClass}
-          data-reparto-action="direct-choice"
-          data-reparto-selectable-slots={choice.selectableCount}
-          disabled={!choice.canChoose}
-          type="button"
-        >
-          {dict.view.choice.choose}
-        </button>
-        <button
-          className={repartoButtonClass}
-          data-reparto-action="pass-turn"
-          disabled={!choice.passTurnEnabled}
-          type="button"
-        >
-          {dict.view.choice.pass}
-        </button>
-      </div>
+      {canChoose ? (
+        <div className={repartoActionRowClass}>
+          <button
+            className={repartoButtonClass}
+            data-reparto-action="direct-choice"
+            data-reparto-selectable-slots={choice.selectableCount}
+            disabled={!choice.canChoose}
+            type="button"
+          >
+            {dict.view.choice.choose}
+          </button>
+          <button
+            className={repartoButtonClass}
+            data-reparto-action="pass-turn"
+            disabled={!choice.passTurnEnabled}
+            type="button"
+          >
+            {dict.view.choice.pass}
+          </button>
+        </div>
+      ) : null}
       {conflictState ? (
         <div
           data-reparto-conflict-reason={conflictState.reason}

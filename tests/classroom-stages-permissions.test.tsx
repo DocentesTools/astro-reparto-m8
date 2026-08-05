@@ -13,15 +13,13 @@ import type { ClassroomStagePublic } from "../src/runtime/schemas.js";
 /**
  * Role-tiered coverage for the classroom-stages view (§13.2 "permissions").
  *
- * This is the one view in the package whose visibility is currently derived
- * from the signed-in user rather than from a hardcoded `mode` prop, so it is
- * the only place where per-role rendering can be proven today. The remaining
- * routes still pass a literal `mode="admin"` / `mode="readonly"`; proving those
- * per role needs §21.8's minimum-role helper first (`RBAC-05`/`RBAC-06`).
- *
- * The gate is checked in both directions for every role in the §21.1 table: a
- * permitted role gets the write affordances, and a denied role gets no
- * create/edit/delete control at all — not merely a disabled one.
+ * The view now carries the §8.1 route map's two floors rather than one: the
+ * service lists stages for any `READER`, and only `ADMIN` may create, edit or
+ * delete one. So a `READER`/`WRITER` reads the table and is offered nothing,
+ * and only a `USER`-role, anonymous or unidentifiable session is refused the
+ * page outright. The gate is checked in both directions for every role in the
+ * §21.1 table; the sweep over the rest of the route map lives in
+ * `route-gating.test.tsx`.
  */
 
 const dict = getRepartoDictionary("en");
@@ -155,27 +153,40 @@ describe("classroom stages — role visibility", () => {
 
   it.each([
     ["writer", user("writer")],
-    ["reader", user("reader")],
-    ["user", user("user")]
-  ])("renders %s the forbidden state and no write control", async (_label, who) => {
+    ["reader", user("reader")]
+  ])("gives %s the table and no write control", async (_label, who) => {
     signIn(who);
     await renderView();
 
+    // The data is not withheld: a `READER` may list stages on the service, and
+    // withholding an action is not withholding the read (§21.4).
+    expect(
+      document.querySelector('[data-reparto-route="classroom-stages"]')
+    ).not.toBeNull();
     expect(
       document.querySelector('[data-reparto-state="forbidden"]')
-    ).not.toBeNull();
-    expect(document.body.textContent).toContain(
-      dict.classroomStages.state.unauthorized
-    );
+    ).toBeNull();
     // Absent, not disabled: a denied role is never shown a button it cannot use.
     const affordances = writeAffordances();
     expect(affordances.create).toBeNull();
     expect(affordances.edit).toBeNull();
     expect(affordances.remove).toBeNull();
-    // The table itself is withheld too, so no row data leaks to a denied role.
+  });
+
+  it("refuses a USER-role session the page itself", async () => {
+    // `USER` is a valid platform identity with zero capability here (§21.1),
+    // so it does not clear even the read floor.
+    signIn(user("user"));
+    await renderView();
+
+    expect(
+      document.querySelector('[data-reparto-state="forbidden"]')
+    ).not.toBeNull();
+    expect(document.body.textContent).toContain(dict.view.access.forbidden);
     expect(
       document.querySelector('[data-reparto-route="classroom-stages"]')
     ).toBeNull();
+    expect(writeAffordances().create).toBeNull();
   });
 
   it("denies an anonymous session", async () => {

@@ -98,10 +98,13 @@ export {
   type RepartoEventStreamState
 } from "./useRepartoEvents.js";
 export {
+  useRepartoCanAct,
   useRepartoCurrentUser,
   useRepartoMinimumRole,
+  useRepartoRouteAccess,
   useRepartoViewMode,
-  type RepartoRoleState
+  type RepartoRoleState,
+  type RepartoRouteAccessState
 } from "./useRepartoRole.js";
 export {
   repartoRouteContainerClasses,

@@ -110,6 +110,18 @@ export const fr: RepartoDictionary = {
       description: "Préparation du contenu le plus récent de la page."
     },
     unavailable: "{entity} indisponible",
+    access: {
+      checking: "Vérification de vos droits d'accès…",
+      forbidden: "Vous n'avez pas accès à cette page.",
+      forbiddenDetail: "Cette page requiert le rôle {role} ou supérieur.",
+      role: {
+        user: "utilisateur",
+        reader: "lecteur",
+        writer: "rédacteur",
+        admin: "administrateur",
+        superadmin: "super administrateur"
+      }
+    },
     currentTurn: { status: "État", turn: "Tour", teacher: "Enseignant", started: "Début", waiting: "En attente", noPosition: "Aucune position", noActiveTurn: "Aucun tour actif", notStarted: "Non démarré", position: "Tour {position}", teacherValue: "Enseignant {teacher}" },
     versions: {
       title: "Versions",

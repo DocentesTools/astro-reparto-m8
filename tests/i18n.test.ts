@@ -199,9 +199,10 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(es.flow.bootstrap.step.process).toBeTruthy();
   });
 
-  it("exposes nav group + item keys for both sidebar groups", () => {
-    expect(en.nav.group.setup).toBe("Setup");
-    expect(en.nav.group.process).toBe("Process");
+  it("exposes nav group + item keys for all three stage sidebar groups", () => {
+    expect(en.nav.group.configuration).toBe("Stage 1 · Configuration");
+    expect(en.nav.group.planning).toBe("Stage 2 · Planning");
+    expect(en.nav.group.assignment).toBe("Stage 3 · Assignment");
     expect(en.nav.item.teacherRoster).toBe("Teacher roster");
     expect(en.nav.item.processParticipants).toBe("Process participants");
     expect(en.nav.item.planning).toBe("Planning");

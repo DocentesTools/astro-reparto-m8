@@ -414,49 +414,61 @@ describe("integration", () => {
     );
   });
 
-  it("exposes the default Setup/Process sidebar nav metadata and resolves route hrefs", () => {
+  it("exposes the default Stage 1/2/3 sidebar nav metadata and resolves route hrefs", () => {
     const routes = buildRepartoRoutes();
     const resolved = buildRepartoNav(routes);
-    expect(DEFAULT_REPARTO_NAV.setup.labelKey).toBe("nav.group.setup");
-    expect(DEFAULT_REPARTO_NAV.setup.entries.map((entry) => entry.labelKey)).toEqual([
+    expect(DEFAULT_REPARTO_NAV.configuration.labelKey).toBe("nav.group.configuration");
+    expect(
+      DEFAULT_REPARTO_NAV.configuration.entries.map((entry) => entry.labelKey)
+    ).toEqual([
       "nav.item.schools",
       "nav.item.academicYears",
       "nav.item.departments",
-      "nav.item.teacherRoster"
-      ,"nav.item.classroomStages"
+      "nav.item.classroomStages",
+      "nav.item.teacherRoster",
+      "nav.item.processParticipants",
+      "nav.item.subjects",
+      "nav.item.classrooms"
     ]);
-    const schoolsEntry = resolved.setup.entries.find(
+    expect(DEFAULT_REPARTO_NAV.planning.labelKey).toBe("nav.group.planning");
+    expect(DEFAULT_REPARTO_NAV.planning.entries.map((entry) => entry.labelKey)).toEqual([
+      "nav.item.planning",
+      "nav.item.requirements"
+    ]);
+    expect(DEFAULT_REPARTO_NAV.assignment.labelKey).toBe("nav.group.assignment");
+    const schoolsEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.schools"
     );
     expect(schoolsEntry?.href).toBe("/reparto/setup/schools");
-    const dashboardEntry = resolved.process.entries.find(
+    const dashboardEntry = resolved.assignment.entries.find(
       (entry) => entry.labelKey === "nav.item.dashboard"
     );
     expect(dashboardEntry?.href).toBe("/reparto");
-    const classroomsEntry = resolved.process.entries.find(
+    const classroomsEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
     expect(classroomsEntry?.href).toBe("/reparto/processes/current/classrooms");
-    const planningEntry = resolved.process.entries.find(
+    const planningEntry = resolved.planning.entries.find(
       (entry) => entry.labelKey === "nav.item.planning"
     );
     expect(planningEntry?.href).toBe("/reparto/processes/current/planning");
-    const auditEntry = resolved.process.entries.find(
+    const auditEntry = resolved.assignment.entries.find(
       (entry) => entry.labelKey === "nav.item.audit"
     );
     expect(auditEntry?.href).toBe("/reparto/processes/current/audit");
     const resolvedMissing = buildRepartoNav(
       buildRepartoRoutes({ dashboard: false })
     );
-    const missingDashboard = resolvedMissing.process.entries.find(
+    const missingDashboard = resolvedMissing.assignment.entries.find(
       (entry) => entry.labelKey === "nav.item.dashboard"
     );
     expect(missingDashboard?.href).toBe("#");
 
     const customNav = buildRepartoNav(buildRepartoRoutes(), {
-      setup: DEFAULT_REPARTO_NAV.setup,
-      process: {
-        labelKey: "nav.group.process",
+      configuration: DEFAULT_REPARTO_NAV.configuration,
+      planning: DEFAULT_REPARTO_NAV.planning,
+      assignment: {
+        labelKey: "nav.group.assignment",
         entries: [
           { labelKey: "nav.item.audit" },
           { labelKey: "nav.item.dashboard", route: "dashboard" },
@@ -464,7 +476,7 @@ describe("integration", () => {
         ]
       }
     });
-    const [audit, dashboard, exportsEntry] = customNav.process.entries;
+    const [audit, dashboard, exportsEntry] = customNav.assignment.entries;
     expect(audit.href).toBe("#");
     expect(dashboard.href).toBe("/reparto");
     expect(exportsEntry.href).toBe("/custom/exports");

@@ -686,8 +686,9 @@ Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
 
 | Key | en | fr | es |
 | --- | --- | --- | --- |
-| `nav.group.setup` | Setup | Configuration | Configuración |
-| `nav.group.process` | Process | Processus | Proceso |
+| `nav.group.configuration` | Stage 1 · Configuration | Étape 1 · Configuration | Etapa 1 · Configuración |
+| `nav.group.planning` | Stage 2 · Planning | Étape 2 · Planification | Etapa 2 · Planificación |
+| `nav.group.assignment` | Stage 3 · Assignment | Étape 3 · Affectation | Etapa 3 · Asignación |
 | `nav.item.schools` | Schools | Établissements | Centros |
 | `nav.item.academicYears` | Academic years | Années scolaires | Cursos académicos |
 | `nav.item.departments` | Departments | Départements | Departamentos |

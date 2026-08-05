@@ -744,7 +744,11 @@ export const fr: RepartoDictionary = {
     cancel: "Annuler"
   },
   nav: {
-    group: { setup: "Configuration", process: "Processus" },
+    group: {
+      configuration: "Étape 1 · Configuration",
+      planning: "Étape 2 · Planification",
+      assignment: "Étape 3 · Affectation"
+    },
     item: {
       schools: "Établissements",
       academicYears: "Années scolaires",

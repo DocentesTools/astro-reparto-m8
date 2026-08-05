@@ -17,8 +17,9 @@ export type FaRepartoNavGroup = {
 };
 
 export type FaRepartoNav = {
-  setup: FaRepartoNavGroup;
-  process: FaRepartoNavGroup;
+  configuration: FaRepartoNavGroup;
+  planning: FaRepartoNavGroup;
+  assignment: FaRepartoNavGroup;
 };
 
 export type FaRepartoAstroOptions = {
@@ -41,27 +42,38 @@ export type FaRepartoAstroOptions = {
   };
 };
 
+// Grouping follows the plan's target workflow (§4): Stage 1 configures the
+// department, Stage 2 turns that configuration into a locked, generated plan,
+// and Stage 3 is the existing assignment process run against the generated
+// slots. `classrooms`/`subjects`/`processParticipants` are process-scoped
+// resources but are configured once per process before planning starts, so
+// they sit in Stage 1 alongside the school-wide setup entries.
 export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
-  setup: {
-    labelKey: "nav.group.setup",
+  configuration: {
+    labelKey: "nav.group.configuration",
     entries: [
       { labelKey: "nav.item.schools", route: "schools" },
       { labelKey: "nav.item.academicYears", route: "academicYears" },
       { labelKey: "nav.item.departments", route: "departments" },
+      { labelKey: "nav.item.classroomStages", route: "classroomStages" },
       { labelKey: "nav.item.teacherRoster", route: "teacherRoster" },
-      { labelKey: "nav.item.classroomStages", route: "classroomStages" }
+      { labelKey: "nav.item.processParticipants", route: "participants" },
+      { labelKey: "nav.item.subjects", route: "subjects" },
+      { labelKey: "nav.item.classrooms", route: "classrooms" }
     ]
   },
-  process: {
-    labelKey: "nav.group.process",
+  planning: {
+    labelKey: "nav.group.planning",
+    entries: [
+      { labelKey: "nav.item.planning", route: "planning" },
+      { labelKey: "nav.item.requirements", route: "requirements" }
+    ]
+  },
+  assignment: {
+    labelKey: "nav.group.assignment",
     entries: [
       { labelKey: "nav.item.dashboard", route: "dashboard" },
       { labelKey: "nav.item.processes", route: "processList" },
-      { labelKey: "nav.item.classrooms", route: "classrooms" },
-      { labelKey: "nav.item.subjects", route: "subjects" },
-      { labelKey: "nav.item.planning", route: "planning" },
-      { labelKey: "nav.item.requirements", route: "requirements" },
-      { labelKey: "nav.item.processParticipants", route: "participants" },
       { labelKey: "nav.item.assignments", route: "assignments" },
       { labelKey: "nav.item.meeting", route: "meeting" },
       { labelKey: "nav.item.myView", route: "teacherView" },
@@ -91,8 +103,15 @@ export function buildRepartoNav(
     };
   }
   return {
-    setup: { ...nav.setup, entries: nav.setup.entries.map(resolveHref) },
-    process: { ...nav.process, entries: nav.process.entries.map(resolveHref) }
+    configuration: {
+      ...nav.configuration,
+      entries: nav.configuration.entries.map(resolveHref)
+    },
+    planning: { ...nav.planning, entries: nav.planning.entries.map(resolveHref) },
+    assignment: {
+      ...nav.assignment,
+      entries: nav.assignment.entries.map(resolveHref)
+    }
   };
 }
 

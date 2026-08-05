@@ -744,7 +744,11 @@ export const en = {
     cancel: "Cancel"
   },
   nav: {
-    group: { setup: "Setup", process: "Process" },
+    group: {
+      configuration: "Stage 1 · Configuration",
+      planning: "Stage 2 · Planning",
+      assignment: "Stage 3 · Assignment"
+    },
     item: {
       schools: "Schools",
       academicYears: "Academic years",

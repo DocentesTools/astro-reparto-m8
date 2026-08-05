@@ -176,7 +176,6 @@ export function RepartoDashboardView({
       <WithSelectedProcess
         bypass={Boolean(dashboard || summary)}
         locale={locale}
-        mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (
@@ -237,7 +236,6 @@ function RepartoDashboardContent({
         dashboard={activeDashboard}
         feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
-        mode="admin"
         summary={activeSummary}
       />
       <QueryState
@@ -276,7 +274,6 @@ export function RepartoMeetingView({
       <WithSelectedProcess
         bypass={Boolean(dashboard || summary)}
         locale={locale}
-        mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (
@@ -436,7 +433,6 @@ export function RepartoMyView({
       <WithSelectedProcess
         bypass={Boolean(summary)}
         locale={locale}
-        mode="readonly"
         processId={processId}
         streamAudience="teacher"
       >
@@ -557,7 +553,6 @@ export function RepartoSharedView({
       <WithSelectedProcess
         bypass={Boolean(summary)}
         locale={locale}
-        mode="readonly"
         processId={processId}
         streamAudience="shared_screen"
       >
@@ -650,7 +645,6 @@ export function RepartoVersionsView({
       <WithSelectedProcess
         bypass={Boolean(versions)}
         locale={locale}
-        mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (
@@ -821,7 +815,6 @@ export function RepartoExportsView({
       <WithSelectedProcess
         bypass={Boolean(artifacts || plan)}
         locale={locale}
-        mode="admin"
         processId={processId}
       >
         {(resolvedProcessId) => (

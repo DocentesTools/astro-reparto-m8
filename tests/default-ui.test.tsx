@@ -285,7 +285,13 @@ describe("default reparto UI", () => {
 
     expect(html).toContain('data-reparto-panel="current-turn"');
     expect(html).toContain("Turn 2");
-    expect(html).toContain('data-reparto-action="start-turn"');
+    // The turn controls are department-head affordances and the static markup
+    // has read no session, so they are correctly absent here (§21.8): the mode
+    // now comes from the signed-in role, never from a prop. The starter routes
+    // mount this view `client:only`, so the resolved role is the first paint a
+    // user sees; `tests/view-mode-role.test.tsx` proves both directions.
+    expect(html).not.toContain('data-reparto-action="start-turn"');
+    expect(html).toContain("Read-only mode");
     expect(html).toContain('data-reparto-panel="planning-balance"');
     expect(html).toContain('data-reparto-panel="assignment-progress"');
     expect(html).toContain('data-reparto-panel="participant-balances"');

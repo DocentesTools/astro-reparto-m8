@@ -67,6 +67,7 @@ import {
   repartoTurnSummaryClass,
   repartoTurnSummaryItemClass
 } from "./styles.js";
+import { useRepartoViewMode } from "./useRepartoRole.js";
 
 /** Where the rendered comparison came from — two captures, or last year. */
 export type VersionComparisonSource = "versions" | "previous_year";
@@ -450,7 +451,6 @@ export function DepartmentHeadWorkspace({
   dashboard,
   feasibility = null,
   locale,
-  mode = "admin",
   summary = null
 }: {
   dashboard?: ProcessDashboard | null;
@@ -461,9 +461,13 @@ export function DepartmentHeadWorkspace({
    */
   feasibility?: FeasibilityStatus | null;
   locale?: RepartoLocale;
-  mode?: "admin" | "readonly";
   summary?: ProcessSummary | null;
 }) {
+  // The turn controls below are department-head actions, so the mode comes from
+  // the signed-in role and from nowhere else (`RBAC-05`). Until the adapter has
+  // answered, the workspace is read-only: an affordance shown to a `READER` and
+  // withdrawn a frame later is worse than one that arrives a frame late.
+  const mode = useRepartoViewMode();
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const activeSummary = summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
   const planning = dashboard?.planning ?? null;

@@ -5,8 +5,14 @@ import {
   createFaAuthAdapter,
   createInMemoryAuthAdapter,
   getRepartoAuthAdapter,
+  hasMinimumRole,
+  REPARTO_ADMIN_MINIMUM_ROLE,
+  REPARTO_ROLE_ORDER,
   resetRepartoAuthAdapter,
-  setRepartoAuthAdapter
+  resolveRepartoViewMode,
+  setRepartoAuthAdapter,
+  type RepartoCurrentUser,
+  type RepartoRole
 } from "../src/runtime/authAdapter.js";
 import { repartoUrl, request } from "../src/runtime/client.js";
 import {
@@ -119,6 +125,64 @@ describe("auth adapter", () => {
     expect(canManageClassroomStages({ id: "user-1", role: "admin", is_superuser: false })).toBe(true);
     expect(canManageClassroomStages({ id: "user-1", role: "superadmin", is_superuser: false })).toBe(true);
     expect(canManageClassroomStages({ id: "user-1", role: "user", is_superuser: true })).toBe(true);
+  });
+
+  /**
+   * The one role comparison in the package (`RBAC-06`). The order below is the
+   * service's own `has_minimum_role` order, so a drift here is a drift from the
+   * backend, not a UI preference.
+   */
+  describe("hasMinimumRole", () => {
+    const as = (role: RepartoRole, is_superuser = false): RepartoCurrentUser => ({
+      id: "user-1",
+      role,
+      is_superuser
+    });
+
+    it("orders the five roles exactly as the service does", () => {
+      expect(REPARTO_ROLE_ORDER).toEqual([
+        "user",
+        "reader",
+        "writer",
+        "admin",
+        "superadmin"
+      ]);
+      for (const [index, held] of REPARTO_ROLE_ORDER.entries()) {
+        for (const [required, minimum] of REPARTO_ROLE_ORDER.entries()) {
+          expect(hasMinimumRole(as(held), minimum)).toBe(index >= required);
+        }
+      }
+    });
+
+    it("fails closed on every unknown session", () => {
+      expect(hasMinimumRole(null, "user")).toBe(false);
+      expect(hasMinimumRole(undefined, "user")).toBe(false);
+      // A role this client does not know is not a role it can rank, and an
+      // unrankable role never clears a floor — not even the lowest one.
+      expect(hasMinimumRole(as("ghost" as RepartoRole), "user")).toBe(false);
+    });
+
+    it("reads is_superuser as superadmin, whatever the role name says", () => {
+      expect(hasMinimumRole(as("user", true), "superadmin")).toBe(true);
+      expect(hasMinimumRole(as("ghost" as RepartoRole, true), "admin")).toBe(true);
+    });
+  });
+
+  describe("resolveRepartoViewMode", () => {
+    it("gives the admin surface to ADMIN and above, and to nobody else", () => {
+      expect(REPARTO_ADMIN_MINIMUM_ROLE).toBe("admin");
+      const mode = (role: RepartoRole) =>
+        resolveRepartoViewMode({ id: "user-1", role, is_superuser: false });
+      expect(mode("superadmin")).toBe("admin");
+      expect(mode("admin")).toBe("admin");
+      // §21.2: department-head authority is ADMIN+, and a WRITER's own-data
+      // affordances are not the administrative surface.
+      expect(mode("writer")).toBe("readonly");
+      expect(mode("reader")).toBe("readonly");
+      expect(mode("user")).toBe("readonly");
+      expect(resolveRepartoViewMode(null)).toBe("readonly");
+      expect(resolveRepartoViewMode(undefined)).toBe("readonly");
+    });
   });
 });
 

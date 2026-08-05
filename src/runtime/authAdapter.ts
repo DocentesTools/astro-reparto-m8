@@ -5,14 +5,73 @@ export type RepartoAuthAdapter = {
   getCurrentUser?: () => RepartoCurrentUser | null | Promise<RepartoCurrentUser | null>;
 };
 
+/**
+ * The role hierarchy, lowest capability first.
+ *
+ * This mirrors the service's own `has_minimum_role` order (§21.1). It is the
+ * single ordering in the package: no view re-derives its own role comparison
+ * (`RBAC-06`), and no view decides what a role may do from anything other than
+ * the signed-in user reported here (`RBAC-05`).
+ */
+export const REPARTO_ROLE_ORDER = [
+  "user",
+  "reader",
+  "writer",
+  "admin",
+  "superadmin"
+] as const;
+
+export type RepartoRole = (typeof REPARTO_ROLE_ORDER)[number];
+
 export type RepartoCurrentUser = {
   id: string;
-  role: "superadmin" | "admin" | "writer" | "reader" | "user";
+  role: RepartoRole;
   is_superuser: boolean;
 };
 
+/**
+ * Whether the signed-in user holds at least `minimum`.
+ *
+ * Fails closed on every unknown: no session, an unresolved session and a role
+ * the client does not recognise all answer `false`. `is_superuser` is read as
+ * `superadmin` because the service treats the flag and the role as one canonical
+ * truth, and a client that ignored it would hide affordances the backend grants.
+ */
+export function hasMinimumRole(
+  user: RepartoCurrentUser | null | undefined,
+  minimum: RepartoRole
+): boolean {
+  if (!user) return false;
+  const held = user.is_superuser ? "superadmin" : user.role;
+  const heldRank = REPARTO_ROLE_ORDER.indexOf(held);
+  if (heldRank < 0) return false;
+  return heldRank >= REPARTO_ROLE_ORDER.indexOf(minimum);
+}
+
+/**
+ * Department-head authority is `ADMIN`/`SUPERADMIN` and nothing else (§21.2):
+ * `department_head_user_id` is descriptive, never an authorization input.
+ */
+export const REPARTO_ADMIN_MINIMUM_ROLE: RepartoRole = "admin";
+
+/**
+ * The two shapes a reparto view takes: the administrative surface, and the
+ * read-only one everyone else gets.
+ */
+export type RepartoViewMode = "admin" | "readonly";
+
+/**
+ * Derive the view mode from the signed-in user — the only source it may come
+ * from. A view never receives this as a caller-supplied literal (`RBAC-05`).
+ */
+export function resolveRepartoViewMode(
+  user: RepartoCurrentUser | null | undefined
+): RepartoViewMode {
+  return hasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE) ? "admin" : "readonly";
+}
+
 export function canManageClassroomStages(user: RepartoCurrentUser | null): boolean {
-  return Boolean(user && (user.is_superuser || user.role === "admin" || user.role === "superadmin"));
+  return hasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE);
 }
 
 let activeAdapter: RepartoAuthAdapter = createInMemoryAuthAdapter();

@@ -69,7 +69,7 @@ export function RepartoPlanningView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} mode="admin" processId={processId}>
+      <WithSelectedProcess locale={locale} processId={processId}>
         {(resolvedProcessId) => (
           <PlanningContent locale={locale} processId={resolvedProcessId} />
         )}

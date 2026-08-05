@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   formatRepartoMessage,
@@ -6,10 +6,8 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
-import {
-  canManageClassroomStages,
-  getRepartoAuthAdapter
-} from "../../authAdapter.js";
+import { REPARTO_ADMIN_MINIMUM_ROLE } from "../../authAdapter.js";
+import { useRepartoMinimumRole } from "../useRepartoRole.js";
 import type { ClassroomStagePublic } from "../../schemas.js";
 import {
   useCreateRepartoClassroomStage,
@@ -156,18 +154,15 @@ function ClassroomStagesContent({
   locale: RepartoLocale;
 }) {
   const query = useRepartoClassroomStages();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  // Classroom stages are platform setup, so the floor is the same `ADMIN` one
+  // every department-head surface uses — read through the shared helper rather
+  // than re-derived here (`RBAC-06`). `null` is "not answered yet".
+  const allowed = useRepartoMinimumRole(REPARTO_ADMIN_MINIMUM_ROLE);
   const [editing, setEditing] = useState<ClassroomStagePublic | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ClassroomStagePublic | null>(null);
   const remove = useDeleteRepartoClassroomStage();
   const [mapped, setError, clear] = useMappedError();
-
-  useEffect(() => {
-    void Promise.resolve(
-      getRepartoAuthAdapter().getCurrentUser?.() ?? null
-    ).then((user) => setAllowed(canManageClassroomStages(user)));
-  }, []);
 
   const rows = query.data?.data ?? [];
   const columns: DataTableColumn<ClassroomStagePublic>[] = [

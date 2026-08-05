@@ -4,6 +4,7 @@ type FormSubmitEvent = { preventDefault: () => void };
 type InputChangeEvent = { target: { value: string } };
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
+import { useRepartoViewMode } from "../useRepartoRole.js";
 import {
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
@@ -455,11 +456,18 @@ export function ProcessPicker({
   );
 }
 
+/**
+ * The process toolbar's mode badge reports the *session*, not the page.
+ *
+ * It used to be whatever literal the route passed in, so every caller declared
+ * its own answer to a question only the signed-in user can settle (`RBAC-05`).
+ * The prop is gone rather than defaulted: while a caller can still hand a mode
+ * in, the badge is a convention rather than a statement about the session.
+ */
 export function WithSelectedProcess({
   bypass = false,
   children,
   locale,
-  mode = "admin",
   processId,
   streamAudience = "department_head"
 }: {
@@ -469,10 +477,10 @@ export function WithSelectedProcess({
     eventState: RepartoEventStreamState
   ) => ReactNode;
   locale?: RepartoLocale;
-  mode?: "admin" | "readonly";
   processId?: string;
   streamAudience?: SseAudience;
 }) {
+  const mode = useRepartoViewMode();
   const routeProcessId = resolveProcessId(processId);
   const [selected, setSelected] = useState<string | undefined>(() => {
     if (routeProcessId || typeof window === "undefined") return undefined;

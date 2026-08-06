@@ -1,4 +1,3 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -6,6 +5,7 @@ import { getRepartoDictionary } from "../src/runtime/i18n/index.js";
 import { REPARTO_ROUTE_ACCESS } from "../src/runtime/routeAccess.js";
 import type { RepartoRouteName } from "../src/runtime/routes.js";
 import { REPARTO_ROLE_ORDER, type RepartoRole } from "../src/runtime/authAdapter.js";
+import { renderRepartoRoute, repartoActions } from "./support/routes.js";
 import {
   repartoUser,
   resetRepartoAuthAdapter,
@@ -140,63 +140,8 @@ vi.mock("radix-ui", () => {
   };
 });
 
-async function renderRoute(route: RepartoRouteName): Promise<string> {
-  const ui = await import("../src/runtime/react/default-ui/index.js");
-  const config = { apiBase: "/api", apiPrefix: "/reparto" };
-  const scoped = { config, locale: "en" as const, processId };
-  switch (route) {
-    case "dashboard":
-      return renderToStaticMarkup(<ui.RepartoDashboardView {...scoped} />);
-    case "meeting":
-      return renderToStaticMarkup(<ui.RepartoMeetingView {...scoped} />);
-    case "processList":
-      return renderToStaticMarkup(
-        <ui.RepartoProcessesView config={config} locale="en" />
-      );
-    case "teacherView":
-      return renderToStaticMarkup(<ui.RepartoMyView {...scoped} />);
-    case "sharedScreen":
-      return renderToStaticMarkup(<ui.RepartoSharedView {...scoped} />);
-    case "versions":
-      return renderToStaticMarkup(<ui.RepartoVersionsView {...scoped} />);
-    case "exports":
-      return renderToStaticMarkup(<ui.RepartoExportsView {...scoped} />);
-    case "planning":
-      return renderToStaticMarkup(<ui.RepartoPlanningView {...scoped} />);
-    case "requirements":
-      return renderToStaticMarkup(<ui.RepartoHourRequirementsView {...scoped} />);
-    case "assignments":
-      return renderToStaticMarkup(<ui.RepartoAssignmentsView {...scoped} />);
-    case "participants":
-      return renderToStaticMarkup(
-        <ui.RepartoProcessParticipantsView {...scoped} />
-      );
-    case "subjects":
-      return renderToStaticMarkup(<ui.RepartoSubjectsView {...scoped} />);
-    case "classrooms":
-      return renderToStaticMarkup(<ui.RepartoClassroomsView {...scoped} />);
-    case "audit":
-      return renderToStaticMarkup(<ui.RepartoAuditView {...scoped} />);
-    case "classroomStages":
-      return renderToStaticMarkup(
-        <ui.RepartoClassroomStagesView config={config} locale="en" />
-      );
-    case "schools":
-      return renderToStaticMarkup(<ui.RepartoSchoolsView config={config} locale="en" />);
-    case "academicYears":
-      return renderToStaticMarkup(
-        <ui.RepartoAcademicYearsView config={config} locale="en" />
-      );
-    case "departments":
-      return renderToStaticMarkup(
-        <ui.RepartoDepartmentsView config={config} locale="en" />
-      );
-    case "teacherRoster":
-      return renderToStaticMarkup(
-        <ui.RepartoTeacherRosterView config={config} locale="en" />
-      );
-  }
-}
+const renderRoute = (route: RepartoRouteName) =>
+  renderRepartoRoute(route, processId);
 
 const ROUTES = Object.keys(REPARTO_ROUTE_ACCESS) as RepartoRouteName[];
 
@@ -218,9 +163,7 @@ const READ_ACTIONS = new Set([
 
 /** Every control the package renders that would write something. */
 function writeActions(html: string): string[] {
-  return [...html.matchAll(/data-reparto-action="([^"]+)"/g)]
-    .map((match) => match[1])
-    .filter((action) => !READ_ACTIONS.has(action));
+  return repartoActions(html).filter((action) => !READ_ACTIONS.has(action));
 }
 
 function actionCount(html: string): number {

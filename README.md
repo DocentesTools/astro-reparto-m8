@@ -4,6 +4,78 @@
 
 Astro integration and headless client for `reparto-docente-m8`.
 
+## Install
+
+```sh
+npm i @mano8/astro-reparto-m8 @mano8/astro-auth-m8 zod
+```
+
+## Quick start
+
+```ts
+import { defineConfig } from "astro/config";
+import faAuth from "@mano8/astro-auth-m8";
+import faReparto from "@mano8/astro-reparto-m8";
+
+export default defineConfig({
+  integrations: [
+    faAuth({ apiBase: "/user" }),
+    faReparto({ apiBase: "/reparto", mode: "starter" })
+  ]
+});
+```
+
+`@mano8/astro-auth-m8` is listed first on purpose: the backend accepts
+`fa-auth-m8` tokens, and the integration warns when its auth peer is missing or
+ordered after it. `mode: "starter"` injects the whole route map below;
+`mode: "headless"` (the default) injects nothing and leaves pages and navigation
+to the host.
+
+**[`docs/host-integration.md`](docs/host-integration.md) is the integration
+reference**: integration options, the route map with its role floors, the props
+every view takes, the API and hook surface, the auth assumptions, and worked
+starter and headless host examples. The sections below describe what each
+surface *does*.
+
+## The three stages
+
+The domain runs in three stages, and the sidebar and route map are grouped to
+match. The order is enforced by the service, not merely suggested by the UI:
+stage-3 work is refused against a plan that has not completed stage 2.
+
+1. **Configuration** — school, academic year, department, classroom stages,
+   teacher roster; then per process: participants and their base/extra hours,
+   subjects and their suggested defaults, teaching groups, and the
+   group-subject matrix that holds the actual planning values. The leadership
+   allocation is recorded here as the first immutable revision.
+2. **Planning** — `/planning` materializes main-subject activities from that
+   matrix, adds secondary activities, keeps the two balances visible, surfaces
+   the service's validations, and then locks the plan and generates the
+   requirement slots. A later allocation revision marks the plan stale and sends
+   it through explicit reconciliation. `/requirements` is the read-only result.
+3. **Assignment** — `/assignments`, `/meeting`, `/my-view` and `/shared-screen`
+   hand the generated slots out, one complete slot per participant, with
+   `/versions` and `/exports` alongside.
+
+## Routes and roles
+
+| Stage | Routes |
+| --- | --- |
+| Configuration | `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{participants,subjects,classrooms}` |
+| Planning | `/reparto/processes/[processId]/{planning,requirements}` |
+| Assignment | `/reparto`, `/reparto/processes`, `/reparto/processes/[processId]/{assignments,my-view,shared,versions,exports,audit}`, `/reparto/meeting/[processId]` |
+
+Every path is overridable, and any route can be dropped with `false`, through
+the integration's `routes` option. Each one carries two floors: the minimum role
+that may **see** it (`reader` everywhere — a `USER`-role session has no
+capability in this application) and the minimum role at which its **write**
+affordances may appear (`admin`, except `my-view` and the teacher roster, whose
+own-data actions are `writer`). `RepartoRouteGuard` applies the read floor and
+`useRepartoCanAct` the write floor, both from the signed-in user and never from
+a caller-supplied prop. The guard states what to show; the service remains the
+authorization boundary. The map is exported from
+`@mano8/astro-reparto-m8/route-access`.
+
 ## Classroom stages and bulk classrooms
 
 The plugin exposes global classroom-stage schemas, API helpers, React Query
@@ -148,6 +220,8 @@ release/retire action. Apply requires a reason plus the preview's exact conflict
 count. A 409 discards the stale preview instead of retrying, and the result shows
 released assignments, generation counts and the authoritative live-slot count.
 
+## Generated slots and the assignment board
+
 The `/requirements` starter route is the read-focused result surface for those
 workflows. It validates the generated-slot contract, groups slots by
 teaching activity and zero-based service position (shown one-based to users),
@@ -187,6 +261,8 @@ went through — the rows already undone stay undone. Cancelled rows stay visibl
 as history without actions, and the board reads the service's assignment-stage
 validation report rather than inferring findings from the table.
 
+## Teacher LAN view and participant hours
+
 The teacher direct-selection panel on `/my-view` takes the live positions
 rather than a required/assigned hour pair: a teacher takes a whole position or
 none, so the panel lists the positions with their own hours and marks each one
@@ -217,6 +293,8 @@ act, not a tolerance applied afterwards: they are absent from the participant
 `POST /…/teachers/{id}/extra-hours` with a mandatory reason
 (`useUpdateRepartoProcessTeacherExtraHours`), in either direction — withdrawing
 an authorization is the same action with `0`.
+
+## Dashboard, meeting control and shared screen
 
 The `/dashboard`, `/meeting` and `/shared-screen` routes read the two-stage
 payloads. `GET /…/dashboard` is `readiness` plus a **planning** section (the
@@ -249,6 +327,8 @@ the three invariants, the pending positions, the lifecycle state and whose turn
 it is by position. The `dashboard` prop is gone from both the workspace and
 `RepartoSharedView`.
 
+## Versions and comparison
+
 The `/versions` route captures immutable snapshots and diffs two of them. A
 comparison is the service's own §10.3 answer: nine change flags — leadership
 allocation, group hours, teacher load, subject category, activities, activity
@@ -272,31 +352,12 @@ sending it. The previous-year diff (`GET /…/compare-previous-year`) shares the
 panel and is offered only when the process records a `created_from_process_id`
 — the service answers 400 otherwise.
 
+## Package structure
+
 The package follows the `astro-prompt-m8` plugin structure: typed Zod schemas,
 API wrappers, auth adapter, optional starter routes, and explicit package
 exports. Official M8 usage requires `@mano8/astro-auth-m8` because the backend
 accepts `fa-auth-m8` tokens.
-
-## Install
-
-```sh
-npm i @mano8/astro-reparto-m8 @mano8/astro-auth-m8 zod
-```
-
-## Quick start
-
-```ts
-import { defineConfig } from "astro/config";
-import faAuth from "@mano8/astro-auth-m8";
-import faReparto from "@mano8/astro-reparto-m8";
-
-export default defineConfig({
-  integrations: [
-    faAuth({ apiBase: "/user" }),
-    faReparto({ apiBase: "/reparto", mode: "starter" })
-  ]
-});
-```
 
 ## Registry skins
 

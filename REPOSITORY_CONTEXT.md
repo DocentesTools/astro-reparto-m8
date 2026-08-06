@@ -8,8 +8,10 @@ Client (optional Astro teaching-assignment plugin).
 
 Provide the Astro integration and headless reparto client for
 `reparto-docente-m8`. The plugin is optional per deployment: it requires an
-installed package and configured `PUBLIC_REPARTO_API_BASE`, degrades safely when
-absent, and never forces host source edits outside documented registration points.
+installed package and a configured API base (the integration's `apiBase` /
+`apiPrefix` options, baked in as `PUBLIC_FA_REPARTO_API_BASE` /
+`PUBLIC_FA_REPARTO_API_PREFIX`), degrades safely when absent, and never forces
+host source edits outside documented registration points.
 
 ## Backend and authentication boundary
 
@@ -25,11 +27,18 @@ absent, and never forces host source edits outside documented registration point
 ## Modes, routes, and repository structure
 
 - `headless` provides schemas, API wrappers, auth adapter, and React providers
-  without pages. `starter` adds the dashboard, processes, meeting, teacher,
-  shared-screen, versions, exports, and setup Astro routes.
-- `src/integration.ts` provides `DEFAULT_REPARTO_NAV` / `buildRepartoNav` for
-  Setup and Process navigation. Consumers own their final configuration and
-  i18n labels.
+  without pages. `starter` adds the three-stage Astro route map: configuration
+  (schools, academic years, departments, classroom stages, teacher roster,
+  participants, subjects, classrooms), planning (planning, requirements) and
+  assignment (dashboard, processes, assignments, meeting, teacher, shared
+  screen, versions, exports, audit).
+- `src/integration.ts` provides `DEFAULT_REPARTO_NAV` / `buildRepartoNav`, whose
+  three groups are those same stages. Consumers own their final configuration
+  and i18n labels.
+- `docs/host-integration.md` is the consumer-facing integration reference
+  (options, route map and role floors, view props, API and hook surface, auth
+  assumptions, three-stage walkthrough, starter and headless host examples);
+  `fixtures/**` are the build-verified examples behind it.
 - `src/runtime/api/**` owns global and process-scoped wrappers plus the single
   backend-error-to-field/form mapping source. `src/runtime/i18n/**` owns the
   English-first `en`/`fr`/`es` dictionary and rejects missing keys, bare

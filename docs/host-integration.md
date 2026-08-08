@@ -25,7 +25,7 @@ npm i @mano8/astro-reparto-m8 @mano8/astro-auth-m8 zod
 | `zod` ^4 | every response is parsed before it reaches a view |
 | `@mano8/astro-auth-m8` ^2 | the official M8 session; the backend accepts `fa-auth-m8` tokens |
 
-The backend contract is `reparto-docente-m8@0.1` (`>=0.1.0 <0.2.0`). A host that
+The backend contract is `reparto-docente-m8@2.0.0` (`>=2.0.0 <3.0.0`). A host that
 already reads the service's metadata should assert it at startup rather than
 discovering drift inside a view:
 

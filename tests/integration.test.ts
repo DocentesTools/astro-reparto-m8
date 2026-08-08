@@ -71,19 +71,19 @@ describe("routes", () => {
 describe("compatibility", () => {
   it("accepts supported contracts and rejects missing/unknown contracts", () => {
     expect(() =>
-      assertRepartoCompatibility({ reparto_contract_version: "reparto-docente-m8@0.1" })
+      assertRepartoCompatibility({ reparto_contract_version: "reparto-docente-m8@2.0.0" })
     ).not.toThrow();
-    expect(() => assertRepartoCompatibility({ contract_version: "0.1" })).not.toThrow();
+    expect(() => assertRepartoCompatibility({ contract_version: "2.0.0" })).not.toThrow();
     expect(() => assertRepartoCompatibility({ service_version: "x" })).toThrow(
       "Unsupported reparto-docente-m8 contract: unknown"
     );
-    expect(() => assertRepartoCompatibility({ contract_version: "2.0" })).toThrow(
-      "Unsupported reparto-docente-m8 contract: 2.0"
+    expect(() => assertRepartoCompatibility({ contract_version: "0.1" })).toThrow(
+      "Unsupported reparto-docente-m8 contract: 0.1"
     );
   });
 
   it("freezes the backend-facing operation contract for the UI rebuild", () => {
-    expect(REPARTO_CONTRACT_VERSION).toBe("reparto-docente-m8@0.1");
+    expect(REPARTO_CONTRACT_VERSION).toBe("reparto-docente-m8@2.0.0");
     expect(REPARTO_CONTRACT_OPERATIONS["assignmentProcesses.dashboard"]).toEqual({
       method: "GET",
       path: "/assignment-processes/{process_id}/dashboard",

@@ -127,7 +127,7 @@
     "zod": "^4.0.0"
   },
   "repartoDocenteM8": {
-    "contract": "reparto-docente-m8@0.1",
+    "contract": "reparto-docente-m8@2.0.0",
     "testedServiceVersion": "0.1.0-alpha.0",
     "serviceVersionRange": ">=0.1.0 <0.2.0"
   }

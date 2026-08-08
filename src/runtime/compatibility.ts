@@ -4,7 +4,7 @@ export type RepartoMetaLike = {
   service_version?: string;
 };
 
-export const REPARTO_CONTRACT_VERSION = "reparto-docente-m8@0.1";
+export const REPARTO_CONTRACT_VERSION = "reparto-docente-m8@2.0.0";
 
 export type RepartoContractMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
@@ -359,7 +359,7 @@ export const REPARTO_CONTRACT_OPERATIONS = {
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 
-const SUPPORTED_CONTRACTS = new Set([REPARTO_CONTRACT_VERSION, "0.1"]);
+const SUPPORTED_CONTRACTS = new Set([REPARTO_CONTRACT_VERSION, "2.0.0"]);
 
 export function assertRepartoCompatibility(meta: RepartoMetaLike): void {
   const contract = meta.reparto_contract_version ?? meta.contract_version;

@@ -718,10 +718,18 @@ export function DepartmentHeadWorkspace({
 export function ProcessListView({
   count = 0,
   locale,
+  onCreate,
   processes = []
 }: {
   count?: number;
   locale?: RepartoLocale;
+  /**
+   * Opens the caller's creation form. Without it the control is withheld
+   * rather than rendered inert: this view has no create form of its own —
+   * opening a process needs an academic year, school and department — so a
+   * button with nowhere to go would be a dead end, not an affordance.
+   */
+  onCreate?: () => void;
   processes?: AssignmentProcessPublic[];
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
@@ -753,8 +761,13 @@ export function ProcessListView({
             </ul>
           ) : null}
         </div>
-        {canAct ? (
-          <button className={repartoButtonClass} type="button" data-reparto-action="create-process">
+        {canAct && onCreate ? (
+          <button
+            className={repartoButtonClass}
+            data-reparto-action="create-process"
+            onClick={onCreate}
+            type="button"
+          >
             {dict.action.create} {dict.entity.assignmentProcess.singular.toLowerCase()}
           </button>
         ) : null}

@@ -517,6 +517,25 @@ export function WithSelectedProcess({
     }
   }, [effective]);
 
+  // A restored id outlives the process it names. A reset database or a deleted
+  // process leaves `reparto.lastProcessId` pointing at a row the service 404s
+  // on, and because a non-empty `effective` suppresses the picker, the view has
+  // no affordance left to choose another one — every child request just fails.
+  // Forget the id once the list proves it is gone. The `count` guard keeps a
+  // still-valid id sitting on a later page from being mistaken for a deleted
+  // one, and only the *restored* id is dropped: an id pinned by the route is
+  // the caller's statement, not ours to overrule.
+  useEffect(() => {
+    if (!selected || routeProcessId) return;
+    const list = processesQuery.data;
+    if (!list || list.count > list.data.length) return;
+    if (list.data.some((process) => process.id === selected)) return;
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LAST_PROCESS_STORAGE_KEY);
+    }
+    setSelected(undefined);
+  }, [processesQuery.data, routeProcessId, selected]);
+
   if (!bypass && !effective) {
     return <ProcessPicker locale={locale} onSelect={setSelected} />;
   }

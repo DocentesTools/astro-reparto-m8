@@ -42,6 +42,7 @@ import {
 import { repartoPanelClass } from "../styles.js";
 import type { RepartoEventStreamState } from "../useRepartoEvents.js";
 import {
+  ProcessPicker,
   Shell,
   WithSelectedProcess,
   type ViewConfig
@@ -385,6 +386,12 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses(params);
   const processes = processesQuery.data?.data ?? [];
+  // Opening a process needs the academic year, school and department behind it,
+  // which only the picker's cascading selects (and their one-level inline
+  // creation) can supply. The list route reaches the same form rather than
+  // growing a second one: the picker replaces the list while it is open, so the
+  // two never nest their `<main>` elements.
+  const [creating, setCreating] = useState(false);
   if (processesQuery.isLoading || processesQuery.isError) {
     return (
       <QueryState
@@ -396,9 +403,20 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
       />
     );
   }
+  if (creating) {
+    // Creating invalidates the process list, so returning to it shows the new
+    // row. Selecting an existing process from the picker closes the form too —
+    // this route's job is the list, not a selection.
+    return <ProcessPicker locale={locale} onSelect={() => setCreating(false)} />;
+  }
   return (
     <>
-      <ProcessListView count={processesQuery.data?.count ?? 0} locale={locale} processes={processes} />
+      <ProcessListView
+        count={processesQuery.data?.count ?? 0}
+        locale={locale}
+        onCreate={() => setCreating(true)}
+        processes={processes}
+      />
       <QueryState
         error={processesQuery.error}
         isError={processesQuery.isError}

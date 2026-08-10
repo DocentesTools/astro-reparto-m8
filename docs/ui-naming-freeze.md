@@ -310,6 +310,26 @@ The bulk editor added on 2026-07-30 freezes these surface slots:
 | Apply confirmation | `data-reparto-dialog="group-subject-bulk-confirmation"` | separate confirmation after preview |
 | Stale preview | `data-group-subject-bulk-stale` | 409 clears the preview and requires re-preview |
 
+The route added on 2026-08-10 (§13.2a `S2-02`) freezes these as well. The matrix
+is *Group-subject matrix* in the nav and on the page — never *Group subjects*
+alone, which reads as a list of subjects:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route | `data-reparto-route="group-subjects"` | `reader` to see, `admin` to write |
+| Cell list | `data-reparto-table="group-subjects"` | one row per existing cell; an absent cell is not a zero row |
+| Empty matrix | `data-reparto-state="empty-matrix"` | states that Stage 2 has no candidate yet |
+| Read-only refusal | `data-reparto-state="read-only"` | stated below the write floor instead of a disabled control |
+| Cell form | `data-reparto-form="group-subject-cell"` | `create` / `edit` mode |
+| Cell classroom / subject | `data-reparto-field="group-subject-cell-classroom"` / `-subject"` | create only — the identity is immutable |
+| Cell identity (edit) | `data-reparto-slot="group-subject-identity"` | shown, never offered |
+| Cell hours | `data-reparto-field="group-subject-cell-group-hours"` / `-teacher-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Cell positions | `data-reparto-field="group-subject-cell-teacher-count"` | positive integer; blank omits the field |
+
+There is deliberately no *deactivate* control on the cell form: §20.12 retires a
+cell through its own action, and a boolean toggle would be a second, quieter way
+to take a cell out of the plan.
+
 ### 3.14 Secondary teaching activity
 
 > Added **2026-07-30** by the three-stage adaptation. The activity type is

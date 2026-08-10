@@ -1079,9 +1079,24 @@ export {
 } from "./process-crud/group-subjects/bulk.js";
 
 export {
+  GroupSubjectCellForm,
+  buildGroupSubjectCellRequest,
+  type GroupSubjectCellErrorKey,
+  type GroupSubjectCellFormProps,
+  type GroupSubjectCellFormResult,
+  type GroupSubjectCellValues
+} from "./process-crud/group-subjects/cell-form.js";
+
+export {
+  GroupSubjectMatrixList,
+  type GroupSubjectMatrixListProps
+} from "./process-crud/group-subjects/list.js";
+
+export {
   RepartoAssignmentsView,
   RepartoAuditView,
   RepartoClassroomsView,
+  RepartoGroupSubjectsView,
   RepartoHourRequirementsView,
   RepartoProcessParticipantsView,
   RepartoSubjectsView

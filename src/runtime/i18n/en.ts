@@ -783,6 +783,7 @@ export const en = {
       processes: "Processes",
       classrooms: "Classrooms",
       classroomStages: "Classroom stages",
+      groupSubjects: "Group-subject matrix",
       subjects: "Subjects",
       planning: "Planning",
       requirements: "Requirements",
@@ -980,6 +981,25 @@ export const en = {
       unchanged: "Unchanged",
       conflict: "Conflict"
     }
+  },
+  groupSubjectMatrix: {
+    pageTitle: "Group-subject matrix",
+    description: "One cell per classroom and subject, carrying the actual planning values the teaching plan materializes from.",
+    addAction: "Add cell",
+    createTitle: "Add matrix cell",
+    editTitle: "Edit matrix cell",
+    empty: "The matrix is empty. Fill it with the bulk editor below, or add a single cell.",
+    emptyHint: "Main-subject materialization has no candidate cell until at least one exists.",
+    inherited: "Inherited",
+    identityHint: "A cell's classroom and subject are its identity and cannot be changed here.",
+    readOnly: "Editing the matrix is a department-head action.",
+    search: "Search classroom or subject...",
+    created: "Matrix cell added.",
+    updated: "Matrix cell updated.",
+    createError: "The matrix cell could not be added.",
+    updateError: "The matrix cell could not be updated.",
+    selectClassroom: "Select a classroom",
+    selectSubject: "Select a subject"
   },
   classroomSelection: {
     selectAllVisible: "Select all visible classrooms",

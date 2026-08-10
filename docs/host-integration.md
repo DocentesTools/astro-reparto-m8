@@ -88,6 +88,7 @@ mutations that route issues.
 | `participants` | `/reparto/processes/[processId]/participants` | `RepartoProcessParticipantsView` | reader | admin |
 | `subjects` | `/reparto/processes/[processId]/subjects` | `RepartoSubjectsView` | reader | admin |
 | `classrooms` | `/reparto/processes/[processId]/classrooms` | `RepartoClassroomsView` | reader | admin |
+| `groupSubjects` | `/reparto/processes/[processId]/group-subjects` | `RepartoGroupSubjectsView` | reader | admin |
 | `planning` | `/reparto/processes/[processId]/planning` | `RepartoPlanningView` | reader | admin |
 | `requirements` | `/reparto/processes/[processId]/requirements` | `RepartoHourRequirementsView` | reader | admin |
 | `dashboard` | `/reparto` | `RepartoDashboardView` | reader | admin |
@@ -269,7 +270,13 @@ view mode literal (`admin`/`readonly` is derived from the signed-in role by
 `useRepartoViewMode`, never passed in) and a `dashboard` payload on the shared
 screen (the projector must not hold per-teacher data).
 
-Panels below view level — `GroupSubjectBulkEditor`, `TeachingPlanCreation`,
+`GroupSubjectBulkEditor` is a panel a headless host may mount itself, but it is
+**not** host-mounted work in `starter` mode: the package's own `groupSubjects`
+route mounts it, next to the matrix list and the per-cell form. Treating it as
+host-only is what left the matrix unreachable in a host that mounts package
+starter routes and nothing else.
+
+Panels below view level — `TeachingPlanCreation`,
 `MainSubjectMaterialization`,
 `SecondaryActivityEditor`, `PlanLockAndRequirementGeneration`,
 `AllocationChangeReconciliation`, `MeetingControlWorkspace`,
@@ -389,9 +396,12 @@ School, academic year, department, classroom stages and the teacher roster, then
 the process-scoped configuration: participants with their base and authorized
 extra hours, subjects with their suggested planning defaults, teaching groups,
 and the group-subject matrix that holds the **actual** planning values.
-`GroupSubjectBulkEditor` fills that matrix one subject at a time across a
-filtered group range; the apply request is never issued without a successful
-preview, and a stale preview is refused with **409** rather than committed.
+The matrix has its own route, `groupSubjects`: it lists the cells that exist,
+offers a single-cell add/edit form, and mounts `GroupSubjectBulkEditor`, which
+fills the matrix one subject at a time across a filtered group range. The apply
+request is never issued without a successful preview, and a stale preview is
+refused with **409** rather than committed. Nothing in Stage 2 has an input
+until at least one cell exists.
 
 Leadership's weekly group-hour allocation is recorded here as the first
 immutable revision (`allocationRevisions.create`). Until one exists,

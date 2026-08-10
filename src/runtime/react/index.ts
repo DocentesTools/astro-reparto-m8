@@ -47,6 +47,8 @@ export {
   useUpdateRepartoSubject,
   useDeleteRepartoSubject,
   useRepartoGroupSubjects,
+  useCreateRepartoGroupSubject,
+  useUpdateRepartoGroupSubject,
   useRepartoTeachingActivities,
   useCreateRepartoTeachingActivity,
   useUpdateRepartoTeachingActivity,

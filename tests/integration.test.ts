@@ -30,6 +30,7 @@ describe("routes", () => {
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
+      groupSubjects: "/reparto/processes/[processId]/group-subjects",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -51,6 +52,7 @@ describe("routes", () => {
       subjects: "/reparto/processes/[processId]/subjects",
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
+      groupSubjects: "/reparto/processes/[processId]/group-subjects",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -276,7 +278,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(19);
+    expect(injectRoute).toHaveBeenCalledTimes(20);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -295,7 +297,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(18);
+    expect(injectRoute).toHaveBeenCalledTimes(19);
   });
 
   it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
@@ -386,7 +388,11 @@ describe("integration", () => {
       pattern: "/en/reparto/processes/[processId]/planning",
       entrypoint: "@mano8/astro-reparto-m8/routes/planning.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(38);
+    expect(injectRoute).toHaveBeenCalledWith({
+      pattern: "/es/reparto/processes/[processId]/group-subjects",
+      entrypoint: "@mano8/astro-reparto-m8/routes/group-subjects.astro"
+    });
+    expect(injectRoute).toHaveBeenCalledTimes(40);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -428,7 +434,8 @@ describe("integration", () => {
       "nav.item.teacherRoster",
       "nav.item.processParticipants",
       "nav.item.subjects",
-      "nav.item.classrooms"
+      "nav.item.classrooms",
+      "nav.item.groupSubjects"
     ]);
     expect(DEFAULT_REPARTO_NAV.planning.labelKey).toBe("nav.group.planning");
     expect(DEFAULT_REPARTO_NAV.planning.entries.map((entry) => entry.labelKey)).toEqual([
@@ -448,6 +455,12 @@ describe("integration", () => {
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
     expect(classroomsEntry?.href).toBe("/reparto/processes/current/classrooms");
+    const groupSubjectsEntry = resolved.configuration.entries.find(
+      (entry) => entry.labelKey === "nav.item.groupSubjects"
+    );
+    expect(groupSubjectsEntry?.href).toBe(
+      "/reparto/processes/current/group-subjects"
+    );
     const planningEntry = resolved.planning.entries.find(
       (entry) => entry.labelKey === "nav.item.planning"
     );

@@ -399,8 +399,12 @@ resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
 `created_count`, `updated_count`, `data` (the affected cells), `count`.
 
 Frontend coverage: `useRepartoGroupSubjects`,
+`useCreateRepartoGroupSubject`, `useUpdateRepartoGroupSubject`,
 `usePreviewRepartoGroupSubjects` and `useApplyRepartoGroupSubjects` isolate the
-HTTP calls and cache invalidation. `GroupSubjectBulkEditor` owns the default UI
+HTTP calls and cache invalidation; all four writes invalidate exactly the matrix
+prefix. `RepartoGroupSubjectsView` is the route they are reachable from —
+without it the matrix stays empty and Stage 2 has no input.
+`GroupSubjectBulkEditor` owns the default UI
 surface: it maps blank hour inputs to explicit `null`, canonicalizes typed zero
 to `"0.00"`, renders every preview outcome in a table, disables apply before a
 valid preview, requires a separate confirmation and discards the preview on

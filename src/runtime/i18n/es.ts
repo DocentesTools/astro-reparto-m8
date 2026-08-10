@@ -782,6 +782,7 @@ export const es: RepartoDictionary = {
       processes: "Procesos",
       classrooms: "Grupos",
       classroomStages: "Etapas educativas",
+      groupSubjects: "Matriz grupo-materia",
       subjects: "Materias",
       planning: "Planificación",
       requirements: "Horas necesarias",
@@ -979,6 +980,25 @@ export const es: RepartoDictionary = {
       unchanged: "Sin cambios",
       conflict: "Conflicto"
     }
+  },
+  groupSubjectMatrix: {
+    pageTitle: "Matriz grupo-materia",
+    description: "Una celda por grupo y materia, con los valores de planificación reales a partir de los cuales se materializa el plan docente.",
+    addAction: "Añadir celda",
+    createTitle: "Añadir celda de la matriz",
+    editTitle: "Editar celda de la matriz",
+    empty: "La matriz está vacía. Rellénala con el editor masivo de abajo o añade una celda.",
+    emptyHint: "La materialización de materias principales no tiene ninguna celda candidata mientras no exista al menos una.",
+    inherited: "Heredado",
+    identityHint: "El grupo y la materia de una celda son su identidad y no se pueden cambiar aquí.",
+    readOnly: "Editar la matriz es una acción del jefe de departamento.",
+    search: "Buscar grupo o materia...",
+    created: "Celda de la matriz añadida.",
+    updated: "Celda de la matriz actualizada.",
+    createError: "No se pudo añadir la celda de la matriz.",
+    updateError: "No se pudo actualizar la celda de la matriz.",
+    selectClassroom: "Seleccionar un grupo",
+    selectSubject: "Seleccionar una materia"
   },
   classroomSelection: {
     selectAllVisible: "Seleccionar todos los grupos visibles",

@@ -783,6 +783,7 @@ export const fr: RepartoDictionary = {
       processes: "Processus",
       classrooms: "Classes",
       classroomStages: "Niveaux scolaires",
+      groupSubjects: "Matrice groupe-matière",
       subjects: "Matières",
       planning: "Planification",
       requirements: "Besoins horaires",
@@ -980,6 +981,25 @@ export const fr: RepartoDictionary = {
       unchanged: "Inchangé",
       conflict: "Conflit"
     }
+  },
+  groupSubjectMatrix: {
+    pageTitle: "Matrice groupe-matière",
+    description: "Une cellule par classe et par matière, portant les valeurs de planification réelles à partir desquelles le plan pédagogique est matérialisé.",
+    addAction: "Ajouter une cellule",
+    createTitle: "Ajouter une cellule de la matrice",
+    editTitle: "Modifier la cellule de la matrice",
+    empty: "La matrice est vide. Remplissez-la avec l'éditeur en masse ci-dessous, ou ajoutez une cellule.",
+    emptyHint: "La matérialisation des matières principales n'a aucune cellule candidate tant qu'aucune n'existe.",
+    inherited: "Hérité",
+    identityHint: "La classe et la matière d'une cellule constituent son identité et ne peuvent pas être modifiées ici.",
+    readOnly: "Modifier la matrice est une action du chef de département.",
+    search: "Rechercher une classe ou une matière...",
+    created: "Cellule de la matrice ajoutée.",
+    updated: "Cellule de la matrice mise à jour.",
+    createError: "La cellule de la matrice n'a pas pu être ajoutée.",
+    updateError: "La cellule de la matrice n'a pas pu être mise à jour.",
+    selectClassroom: "Sélectionner une classe",
+    selectSubject: "Sélectionner une matière"
   },
   classroomSelection: {
     selectAllVisible: "Sélectionner toutes les classes visibles",

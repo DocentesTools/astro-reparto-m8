@@ -85,6 +85,8 @@ const mocks = vi.hoisted(() => ({
   },
   groupSubjects: {
     list: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
     bulkPreview: vi.fn(),
     bulkApply: vi.fn()
   },
@@ -241,6 +243,8 @@ describe("reparto React hooks", () => {
     mocks.subjects.update.mockClear();
     mocks.subjects.remove.mockClear();
     mocks.groupSubjects.list.mockClear();
+    mocks.groupSubjects.create.mockClear();
+    mocks.groupSubjects.update.mockClear();
     mocks.groupSubjects.bulkPreview.mockClear();
     mocks.groupSubjects.bulkApply.mockClear();
     mocks.teachingPlans.summary.mockClear();
@@ -834,6 +838,55 @@ describe("reparto React hooks", () => {
     });
     expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
     expect(mocks.useMutation).toHaveBeenCalledTimes(21);
+  });
+
+  it("wires the per-cell group-subject hooks to the matrix read", async () => {
+    const { useCreateRepartoGroupSubject, useUpdateRepartoGroupSubject } =
+      await import("../src/runtime/react/hooks.js");
+
+    mocks.invalidateQueries.mockClear();
+    const create = useCreateRepartoGroupSubject();
+    create.mutate({
+      processId: "p1",
+      body: {
+        teaching_group_id: "g1",
+        subject_id: "s1",
+        group_weekly_hours: "2.50",
+        teacher_weekly_hours_per_position: null,
+        required_teacher_count: 1,
+        notes: null
+      }
+    });
+    expect(mocks.groupSubjects.create).toHaveBeenCalledWith("p1", {
+      teaching_group_id: "g1",
+      subject_id: "s1",
+      group_weekly_hours: "2.50",
+      teacher_weekly_hours_per_position: null,
+      required_teacher_count: 1,
+      notes: null
+    });
+    // Exactly the matrix prefix, as the bulk apply does: writing a cell changes
+    // what materialization could produce, never what it already produced.
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([["reparto", "processes", "detail", "p1", "group-subjects"]]);
+
+    mocks.invalidateQueries.mockClear();
+    const update = useUpdateRepartoGroupSubject();
+    update.mutate({
+      processId: "p1",
+      groupSubjectId: "gs1",
+      body: { group_weekly_hours: null, required_teacher_count: 2 }
+    });
+    // The cell's identity is not in the payload: a mis-targeted cell is
+    // replaced, never re-pointed.
+    expect(mocks.groupSubjects.update).toHaveBeenCalledWith("p1", "gs1", {
+      group_weekly_hours: null,
+      required_teacher_count: 2
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([["reparto", "processes", "detail", "p1", "group-subjects"]]);
   });
 
   it("wires plan validation and requirement-generation workflow hooks", async () => {

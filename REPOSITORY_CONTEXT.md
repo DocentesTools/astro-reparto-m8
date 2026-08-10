@@ -29,9 +29,9 @@ host source edits outside documented registration points.
 - `headless` provides schemas, API wrappers, auth adapter, and React providers
   without pages. `starter` adds the three-stage Astro route map: configuration
   (schools, academic years, departments, classroom stages, teacher roster,
-  participants, subjects, classrooms), planning (planning, requirements) and
-  assignment (dashboard, processes, assignments, meeting, teacher, shared
-  screen, versions, exports, audit).
+  participants, subjects, classrooms, group-subject matrix), planning (planning,
+  requirements) and assignment (dashboard, processes, assignments, meeting,
+  teacher, shared screen, versions, exports, audit).
 - `src/integration.ts` provides `DEFAULT_REPARTO_NAV` / `buildRepartoNav`, whose
   three groups are those same stages. Consumers own their final configuration
   and i18n labels.

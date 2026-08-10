@@ -175,7 +175,14 @@ export function groupSubjectBulkPreviewRows(
   ];
 }
 
-function LocalError({ message }: { message?: string }) {
+/**
+ * A validation message the form itself raised, before any request.
+ *
+ * Exported for the per-cell form so the two surfaces of the matrix report a
+ * rejected field the same way; a mapped *server* error still goes through
+ * `RepartoFieldError` / `RepartoFormError`.
+ */
+export function LocalError({ message }: { message?: string }) {
   if (!message) return null;
   return (
     <span
@@ -188,7 +195,8 @@ function LocalError({ message }: { message?: string }) {
   );
 }
 
-function HoursField({
+/** A two-decimal hour input: blank stays "inherit", it never becomes zero. */
+export function HoursField({
   error,
   field,
   label,

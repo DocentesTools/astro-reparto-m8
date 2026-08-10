@@ -37,6 +37,8 @@ import type {
   DepartmentHourAllocationRevisionCreateInput,
   GroupSubjectBulkApplyRequestInput,
   GroupSubjectBulkRequestInput,
+  GroupSubjectCreateInput,
+  GroupSubjectUpdateInput,
   MainActivitySyncApplyRequestInput,
   ProcessTeacherCreateInput,
   ProcessTeacherExtraHoursInput,
@@ -825,6 +827,61 @@ export function useApplyRepartoGroupSubjects() {
       processId: string;
       body: GroupSubjectBulkApplyRequestInput;
     }) => groupSubjects.bulkApply(processId, body),
+    onSuccess: (_data, { processId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.groupSubjects(processId)
+      });
+    }
+  });
+}
+
+/**
+ * Add one matrix cell.
+ *
+ * The bulk pair fills the matrix a subject at a time across a filtered group
+ * range; this is the single-cell exception the range cannot express. Both
+ * invalidate exactly the matrix read: writing a cell changes what
+ * materialization *could* produce, never what it already produced — the service
+ * keeps an existing activity untouched until an explicit sync (§20.14), so
+ * invalidating the plan projections here would claim a change that did not
+ * happen.
+ */
+export function useCreateRepartoGroupSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: GroupSubjectCreateInput;
+    }) => groupSubjects.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.groupSubjects(processId)
+      });
+    }
+  });
+}
+
+/**
+ * Patch one matrix cell's planning values.
+ *
+ * `teaching_group_id` / `subject_id` are the cell's identity and are not part
+ * of the payload: a mis-targeted cell is replaced, never re-pointed.
+ */
+export function useUpdateRepartoGroupSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupSubjectId,
+      body
+    }: {
+      processId: string;
+      groupSubjectId: string;
+      body: GroupSubjectUpdateInput;
+    }) => groupSubjects.update(processId, groupSubjectId, body),
     onSuccess: (_data, { processId }) => {
       void queryClient.invalidateQueries({
         queryKey: repartoKeys.groupSubjects(processId)

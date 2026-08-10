@@ -47,7 +47,10 @@ export type FaRepartoAstroOptions = {
 // and Stage 3 is the existing assignment process run against the generated
 // slots. `classrooms`/`subjects`/`processParticipants` are process-scoped
 // resources but are configured once per process before planning starts, so
-// they sit in Stage 1 alongside the school-wide setup entries.
+// they sit in Stage 1 alongside the school-wide setup entries. `groupSubjects`
+// closes that group: the matrix is the last thing Stage 1 produces and the only
+// input main-subject materialization has, so it follows subjects and classrooms
+// and precedes the Stage 2 entries that consume it.
 export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
   configuration: {
     labelKey: "nav.group.configuration",
@@ -59,7 +62,8 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
       { labelKey: "nav.item.teacherRoster", route: "teacherRoster" },
       { labelKey: "nav.item.processParticipants", route: "participants" },
       { labelKey: "nav.item.subjects", route: "subjects" },
-      { labelKey: "nav.item.classrooms", route: "classrooms" }
+      { labelKey: "nav.item.classrooms", route: "classrooms" },
+      { labelKey: "nav.item.groupSubjects", route: "groupSubjects" }
     ]
   },
   planning: {
@@ -130,6 +134,7 @@ const ROUTE_ENTRYPOINTS = {
   subjects: "@mano8/astro-reparto-m8/routes/subjects.astro",
   classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
   classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
+  groupSubjects: "@mano8/astro-reparto-m8/routes/group-subjects.astro",
   planning: "@mano8/astro-reparto-m8/routes/planning.astro",
   requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
   participants: "@mano8/astro-reparto-m8/routes/participants.astro",

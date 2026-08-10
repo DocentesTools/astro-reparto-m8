@@ -154,6 +154,12 @@ is left untouched, an explicit `null` hour clears an override back to "inherit",
 and `required_teacher_count` takes only a positive integer because its column is
 `NOT NULL`.
 
+`RepartoGroupSubjectsView` is the matrix's own starter route
+(`/reparto/processes/[processId]/group-subjects`, `reader`/`admin`): it lists
+the cells that exist, adds or edits one cell through
+`useCreateRepartoGroupSubject` / `useUpdateRepartoGroupSubject`, and mounts the
+bulk editor below them.
+
 `GroupSubjectBulkEditor` is exported from
 `@mano8/astro-reparto-m8/default-ui`. It loads the process subjects and
 classrooms through the package hooks, exposes the three backend modes and the

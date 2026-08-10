@@ -16,6 +16,7 @@ import {
 } from "../process-crud/shared.js";
 import { useRepartoTeachingPlanSummary } from "../../hooks.js";
 import { PlanningBalanceHeader } from "./balance-header.js";
+import { TeachingPlanCreation } from "./plan-creation.js";
 import { MainSubjectMaterialization } from "./main-materialization.js";
 import { MainActivitySyncPanel } from "./activity-sync.js";
 import { SecondaryActivityEditor } from "./secondary-activities.js";
@@ -65,6 +66,8 @@ function PlanningContent({
       />
       {canAct ? (
         <>
+          {/* First, because with no plan every panel below it is a 404. */}
+          <TeachingPlanCreation locale={locale} processId={processId} />
           <MainSubjectMaterialization locale={locale} processId={processId} />
           <MainActivitySyncPanel locale={locale} processId={processId} />
           <SecondaryActivityEditor locale={locale} processId={processId} />
@@ -96,6 +99,7 @@ export function RepartoPlanningView({
 }
 
 export { PlanningBalanceHeader } from "./balance-header.js";
+export { TeachingPlanCreation } from "./plan-creation.js";
 export {
   MainSubjectMaterialization,
   MainSubjectMaterializationConfirmation,

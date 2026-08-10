@@ -448,6 +448,19 @@ export const en = {
     difference: "Difference",
     loading: "Loading planning balance.",
     unavailable: "Planning balance is unavailable.",
+    noPlanYet: "No teaching plan has been created for this process yet, so there is no balance to show.",
+    creation: {
+      title: "Teaching plan",
+      description: "Planning works on a single teaching plan owned by this process.",
+      absent: "This process has no teaching plan yet. Create it to start planning; nothing has failed.",
+      unavailable: "The teaching plan could not be read.",
+      readOnly: "An administrator has to create the teaching plan before planning can start.",
+      action: "Create teaching plan",
+      pending: "Creating the teaching plan.",
+      success: "The teaching plan was created.",
+      error: "The teaching plan could not be created.",
+      duplicateError: "This process already has a teaching plan."
+    },
     materialization: {
       title: "Main-subject activities",
       description: "Review every active main-subject matrix row before creating only the activities that are still missing.",

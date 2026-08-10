@@ -95,6 +95,7 @@ const mocks = vi.hoisted(() => ({
     evaluateFeasibility: vi.fn(),
     feasibilityDiagnostics: vi.fn(),
     feasibilityWitness: vi.fn(),
+    create: vi.fn(),
     lock: vi.fn(),
     materializeMain: vi.fn()
   },
@@ -248,6 +249,7 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.evaluateFeasibility.mockClear();
     mocks.teachingPlans.feasibilityDiagnostics.mockClear();
     mocks.teachingPlans.feasibilityWitness.mockClear();
+    mocks.teachingPlans.create.mockClear();
     mocks.teachingPlans.lock.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
@@ -836,6 +838,7 @@ describe("reparto React hooks", () => {
 
   it("wires plan validation and requirement-generation workflow hooks", async () => {
     const {
+      useCreateRepartoTeachingPlan,
       useGenerateRepartoRequirements,
       useLockRepartoTeachingPlan,
       usePreviewRepartoRequirementGeneration,
@@ -847,6 +850,22 @@ describe("reparto React hooks", () => {
     useRepartoTeachingPlanValidations("p1");
     expect(mocks.teachingPlans.get).toHaveBeenCalledWith("p1");
     expect(mocks.teachingPlans.validations).toHaveBeenCalledWith("p1");
+
+    // Creation is what makes every read above answer anything but 404, so it
+    // invalidates the plan reads as well as the two `plan_status` projections.
+    mocks.invalidateQueries.mockClear();
+    const create = useCreateRepartoTeachingPlan();
+    create.mutate("p1");
+    expect(mocks.teachingPlans.create).toHaveBeenCalledWith("p1");
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan", "summary"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan", "validations"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
 
     mocks.invalidateQueries.mockClear();
     const lock = useLockRepartoTeachingPlan();

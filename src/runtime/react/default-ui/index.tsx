@@ -98,6 +98,7 @@ export {
   SecondaryActivityEditor,
   SecondaryActivityForm,
   SecondaryActivityTable,
+  TeachingPlanCreation,
   buildActivitySyncRows,
   buildMainSubjectMaterializationRows,
   buildAllocationRevisionRequest,

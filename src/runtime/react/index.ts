@@ -52,6 +52,7 @@ export {
   useUpdateRepartoTeachingActivity,
   useDeleteRepartoTeachingActivity,
   useGenerateRepartoRequirements,
+  useCreateRepartoTeachingPlan,
   useLockRepartoTeachingPlan,
   usePreviewRepartoRequirementGeneration,
   usePreviewRepartoRequirementReconciliation,

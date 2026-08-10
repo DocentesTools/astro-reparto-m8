@@ -448,6 +448,19 @@ export const fr: RepartoDictionary = {
     difference: "Différence",
     loading: "Chargement de l'équilibre de planification.",
     unavailable: "L'équilibre de planification est indisponible.",
+    noPlanYet: "Aucun plan d'enseignement n'a encore été créé pour ce processus, il n'y a donc aucun équilibre à afficher.",
+    creation: {
+      title: "Plan d'enseignement",
+      description: "La planification porte sur un unique plan d'enseignement appartenant à ce processus.",
+      absent: "Ce processus n'a pas encore de plan d'enseignement. Créez-le pour commencer la planification ; rien n'a échoué.",
+      unavailable: "Le plan d'enseignement n'a pas pu être lu.",
+      readOnly: "Un administrateur doit créer le plan d'enseignement avant que la planification puisse commencer.",
+      action: "Créer le plan d'enseignement",
+      pending: "Création du plan d'enseignement.",
+      success: "Le plan d'enseignement a été créé.",
+      error: "Le plan d'enseignement n'a pas pu être créé.",
+      duplicateError: "Ce processus possède déjà un plan d'enseignement."
+    },
     materialization: {
       title: "Activités des matières principales",
       description: "Vérifiez chaque ligne active de matière principale avant de créer uniquement les activités encore manquantes.",

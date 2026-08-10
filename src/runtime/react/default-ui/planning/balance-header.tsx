@@ -1,5 +1,6 @@
 import type { PlanBalance } from "../../../schemas.js";
 import type { RepartoDictionary } from "../../../i18n/index.js";
+import { isMissingTeachingPlanError } from "../../../ui/teachingPlan.js";
 import { repartoMetricLabelClass, repartoMetricValueLargeClass } from "../../styles.js";
 
 type BalanceMetric = {
@@ -108,7 +109,22 @@ export function PlanningBalanceHeader({
           {dict.planning.loading}
         </p>
       ) : null}
-      {error ? (
+      {/*
+        The balance is 404 until the plan exists, which is the documented empty
+        state of a process that has just finished Stage 1 — not a failed read.
+        Announcing the service's "No teaching plan for process …" as a red
+        alert told the operator something was broken when the only thing
+        missing was the plan the creation panel now offers.
+      */}
+      {error && isMissingTeachingPlanError(error) ? (
+        <p
+          className="mt-2 text-xs text-muted-foreground"
+          data-reparto-state="no-plan"
+          role="status"
+        >
+          {dict.planning.noPlanYet}
+        </p>
+      ) : error ? (
         <p className="mt-2 text-xs text-destructive" role="alert">
           {error instanceof Error ? error.message : dict.planning.unavailable}
         </p>

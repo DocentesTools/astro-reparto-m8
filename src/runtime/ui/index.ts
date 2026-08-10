@@ -67,6 +67,14 @@ export {
   type FeasibilityRelatedKind
 } from "./feasibility.js";
 export {
+  buildTeachingPlanCreationState,
+  isDuplicateTeachingPlanError,
+  isMissingTeachingPlanError,
+  type TeachingPlanCreationBlockedReason,
+  type TeachingPlanCreationState,
+  type TeachingPlanPresence
+} from "./teachingPlan.js";
+export {
   buildActivitySyncPreviewState,
   listOutOfSyncActivities,
   type ActivitySyncBlockedReason,

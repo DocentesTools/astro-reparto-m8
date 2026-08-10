@@ -652,6 +652,32 @@ export function useEvaluateRepartoFeasibility() {
   });
 }
 
+/**
+ * Create the process's single teaching plan (§8.3).
+ *
+ * Nothing creates the plan row with the process, so every Stage 2 read answers
+ * 404 until this runs — the plan reads are therefore invalidated alongside the
+ * two projections that carry `plan_status`. The backend answers 409 on a
+ * second attempt; that is the caller's to present, not an error to swallow.
+ */
+export function useCreateRepartoTeachingPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => teachingPlans.create(processId),
+    onSuccess: (_data, processId) => {
+      for (const queryKey of [
+        repartoKeys.teachingPlan(processId),
+        repartoKeys.teachingPlanSummary(processId),
+        repartoKeys.teachingPlanValidations(processId),
+        repartoKeys.dashboard(processId),
+        repartoKeys.summary(processId)
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    }
+  });
+}
+
 export function useLockRepartoTeachingPlan() {
   const queryClient = useQueryClient();
   return useMutation({

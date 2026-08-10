@@ -447,6 +447,19 @@ export const es: RepartoDictionary = {
     difference: "Diferencia",
     loading: "Cargando el balance de planificación.",
     unavailable: "El balance de planificación no está disponible.",
+    noPlanYet: "Todavía no se ha creado un plan docente para este proceso, así que no hay balance que mostrar.",
+    creation: {
+      title: "Plan docente",
+      description: "La planificación trabaja sobre un único plan docente propiedad de este proceso.",
+      absent: "Este proceso aún no tiene plan docente. Créalo para empezar a planificar; no ha fallado nada.",
+      unavailable: "No se ha podido leer el plan docente.",
+      readOnly: "Un administrador debe crear el plan docente antes de poder planificar.",
+      action: "Crear plan docente",
+      pending: "Creando el plan docente.",
+      success: "El plan docente se ha creado.",
+      error: "No se ha podido crear el plan docente.",
+      duplicateError: "Este proceso ya tiene un plan docente."
+    },
     materialization: {
       title: "Actividades de materias principales",
       description: "Revisa cada fila activa de materia principal antes de crear únicamente las actividades que faltan.",

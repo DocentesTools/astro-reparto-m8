@@ -269,7 +269,8 @@ view mode literal (`admin`/`readonly` is derived from the signed-in role by
 `useRepartoViewMode`, never passed in) and a `dashboard` payload on the shared
 screen (the projector must not hold per-teacher data).
 
-Panels below view level — `GroupSubjectBulkEditor`, `MainSubjectMaterialization`,
+Panels below view level — `GroupSubjectBulkEditor`, `TeachingPlanCreation`,
+`MainSubjectMaterialization`,
 `SecondaryActivityEditor`, `PlanLockAndRequirementGeneration`,
 `AllocationChangeReconciliation`, `MeetingControlWorkspace`,
 `TeacherLanWorkspace`, `SharedScreenWorkspace` — take `processId` plus an optional
@@ -401,6 +402,13 @@ not an error to surface as a failure.
 
 `/planning` turns that configuration into a locked plan:
 
+0. **Plan creation** — a process owns at most one teaching plan and the row is
+   not created with the process, so `teachingPlans.get` (and every other Stage 2
+   read) answers **404** until an operator creates it. `TeachingPlanCreation`
+   shows that 404 as an empty state, never as a failed request, and offers
+   `useCreateRepartoTeachingPlan` at the `admin` write floor; the panel
+   disappears once the plan exists, and a 409 from a second attempt is shown in
+   the service's own words.
 1. **Allocation and history** — the current revision and every superseded one.
 2. **Two balances, always visible** — group hours (target / planned /
    difference) and teacher load (target / planned / difference). They are two

@@ -196,13 +196,13 @@ describe("out-of-sync main activities", () => {
         activityId,
         groupSubjectId: cellId,
         subject: "Mathematics",
-        classroom: "1A"
+        teachingGroup: "1A"
       },
       {
         activityId: "unresolvable",
         groupSubjectId: orphanCellId,
         subject: dict.requirements.unknownSubject,
-        classroom: dict.planning.sync.unknownClassroom
+        teachingGroup: dict.planning.sync.unknownTeachingGroup
       }
     ]);
     // An unresolved row still appears, and prints no UUID.

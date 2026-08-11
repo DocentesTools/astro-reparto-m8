@@ -1176,7 +1176,7 @@ export function useRepartoAllocationRevisions(processId?: string) {
  * The Stage 1 counts the setup checklist tests (`S2-07`).
  *
  * The dashboard payload reports on a plan, not on the reference data behind it,
- * so a surface that wants honest *subjects / classrooms / matrix / allocation*
+ * so a surface that wants honest *subjects / teaching groups / matrix / allocation*
  * steps has to read them. Five list reads, all of them the same reads the Stage
  * 1 routes make — the shared query cache answers most of them from a route the
  * operator has already visited.
@@ -1190,11 +1190,11 @@ export function useRepartoSetupObservations(processId?: string) {
   const allocationQuery = useRepartoAllocationRevisions(processId);
   const participantsQuery = useRepartoProcessTeachers(processId);
   const subjectsQuery = useRepartoSubjects(processId);
-  const classroomsQuery = useRepartoTeachingGroups(processId);
+  const teachingGroupsQuery = useRepartoTeachingGroups(processId);
   const groupSubjectsQuery = useRepartoGroupSubjects(processId);
   return {
     allocationRevisionCount: allocationQuery.data?.count ?? null,
-    classroomCount: classroomsQuery.data?.count ?? null,
+    teachingGroupCount: teachingGroupsQuery.data?.count ?? null,
     groupSubjectCount: groupSubjectsQuery.data?.count ?? null,
     participantCount: participantsQuery.data?.count ?? null,
     processId: resolvedProcessId,

@@ -320,7 +320,7 @@ describe("default UI query states", () => {
     const {
       RepartoAssignmentsView,
       RepartoAuditView,
-      RepartoClassroomsView,
+      RepartoTeachingGroupsView,
       RepartoDashboardView,
       RepartoExportsView,
       RepartoHourRequirementsView,
@@ -349,7 +349,7 @@ describe("default UI query states", () => {
 
     for (const html of [
       renderToStaticMarkup(<RepartoSubjectsView processId={processId} />),
-      renderToStaticMarkup(<RepartoClassroomsView processId={processId} />),
+      renderToStaticMarkup(<RepartoTeachingGroupsView processId={processId} />),
       renderToStaticMarkup(<RepartoHourRequirementsView processId={processId} />),
       renderToStaticMarkup(<RepartoProcessParticipantsView processId={processId} />),
       renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />),

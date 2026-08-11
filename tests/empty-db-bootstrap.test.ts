@@ -250,7 +250,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       "entity.teacherRoster",
       "entity.assignmentProcess",
       "entity.subject",
-      "entity.classroom",
+      "entity.teachingGroup",
       "entity.hourRequirement",
       "entity.processParticipant",
       "entity.assignment",
@@ -273,7 +273,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       { en: "Teacher roster", fr: "Liste du personnel enseignant", es: "Listado del profesorado" },
       { en: "Assignment process", fr: "Processus d'affectation", es: "Proceso de reparto" },
       { en: "Subject", fr: "Matière", es: "Materia" },
-      { en: "Classroom", fr: "Classe", es: "Grupo" },
+      { en: "Teaching group", fr: "Classe", es: "Grupo" },
       { en: "Requirement slot", fr: "Créneau de besoin", es: "Puesto horario" },
       { en: "Process participant", fr: "Participant au processus", es: "Participantes en el proceso" },
       { en: "Assignment", fr: "Affectation", es: "Reparto" },
@@ -337,7 +337,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       "flow.bootstrap.step.allocation",
       "flow.bootstrap.step.participants",
       "flow.bootstrap.step.subjects",
-      "flow.bootstrap.step.classrooms",
+      "flow.bootstrap.step.teachingGroups",
       "flow.bootstrap.step.groupSubjects",
       "flow.bootstrap.step.configurationReview",
       "flow.bootstrap.step.teachingPlan",
@@ -360,7 +360,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
 
   it("forbids en/fr/es drift in singular vs plural roots", () => {
     const table = section(freeze, "Pluralization roots");
-    for (const word of ["School", "Department", "Subject", "Classroom", "Assignment", "Version"]) {
+    for (const word of ["School", "Department", "Subject", "Teaching group", "Assignment", "Version"]) {
       expect(table).toMatch(new RegExp(`${word}\\s*\\|\\s*${word}s`));
     }
   });

@@ -4,19 +4,19 @@ import { useDeleteRepartoTeachingGroup } from "../../../hooks.js";
 import { repartoToast } from "../../../ui/toast-notification.js";
 import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 
-export type ClassroomBulkDeleteProps = {
+export type TeachingGroupBulkDeleteProps = {
   dict: Dict;
   groups: TeachingGroupPublic[];
   processId: string;
   onDone: () => void;
 };
 
-export function ClassroomBulkDelete({
+export function TeachingGroupBulkDelete({
   dict,
   groups,
   processId,
   onDone
-}: ClassroomBulkDeleteProps) {
+}: TeachingGroupBulkDeleteProps) {
   const deleteMutation = useDeleteRepartoTeachingGroup();
   const [mapped, setError, clear] = useMappedError();
   const count = groups.length;
@@ -28,12 +28,12 @@ export function ClassroomBulkDelete({
         processId,
         groupId: group.id
       })));
-      repartoToast.success(formatRepartoMessage(dict.classroomSelection.deleted, { count }));
+      repartoToast.success(formatRepartoMessage(dict.teachingGroupSelection.deleted, { count }));
       onDone();
     } catch (error) {
       setError(error);
       repartoToast.error(
-        dict.classroomSelection.deleteError,
+        dict.teachingGroupSelection.deleteError,
         error instanceof Error ? error.message : undefined
       );
     }
@@ -41,14 +41,14 @@ export function ClassroomBulkDelete({
 
   return (
     <EntityDeleteDialog
-      body={formatRepartoMessage(dict.classroomSelection.deleteBody, { count })}
+      body={formatRepartoMessage(dict.teachingGroupSelection.deleteBody, { count })}
       cancelLabel={dict.confirm.cancel}
       isPending={deleteMutation.isPending}
       mapped={mapped}
       onClose={onDone}
       onConfirm={() => { void handleConfirm(); }}
       proceedLabel={dict.confirm.delete.proceed}
-      title={dict.classroomSelection.deleteTitle}
+      title={dict.teachingGroupSelection.deleteTitle}
     />
   );
 }

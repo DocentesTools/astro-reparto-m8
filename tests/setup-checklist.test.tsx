@@ -18,7 +18,7 @@ import type { ProcessSummary } from "../src/runtime/schemas.js";
  *
  * The two defects these cases exist to catch are both *label versus condition*:
  * the dashboard tested "a teaching plan exists" under **Add subjects** and "a
- * plan balance exists" under **Add classrooms**, and it tested the participant
+ * plan balance exists" under **Add teaching groups**, and it tested the participant
  * count under two different labels. Neither is visible to a test that only
  * counts steps, so the cases below assert the condition each key answers to.
  */
@@ -187,14 +187,14 @@ describe("setup checklist — the one derivation (S2-07)", () => {
     expect(stepOf(withProcess, "subjects").blockedReason).toBe("not-observed");
   });
 
-  it("does not test the teaching plan under the subjects or classrooms label", () => {
+  it("does not test the teaching plan under the subjects or teaching groups label", () => {
     // The exact shape of the defect: a process with a plan *and* a balance, and
-    // no subject or classroom read at all.
+    // no subject or teaching group read at all.
     const checklist = buildSetupChecklist({ summary: summaryFixture() });
     expect(stepOf(checklist, "teachingPlan").status).toBe("done");
     expect(stepOf(checklist, "planBalance").status).toBe("done");
     expect(stepOf(checklist, "subjects").status).toBe("unknown");
-    expect(stepOf(checklist, "classrooms").status).toBe("unknown");
+    expect(stepOf(checklist, "teachingGroups").status).toBe("unknown");
   });
 
   it("takes a selected process as proof of its school, year and department", () => {
@@ -233,7 +233,7 @@ describe("setup checklist — the one derivation (S2-07)", () => {
 
   it("counts the four Stage 1 resources from their own reads", () => {
     const checklist = buildSetupChecklist({
-      classroomCount: 12,
+      teachingGroupCount: 12,
       groupSubjectCount: 0,
       participantCount: 7,
       processId,
@@ -241,14 +241,14 @@ describe("setup checklist — the one derivation (S2-07)", () => {
     });
     expect(stepOf(checklist, "participants").status).toBe("done");
     expect(stepOf(checklist, "subjects").status).toBe("done");
-    expect(stepOf(checklist, "classrooms").status).toBe("done");
+    expect(stepOf(checklist, "teachingGroups").status).toBe("done");
     expect(stepOf(checklist, "groupSubjects").status).toBe("pending");
   });
 
   it("closes the configuration review only when every step above it is done", () => {
     const incomplete = buildSetupChecklist({
       allocationRevisionCount: 1,
-      classroomCount: 1,
+      teachingGroupCount: 1,
       groupSubjectCount: 0,
       participantCount: 1,
       processId,
@@ -258,7 +258,7 @@ describe("setup checklist — the one derivation (S2-07)", () => {
 
     const complete = buildSetupChecklist({
       allocationRevisionCount: 1,
-      classroomCount: 1,
+      teachingGroupCount: 1,
       groupSubjectCount: 4,
       participantCount: 1,
       processId,
@@ -346,15 +346,15 @@ describe("setup checklist — the dashboard surface", () => {
     expect(html).not.toContain('data-reparto-checklist-step="teacherRoster"');
   });
 
-  it("tests subjects against subjects, and classrooms against classrooms", () => {
+  it("tests subjects against subjects, and teaching groups against teaching groups", () => {
     // The exact defect: a dashboard whose teaching plan exists and whose plan
-    // balance exists, with **no** subject and **no** classroom. The old
+    // balance exists, with **no** subject and **no** teaching group. The old
     // conditions read the plan and the balance and turned both rows green.
     const html = renderToStaticMarkup(
       <DepartmentHeadWorkspace
         dashboard={dashboardFixture()}
         locale="en"
-        setup={{ classroomCount: 0, subjectCount: 0 }}
+        setup={{ teachingGroupCount: 0, subjectCount: 0 }}
         summary={summaryFixture()}
       />
     );
@@ -362,7 +362,7 @@ describe("setup checklist — the dashboard surface", () => {
       /data-reparto-checklist-state="pending"[^>]*data-reparto-checklist-step="subjects"/
     );
     expect(html).toMatch(
-      /data-reparto-checklist-state="pending"[^>]*data-reparto-checklist-step="classrooms"/
+      /data-reparto-checklist-state="pending"[^>]*data-reparto-checklist-step="teachingGroups"/
     );
     expect(html).toContain(en.flow.bootstrap.step.subjects);
 
@@ -371,7 +371,7 @@ describe("setup checklist — the dashboard surface", () => {
       <DepartmentHeadWorkspace
         dashboard={dashboardFixture()}
         locale="en"
-        setup={{ classroomCount: 0, subjectCount: 5 }}
+        setup={{ teachingGroupCount: 0, subjectCount: 5 }}
         summary={summaryFixture()}
       />
     );
@@ -379,7 +379,7 @@ describe("setup checklist — the dashboard surface", () => {
       /data-reparto-checklist-state="done"[^>]*data-reparto-checklist-step="subjects"/
     );
     expect(stocked).toMatch(
-      /data-reparto-checklist-state="pending"[^>]*data-reparto-checklist-step="classrooms"/
+      /data-reparto-checklist-state="pending"[^>]*data-reparto-checklist-step="teachingGroups"/
     );
   });
 

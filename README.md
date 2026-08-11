@@ -64,7 +64,7 @@ stage-3 work is refused against a plan that has not completed stage 2.
 
 | Stage | Routes |
 | --- | --- |
-| Configuration | `/reparto`, `/reparto/processes`, `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{allocation,participants,subjects,classrooms,group-subjects,settings}` |
+| Configuration | `/reparto`, `/reparto/processes`, `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{allocation,participants,subjects,teaching-groups,group-subjects,settings}` |
 | Planning | `/reparto/processes/[processId]/{planning,requirements}` |
 | Assignment | `/reparto/processes/[processId]/{assignments,my-view,shared,versions,exports,audit}`, `/reparto/meeting/[processId]` |
 
@@ -79,7 +79,7 @@ a caller-supplied prop. The guard states what to show; the service remains the
 authorization boundary. The map is exported from
 `@mano8/astro-reparto-m8/route-access`.
 
-## Classroom stages and bulk classrooms
+## Classroom stages and bulk teaching groups
 
 The plugin exposes global classroom-stage schemas, API helpers, React Query
 hooks, and the `/reparto/setup/classroom-stages` starter route. Stage reads are
@@ -87,7 +87,7 @@ available to authenticated users; mutation controls and the management route
 use the auth adapter's existing `admin`/`superadmin` capability while the
 backend remains authoritative.
 
-Classroom forms submit `classroom_stage_id`, constrain grade to the selected
+Teaching-group forms submit `classroom_stage_id`, constrain grade to the selected
 stage, and generate `{grade}° {stage.label} {group_code}` until the label is
 manually changed. The bulk dialog previews an inclusive A-Z range and submits
 one atomic request to the process-scoped groups endpoint. Mutation feedback uses
@@ -165,7 +165,7 @@ bulk editor below them.
 
 `GroupSubjectBulkEditor` is exported from
 `@mano8/astro-reparto-m8/default-ui`. It loads the process subjects and
-classrooms through the package hooks, exposes the three backend modes and the
+teaching groups through the package hooks, exposes the three backend modes and the
 stage/grade filters, and renders the complete create/update/unchanged/conflict
 preview before enabling apply. Apply is a separate confirmation step. A 409
 clears the preview and requires a fresh preview; the component never retries a

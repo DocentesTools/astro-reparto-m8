@@ -17,7 +17,7 @@ const routeCases = [
   ["departments.astro", "RepartoDepartmentsView", "Reparto departments"],
   ["teacher-roster.astro", "RepartoTeacherRosterView", "Reparto teacher roster"],
   ["subjects.astro", "RepartoSubjectsView", "Reparto subjects"],
-  ["classrooms.astro", "RepartoClassroomsView", "Reparto classrooms"],
+  ["teaching-groups.astro", "RepartoTeachingGroupsView", "Reparto teaching groups"],
   [
     "group-subjects.astro",
     "RepartoGroupSubjectsView",
@@ -77,7 +77,7 @@ describe("starter route shells", () => {
     const directShells = [
       ["default-ui", "classroom-stages.tsx"],
       ["default-ui", "process-crud", "subjects", "index.tsx"],
-      ["default-ui", "process-crud", "classrooms", "index.tsx"],
+      ["default-ui", "process-crud", "teaching-groups", "index.tsx"],
       ["default-ui", "process-crud", "group-subjects", "index.tsx"],
       ["default-ui", "process-crud", "process-settings", "index.tsx"],
       ["default-ui", "process-crud", "allocation", "index.tsx"],

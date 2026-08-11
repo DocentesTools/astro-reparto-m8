@@ -50,7 +50,7 @@ export const REPARTO_ROUTE_ACCESS: Record<RepartoRouteName, RepartoRouteAccess> 
   departments: { view: "reader", act: "admin" },
   teacherRoster: { view: "reader", act: "writer" },
   subjects: { view: "reader", act: "admin" },
-  classrooms: { view: "reader", act: "admin" },
+  teachingGroups: { view: "reader", act: "admin" },
   classroomStages: { view: "reader", act: "admin" },
   groupSubjects: { view: "reader", act: "admin" },
   processSettings: { view: "reader", act: "admin" },

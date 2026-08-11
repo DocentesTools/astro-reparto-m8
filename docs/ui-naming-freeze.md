@@ -23,7 +23,7 @@ registry skins (Phase 1–3) must mirror.
 | **UI labels are title-cased English, then translated** | `Teacher roster`, `Roster de profesorado` (es), `Liste du personnel enseignant` (fr). Title Case en; lower-case, sentence-case or article-led fr/es per locale convention (see §5). | Calm meeting-screen reading. |
 | **i18n keys are flat-with-dots** | `entity.teacherRoster.singular`, `action.archive`, `error.required`. | Friction-free for hand-written dictionaries; no namespace conflict. |
 | **Two "Teacher" concepts must never share a label** | Global = **Teacher roster**; process-scoped = **Process participants**. | Plan §3, frozen. |
-| **"Classrooms" is the user-facing word for `teachingGroups`** | `groups` is internal slang; never appears in a UI string. | Plan §3. |
+| **"Teaching group" is the user-facing word for `teachingGroups`** | Amended **2026-08-11** (audit `S2-11`): the en label was *Classroom*, which read as one family with the separate `ClassroomStage` entity (*Classroom stages*) sitting next to it in the sidebar. The en label now matches the runtime name and the backend path; `fr` (*Classe*) and `es` (*Grupo*) were already distinct from *Niveaux scolaires* / *Etapas educativas* and are unchanged. Bare `groups` remains internal slang and never appears in a UI string. | Plan §3; §12. |
 | **Academic year has an Archive action, not a Delete action** | The button is **Archive**; the verb is `archive`; the route is `POST /academic-years/{id}/archive`. | Plan §2 + backend has no `DELETE /academic-years/{id}`. |
 | **Schools and Departments have only Edit (no Delete)** | The button is **Edit**; no `Delete` button is ever rendered. | Plan §2 + backend has no delete route for either. |
 | **Audit events are read-only** | Tables show rows, no row actions, no Create button. | Plan §2. |
@@ -46,7 +46,7 @@ registry skins (Phase 1–3) must mirror.
 | Teacher roster | Liste du personnel enseignant | Listado del profesorado | `teacherProfiles` | `/teacher-profiles` | `entity.teacherRoster` |
 | Assignment process | Processus d'affectation | Proceso de reparto | `assignmentProcesses` | `/assignment-processes` | `entity.assignmentProcess` |
 | Subject | Matière | Materia / Asignatura | `subjects` | `/…/subjects` | `entity.subject` |
-| Classroom | Classe | Grupo / Aula | `teachingGroups` | `/…/groups` | `entity.classroom` |
+| Teaching group | Classe | Grupo | `teachingGroups` | `/…/groups` | `entity.teachingGroup` |
 | Requirement slot | Créneau de besoin | Puesto horario | `hourRequirements` | `/…/requirements` | `entity.hourRequirement` |
 | Process participant | Participant au processus | Participante en el proceso | `processTeachers` | `/…/teachers` | `entity.processParticipant` |
 | Assignment | Affectation | Reparto / Asignación | `assignments` | `/…/assignments` | `entity.assignment` |
@@ -73,7 +73,7 @@ registry skins (Phase 1–3) must mirror.
 | Teacher roster entry | Teacher roster entries | Enseignant | Enseignants | Docente | Docentes |
 | Process | Processes | Processus | Processus | Proceso | Procesos |
 | Subject | Subjects | Matière | Matières | Materia | Materias |
-| Classroom | Classrooms | Classe | Classes | Grupo | Grupos |
+| Teaching group | Teaching groups | Classe | Classes | Grupo | Grupos |
 | Requirement slot | Requirement slots | Créneau de besoin | Créneaux de besoin | Puesto horario | Puestos horarios |
 | Process participant | Process participants | Participant | Participants | Participante | Participantes |
 | Assignment | Assignments | Affectation | Affectations | Reparto | Repartos |
@@ -176,7 +176,12 @@ ids, etc.) stay internal — no UI label.
 | `allows_zero_groups` | Allows zero groups | Aucun groupe autorisé | Permite cero grupos | no | bool |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
-### 3.7 Classroom (teaching group)
+### 3.7 Teaching group
+
+> Renamed from **Classroom** on **2026-08-11** by audit `S2-11` — see §12. The
+> entity, its fields and its backend path are unchanged; only the en label and
+> the `teachingGroup*` UI names moved. `ClassroomStage` (§7 `nav.item.classroomStages`)
+> is a different entity and keeps its name.
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -293,7 +298,7 @@ renders only its role-safe readiness status at
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `teaching_group_id` | Classroom | Classe | Grupo | yes (form) | FK select |
+| `teaching_group_id` | Teaching group | Classe | Grupo | yes (form) | FK select |
 | `subject_id` | Subject | Matière | Materia | yes (form) | FK select |
 | `group_weekly_hours` | Group hours | Heures groupe | Horas de grupo | no | empty **inherits the subject default**; `0` is a real zero |
 | `teacher_weekly_hours_per_position` | Teacher hours per position | Heures enseignant par poste | Horas por puesto | no | empty inherits the subject default |
@@ -327,7 +332,7 @@ alone, which reads as a list of subjects:
 | Empty matrix | `data-reparto-state="empty-matrix"` | states that Stage 2 has no candidate yet |
 | Read-only refusal | `data-reparto-state="read-only"` | stated below the write floor instead of a disabled control |
 | Cell form | `data-reparto-form="group-subject-cell"` | `create` / `edit` mode |
-| Cell classroom / subject | `data-reparto-field="group-subject-cell-classroom"` / `-subject"` | create only — the identity is immutable |
+| Cell teaching group / subject | `data-reparto-field="group-subject-cell-teaching-group"` / `-subject"` | create only — the identity is immutable |
 | Cell identity (edit) | `data-reparto-slot="group-subject-identity"` | shown, never offered |
 | Cell hours | `data-reparto-field="group-subject-cell-group-hours"` / `-teacher-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
 | Cell positions | `data-reparto-field="group-subject-cell-teacher-count"` | positive integer; blank omits the field |
@@ -794,7 +799,7 @@ The table:
 | `nav.item.teacherRoster` | Teacher roster | Liste du personnel enseignant | Listado del profesorado |
 | `nav.item.dashboard` | Dashboard | Tableau de bord | Panel |
 | `nav.item.processes` | Processes | Processus | Procesos |
-| `nav.item.classrooms` | Classrooms | Classes | Grupos |
+| `nav.item.teachingGroups` | Teaching groups | Classes | Grupos |
 | `nav.item.subjects` | Subjects | Matières | Materias |
 | `nav.item.requirements` | Requirements | Besoins horaires | Horas necesarias |
 | `nav.item.processParticipants` | Process participants | Participants au processus | Participantes en el proceso |
@@ -843,7 +848,7 @@ other is the defect this section was rewritten to prevent.
 | `flow.bootstrap.step.allocation` | Record the leadership hour allocation | an allocation revision exists, or the plan balance carries allocated group hours (§8.2 step 2) |
 | `flow.bootstrap.step.participants` | Add process participants and their target hours | `processTeachers` count > 0 (§8.2 step 3) |
 | `flow.bootstrap.step.subjects` | Add the subjects taught | `subjects` count > 0 (§8.2 step 4) |
-| `flow.bootstrap.step.classrooms` | Add the classrooms | `teachingGroups` count > 0 (§8.2 step 5) |
+| `flow.bootstrap.step.teachingGroups` | Add the teaching groups | `teachingGroups` count > 0 (§8.2 step 5) |
 | `flow.bootstrap.step.groupSubjects` | Fill the group-subject matrix | `groupSubjects` count > 0 (§8.2 step 6) |
 | `flow.bootstrap.step.configurationReview` | Review the configuration and the selection settings | every configuration step above is done (§8.2 step 8) |
 | `flow.bootstrap.step.teachingPlan` | Create the teaching plan | `plan_status` is not null (§8.2 step 9 — continuing to planning *is* creating the plan) |
@@ -997,6 +1002,7 @@ Amendment rules:
 | `data-reparto-invariant="readiness"` as the third invariant's key, and `dashboard.invariant.readiness` as its only label | dashboard / meeting control / shared screen | the third invariant is `data-reparto-invariant="feasibility"` (plan §20.19 8/8.7 — group balance, teacher-load balance and **feasibility**), carrying `data-reparto-invariant-source` to say which vocabulary its state is in: `plan` for the department-head-only `TeachingPlanPublic.feasibility_status` (`dashboard.feasibility.*`, label `dashboard.invariant.feasibility`) and `readiness` for the coarse §20.25 projection every tier receives (`dashboard.readiness.*`, label `dashboard.invariant.readiness`, unchanged). `buildProcessInvariants` (`runtime/ui/invariants.ts`) owns the three-slot shape | 2026-08-03 |
 | `flow.bootstrap.step.teacherRoster` ("Add teachers") | §8 | nothing — it tested `participants.length > 0`, the identical condition `flow.bootstrap.step.participants` tested one row below it, so the checklist counted one act twice and told an operator who had added teachers to add teachers (audit `S2-07`). The teacher roster keeps its own sidebar entry (`nav.item.teacherRoster`); participants cannot exist without it | 2026-08-11 |
 | The secondary-activity row action `delete` (`data-reparto-row-action="delete"`, `action.delete` as its label) and the `planning.secondary.deleted` / `deleteError` / `deleteTitle` / `deleteBody` copy | §3.14 | guarded §20.12 retirement: `data-reparto-row-action="retire"` labelled `action.retire`, `planning.secondary.retired` / `retireError` / `retireTitle` / `retireBody` plus the new `retireConsequence` shown on `data-reparto-slot="secondary-activity-retire-consequence"`. The wrapper is `POST …/{activity_id}/retire`; the served backend supports `GET, PATCH` only on the plain path and answered **405** to the old control (audit `S2-08`) | 2026-08-11 |
+| The en label **Classroom** / **Classrooms** for `teachingGroups`, the dictionary roots `entity.classroom`, `field.classroom`, `table.searchClassrooms`, `nav.item.classrooms`, `flow.bootstrap.step.classrooms`, `classroomBulk.*`, `classroomSelection.*`, `groupSubjectMatrix.selectClassroom`, `groupSubjectBulk.column.classroom`, `planning.materialization.column.classroom`, `planning.sync.unknownClassroom` and the `{classroom}` message placeholder; the route key `classrooms` and its path `/reparto/processes/[processId]/classrooms`; the entry point `routes/classrooms.astro`; the exported view `RepartoClassroomsView`; the error-mapping field key `classroom`; and the DOM slots `data-classroom-id` / `data-classroom-stage` / `data-classroom-grade`, `data-reparto-route|actions|panel="classrooms"`, `data-reparto-table="classrooms"`, `data-reparto-row="classroom"`, `data-reparto-form="classroom"` / `"classroom-bulk"`, `data-reparto-dialog="classroom-create"` / `"classroom-edit"` / `"classroom-bulk"`, the `classroom-add-*` / `classroom-edit-*` field ids and `data-reparto-field="group-subject-cell-classroom"` | §1 / §2 / §2.1 / §3.7 / §3.13 / §7 / §8 | the same concept under its runtime and backend name: en **Teaching group** / **Teaching groups** (`fr` *Classe*, `es` *Grupo* unchanged), roots `entity.teachingGroup`, `field.teachingGroup`, `table.searchTeachingGroups`, `nav.item.teachingGroups`, `flow.bootstrap.step.teachingGroups`, `teachingGroupBulk.*`, `teachingGroupSelection.*`, `groupSubjectMatrix.selectTeachingGroup`, `groupSubjectBulk.column.teachingGroup`, `planning.materialization.column.teachingGroup`, `planning.sync.unknownTeachingGroup`, `{teachingGroup}`; route key `teachingGroups` at `/reparto/processes/[processId]/teaching-groups`; `routes/teaching-groups.astro`; `RepartoTeachingGroupsView`; field key `teachingGroup`; and the same DOM slots rooted on `teaching-group` / `teaching-groups`. Nothing about the entity, its fields or `/…/groups` changed, and `ClassroomStage` — a genuinely separate entity — keeps *Classroom stages* and every `classroomStages` name. The route and the subpath are a consumer break, carried under §21.6 | 2026-08-11 |
 
 The versions bullet closed the last surface that still parsed a float hour
 delta: every hour figure the package reads is now a canonical decimal string.

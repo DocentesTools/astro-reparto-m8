@@ -28,7 +28,7 @@ describe("routes", () => {
       departments: "/reparto/setup/departments",
       teacherRoster: "/reparto/setup/teacher-roster",
       subjects: "/reparto/processes/[processId]/subjects",
-      classrooms: "/reparto/processes/[processId]/classrooms",
+      teachingGroups: "/reparto/processes/[processId]/teaching-groups",
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
       processSettings: "/reparto/processes/[processId]/settings",
@@ -52,7 +52,7 @@ describe("routes", () => {
       departments: "/reparto/setup/departments",
       teacherRoster: "/reparto/setup/teacher-roster",
       subjects: "/reparto/processes/[processId]/subjects",
-      classrooms: "/reparto/processes/[processId]/classrooms",
+      teachingGroups: "/reparto/processes/[processId]/teaching-groups",
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
       processSettings: "/reparto/processes/[processId]/settings",
@@ -467,7 +467,7 @@ describe("integration", () => {
       "nav.item.allocation",
       "nav.item.processParticipants",
       "nav.item.subjects",
-      "nav.item.classrooms",
+      "nav.item.teachingGroups",
       "nav.item.groupSubjects",
       "nav.item.processSettings"
     ]);
@@ -507,10 +507,10 @@ describe("integration", () => {
     expect(planningExportsEntry?.href).toBe(
       "/reparto/processes/current/exports"
     );
-    const classroomsEntry = resolved.configuration.entries.find(
-      (entry) => entry.labelKey === "nav.item.classrooms"
+    const teachingGroupsEntry = resolved.configuration.entries.find(
+      (entry) => entry.labelKey === "nav.item.teachingGroups"
     );
-    expect(classroomsEntry?.href).toBe("/reparto/processes/current/classrooms");
+    expect(teachingGroupsEntry?.href).toBe("/reparto/processes/current/teaching-groups");
     const groupSubjectsEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.groupSubjects"
     );

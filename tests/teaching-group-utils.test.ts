@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { generateClassroomLabel, generateGroupCodeRange, gradeInStageRange } from "../src/runtime/ui/classrooms.js";
+import { generateTeachingGroupLabel, generateGroupCodeRange, gradeInStageRange } from "../src/runtime/ui/teachingGroups.js";
 
-describe("classroom utilities", () => {
+describe("teaching group utilities", () => {
   it("generates the canonical normalized label", () => {
-    expect(generateClassroomLabel({ grade: 1, stageLabel: " ESO ", groupCode: " a " })).toBe("1° ESO A");
+    expect(generateTeachingGroupLabel({ grade: 1, stageLabel: " ESO ", groupCode: " a " })).toBe("1° ESO A");
   });
   it("generates inclusive ranges and rejects invalid ranges", () => {
     expect(generateGroupCodeRange("a", "c")).toEqual(["A", "B", "C"]);

@@ -64,7 +64,7 @@ export type ActivitySyncRow = {
   activityId: string;
   groupSubjectId: string;
   subject: string;
-  classroom: string;
+  teachingGroup: string;
 };
 
 /**
@@ -104,15 +104,15 @@ export function buildActivitySyncRows({
         subject:
           subjectById.get(activity.subjectId) ??
           dict.requirements.unknownSubject,
-        classroom:
+        teachingGroup:
           (cell ? groupById.get(cell.teaching_group_id) : undefined) ??
-          dict.planning.sync.unknownClassroom
+          dict.planning.sync.unknownTeachingGroup
       };
     })
     .sort(
       (left, right) =>
         left.subject.localeCompare(right.subject) ||
-        left.classroom.localeCompare(right.classroom)
+        left.teachingGroup.localeCompare(right.teachingGroup)
     );
 }
 
@@ -227,7 +227,7 @@ export function ActivitySyncView({
                 <p className="font-medium">
                   {formatRepartoMessage(labels.activityLabel, {
                     subject: row.subject,
-                    classroom: row.classroom
+                    teachingGroup: row.teachingGroup
                   })}
                 </p>
                 <span
@@ -257,7 +257,7 @@ export function ActivitySyncView({
           <h3 className="font-semibold" id="activity-sync-preview-title">
             {formatRepartoMessage(labels.previewTitle, {
               subject: selectedRow.subject,
-              classroom: selectedRow.classroom
+              teachingGroup: selectedRow.teachingGroup
             })}
           </h3>
           <ActivitySyncDifferences dict={dict} state={state} />

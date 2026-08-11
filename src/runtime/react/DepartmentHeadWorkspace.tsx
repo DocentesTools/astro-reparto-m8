@@ -469,7 +469,7 @@ export function DepartmentHeadWorkspace({
    * Stage 1 counts the dashboard payload does not carry (`S2-07`).
    *
    * The dashboard reports on a plan, not on the reference data behind it, so the
-   * subject, classroom, matrix and allocation conditions can only come from the
+   * subject, teaching group, matrix and allocation conditions can only come from the
    * caller. A caller that has not read them passes nothing and those steps say
    * *not checked here* rather than claiming they are undone.
    */

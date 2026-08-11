@@ -87,7 +87,7 @@ mutations that route issues.
 | `teacherRoster` | `/reparto/setup/teacher-roster` | `RepartoTeacherRosterView` | reader | **writer** |
 | `participants` | `/reparto/processes/[processId]/participants` | `RepartoProcessParticipantsView` | reader | admin |
 | `subjects` | `/reparto/processes/[processId]/subjects` | `RepartoSubjectsView` | reader | admin |
-| `classrooms` | `/reparto/processes/[processId]/classrooms` | `RepartoClassroomsView` | reader | admin |
+| `teachingGroups` | `/reparto/processes/[processId]/teaching-groups` | `RepartoTeachingGroupsView` | reader | admin |
 | `groupSubjects` | `/reparto/processes/[processId]/group-subjects` | `RepartoGroupSubjectsView` | reader | admin |
 | `processSettings` | `/reparto/processes/[processId]/settings` | `RepartoProcessSettingsView` | reader | admin |
 | `allocation` | `/reparto/processes/[processId]/allocation` | `RepartoAllocationView` | reader | admin |

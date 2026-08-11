@@ -228,7 +228,7 @@ describe("mapRepartoError", () => {
 
   it("maps the Phase 3 process-scoped field aliases to their RepartoFieldKey", () => {
     const cases: Array<[string, ReturnType<typeof import("../src/runtime/errorMapping.js").mapRepartoError>["fieldErrors"][number]["field"]]> = [
-      ["teaching_group_id", "classroom"],
+      ["teaching_group_id", "teachingGroup"],
       ["subject_id", "subject"],
       ["teacher_profile_id", "teacher"],
       ["hour_requirement_id", "hourRequirement"],

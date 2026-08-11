@@ -8,7 +8,7 @@ import type { ProcessSummary } from "../schemas.js";
  * selected, and the department-head dashboard after — and they used to derive it
  * twice, from different data, under labels that named neither derivation. The
  * dashboard tested *"a teaching plan exists"* under the label **Add subjects**
- * and *"a plan balance exists"* under **Add classrooms**, and tested
+ * and *"a plan balance exists"* under **Add teaching groups**, and tested
  * `participants.length > 0` twice under two labels; the picker hard-coded its
  * last five steps to "not done". An operator who had added subjects was told to
  * add subjects.
@@ -36,7 +36,7 @@ export type SetupChecklistStepKey =
   | "allocation"
   | "participants"
   | "subjects"
-  | "classrooms"
+  | "teachingGroups"
   | "groupSubjects"
   | "configurationReview"
   | "teachingPlan"
@@ -94,7 +94,7 @@ export type SetupChecklistObservations = {
   allocationRevisionCount?: number | null;
   participantCount?: number | null;
   subjectCount?: number | null;
-  classroomCount?: number | null;
+  teachingGroupCount?: number | null;
   groupSubjectCount?: number | null;
 };
 
@@ -107,7 +107,7 @@ const REVIEWED_STEPS: readonly SetupChecklistStepKey[] = [
   "allocation",
   "participants",
   "subjects",
-  "classrooms",
+  "teachingGroups",
   "groupSubjects"
 ];
 
@@ -147,7 +147,7 @@ export function buildSetupChecklist(
   const {
     allocationRevisionCount = null,
     academicYearCount = null,
-    classroomCount = null,
+    teachingGroupCount = null,
     departmentCount = null,
     groupSubjectCount = null,
     participantCount = null,
@@ -215,9 +215,9 @@ export function buildSetupChecklist(
       ...fromCount(subjectCount, processScoped)
     },
     {
-      key: "classrooms",
+      key: "teachingGroups",
       stage: "configuration",
-      ...fromCount(classroomCount, processScoped)
+      ...fromCount(teachingGroupCount, processScoped)
     },
     {
       key: "groupSubjects",

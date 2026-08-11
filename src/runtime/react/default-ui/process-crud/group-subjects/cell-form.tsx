@@ -38,7 +38,7 @@ export type GroupSubjectCellValues = {
 };
 
 export type GroupSubjectCellErrorKey =
-  | "classroom"
+  | "teachingGroup"
   | "subject"
   | "groupHours"
   | "teacherHours"
@@ -72,7 +72,7 @@ export function buildGroupSubjectCellRequest(
   const teacherCount = rawCount ? Number(rawCount) : null;
 
   if (requireIdentity && !values.teachingGroupId) {
-    errors.classroom = dict.error.required;
+    errors.teachingGroup = dict.error.required;
   }
   if (requireIdentity && !values.subjectId) errors.subject = dict.error.required;
   if (groupHours.state === "invalid") {
@@ -252,19 +252,19 @@ export function GroupSubjectCellForm({
           ) : (
             <>
               <SelectField
-                field="group-subject-cell-classroom"
-                fieldErrorKey="classroom"
-                label={dict.field.classroom}
+                field="group-subject-cell-teaching-group"
+                fieldErrorKey="teachingGroup"
+                label={dict.field.teachingGroup}
                 mapped={mapped}
                 onChange={(value) => update(setTeachingGroupId, value)}
                 options={teachingGroups.map((group) => ({
                   value: group.id,
                   label: group.label
                 }))}
-                placeholder={dict.groupSubjectMatrix.selectClassroom}
+                placeholder={dict.groupSubjectMatrix.selectTeachingGroup}
                 value={teachingGroupId}
               />
-              <LocalError message={localErrors.classroom} />
+              <LocalError message={localErrors.teachingGroup} />
               <SelectField
                 field="group-subject-cell-subject"
                 fieldErrorKey="subject"

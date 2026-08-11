@@ -12,9 +12,9 @@ import {
 } from "../shared.js";
 import { useUpdateRepartoTeachingGroup } from "../../../hooks.js";
 import type { ClassroomStagePublic, TeachingGroupPublic, TeachingGroupUpdate } from "../../../../schemas.js";
-import { generateClassroomLabel, gradeInStageRange } from "../../../../ui/classrooms.js";
+import { generateTeachingGroupLabel, gradeInStageRange } from "../../../../ui/teachingGroups.js";
 
-export type ClassroomEditProps = {
+export type TeachingGroupEditProps = {
   dict: Dict;
   processId: string;
   group: TeachingGroupPublic;
@@ -22,7 +22,7 @@ export type ClassroomEditProps = {
   onDone: () => void;
 };
 
-export function ClassroomEdit({ dict, processId, group, stages, onDone }: ClassroomEditProps) {
+export function TeachingGroupEdit({ dict, processId, group, stages, onDone }: TeachingGroupEditProps) {
   const updateMutation = useUpdateRepartoTeachingGroup();
   const [mapped, setError, clearError] = useMappedError();
   const [stageId, setStageId] = useState(group.classroom_stage_id);
@@ -30,13 +30,13 @@ export function ClassroomEdit({ dict, processId, group, stages, onDone }: Classr
   const [groupCode, setGroupCode] = useState(group.group_code);
   const [label, setLabel] = useState(group.label);
   const [notes, setNotes] = useState(group.notes ?? "");
-  const initialGenerated = generateClassroomLabel({ grade: group.grade, stageLabel: group.classroom_stage.label, groupCode: group.group_code });
+  const initialGenerated = generateTeachingGroupLabel({ grade: group.grade, stageLabel: group.classroom_stage.label, groupCode: group.group_code });
   const [manualLabel, setManualLabel] = useState(group.label !== initialGenerated);
 
   const gradeNum = Number.parseInt(grade, 10);
   const stage = stages.find((item) => item.id === stageId);
   const gradeValid = Boolean(stage && gradeInStageRange(gradeNum, stage));
-  const generated = stage && gradeValid && groupCode.trim() ? generateClassroomLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
+  const generated = stage && gradeValid && groupCode.trim() ? generateTeachingGroupLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
   const visibleLabel = manualLabel ? label : generated;
   const dirty =
     stageId !== group.classroom_stage_id ||
@@ -66,16 +66,16 @@ export function ClassroomEdit({ dict, processId, group, stages, onDone }: Classr
   return (
     <EntityDialogShell
       description={group.label}
-      dialogId="classroom-edit"
+      dialogId="teaching-group-edit"
       onClose={onDone}
-      title={`${dict.action.edit} ${dict.entity.classroom.singular.toLowerCase()}`}
+      title={`${dict.action.edit} ${dict.entity.teachingGroup.singular.toLowerCase()}`}
     >
-      <FormPanelShell formAttr="classroom" mode="edit" onSubmit={handleSubmit}>
+      <FormPanelShell formAttr="teaching-group" mode="edit" onSubmit={handleSubmit}>
         <FormGrid>
         <SelectField field="stage" label={dict.field.stage} onChange={setStageId} value={stageId} options={stages.map((item) => ({ label: `${item.stage} — ${item.label}`, value: item.id }))} mapped={mapped} fieldErrorKey="stage" />
         <TextField
           field="grade"
-          id="classroom-edit-grade"
+          id="teaching-group-edit-grade"
           label={dict.field.grade}
           onChange={setGrade}
           value={grade}
@@ -85,7 +85,7 @@ export function ClassroomEdit({ dict, processId, group, stages, onDone }: Classr
         />
         <TextField
           field="group-code"
-          id="classroom-edit-group-code"
+          id="teaching-group-edit-group-code"
           label={dict.field.groupCode}
           maxLength={10}
           onChange={setGroupCode}
@@ -95,7 +95,7 @@ export function ClassroomEdit({ dict, processId, group, stages, onDone }: Classr
         />
         <TextField
           field="label"
-          id="classroom-edit-label"
+          id="teaching-group-edit-label"
           label={dict.field.label}
           maxLength={100}
           onChange={(value) => { setLabel(value); setManualLabel(value.trim() !== ""); }}
@@ -105,7 +105,7 @@ export function ClassroomEdit({ dict, processId, group, stages, onDone }: Classr
         />
         <TextField
           field="notes"
-          id="classroom-edit-notes"
+          id="teaching-group-edit-notes"
           label={dict.field.notes}
           maxLength={2000}
           onChange={setNotes}

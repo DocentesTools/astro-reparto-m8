@@ -284,7 +284,7 @@ export function GroupSubjectBulkPreviewTable({
                   {dict.groupSubjectBulk.column.action}
                 </th>
                 <th className="px-3 py-2 text-left">
-                  {dict.groupSubjectBulk.column.classroom}
+                  {dict.groupSubjectBulk.column.teachingGroup}
                 </th>
                 <th className="px-3 py-2 text-left">
                   {dict.groupSubjectBulk.column.groupHours}

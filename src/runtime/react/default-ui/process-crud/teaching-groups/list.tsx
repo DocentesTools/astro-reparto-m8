@@ -5,7 +5,7 @@ import type { TeachingGroupPublic } from "../../../../schemas.js";
 import { DataTable, type DataTableColumn } from "../../data-table.js";
 import { repartoBulkDeleteButtonClass } from "../../../styles.js";
 
-export type ClassroomsListProps = {
+export type TeachingGroupsListProps = {
   dict: Dict;
   rows: TeachingGroupPublic[];
   error: unknown;
@@ -19,13 +19,13 @@ export type ClassroomsListProps = {
   selectedIds: ReadonlySet<string>;
 };
 
-export function ClassroomsList({
+export function TeachingGroupsList({
   dict, rows, error, isError, isLoading, hasActiveForm, onDeleteSelected, onSelectedIdsChange, onEdit, onDelete, selectedIds
-}: ClassroomsListProps) {
+}: TeachingGroupsListProps) {
   // Teaching-group create/update/delete is department-head-only (§21.3).
-  const canAct = useRepartoCanAct("classrooms");
+  const canAct = useRepartoCanAct("teachingGroups");
   if (isLoading || isError) {
-    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.classroom.plural} />;
+    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.teachingGroup.plural} />;
   }
   const columns: DataTableColumn<TeachingGroupPublic>[] = [
     { id: "stage", label: dict.field.stage, value: (group) => group.classroom_stage.stage },
@@ -58,13 +58,13 @@ export function ClassroomsList({
       onClick={onDeleteSelected}
       type="button"
     >
-      {formatRepartoMessage(dict.classroomSelection.deleteSelected, { count: selectedCount })}
+      {formatRepartoMessage(dict.teachingGroupSelection.deleteSelected, { count: selectedCount })}
     </button>
   ) : undefined;
 
   return (
     <>
-      <h2 className="sr-only">{dict.entity.classroom.plural}</h2>
+      <h2 className="sr-only">{dict.entity.teachingGroup.plural}</h2>
       <DataTable
         columns={columns}
         data={rows}
@@ -79,24 +79,24 @@ export function ClassroomsList({
           page: (current, total) => `${dict.table.page} ${current} / ${total}`,
           previousPage: dict.table.previousPage,
           rowsPerPage: dict.table.rowsPerPage,
-          search: dict.table.searchClassrooms
+          search: dict.table.searchTeachingGroups
         }}
         rowAttributes={(group) => ({
-          "data-classroom-id": group.id,
+          "data-teaching-group-id": group.id,
           "data-classroom-stage": group.classroom_stage.stage,
-          "data-classroom-grade": String(group.grade)
+          "data-teaching-group-grade": String(group.grade)
         })}
         rowKey={(group) => group.id}
-        rowName="classroom"
+        rowName="teaching-group"
         searchFields={[(group) => group.classroom_stage.stage, (group) => group.group_code, (group) => group.label]}
         selection={{
           actions: deleteSelectedAction,
           onSelectedKeysChange: onSelectedIdsChange,
           selectedKeys: selectedIds,
-          selectAllVisibleLabel: dict.classroomSelection.selectAllVisible,
-          selectRowLabel: (group) => formatRepartoMessage(dict.classroomSelection.selectRow, { name: group.label })
+          selectAllVisibleLabel: dict.teachingGroupSelection.selectAllVisible,
+          selectRowLabel: (group) => formatRepartoMessage(dict.teachingGroupSelection.selectRow, { name: group.label })
         }}
-        tableName="classrooms"
+        tableName="teaching-groups"
       />
       {isLoading ? (
         <section data-reparto-state="loading">{dict.table.loading}</section>

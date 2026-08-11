@@ -66,12 +66,12 @@ function RepartoGroupSubjectsContent({ locale, processId }: EntityViewProps) {
   const teachingGroups = groupsQuery.data?.data ?? [];
   const hasProcess = Boolean(resolveProcessId(processId));
   const hasActiveForm = adding || Boolean(editing);
-  // A cell names one classroom and one subject, so neither list may be empty:
+  // A cell names one teaching group and one subject, so neither list may be empty:
   // the refusal states which prerequisite is missing rather than offering a
   // select with nothing in it.
   const missingPrereq =
     teachingGroups.length === 0
-      ? dict.entity.classroom.plural
+      ? dict.entity.teachingGroup.plural
       : subjects.length === 0
         ? dict.entity.subject.plural
         : null;

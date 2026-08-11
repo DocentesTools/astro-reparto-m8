@@ -20,7 +20,7 @@ export type RepartoFieldKey =
   | "grade"
   | "groupCode"
   | "subject"
-  | "classroom"
+  | "teachingGroup"
   | "teacher"
   | "hourRequirement"
   | "processParticipant"
@@ -100,7 +100,7 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   grade: "grade",
   group_code: "groupCode",
   subject_id: "subject",
-  teaching_group_id: "classroom",
+  teaching_group_id: "teachingGroup",
   hour_requirement_id: "hourRequirement",
   process_teacher_id: "processParticipant",
   teacher_profile_id: "teacher",

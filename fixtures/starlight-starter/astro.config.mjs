@@ -22,7 +22,7 @@ export default defineConfig({
             { label: "Teacher roster", link: "/reparto/setup/teacher-roster" },
             { label: "Participants", link: "/reparto/processes/current/participants" },
             { label: "Subjects", link: "/reparto/processes/current/subjects" },
-            { label: "Classrooms", link: "/reparto/processes/current/classrooms" }
+            { label: "Teaching groups", link: "/reparto/processes/current/teaching-groups" }
           ]
         },
         {

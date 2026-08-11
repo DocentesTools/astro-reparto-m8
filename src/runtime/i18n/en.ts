@@ -9,7 +9,7 @@ export const en = {
     teacherRoster: { singular: "Teacher roster entry", plural: "Teacher roster entries", status: {} },
     assignmentProcess: { singular: "Assignment process", plural: "Assignment processes", status: { draft: "Draft", ready_for_meeting: "Ready for meeting", meeting_open: "Meeting open", assigning: "Assigning", department_proposal: "Department proposal", sent_to_school_leadership: "Sent to school leadership", returned_by_school_leadership: "Returned by school leadership", internal_revision: "Internal revision", final: "Final", reopened: "Reopened", archived: "Archived" } },
     subject: { singular: "Subject", plural: "Subjects", status: {} },
-    classroom: { singular: "Classroom", plural: "Classrooms", status: {} },
+    teachingGroup: { singular: "Teaching group", plural: "Teaching groups", status: {} },
     hourRequirement: { singular: "Requirement slot", plural: "Requirement slots", status: { available: "Available", assigned: "Assigned", stale: "Stale", reconciliation_required: "Reconciliation required" } },
     processParticipant: { singular: "Process participant", plural: "Process participants", status: { active: "Active", inactive: "Inactive" } },
     assignment: { singular: "Assignment", plural: "Assignments", status: { active: "Active", cancelled: "Cancelled" } },
@@ -52,7 +52,7 @@ export const en = {
     directTeacherSelectionEnabled: "Direct teacher selection",
     lanAccessEnabled: "LAN access",
     subject: "Subject",
-    classroom: "Classroom",
+    teachingGroup: "Teaching group",
     teacher: "Teacher",
     hourRequirement: "Requirement slot",
     processParticipant: "Process participant",
@@ -334,7 +334,7 @@ export const en = {
   audit: {
     pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
     action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden", undone: "Undone", reassigned: "Reassigned", reentered: "Re-entered", recomputed: "Recomputed" },
-    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Requirement slot", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
+    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Requirement slot", selection_turn: "Selection turn", teaching_group: "Teaching group", process_teacher: "Process participant" },
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
   },
   requirements: {
@@ -484,7 +484,7 @@ export const en = {
       },
       column: {
         subject: "Subject",
-        classroom: "Classroom",
+        teachingGroup: "Teaching group",
         groupHours: "Group hours",
         teacherHours: "Teacher hours per position",
         teacherCount: "Teacher positions",
@@ -497,10 +497,10 @@ export const en = {
       empty: "Every materialized main activity matches its source cell.",
       loading: "Loading main-activity sync state.",
       unavailable: "Main-activity sync state is unavailable.",
-      unknownClassroom: "Unknown classroom",
-      activityLabel: "{subject} — {classroom}",
+      unknownTeachingGroup: "Unknown teaching group",
+      activityLabel: "{subject} — {teachingGroup}",
       reviewAction: "Review differences",
-      previewTitle: "Sync {subject} — {classroom}?",
+      previewTitle: "Sync {subject} — {teachingGroup}?",
       previewError: "The sync preview could not be loaded.",
       noValueDifferences: "The planning values already match; applying only clears the out-of-sync mark.",
       reconciliationRequired: "Applying changes {count} assigned positions. They are routed through the reconciliation workflow.",
@@ -792,7 +792,7 @@ export const en = {
       teacherRoster: "Teacher roster",
       dashboard: "Dashboard",
       processes: "Processes",
-      classrooms: "Classrooms",
+      teachingGroups: "Teaching groups",
       classroomStages: "Classroom stages",
       groupSubjects: "Group-subject matrix",
       processSettings: "Process settings",
@@ -817,7 +817,7 @@ export const en = {
       subtitle: "The three stages, from the first record to the meeting.",
       // Every label states the condition `buildSetupChecklist` tests for it —
       // the pair is frozen side by side in `docs/ui-naming-freeze.md` §8.
-      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create an assignment process", allocation: "Record the leadership hour allocation", participants: "Add process participants and their target hours", subjects: "Add the subjects taught", classrooms: "Add the classrooms", groupSubjects: "Fill the group-subject matrix", configurationReview: "Review the configuration and the selection settings", teachingPlan: "Create the teaching plan", planBalance: "Balance the group hours and the teacher load", planLock: "Lock the teaching plan", requirements: "Generate the requirement slots", meeting: "Hand out the positions in the meeting" },
+      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create an assignment process", allocation: "Record the leadership hour allocation", participants: "Add process participants and their target hours", subjects: "Add the subjects taught", teachingGroups: "Add the teaching groups", groupSubjects: "Fill the group-subject matrix", configurationReview: "Review the configuration and the selection settings", teachingPlan: "Create the teaching plan", planBalance: "Balance the group hours and the teacher load", planLock: "Lock the teaching plan", requirements: "Generate the requirement slots", meeting: "Hand out the positions in the meeting" },
       done: "Done",
       open: "Open",
       unknown: "Not checked here",
@@ -940,19 +940,19 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
-  classroomBulk: {
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchTeachingGroups: "Search stage, group code, or label...", searchSubjects: "Search name...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
+  teachingGroupBulk: {
     action: "Create groups",
-    title: "Bulk create classrooms",
-    description: "Create an inclusive classroom range.",
+    title: "Bulk create teaching groups",
+    description: "Create an inclusive teaching group range.",
     groupStart: "Group start",
     groupEnd: "Group end",
-    created: "{count} classrooms created",
-    createError: "Classrooms could not be created"
+    created: "{count} teaching groups created",
+    createError: "Teaching groups could not be created"
   },
   groupSubjectBulk: {
     title: "Group-subject bulk editor",
-    description: "Preview and confirm one subject across the classrooms matched by stage and grade.",
+    description: "Preview and confirm one subject across the teaching groups matched by stage and grade.",
     modeLabel: "Operation mode",
     mode: {
       create_missing: "Create missing",
@@ -971,10 +971,10 @@ export const en = {
     confirmTitle: "Apply group-subject changes?",
     confirmBody: "Apply {count} change(s) from this preview. The server will reject the apply if the matched selection changed.",
     previewTitle: "Bulk preview",
-    noMatches: "No classrooms matched these filters.",
+    noMatches: "No teaching groups matched these filters.",
     noChanges: "The preview contains no changes to apply.",
     validationTitle: "Preview validation errors",
-    stale: "This preview is stale because the matched classrooms changed. Preview again before applying.",
+    stale: "This preview is stale because the matched teaching groups changed. Preview again before applying.",
     applied: "Created {created} and updated {updated} group-subject row(s).",
     previewError: "The group-subject preview could not be generated.",
     applyError: "The group-subject changes could not be applied.",
@@ -990,7 +990,7 @@ export const en = {
     summary: "{create} to create, {update} to update, {unchanged} unchanged, {conflicts} conflict(s).",
     column: {
       action: "Result",
-      classroom: "Classroom",
+      teachingGroup: "Teaching group",
       groupHours: "Group hours",
       teacherHours: "Teacher hours",
       teacherCount: "Teacher positions",
@@ -1005,21 +1005,21 @@ export const en = {
   },
   groupSubjectMatrix: {
     pageTitle: "Group-subject matrix",
-    description: "One cell per classroom and subject, carrying the actual planning values the teaching plan materializes from.",
+    description: "One cell per teaching group and subject, carrying the actual planning values the teaching plan materializes from.",
     addAction: "Add cell",
     createTitle: "Add matrix cell",
     editTitle: "Edit matrix cell",
     empty: "The matrix is empty. Fill it with the bulk editor below, or add a single cell.",
     emptyHint: "Main-subject materialization has no candidate cell until at least one exists.",
     inherited: "Inherited",
-    identityHint: "A cell's classroom and subject are its identity and cannot be changed here.",
+    identityHint: "A cell's teaching group and subject are its identity and cannot be changed here.",
     readOnly: "Editing the matrix is a department-head action.",
-    search: "Search classroom or subject...",
+    search: "Search teaching group or subject...",
     created: "Matrix cell added.",
     updated: "Matrix cell updated.",
     createError: "The matrix cell could not be added.",
     updateError: "The matrix cell could not be updated.",
-    selectClassroom: "Select a classroom",
+    selectTeachingGroup: "Select a teaching group",
     selectSubject: "Select a subject"
   },
   allocation: {
@@ -1078,14 +1078,14 @@ export const en = {
       error: "The process could not be reopened."
     }
   },
-  classroomSelection: {
-    selectAllVisible: "Select all visible classrooms",
+  teachingGroupSelection: {
+    selectAllVisible: "Select all visible teaching groups",
     selectRow: "Select {name}",
     deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected classrooms",
-    deleteBody: "Selected classrooms to delete: {count}. This action cannot be undone.",
-    deleted: "Classrooms deleted: {count}",
-    deleteError: "The selected classrooms could not be deleted"
+    deleteTitle: "Delete selected teaching groups",
+    deleteBody: "Selected teaching groups to delete: {count}. This action cannot be undone.",
+    deleted: "Teaching groups deleted: {count}",
+    deleteError: "The selected teaching groups could not be deleted"
   },
   subjectSelection: {
     selectAllVisible: "Select all visible subjects",

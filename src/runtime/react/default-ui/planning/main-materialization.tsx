@@ -39,7 +39,7 @@ import {
 export type MainSubjectMaterializationRow = {
   groupSubjectId: string;
   activityId: string | null;
-  classroom: string;
+  teachingGroup: string;
   subject: string;
   groupHours: string | null;
   teacherHours: string | null;
@@ -96,7 +96,7 @@ export function buildMainSubjectMaterializationRows({
       return {
         groupSubjectId: groupSubject.id,
         activityId: activity?.id ?? null,
-        classroom:
+        teachingGroup:
           groups.get(groupSubject.teaching_group_id) ??
           groupSubject.teaching_group_id,
         subject: subject.name,
@@ -121,7 +121,7 @@ export function buildMainSubjectMaterializationRows({
     .sort(
       (left, right) =>
         left.subject.localeCompare(right.subject) ||
-        left.classroom.localeCompare(right.classroom)
+        left.teachingGroup.localeCompare(right.teachingGroup)
     );
 }
 
@@ -208,7 +208,7 @@ export function MainSubjectMaterializationTable({
               {dict.planning.materialization.column.subject}
             </th>
             <th className="px-3 py-2 text-left">
-              {dict.planning.materialization.column.classroom}
+              {dict.planning.materialization.column.teachingGroup}
             </th>
             <th className="px-3 py-2 text-left">
               {dict.planning.materialization.column.groupHours}
@@ -233,7 +233,7 @@ export function MainSubjectMaterializationTable({
               key={row.groupSubjectId}
             >
               <td className="px-3 py-2 font-medium">{row.subject}</td>
-              <td className="px-3 py-2">{row.classroom}</td>
+              <td className="px-3 py-2">{row.teachingGroup}</td>
               <td className="px-3 py-2">
                 {displayHours(
                   row.groupHours,

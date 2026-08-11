@@ -337,7 +337,7 @@ describe("per-cell writes", () => {
     await renderView();
     fireEvent.click(action("create"));
 
-    fireEvent.change(field("group-subject-cell-classroom"), {
+    fireEvent.change(field("group-subject-cell-teaching-group"), {
       target: { value: groupId }
     });
     fireEvent.change(field("group-subject-cell-subject"), {
@@ -360,7 +360,7 @@ describe("per-cell writes", () => {
     expect("required_teacher_count" in sent.body).toBe(false);
   });
 
-  it("refuses to create a cell that names no classroom or subject", async () => {
+  it("refuses to create a cell that names no teaching group or subject", async () => {
     await renderView();
     fireEvent.click(action("create"));
     fireEvent.click(action("save"));
@@ -380,9 +380,9 @@ describe("per-cell writes", () => {
       ) as HTMLButtonElement
     );
 
-    // The classroom and the subject are shown, not offered.
+    // The teaching group and the subject are shown, not offered.
     expect(
-      document.querySelector('[data-reparto-field="group-subject-cell-classroom"]')
+      document.querySelector('[data-reparto-field="group-subject-cell-teaching-group"]')
     ).toBeNull();
     expect(document.body.textContent).toContain(
       dict.groupSubjectMatrix.identityHint
@@ -404,7 +404,7 @@ describe("per-cell writes", () => {
   it("rejects an hour value the decimal contract forbids", async () => {
     await renderView();
     fireEvent.click(action("create"));
-    fireEvent.change(field("group-subject-cell-classroom"), {
+    fireEvent.change(field("group-subject-cell-teaching-group"), {
       target: { value: groupId }
     });
     fireEvent.change(field("group-subject-cell-subject"), {
@@ -426,7 +426,7 @@ describe("per-cell writes", () => {
   it("reports a refused write with the service's own words", async () => {
     await renderView();
     fireEvent.click(action("create"));
-    fireEvent.change(field("group-subject-cell-classroom"), {
+    fireEvent.change(field("group-subject-cell-teaching-group"), {
       target: { value: groupId }
     });
     fireEvent.change(field("group-subject-cell-subject"), {

@@ -1106,7 +1106,7 @@ export {
   RepartoAllocationView,
   RepartoAssignmentsView,
   RepartoAuditView,
-  RepartoClassroomsView,
+  RepartoTeachingGroupsView,
   RepartoGroupSubjectsView,
   RepartoHourRequirementsView,
   RepartoProcessParticipantsView,

@@ -1,6 +1,6 @@
 {
   "name": "@mano8/astro-reparto-m8",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Astro integration and headless client for reparto-docente-m8.",
   "type": "module",
   "license": "MIT",
@@ -55,7 +55,7 @@
     "./routes/departments.astro": "./src/routes/departments.astro",
     "./routes/teacher-roster.astro": "./src/routes/teacher-roster.astro",
     "./routes/subjects.astro": "./src/routes/subjects.astro",
-    "./routes/classrooms.astro": "./src/routes/classrooms.astro",
+    "./routes/teaching-groups.astro": "./src/routes/teaching-groups.astro",
     "./routes/classroom-stages.astro": "./src/routes/classroom-stages.astro",
     "./routes/group-subjects.astro": "./src/routes/group-subjects.astro",
     "./routes/settings.astro": "./src/routes/settings.astro",

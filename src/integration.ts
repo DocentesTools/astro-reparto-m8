@@ -45,7 +45,7 @@ export type FaRepartoAstroOptions = {
 // Grouping follows the plan's target workflow (§4): Stage 1 configures the
 // department, Stage 2 turns that configuration into a locked, generated plan,
 // and Stage 3 is the existing assignment process run against the generated
-// slots. `classrooms`/`subjects`/`processParticipants` are process-scoped
+// slots. `teachingGroups`/`subjects`/`processParticipants` are process-scoped
 // resources but are configured once per process before planning starts, so
 // they sit in Stage 1 alongside the school-wide setup entries.
 //
@@ -53,7 +53,7 @@ export type FaRepartoAstroOptions = {
 // the way: `processList`/`dashboard` (select or create the process — the
 // prerequisite for everything else), schools/years/departments (step 1), the
 // school-wide reference data, then the process-scoped block in step order —
-// `allocation` (2), `participants` (3), `subjects` (4), `classrooms` (5),
+// `allocation` (2), `participants` (3), `subjects` (4), `teachingGroups` (5),
 // `groupSubjects` (6), `processSettings` (7).
 //
 // Three placements the audit (`S2-10`, `S2-06`) asked for and why they are
@@ -85,7 +85,7 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
       { labelKey: "nav.item.allocation", route: "allocation" },
       { labelKey: "nav.item.processParticipants", route: "participants" },
       { labelKey: "nav.item.subjects", route: "subjects" },
-      { labelKey: "nav.item.classrooms", route: "classrooms" },
+      { labelKey: "nav.item.teachingGroups", route: "teachingGroups" },
       { labelKey: "nav.item.groupSubjects", route: "groupSubjects" },
       { labelKey: "nav.item.processSettings", route: "processSettings" }
     ]
@@ -155,7 +155,7 @@ const ROUTE_ENTRYPOINTS = {
   departments: "@mano8/astro-reparto-m8/routes/departments.astro",
   teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro",
   subjects: "@mano8/astro-reparto-m8/routes/subjects.astro",
-  classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
+  teachingGroups: "@mano8/astro-reparto-m8/routes/teaching-groups.astro",
   classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
   groupSubjects: "@mano8/astro-reparto-m8/routes/group-subjects.astro",
   processSettings: "@mano8/astro-reparto-m8/routes/settings.astro",

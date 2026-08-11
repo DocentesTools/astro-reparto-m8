@@ -8,7 +8,7 @@ export const fr: RepartoDictionary = {
     teacherRoster: { singular: "Enseignant", plural: "Enseignants", status: {} },
     assignmentProcess: { singular: "Processus d'affectation", plural: "Processus d'affectation", status: { draft: "Brouillon", ready_for_meeting: "Prêt pour la séance", meeting_open: "Séance ouverte", assigning: "Affectation en cours", department_proposal: "Proposition du département", sent_to_school_leadership: "Envoyé à la direction", returned_by_school_leadership: "Renvoyé par la direction", internal_revision: "Révision interne", final: "Final", reopened: "Rouverte", archived: "Archivé" } },
     subject: { singular: "Matière", plural: "Matières", status: {} },
-    classroom: { singular: "Classe", plural: "Classes", status: {} },
+    teachingGroup: { singular: "Classe", plural: "Classes", status: {} },
     hourRequirement: { singular: "Créneau de besoin", plural: "Créneaux de besoin", status: { available: "Disponible", assigned: "Affecté", stale: "Obsolète", reconciliation_required: "Réconciliation requise" } },
     processParticipant: { singular: "Participant au processus", plural: "Participants au processus", status: { active: "Actif", inactive: "Inactif" } },
     assignment: { singular: "Affectation", plural: "Affectations", status: { active: "Active", cancelled: "Annulée" } },
@@ -51,7 +51,7 @@ export const fr: RepartoDictionary = {
     directTeacherSelectionEnabled: "Sélection directe par l'enseignant",
     lanAccessEnabled: "Accès LAN",
     subject: "Matière",
-    classroom: "Classe",
+    teachingGroup: "Classe",
     teacher: "Enseignant",
     hourRequirement: "Créneau de besoin",
     processParticipant: "Participant",
@@ -484,7 +484,7 @@ export const fr: RepartoDictionary = {
       },
       column: {
         subject: "Matière",
-        classroom: "Classe",
+        teachingGroup: "Classe",
         groupHours: "Heures groupe",
         teacherHours: "Heures enseignant par poste",
         teacherCount: "Postes enseignants",
@@ -497,10 +497,10 @@ export const fr: RepartoDictionary = {
       empty: "Chaque activité principale matérialisée correspond à sa cellule source.",
       loading: "Chargement de l'état de synchronisation des activités principales.",
       unavailable: "L'état de synchronisation des activités principales est indisponible.",
-      unknownClassroom: "Classe inconnue",
-      activityLabel: "{subject} — {classroom}",
+      unknownTeachingGroup: "Classe inconnue",
+      activityLabel: "{subject} — {teachingGroup}",
       reviewAction: "Vérifier les différences",
-      previewTitle: "Synchroniser {subject} — {classroom} ?",
+      previewTitle: "Synchroniser {subject} — {teachingGroup} ?",
       previewError: "L'aperçu de synchronisation n'a pas pu être chargé.",
       noValueDifferences: "Les valeurs de planification correspondent déjà ; l'application ne fait que lever la marque de désynchronisation.",
       reconciliationRequired: "L'application modifie {count} postes attribués. Ils passent par le flux de réconciliation.",
@@ -792,7 +792,7 @@ export const fr: RepartoDictionary = {
       teacherRoster: "Liste du personnel enseignant",
       dashboard: "Tableau de bord",
       processes: "Processus",
-      classrooms: "Classes",
+      teachingGroups: "Classes",
       classroomStages: "Niveaux scolaires",
       groupSubjects: "Matrice groupe-matière",
       processSettings: "Paramètres du processus",
@@ -815,7 +815,7 @@ export const fr: RepartoDictionary = {
     bootstrap: {
       title: "Configurer votre répartition",
       subtitle: "Les trois étapes, du premier enregistrement à la séance.",
-      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus d'affectation", allocation: "Enregistrer la dotation horaire de la direction", participants: "Ajouter les participants et leurs heures cibles", subjects: "Ajouter les matières enseignées", classrooms: "Ajouter les classes", groupSubjects: "Remplir la matrice classe-matière", configurationReview: "Vérifier la configuration et les paramètres de sélection", teachingPlan: "Créer le plan d'enseignement", planBalance: "Équilibrer les heures de classe et la charge enseignante", planLock: "Verrouiller le plan d'enseignement", requirements: "Générer les créneaux de besoin", meeting: "Attribuer les postes en séance" },
+      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus d'affectation", allocation: "Enregistrer la dotation horaire de la direction", participants: "Ajouter les participants et leurs heures cibles", subjects: "Ajouter les matières enseignées", teachingGroups: "Ajouter les classes", groupSubjects: "Remplir la matrice classe-matière", configurationReview: "Vérifier la configuration et les paramètres de sélection", teachingPlan: "Créer le plan d'enseignement", planBalance: "Équilibrer les heures de classe et la charge enseignante", planLock: "Verrouiller le plan d'enseignement", requirements: "Générer les créneaux de besoin", meeting: "Attribuer les postes en séance" },
       done: "Terminé",
       open: "Ouvrir",
       unknown: "Non vérifié ici",
@@ -938,8 +938,8 @@ export const fr: RepartoDictionary = {
     noData: "Pas encore de données disponibles.",
     noPermission: "Vous n'avez pas les droits nécessaires."
   },
-  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchClassrooms: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
-  classroomBulk: {
+  table: { noResults: "Aucun résultat.", searchPlaceholder: "Rechercher...", loading: "Chargement...", actions: "Actions", columns: "Colonnes", all: "Toutes", firstPage: "Première page", previousPage: "Page précédente", nextPage: "Page suivante", lastPage: "Dernière page", page: "Page", rowsPerPage: "Lignes par page", searchTeachingGroups: "Rechercher par niveau, code du groupe ou libellé...", searchSubjects: "Rechercher par nom...", searchParticipants: "Rechercher un enseignant...", searchAssignments: "Rechercher par besoin ou participant...", searchSchools: "Rechercher par nom, localité ou province...", searchAcademicYears: "Rechercher par libellé ou établissement...", searchDepartments: "Rechercher par nom ou établissement...", searchTeacherRoster: "Rechercher un enseignant..." },
+  teachingGroupBulk: {
     action: "Créer des groupes",
     title: "Créer plusieurs classes",
     description: "Créer une plage inclusive de classes.",
@@ -988,7 +988,7 @@ export const fr: RepartoDictionary = {
     summary: "{create} à créer, {update} à mettre à jour, {unchanged} inchangé(s), {conflicts} conflit(s).",
     column: {
       action: "Résultat",
-      classroom: "Classe",
+      teachingGroup: "Classe",
       groupHours: "Heures groupe",
       teacherHours: "Heures enseignant",
       teacherCount: "Postes enseignants",
@@ -1017,7 +1017,7 @@ export const fr: RepartoDictionary = {
     updated: "Cellule de la matrice mise à jour.",
     createError: "La cellule de la matrice n'a pas pu être ajoutée.",
     updateError: "La cellule de la matrice n'a pas pu être mise à jour.",
-    selectClassroom: "Sélectionner une classe",
+    selectTeachingGroup: "Sélectionner une classe",
     selectSubject: "Sélectionner une matière"
   },
   allocation: {
@@ -1076,7 +1076,7 @@ export const fr: RepartoDictionary = {
       error: "Le processus n'a pas pu être rouvert."
     }
   },
-  classroomSelection: {
+  teachingGroupSelection: {
     selectAllVisible: "Sélectionner toutes les classes visibles",
     selectRow: "Sélectionner {name}",
     deleteSelected: "Supprimer la sélection ({count})",

@@ -129,8 +129,8 @@ export {
   type MeetingTurnAction
 } from "./meeting.js";
 export {
-  generateClassroomLabel,
+  generateTeachingGroupLabel,
   generateGroupCodeRange,
   gradeInStageRange,
   normalizeGroupCode
-} from "./classrooms.js";
+} from "./teachingGroups.js";

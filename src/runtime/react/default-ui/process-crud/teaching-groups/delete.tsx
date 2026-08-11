@@ -3,14 +3,14 @@ import { EntityDeleteDialog, useMappedError, type Dict } from "../shared.js";
 import { useDeleteRepartoTeachingGroup } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
 
-export type ClassroomDeleteProps = {
+export type TeachingGroupDeleteProps = {
   dict: Dict;
   processId: string;
   group: TeachingGroupPublic;
   onDone: () => void;
 };
 
-export function ClassroomDelete({ dict, processId, group, onDone }: ClassroomDeleteProps) {
+export function TeachingGroupDelete({ dict, processId, group, onDone }: TeachingGroupDeleteProps) {
   const deleteMutation = useDeleteRepartoTeachingGroup();
   const [mapped, setError, clear] = useMappedError();
 
@@ -23,7 +23,7 @@ export function ClassroomDelete({ dict, processId, group, onDone }: ClassroomDel
   }
 
   const title = formatRepartoMessage(dict.confirm.delete.title, {
-    entity: dict.entity.classroom.singular.toLowerCase()
+    entity: dict.entity.teachingGroup.singular.toLowerCase()
   });
   const body = formatRepartoMessage(dict.confirm.delete.body, {
     name: group.label

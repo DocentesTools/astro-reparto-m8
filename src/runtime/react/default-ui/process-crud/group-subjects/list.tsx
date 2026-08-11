@@ -66,13 +66,13 @@ export function GroupSubjectMatrixList({
     subjects.map((subject) => [subject.id, subject.name])
   );
   const inherited = dict.groupSubjectMatrix.inherited;
-  const classroomOf = (cell: GroupSubjectPublic) =>
+  const teachingGroupOf = (cell: GroupSubjectPublic) =>
     groupLabels.get(cell.teaching_group_id) ?? cell.teaching_group_id;
   const subjectOf = (cell: GroupSubjectPublic) =>
     subjectNames.get(cell.subject_id) ?? cell.subject_id;
 
   const columns: DataTableColumn<GroupSubjectPublic>[] = [
-    { id: "classroom", label: dict.field.classroom, value: classroomOf },
+    { id: "teachingGroup", label: dict.field.teachingGroup, value: teachingGroupOf },
     { id: "subject", label: dict.field.subject, value: subjectOf },
     ...(canAct
       ? [
@@ -80,7 +80,7 @@ export function GroupSubjectMatrixList({
             id: "actions",
             label: dict.table.actions,
             value: (cell: GroupSubjectPublic) =>
-              `${classroomOf(cell)} ${dict.table.actions}`,
+              `${teachingGroupOf(cell)} ${dict.table.actions}`,
             hideable: false,
             sortable: false,
             cell: (cell: GroupSubjectPublic) => (
@@ -141,7 +141,7 @@ export function GroupSubjectMatrixList({
         })}
         rowKey={(cell) => cell.id}
         rowName="group-subject"
-        searchFields={[classroomOf, subjectOf]}
+        searchFields={[teachingGroupOf, subjectOf]}
         tableName="group-subjects"
       />
     </>

@@ -111,6 +111,35 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     }
   });
 
+  // Audit `S2-11`: the en label said *Classroom* while the runtime name, the Zod
+  // schemas and the backend path said *teaching group*, and the split sat one row
+  // away from `nav.item.classroomStages` — a genuinely different entity — so the
+  // two read as one family. `classroom` is now a `ClassroomStage` word only.
+  it("keeps `classroom` for ClassroomStage alone (freeze §1, §12)", () => {
+    for (const locale of REPARTO_LOCALES) {
+      const dict = getRepartoDictionary(locale);
+      for (const key of collectKeys(dict)) {
+        expect(
+          /classroom/i.test(key) && !/classroomStages?\b/i.test(key),
+          `${locale} key ${key} names a teaching group "classroom"`
+        ).toBe(false);
+      }
+    }
+    // English copy: only the ClassroomStage branch may say "classroom".
+    for (const [key, value] of Object.entries(en)) {
+      if (key === "classroomStages") continue;
+      for (const text of collectStrings(value)) {
+        expect(
+          /classroom/i.test(text) && !/classroom stage/i.test(text),
+          `en.${key} says "classroom" for a teaching group: ${text}`
+        ).toBe(false);
+      }
+    }
+    expect(en.entity.teachingGroup.singular).toBe("Teaching group");
+    expect(en.nav.item.teachingGroups).toBe("Teaching groups");
+    expect(en.nav.item.classroomStages).toBe("Classroom stages");
+  });
+
   it("never carries a UUID string in any dictionary value", () => {
     for (const locale of REPARTO_LOCALES) {
       for (const value of collectStrings(getRepartoDictionary(locale))) {
@@ -138,9 +167,9 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.entity.school.singular).toBe("School");
     expect(fr.entity.school.singular).toBe("Établissement");
     expect(es.entity.school.singular).toBe("Centro");
-    expect(en.entity.classroom.singular).toBe("Classroom");
-    expect(fr.entity.classroom.singular).toBe("Classe");
-    expect(es.entity.classroom.singular).toBe("Grupo");
+    expect(en.entity.teachingGroup.singular).toBe("Teaching group");
+    expect(fr.entity.teachingGroup.singular).toBe("Classe");
+    expect(es.entity.teachingGroup.singular).toBe("Grupo");
     expect(en.entity.hourRequirement.singular).toBe("Requirement slot");
     expect(fr.entity.hourRequirement.singular).toBe("Créneau de besoin");
     expect(es.entity.hourRequirement.singular).toBe("Puesto horario");
@@ -392,8 +421,8 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     );
   });
 
-  it("fully localizes classroom bulk and stage CRUD surfaces", () => {
-    const roots = ["classroomBulk", "classroomStages"] as const;
+  it("fully localizes teaching group bulk and stage CRUD surfaces", () => {
+    const roots = ["teachingGroupBulk", "classroomStages"] as const;
     for (const root of roots) {
       const english = collectStrings(en[root]);
       expect(collectKeys(fr[root]).sort()).toEqual(collectKeys(en[root]).sort());
@@ -401,14 +430,14 @@ describe("reparto i18n dictionary (Phase 1)", () => {
       expect(collectStrings(fr[root])).not.toEqual(english);
       expect(collectStrings(es[root])).not.toEqual(english);
     }
-    expect(fr.classroomBulk.groupStart).toBe("Premier groupe");
-    expect(es.classroomBulk.groupEnd).toBe("Último grupo");
-    expect(en.classroomBulk.action).toBe("Create groups");
-    expect(es.classroomBulk.action).toBe("Crear grupos");
-    expect(fr.classroomBulk.action).toBe("Créer des groupes");
-    expect(en.classroomSelection.deleteSelected).toBe("Delete selected ({count})");
-    expect(es.classroomSelection.selectAllVisible).toBe("Seleccionar todos los grupos visibles");
-    expect(fr.classroomSelection.deleteTitle).toBe("Supprimer les classes sélectionnées");
+    expect(fr.teachingGroupBulk.groupStart).toBe("Premier groupe");
+    expect(es.teachingGroupBulk.groupEnd).toBe("Último grupo");
+    expect(en.teachingGroupBulk.action).toBe("Create groups");
+    expect(es.teachingGroupBulk.action).toBe("Crear grupos");
+    expect(fr.teachingGroupBulk.action).toBe("Créer des groupes");
+    expect(en.teachingGroupSelection.deleteSelected).toBe("Delete selected ({count})");
+    expect(es.teachingGroupSelection.selectAllVisible).toBe("Seleccionar todos los grupos visibles");
+    expect(fr.teachingGroupSelection.deleteTitle).toBe("Supprimer les classes sélectionnées");
     expect(fr.classroomStages.toast.deleteError).toContain("supprimer");
     expect(es.classroomStages.deleteBody).toContain("{name}");
   });

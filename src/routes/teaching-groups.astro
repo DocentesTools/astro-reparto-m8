@@ -1,6 +1,6 @@
 ---
 import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
-import { RepartoClassroomsView } from "@mano8/astro-reparto-m8/default-ui";
+import { RepartoTeachingGroupsView } from "@mano8/astro-reparto-m8/default-ui";
 import RepartoRouteLoading from "./_components/RepartoRouteLoading.astro";
 import "../scaffold/styles/reparto.css";
 
@@ -17,13 +17,13 @@ const config = {
 
 <StarlightPage
   frontmatter={{
-    title: "Reparto classrooms",
-    description: "Create, edit, and delete reparto classrooms (teaching groups) for the active process.",
+    title: "Reparto teaching groups",
+    description: "Create, edit, and delete reparto teaching groups (teaching groups) for the active process.",
     tableOfContents: false
   }}
 >
   <RepartoRouteLoading />
-  <RepartoClassroomsView client:only="react" config={config} locale={Astro.currentLocale} processId={processId}>
+  <RepartoTeachingGroupsView client:only="react" config={config} locale={Astro.currentLocale} processId={processId}>
     <RepartoRouteLoading fallback slot="fallback" />
-  </RepartoClassroomsView>
+  </RepartoTeachingGroupsView>
 </StarlightPage>

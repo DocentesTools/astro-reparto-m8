@@ -159,7 +159,7 @@ describe("main-subject materialization UI", () => {
       {
         groupSubjectId: groupSubjectAId,
         activityId: null,
-        classroom: "1A",
+        teachingGroup: "1A",
         subject: "Mathematics",
         groupHours: "3.00",
         teacherHours: "3.00",
@@ -169,7 +169,7 @@ describe("main-subject materialization UI", () => {
       {
         groupSubjectId: groupSubjectBId,
         activityId: materializedActivity.id,
-        classroom: "1B",
+        teachingGroup: "1B",
         subject: "Mathematics",
         groupHours: "4.00",
         teacherHours: "4.00",

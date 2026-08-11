@@ -2,7 +2,7 @@ export function normalizeGroupCode(value: string): string {
   return value.trim().toUpperCase();
 }
 
-export function generateClassroomLabel(input: {
+export function generateTeachingGroupLabel(input: {
   grade: number;
   stageLabel: string;
   groupCode: string;

@@ -4,21 +4,21 @@ import { ActionButton, RepartoRouteGuard, resolveProcessId, Shell, useDict, useR
 import { useRepartoClassroomStages, useRepartoTeachingGroups } from "../../../hooks.js";
 import type { TeachingGroupPublic } from "../../../../schemas.js";
 
-import { ClassroomsList } from "./list.js";
-import { ClassroomAdd } from "./add.js";
-import { ClassroomEdit } from "./edit.js";
-import { ClassroomDelete } from "./delete.js";
-import { ClassroomBulk } from "./bulk.js";
-import { ClassroomBulkDelete } from "./bulk-delete.js";
+import { TeachingGroupsList } from "./list.js";
+import { TeachingGroupAdd } from "./add.js";
+import { TeachingGroupEdit } from "./edit.js";
+import { TeachingGroupDelete } from "./delete.js";
+import { TeachingGroupBulk } from "./bulk.js";
+import { TeachingGroupBulkDelete } from "./bulk-delete.js";
 import { RepartoToastHost } from "../../../ui/toast-notification.js";
 
-export function RepartoClassroomsView({ config, locale, processId }: EntityViewProps) {
+export function RepartoTeachingGroupsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="classrooms">
+      <RepartoRouteGuard locale={locale} route="teachingGroups">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
-            <RepartoClassroomsContent locale={locale} processId={resolvedId} />
+            <RepartoTeachingGroupsContent locale={locale} processId={resolvedId} />
           )}
         </WithSelectedProcess>
       </RepartoRouteGuard>
@@ -26,9 +26,9 @@ export function RepartoClassroomsView({ config, locale, processId }: EntityViewP
   );
 }
 
-function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
+function RepartoTeachingGroupsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
-  const canAct = useRepartoCanAct("classrooms");
+  const canAct = useRepartoCanAct("teachingGroups");
   const query = useRepartoTeachingGroups(processId);
   const stagesQuery = useRepartoClassroomStages();
   const stages = stagesQuery.data?.data ?? [];
@@ -49,19 +49,19 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
   return (
     <main
       className="not-content flex w-full max-w-none flex-col gap-4 text-foreground"
-      data-reparto-route="classrooms"
+      data-reparto-route="teaching-groups"
       data-reparto-group="process"
     >
       <RepartoToastHost />
       {canAct ? (
         <div
           className="flex justify-end gap-2 pb-4"
-          data-reparto-actions="classrooms"
+          data-reparto-actions="teaching-groups"
         >
           <ActionButton
             action="bulk-create"
             disabled={hasActiveForm || stages.length === 0}
-            label={dict.classroomBulk.action}
+            label={dict.teachingGroupBulk.action}
             onClick={() => setBulk(true)}
           />
           <ActionButton
@@ -79,9 +79,9 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
       ) : null}
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
-        data-reparto-panel="classrooms"
+        data-reparto-panel="teaching-groups"
       >
-        <ClassroomsList
+        <TeachingGroupsList
           dict={dict}
           rows={rows}
           error={query.error}
@@ -103,10 +103,10 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
           }}
         />
         {adding ? (
-          <ClassroomAdd dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setAdding(false)} />
+          <TeachingGroupAdd dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setAdding(false)} />
         ) : null}
         {editing ? (
-          <ClassroomEdit
+          <TeachingGroupEdit
             dict={dict}
             processId={processId ?? ""}
             group={editing}
@@ -114,9 +114,9 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
             onDone={() => setEditing(null)}
           />
         ) : null}
-        {bulk ? <ClassroomBulk dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setBulk(false)} /> : null}
+        {bulk ? <TeachingGroupBulk dict={dict} processId={processId ?? ""} stages={stages} onDone={() => setBulk(false)} /> : null}
         {deletingSelected ? (
-          <ClassroomBulkDelete
+          <TeachingGroupBulkDelete
             dict={dict}
             groups={selectedGroups}
             processId={processId ?? ""}
@@ -127,7 +127,7 @@ function RepartoClassroomsContent({ locale, processId }: EntityViewProps) {
           />
         ) : null}
         {deleting ? (
-          <ClassroomDelete
+          <TeachingGroupDelete
             dict={dict}
             processId={processId ?? ""}
             group={deleting}

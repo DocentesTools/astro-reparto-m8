@@ -176,7 +176,7 @@ become canonical two-decimal strings after the backend's `NUMERIC(8, 2)` sweep
 (plan §3.9) — the runtime reads both through `HoursSchema` and always **sends**
 the canonical string. Uniqueness `(process_id, name)` is DB-enforced.
 
-### 2.3 Teaching group (classroom) — `prefix=/…/groups`
+### 2.3 Teaching group — `prefix=/…/groups`
 
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
@@ -909,7 +909,7 @@ Special operations:
 | `Teacher profile (roster) /teacher-profiles?active= list, create, get, patch, POST {id}/link-user, delete / display_name* / hard delete (confirm)` | ✓ | matches; hard delete confirmed |
 | `Assignment process /assignment-processes list, create, get, patch, transition, reopen, summary, dashboard, lan/me, events / academic_year_id*, school_id*, department_id* / patch/transition/reopen (no delete)` | ✓ + `copy-from` | extra `POST /copy-from/{src}` not in plan §2 — see §3.1 |
 | `Subject /…/subjects list, create, get, patch, delete / name* / hard delete (confirm)` | ✓ | matches |
-| `Teaching group (classroom) /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
+| `Teaching group /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
 | `Requirement slot /…/requirements list, get, generation-preview/generate, reconciliation-preview/reconcile / teaching_activity_id + position_index + required_teacher_hours / generated, never manually deleted` | ✓ | three-stage contract |
 | `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, base_weekly_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness; plus the audited `POST /…/extra-hours` |
 | `Assignment /…/assignments list, create, direct-choice, get, patch, delete / hour_requirement_id*, process_teacher_id*, assigned_hours*, meeting_session_id* / hard delete (confirm)` | ✓ | matches; **note**: `meeting_session_id` is NOT a Create field in the backend — it is set when a teacher uses `direct-choice` and is left null on `POST /`. Plan §2 row should be read as "the direct-choice path carries `meeting_session_id`", not the create path |

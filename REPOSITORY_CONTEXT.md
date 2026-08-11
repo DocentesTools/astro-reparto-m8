@@ -30,7 +30,7 @@ host source edits outside documented registration points.
   without pages. `starter` adds the three-stage Astro route map: configuration
   (process list and dashboard, schools, academic years, departments, classroom
   stages, teacher roster, leadership allocation, participants, subjects,
-  classrooms, group-subject matrix, process settings), planning (planning,
+  teaching groups, group-subject matrix, process settings), planning (planning,
   requirements, planning exports) and assignment (assignments, meeting, teacher,
   shared screen, versions, exports, audit).
 - `src/integration.ts` provides `DEFAULT_REPARTO_NAV` / `buildRepartoNav`, whose

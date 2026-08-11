@@ -303,7 +303,7 @@ describe("§8.1 route map — ADMIN and SUPERADMIN get the department-head surfa
     "assignments",
     "participants",
     "subjects",
-    "classrooms",
+    "teachingGroups",
     "classroomStages",
     "schools",
     "academicYears",

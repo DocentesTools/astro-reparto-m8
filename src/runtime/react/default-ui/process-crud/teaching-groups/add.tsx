@@ -12,16 +12,16 @@ import {
 } from "../shared.js";
 import { useCreateRepartoTeachingGroup } from "../../../hooks.js";
 import type { ClassroomStagePublic, TeachingGroupCreateInput } from "../../../../schemas.js";
-import { generateClassroomLabel, gradeInStageRange } from "../../../../ui/classrooms.js";
+import { generateTeachingGroupLabel, gradeInStageRange } from "../../../../ui/teachingGroups.js";
 
-export type ClassroomAddProps = {
+export type TeachingGroupAddProps = {
   dict: Dict;
   processId: string;
   stages: ClassroomStagePublic[];
   onDone: () => void;
 };
 
-export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddProps) {
+export function TeachingGroupAdd({ dict, processId, stages, onDone }: TeachingGroupAddProps) {
   const createMutation = useCreateRepartoTeachingGroup();
   const [mapped, setError, clearError] = useMappedError();
   const [stageId, setStageId] = useState("");
@@ -34,7 +34,7 @@ export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddPr
   const gradeNum = Number.parseInt(grade, 10);
   const stage = stages.find((item) => item.id === stageId);
   const gradeValid = Boolean(stage && gradeInStageRange(gradeNum, stage));
-  const generated = stage && gradeValid && groupCode.trim() ? generateClassroomLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
+  const generated = stage && gradeValid && groupCode.trim() ? generateTeachingGroupLabel({ grade: gradeNum, stageLabel: stage.label, groupCode }) : "";
   const visibleLabel = manualLabel ? label : generated;
   const canSave =
     stageId !== "" &&
@@ -61,17 +61,17 @@ export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddPr
 
   return (
     <EntityDialogShell
-      description={dict.entity.classroom.plural}
-      dialogId="classroom-create"
+      description={dict.entity.teachingGroup.plural}
+      dialogId="teaching-group-create"
       onClose={onDone}
-      title={`${dict.action.create} ${dict.entity.classroom.singular.toLowerCase()}`}
+      title={`${dict.action.create} ${dict.entity.teachingGroup.singular.toLowerCase()}`}
     >
-      <FormPanelShell formAttr="classroom" mode="create" onSubmit={handleSubmit}>
+      <FormPanelShell formAttr="teaching-group" mode="create" onSubmit={handleSubmit}>
         <FormGrid>
         <SelectField field="stage" label={dict.field.stage} onChange={setStageId} value={stageId} options={stages.map((item) => ({ label: `${item.stage} — ${item.label}`, value: item.id }))} mapped={mapped} fieldErrorKey="stage" />
         <TextField
           field="grade"
-          id="classroom-add-grade"
+          id="teaching-group-add-grade"
           label={dict.field.grade}
           onChange={setGrade}
           value={grade}
@@ -81,7 +81,7 @@ export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddPr
         />
         <TextField
           field="group-code"
-          id="classroom-add-group-code"
+          id="teaching-group-add-group-code"
           label={dict.field.groupCode}
           maxLength={10}
           onChange={setGroupCode}
@@ -91,7 +91,7 @@ export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddPr
         />
         <TextField
           field="label"
-          id="classroom-add-label"
+          id="teaching-group-add-label"
           label={dict.field.label}
           maxLength={100}
           onChange={(value) => { setLabel(value); setManualLabel(value.trim() !== ""); }}
@@ -101,7 +101,7 @@ export function ClassroomAdd({ dict, processId, stages, onDone }: ClassroomAddPr
         />
         <TextField
           field="notes"
-          id="classroom-add-notes"
+          id="teaching-group-add-notes"
           label={dict.field.notes}
           maxLength={2000}
           onChange={setNotes}

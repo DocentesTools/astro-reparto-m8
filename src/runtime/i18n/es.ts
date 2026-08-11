@@ -8,7 +8,7 @@ export const es: RepartoDictionary = {
     teacherRoster: { singular: "Docente", plural: "Docentes", status: {} },
     assignmentProcess: { singular: "Proceso de reparto", plural: "Procesos de reparto", status: { draft: "Borrador", ready_for_meeting: "Listo para la sesión", meeting_open: "Sesión abierta", assigning: "Asignación en curso", department_proposal: "Propuesta del departamento", sent_to_school_leadership: "Enviado a la dirección", returned_by_school_leadership: "Devuelto por la dirección", internal_revision: "Revisión interna", final: "Final", reopened: "Reabierto", archived: "Archivado" } },
     subject: { singular: "Materia", plural: "Materias", status: {} },
-    classroom: { singular: "Grupo", plural: "Grupos", status: {} },
+    teachingGroup: { singular: "Grupo", plural: "Grupos", status: {} },
     hourRequirement: { singular: "Puesto horario", plural: "Puestos horarios", status: { available: "Disponible", assigned: "Asignado", stale: "Obsoleto", reconciliation_required: "Conciliación requerida" } },
     processParticipant: { singular: "Participante en el proceso", plural: "Participantes en el proceso", status: { active: "Activo", inactive: "Inactivo" } },
     assignment: { singular: "Reparto", plural: "Repartos", status: { active: "Activo", cancelled: "Cancelado" } },
@@ -51,7 +51,7 @@ export const es: RepartoDictionary = {
     directTeacherSelectionEnabled: "Selección directa del docente",
     lanAccessEnabled: "Acceso LAN",
     subject: "Materia",
-    classroom: "Grupo",
+    teachingGroup: "Grupo",
     teacher: "Docente",
     hourRequirement: "Puesto horario",
     processParticipant: "Participante",
@@ -483,7 +483,7 @@ export const es: RepartoDictionary = {
       },
       column: {
         subject: "Materia",
-        classroom: "Grupo",
+        teachingGroup: "Grupo",
         groupHours: "Horas de grupo",
         teacherHours: "Horas por puesto docente",
         teacherCount: "Puestos docentes",
@@ -496,10 +496,10 @@ export const es: RepartoDictionary = {
       empty: "Todas las actividades principales materializadas coinciden con su celda de origen.",
       loading: "Cargando el estado de sincronización de las actividades principales.",
       unavailable: "El estado de sincronización de las actividades principales no está disponible.",
-      unknownClassroom: "Aula desconocida",
-      activityLabel: "{subject} — {classroom}",
+      unknownTeachingGroup: "Grupo desconocido",
+      activityLabel: "{subject} — {teachingGroup}",
       reviewAction: "Revisar diferencias",
-      previewTitle: "¿Sincronizar {subject} — {classroom}?",
+      previewTitle: "¿Sincronizar {subject} — {teachingGroup}?",
       previewError: "No se pudo cargar la vista previa de sincronización.",
       noValueDifferences: "Los valores de planificación ya coinciden; aplicar solo retira la marca de desincronización.",
       reconciliationRequired: "Aplicar cambia {count} puestos asignados. Se encauzan por el flujo de reconciliación.",
@@ -791,7 +791,7 @@ export const es: RepartoDictionary = {
       teacherRoster: "Listado del profesorado",
       dashboard: "Panel",
       processes: "Procesos",
-      classrooms: "Grupos",
+      teachingGroups: "Grupos",
       classroomStages: "Etapas educativas",
       groupSubjects: "Matriz grupo-materia",
       processSettings: "Ajustes del proceso",
@@ -814,7 +814,7 @@ export const es: RepartoDictionary = {
     bootstrap: {
       title: "Configurar el reparto",
       subtitle: "Las tres fases, del primer registro a la sesión.",
-      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso de reparto", allocation: "Registrar la dotación horaria de la dirección", participants: "Añadir participantes y sus horas objetivo", subjects: "Añadir las materias impartidas", classrooms: "Añadir los grupos", groupSubjects: "Rellenar la matriz grupo-materia", configurationReview: "Revisar la configuración y los ajustes de selección", teachingPlan: "Crear el plan docente", planBalance: "Equilibrar las horas de grupo y la carga del profesorado", planLock: "Bloquear el plan docente", requirements: "Generar los puestos horarios", meeting: "Repartir los puestos en la sesión" },
+      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso de reparto", allocation: "Registrar la dotación horaria de la dirección", participants: "Añadir participantes y sus horas objetivo", subjects: "Añadir las materias impartidas", teachingGroups: "Añadir los grupos", groupSubjects: "Rellenar la matriz grupo-materia", configurationReview: "Revisar la configuración y los ajustes de selección", teachingPlan: "Crear el plan docente", planBalance: "Equilibrar las horas de grupo y la carga del profesorado", planLock: "Bloquear el plan docente", requirements: "Generar los puestos horarios", meeting: "Repartir los puestos en la sesión" },
       done: "Hecho",
       open: "Abrir",
       unknown: "No comprobado aquí",
@@ -937,8 +937,8 @@ export const es: RepartoDictionary = {
     noData: "Aún no hay datos disponibles.",
     noPermission: "No tiene permiso."
   },
-  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchClassrooms: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
-  classroomBulk: {
+  table: { noResults: "Sin resultados.", searchPlaceholder: "Buscar...", loading: "Cargando...", actions: "Acciones", columns: "Columnas", all: "Todas", firstPage: "Primera página", previousPage: "Página anterior", nextPage: "Página siguiente", lastPage: "Última página", page: "Página", rowsPerPage: "Filas por página", searchTeachingGroups: "Buscar por etapa, código de grupo o etiqueta...", searchSubjects: "Buscar por nombre...", searchParticipants: "Buscar docente...", searchAssignments: "Buscar por necesidad o participante...", searchSchools: "Buscar por nombre, localidad o provincia...", searchAcademicYears: "Buscar por etiqueta o centro...", searchDepartments: "Buscar por nombre o centro...", searchTeacherRoster: "Buscar docente..." },
+  teachingGroupBulk: {
     action: "Crear grupos",
     title: "Crear varios grupos",
     description: "Crear un intervalo inclusivo de grupos.",
@@ -987,7 +987,7 @@ export const es: RepartoDictionary = {
     summary: "{create} para crear, {update} para actualizar, {unchanged} sin cambios, {conflicts} conflicto(s).",
     column: {
       action: "Resultado",
-      classroom: "Grupo",
+      teachingGroup: "Grupo",
       groupHours: "Horas de grupo",
       teacherHours: "Horas docentes",
       teacherCount: "Puestos docentes",
@@ -1016,7 +1016,7 @@ export const es: RepartoDictionary = {
     updated: "Celda de la matriz actualizada.",
     createError: "No se pudo añadir la celda de la matriz.",
     updateError: "No se pudo actualizar la celda de la matriz.",
-    selectClassroom: "Seleccionar un grupo",
+    selectTeachingGroup: "Seleccionar un grupo",
     selectSubject: "Seleccionar una materia"
   },
   allocation: {
@@ -1075,7 +1075,7 @@ export const es: RepartoDictionary = {
       error: "No se pudo reabrir el proceso."
     }
   },
-  classroomSelection: {
+  teachingGroupSelection: {
     selectAllVisible: "Seleccionar todos los grupos visibles",
     selectRow: "Seleccionar {name}",
     deleteSelected: "Eliminar seleccionados ({count})",

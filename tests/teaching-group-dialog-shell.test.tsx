@@ -22,23 +22,23 @@ vi.mock("radix-ui", () => {
 
 import { EntityDialogShell } from "../src/runtime/react/default-ui/process-crud/shared.js";
 
-describe("classroom CRUD dialog shell", () => {
+describe("teaching group CRUD dialog shell", () => {
   it("uses the shadcn Dialog structure for create and edit forms", () => {
     const html = renderToStaticMarkup(
-      <EntityDialogShell description="Classrooms" dialogId="classroom-edit" onClose={vi.fn()} title="Edit classroom">
+      <EntityDialogShell description="Teaching groups" dialogId="teaching-group-edit" onClose={vi.fn()} title="Edit teaching group">
         <form>Fields</form>
       </EntityDialogShell>
     );
 
     expect(html).toContain('role="dialog"');
     expect(html).toContain('data-slot="dialog-overlay"');
-    expect(html).toContain('data-reparto-dialog="classroom-edit"');
+    expect(html).toContain('data-reparto-dialog="teaching-group-edit"');
     expect(html).toContain('data-reparto-dialog-dismiss="close"');
     expect(html).toContain("sm:max-w-2xl");
     expect(html).toContain("bg-black/10");
     expect(html).toContain("p-4");
     expect(html).not.toContain("style=");
-    expect(html).toContain("Edit classroom");
+    expect(html).toContain("Edit teaching group");
     expect(html).toContain("<form>Fields</form>");
   });
 
@@ -61,7 +61,7 @@ describe("classroom CRUD dialog shell", () => {
     }
 
     const source = readFileSync(
-      resolve("src/runtime/react/default-ui/process-crud/classrooms/delete.tsx"),
+      resolve("src/runtime/react/default-ui/process-crud/teaching-groups/delete.tsx"),
       "utf8"
     );
     expect(source).toContain("EntityDeleteDialog");

@@ -54,6 +54,7 @@ export const REPARTO_ROUTE_ACCESS: Record<RepartoRouteName, RepartoRouteAccess> 
   classroomStages: { view: "reader", act: "admin" },
   groupSubjects: { view: "reader", act: "admin" },
   processSettings: { view: "reader", act: "admin" },
+  allocation: { view: "reader", act: "admin" },
   planning: { view: "reader", act: "admin" },
   requirements: { view: "reader", act: "admin" },
   participants: { view: "reader", act: "admin" },

@@ -32,6 +32,7 @@ describe("routes", () => {
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
       processSettings: "/reparto/processes/[processId]/settings",
+      allocation: "/reparto/processes/[processId]/allocation",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -55,6 +56,7 @@ describe("routes", () => {
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
       processSettings: "/reparto/processes/[processId]/settings",
+      allocation: "/reparto/processes/[processId]/allocation",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -303,7 +305,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(21);
+    expect(injectRoute).toHaveBeenCalledTimes(22);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -322,7 +324,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(20);
+    expect(injectRoute).toHaveBeenCalledTimes(21);
   });
 
   it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
@@ -417,7 +419,7 @@ describe("integration", () => {
       pattern: "/es/reparto/processes/[processId]/group-subjects",
       entrypoint: "@mano8/astro-reparto-m8/routes/group-subjects.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(42);
+    expect(injectRoute).toHaveBeenCalledTimes(44);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -452,11 +454,17 @@ describe("integration", () => {
     expect(
       DEFAULT_REPARTO_NAV.configuration.entries.map((entry) => entry.labelKey)
     ).toEqual([
+      // Selecting or creating a process precedes every Stage 1 entry, so the
+      // two process surfaces head the group rather than sitting in Stage 3
+      // (audit `S2-10`); the rest follow §8.2's step order.
+      "nav.item.processes",
+      "nav.item.dashboard",
       "nav.item.schools",
       "nav.item.academicYears",
       "nav.item.departments",
       "nav.item.classroomStages",
       "nav.item.teacherRoster",
+      "nav.item.allocation",
       "nav.item.processParticipants",
       "nav.item.subjects",
       "nav.item.classrooms",
@@ -466,17 +474,39 @@ describe("integration", () => {
     expect(DEFAULT_REPARTO_NAV.planning.labelKey).toBe("nav.group.planning");
     expect(DEFAULT_REPARTO_NAV.planning.entries.map((entry) => entry.labelKey)).toEqual([
       "nav.item.planning",
-      "nav.item.requirements"
+      "nav.item.requirements",
+      // The planning draft/provisional exports (§7.8) are Stage 2 artifacts, so
+      // the export route is reachable from Stage 2 as well as Stage 3.
+      "nav.item.planningExports"
     ]);
     expect(DEFAULT_REPARTO_NAV.assignment.labelKey).toBe("nav.group.assignment");
     const schoolsEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.schools"
     );
     expect(schoolsEntry?.href).toBe("/reparto/setup/schools");
-    const dashboardEntry = resolved.assignment.entries.find(
+    const dashboardEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.dashboard"
     );
     expect(dashboardEntry?.href).toBe("/reparto");
+    // Neither process surface is left behind in Stage 3.
+    expect(
+      DEFAULT_REPARTO_NAV.assignment.entries.map((entry) => entry.route)
+    ).not.toContain("dashboard");
+    expect(
+      DEFAULT_REPARTO_NAV.assignment.entries.map((entry) => entry.route)
+    ).not.toContain("processList");
+    const allocationEntry = resolved.configuration.entries.find(
+      (entry) => entry.labelKey === "nav.item.allocation"
+    );
+    expect(allocationEntry?.href).toBe(
+      "/reparto/processes/current/allocation"
+    );
+    const planningExportsEntry = resolved.planning.entries.find(
+      (entry) => entry.labelKey === "nav.item.planningExports"
+    );
+    expect(planningExportsEntry?.href).toBe(
+      "/reparto/processes/current/exports"
+    );
     const classroomsEntry = resolved.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.classrooms"
     );
@@ -498,7 +528,7 @@ describe("integration", () => {
     const resolvedMissing = buildRepartoNav(
       buildRepartoRoutes({ dashboard: false })
     );
-    const missingDashboard = resolvedMissing.assignment.entries.find(
+    const missingDashboard = resolvedMissing.configuration.entries.find(
       (entry) => entry.labelKey === "nav.item.dashboard"
     );
     expect(missingDashboard?.href).toBe("#");

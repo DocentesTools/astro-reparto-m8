@@ -90,6 +90,7 @@ mutations that route issues.
 | `classrooms` | `/reparto/processes/[processId]/classrooms` | `RepartoClassroomsView` | reader | admin |
 | `groupSubjects` | `/reparto/processes/[processId]/group-subjects` | `RepartoGroupSubjectsView` | reader | admin |
 | `processSettings` | `/reparto/processes/[processId]/settings` | `RepartoProcessSettingsView` | reader | admin |
+| `allocation` | `/reparto/processes/[processId]/allocation` | `RepartoAllocationView` | reader | admin |
 | `planning` | `/reparto/processes/[processId]/planning` | `RepartoPlanningView` | reader | admin |
 | `requirements` | `/reparto/processes/[processId]/requirements` | `RepartoHourRequirementsView` | reader | admin |
 | `dashboard` | `/reparto` | `RepartoDashboardView` | reader | admin |
@@ -411,9 +412,12 @@ refused with **409** rather than committed. Nothing in Stage 2 has an input
 until at least one cell exists.
 
 Leadership's weekly group-hour allocation is recorded here as the first
-immutable revision (`allocationRevisions.create`). Until one exists,
-`allocationRevisions.current` answers **404** — a normal state for a new process,
-not an error to surface as a failure.
+immutable revision (`allocationRevisions.create`), on its own `allocation`
+route. Until one exists, `allocationRevisions.current` answers **404** — a normal
+state for a new process, not an error to surface as a failure.
+`LeadershipAllocationPanel` is the one implementation: the route frames it as
+§8.2 step 2, and `AllocationChangeReconciliation` on `/planning` embeds the same
+panel for the case it was written for, resolving a *change*.
 
 Stage 1 closes with `processSettings` (§8.2 step 7): the hours reference every
 participant is measured against, the selection order and its mode, and the two

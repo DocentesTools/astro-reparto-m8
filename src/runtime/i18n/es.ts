@@ -795,6 +795,8 @@ export const es: RepartoDictionary = {
       classroomStages: "Etapas educativas",
       groupSubjects: "Matriz grupo-materia",
       processSettings: "Ajustes del proceso",
+      allocation: "Dotación de dirección",
+      planningExports: "Exportaciones de planificación",
       subjects: "Materias",
       planning: "Planificación",
       requirements: "Horas necesarias",
@@ -1011,6 +1013,13 @@ export const es: RepartoDictionary = {
     updateError: "No se pudo actualizar la celda de la matriz.",
     selectClassroom: "Seleccionar un grupo",
     selectSubject: "Seleccionar una materia"
+  },
+  allocation: {
+    pageTitle: "Dotación de dirección",
+    description: "Las horas de grupo semanales que la dirección ha comunicado a este departamento. La etapa 2 equilibra el plan docente frente a la revisión vigente, así que regístrala antes de empezar a planificar.",
+    panelTitle: "Revisiones de la dotación",
+    panelDescription: "Cada revisión es inmutable y conserva su lugar en el historial. Registrar una nueva después de haber empezado la planificación marca el plan como obsoleto y obliga a una reconciliación explícita.",
+    readOnly: "Registrar una revisión de la dotación es una acción del jefe de departamento."
   },
   processSettings: {
     pageTitle: "Ajustes del proceso",

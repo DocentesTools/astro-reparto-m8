@@ -413,11 +413,18 @@ in §12; see that entry before reusing either name.
 
 > Added **2026-08-02** by the three-stage adaptation. Plan/reconciliation state
 > remains service-owned; the UI never deletes an assignment or retries a stale
-> confirmation silently.
+> confirmation silently. Amended **2026-08-11** (audit `S2-06`): the revision
+> history and record form are now `LeadershipAllocationPanel`, mounted by the
+> Stage 1 `allocation` route (§8.2 step 2) **and** embedded here. One
+> implementation, two framings — the slot names below are unchanged, so an
+> older skin still finds every one of them.
 
 | Concept | DOM slot | Contract |
 | --- | --- | --- |
 | Workflow | `data-reparto-component="allocation-change-reconciliation"` | package-owned planning panel |
+| Allocation panel | `data-reparto-component="leadership-allocation"` | the route framing (`/reparto/processes/[processId]/allocation`); the embedded framing renders the same body without this wrapper |
+| Route | `data-reparto-route="allocation"` | Stage 1 nav entry `nav.item.allocation`, floors `reader`/`admin` |
+| Record refusal | `data-reparto-state="read-only"` | the `admin` write floor is read inside the panel (§21.5); the history stays visible to a `READER` |
 | Reconciliation state | `data-reparto-slot="allocation-reconciliation-status"` | service plan status; `stale`/`reconciliation_required` enable preview |
 | Preserved assignment notice | `data-reparto-state="assignments-preserved"` | assignments remain visible until explicit apply |
 | Allocation history | `data-reparto-table="allocation-revisions"` | append-only immutable revisions |
@@ -757,7 +764,24 @@ never invent alternate status names.
 
 ## 7. Sidebar / information architecture labels
 
-Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
+Plan §7 IA is the source of truth. The dictionary root is `nav.*`.
+
+**Composition, amended 2026-08-11 (audit `S2-10`).** The three groups stay the
+three stages, and their *contents* follow §8.2's setup workflow rather than
+strict domain ownership:
+
+* `nav.item.processes` and `nav.item.dashboard` head **Stage 1**. Selecting or
+  creating a process is the prerequisite for every Stage 1 entry, so filing them
+  under Stage 3 was domain-correct and workflow-backwards. They are not a fourth
+  ungrouped group: `FaRepartoNav` names exactly three groups and hosts render
+  them one by one, so a new group would be a nav entry nothing mounts.
+* `nav.item.allocation` is **Stage 1** (§8.2 step 2), not Stage 2.
+* `nav.item.planningExports` points the **Stage 2** group at the `exports`
+  route: the planning draft and provisional exports (§7.8) are Stage 2
+  artifacts. `nav.item.exports` keeps the same route under Stage 3 for the final
+  and stored documents.
+
+The table:
 
 | Key | en | fr | es |
 | --- | --- | --- | --- |
@@ -780,6 +804,8 @@ Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
 | `nav.item.shared` | Shared screen | Écran partagé | Pantalla compartida |
 | `nav.item.versions` | Versions | Versions | Versiones |
 | `nav.item.exports` | Exports | Exports | Exportaciones |
+| `nav.item.allocation` | Leadership allocation | Dotation de la direction | Dotación de dirección |
+| `nav.item.planningExports` | Planning exports | Exports de planification | Exportaciones de planificación |
 | `nav.item.processSettings` | Process settings | Paramètres du processus | Ajustes del proceso |
 | `nav.item.audit` | Audit | Audit | Auditoría |
 

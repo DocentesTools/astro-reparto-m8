@@ -47,7 +47,8 @@ stage-3 work is refused against a plan that has not completed stage 2.
    teacher roster; then per process: participants and their base/extra hours,
    subjects and their suggested defaults, teaching groups, and the
    group-subject matrix that holds the actual planning values. The leadership
-   allocation is recorded here as the first immutable revision, and the process
+   allocation is recorded here as the first immutable revision on its own
+   `/allocation` route (§8.2 step 2), and the process
    settings — the hours reference, the selection order and the direct-selection
    and LAN switches — close the stage.
 2. **Planning** — `/planning` materializes main-subject activities from that
@@ -63,9 +64,9 @@ stage-3 work is refused against a plan that has not completed stage 2.
 
 | Stage | Routes |
 | --- | --- |
-| Configuration | `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{participants,subjects,classrooms,group-subjects,settings}` |
+| Configuration | `/reparto`, `/reparto/processes`, `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{allocation,participants,subjects,classrooms,group-subjects,settings}` |
 | Planning | `/reparto/processes/[processId]/{planning,requirements}` |
-| Assignment | `/reparto`, `/reparto/processes`, `/reparto/processes/[processId]/{assignments,my-view,shared,versions,exports,audit}`, `/reparto/meeting/[processId]` |
+| Assignment | `/reparto/processes/[processId]/{assignments,my-view,shared,versions,exports,audit}`, `/reparto/meeting/[processId]` |
 
 Every path is overridable, and any route can be dropped with `false`, through
 the integration's `routes` option. Each one carries two floors: the minimum role

@@ -796,6 +796,8 @@ export const fr: RepartoDictionary = {
       classroomStages: "Niveaux scolaires",
       groupSubjects: "Matrice groupe-matière",
       processSettings: "Paramètres du processus",
+      allocation: "Dotation de la direction",
+      planningExports: "Exports de planification",
       subjects: "Matières",
       planning: "Planification",
       requirements: "Besoins horaires",
@@ -1012,6 +1014,13 @@ export const fr: RepartoDictionary = {
     updateError: "La cellule de la matrice n'a pas pu être mise à jour.",
     selectClassroom: "Sélectionner une classe",
     selectSubject: "Sélectionner une matière"
+  },
+  allocation: {
+    pageTitle: "Dotation de la direction",
+    description: "Les heures de groupe hebdomadaires communiquées à ce département par la direction. L'étape 2 équilibre le plan pédagogique par rapport à la révision courante : enregistrez-la avant de commencer la planification.",
+    panelTitle: "Révisions de la dotation",
+    panelDescription: "Chaque révision est immuable et conserve sa place dans l'historique. En enregistrer une nouvelle après le début de la planification rend le plan obsolète et impose une réconciliation explicite.",
+    readOnly: "Enregistrer une révision de la dotation est une action du chef de département."
   },
   processSettings: {
     pageTitle: "Paramètres du processus",

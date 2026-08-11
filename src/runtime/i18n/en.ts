@@ -796,6 +796,8 @@ export const en = {
       classroomStages: "Classroom stages",
       groupSubjects: "Group-subject matrix",
       processSettings: "Process settings",
+      allocation: "Leadership allocation",
+      planningExports: "Planning exports",
       subjects: "Subjects",
       planning: "Planning",
       requirements: "Requirements",
@@ -1012,6 +1014,13 @@ export const en = {
     updateError: "The matrix cell could not be updated.",
     selectClassroom: "Select a classroom",
     selectSubject: "Select a subject"
+  },
+  allocation: {
+    pageTitle: "Leadership allocation",
+    description: "The weekly group hours school leadership has communicated to this department. Stage 2 balances the teaching plan against the current revision, so record it before planning starts.",
+    panelTitle: "Allocation revisions",
+    panelDescription: "Each revision is immutable and keeps its place in the history. Recording a new one after planning has started marks the plan stale and sends it through explicit reconciliation.",
+    readOnly: "Recording an allocation revision is a department-head action."
   },
   processSettings: {
     pageTitle: "Process settings",

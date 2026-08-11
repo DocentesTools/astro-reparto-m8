@@ -47,22 +47,42 @@ export type FaRepartoAstroOptions = {
 // and Stage 3 is the existing assignment process run against the generated
 // slots. `classrooms`/`subjects`/`processParticipants` are process-scoped
 // resources but are configured once per process before planning starts, so
-// they sit in Stage 1 alongside the school-wide setup entries. `groupSubjects`
-// then closes the matrix work: the matrix is the last thing Stage 1 produces
-// for materialization and the only input main-subject materialization has, so
-// it follows subjects and classrooms and precedes the Stage 2 entries that
-// consume it. `processSettings` is §8.2 step 7 and comes last in the group:
-// selection order, direct selection and LAN access describe how Stage 3 will be
-// run, and they are the final configuration decision before planning starts.
+// they sit in Stage 1 alongside the school-wide setup entries.
+//
+// Within Stage 1 the order is §8.2's, once the school-wide entries are out of
+// the way: `processList`/`dashboard` (select or create the process — the
+// prerequisite for everything else), schools/years/departments (step 1), the
+// school-wide reference data, then the process-scoped block in step order —
+// `allocation` (2), `participants` (3), `subjects` (4), `classrooms` (5),
+// `groupSubjects` (6), `processSettings` (7).
+//
+// Three placements the audit (`S2-10`, `S2-06`) asked for and why they are
+// where they are:
+//
+// * `processList`/`dashboard` head Stage 1 rather than sitting in Stage 3.
+//   They are domain-correct as assignment surfaces and workflow-backwards
+//   there: nothing in Stage 1 can be opened before a process is selected. They
+//   are **not** a fourth, ungrouped root group — `FaRepartoNav` names exactly
+//   three groups and a host renders them one by one (`fa-ui-m8` does), so a new
+//   group would be a nav entry nothing mounts, which is the shape of `S2-02`.
+// * `allocation` is Stage 1, not Stage 2. Recording the *first* revision is
+//   §8.2 step 2; the reconciliation panel on `/planning` keeps the same form
+//   for the case it was written for — resolving a *change*.
+// * `exports` appears in Stage 2 as well as Stage 3. The planning draft and
+//   provisional exports (§7.8) are Stage 2 artifacts and the export centre
+//   already implements them; the same route serves both readings.
 export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
   configuration: {
     labelKey: "nav.group.configuration",
     entries: [
+      { labelKey: "nav.item.processes", route: "processList" },
+      { labelKey: "nav.item.dashboard", route: "dashboard" },
       { labelKey: "nav.item.schools", route: "schools" },
       { labelKey: "nav.item.academicYears", route: "academicYears" },
       { labelKey: "nav.item.departments", route: "departments" },
       { labelKey: "nav.item.classroomStages", route: "classroomStages" },
       { labelKey: "nav.item.teacherRoster", route: "teacherRoster" },
+      { labelKey: "nav.item.allocation", route: "allocation" },
       { labelKey: "nav.item.processParticipants", route: "participants" },
       { labelKey: "nav.item.subjects", route: "subjects" },
       { labelKey: "nav.item.classrooms", route: "classrooms" },
@@ -74,14 +94,13 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
     labelKey: "nav.group.planning",
     entries: [
       { labelKey: "nav.item.planning", route: "planning" },
-      { labelKey: "nav.item.requirements", route: "requirements" }
+      { labelKey: "nav.item.requirements", route: "requirements" },
+      { labelKey: "nav.item.planningExports", route: "exports" }
     ]
   },
   assignment: {
     labelKey: "nav.group.assignment",
     entries: [
-      { labelKey: "nav.item.dashboard", route: "dashboard" },
-      { labelKey: "nav.item.processes", route: "processList" },
       { labelKey: "nav.item.assignments", route: "assignments" },
       { labelKey: "nav.item.meeting", route: "meeting" },
       { labelKey: "nav.item.myView", route: "teacherView" },
@@ -140,6 +159,7 @@ const ROUTE_ENTRYPOINTS = {
   classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
   groupSubjects: "@mano8/astro-reparto-m8/routes/group-subjects.astro",
   processSettings: "@mano8/astro-reparto-m8/routes/settings.astro",
+  allocation: "@mano8/astro-reparto-m8/routes/allocation.astro",
   planning: "@mano8/astro-reparto-m8/routes/planning.astro",
   requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
   participants: "@mano8/astro-reparto-m8/routes/participants.astro",

@@ -80,6 +80,7 @@ export {
   ActivitySyncDifferences,
   ActivitySyncView,
   AllocationChangeReconciliation,
+  LeadershipAllocationPanel,
   AllocationRevisionHistory,
   MainActivitySyncPanel,
   MainSubjectMaterialization,
@@ -1097,6 +1098,7 @@ export { ProcessSettingsForm } from "./process-crud/process-settings/settings-fo
 export { ProcessReopenControl } from "./process-crud/process-settings/reopen.js";
 
 export {
+  RepartoAllocationView,
   RepartoAssignmentsView,
   RepartoAuditView,
   RepartoClassroomsView,

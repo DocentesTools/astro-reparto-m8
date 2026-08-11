@@ -28,12 +28,14 @@ host source edits outside documented registration points.
 
 - `headless` provides schemas, API wrappers, auth adapter, and React providers
   without pages. `starter` adds the three-stage Astro route map: configuration
-  (schools, academic years, departments, classroom stages, teacher roster,
-  participants, subjects, classrooms, group-subject matrix, process settings),
-  planning (planning, requirements) and assignment (dashboard, processes,
-  assignments, meeting, teacher, shared screen, versions, exports, audit).
+  (process list and dashboard, schools, academic years, departments, classroom
+  stages, teacher roster, leadership allocation, participants, subjects,
+  classrooms, group-subject matrix, process settings), planning (planning,
+  requirements, planning exports) and assignment (assignments, meeting, teacher,
+  shared screen, versions, exports, audit).
 - `src/integration.ts` provides `DEFAULT_REPARTO_NAV` / `buildRepartoNav`, whose
-  three groups are those same stages. Consumers own their final configuration
+  three groups are those same stages, composed in §8.2 setup-workflow order
+  rather than by strict domain ownership. Consumers own their final configuration
   and i18n labels.
 - `docs/host-integration.md` is the consumer-facing integration reference
   (options, route map and role floors, view props, API and hook surface, auth

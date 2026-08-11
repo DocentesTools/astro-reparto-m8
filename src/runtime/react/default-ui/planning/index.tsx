@@ -142,6 +142,7 @@ export {
 } from "./feasibility-diagnostics.js";
 export {
   AllocationChangeReconciliation,
+  LeadershipAllocationPanel,
   AllocationRevisionHistory,
   ReconciliationStatusCard,
   RequirementReconciliationPreviewCard,

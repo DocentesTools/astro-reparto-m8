@@ -142,6 +142,7 @@ const revision: DepartmentHourAllocationRevisionPublic = {
 };
 
 const state = vi.hoisted(() => ({
+  canAct: true,
   plan: null as unknown,
   planLoading: false,
   planError: null as unknown,
@@ -160,6 +161,13 @@ const hooks = vi.hoisted(() => ({
 }));
 
 const toasts = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
+
+// The allocation panel now owns its own `admin` write floor (§21.5, audit
+// `S2-06`), because `/allocation` mounts it with nothing else gating it.
+vi.mock("../src/runtime/react/useRepartoRole.js", () => ({
+  useRepartoCanAct: () => state.canAct,
+  useRepartoViewMode: () => (state.canAct ? "admin" : "readonly")
+}));
 
 vi.mock("../src/runtime/react/hooks.js", () => ({
   useRepartoTeachingPlan: () => ({
@@ -237,6 +245,7 @@ function takePreview(result = previewFixture()) {
 }
 
 beforeEach(() => {
+  state.canAct = true;
   state.plan = planFixture();
   state.planLoading = false;
   state.planError = null;
@@ -252,6 +261,20 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("allocation revision recording", () => {
+  it("withholds the record control below the admin floor and says so", async () => {
+    state.canAct = false;
+    await renderPanel();
+
+    expect(action("record-allocation-revision")).toBeNull();
+    expect(
+      document.querySelector('[data-reparto-state="read-only"]')?.textContent
+    ).toBe(dict.allocation.readOnly);
+    // The history is data a `READER` is entitled to (§21.4).
+    expect(
+      document.querySelector('[data-reparto-slot="allocation-revision-history"]')
+    ).not.toBeNull();
+  });
+
   it("records an audited revision with trimmed values", async () => {
     await renderPanel();
     fireEvent.click(requireAction("record-allocation-revision"));

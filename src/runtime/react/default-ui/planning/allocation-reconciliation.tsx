@@ -42,7 +42,8 @@ import {
   RepartoFormError,
   RowActions,
   useDict,
-  useMappedError
+  useMappedError,
+  useRepartoCanAct
 } from "../process-crud/shared.js";
 
 export type AllocationRevisionFormValues = {
@@ -651,21 +652,39 @@ export function RequirementReconciliationResultCard({
   );
 }
 
-export function AllocationChangeReconciliation({
+/**
+ * The leadership allocation itself: its immutable history and the form that
+ * records the next revision (audit finding `S2-06`).
+ *
+ * Recording the **first** revision is §8.2 step 2 — a Stage 1 act — and it lived
+ * only inside `AllocationChangeReconciliation` on `/planning`, titled and framed
+ * as reconciling a *change*. The form always worked; an operator finishing
+ * Stage 1 simply had no reason to open a Stage 2 page to enter the number Stage
+ * 2 balances against. So the panel moved here and is mounted twice, with one
+ * implementation: `/allocation` frames it as Stage 1, and the reconciliation
+ * panel keeps it in place as the first step of resolving a change.
+ *
+ * The `admin` floor is read from the `allocation` route inside the component
+ * (§21.5) rather than taken as a prop, so a headless host mounting it directly
+ * still gets it. Both mount points carry the same floor, and recording a
+ * revision is the same act on either.
+ */
+export function LeadershipAllocationPanel({
   locale,
-  processId
+  onRecorded,
+  processId,
+  variant = "route"
 }: {
   locale?: RepartoLocale;
+  /** Lets the reconciliation panel drop a preview the new revision invalidated. */
+  onRecorded?: () => void;
   processId?: string;
+  variant?: "route" | "embedded";
 }) {
   const dict = useDict(locale);
-  const planQuery = useRepartoTeachingPlan(processId);
+  const canAct = useRepartoCanAct("allocation");
   const revisionsQuery = useRepartoAllocationRevisions(processId);
-  const activitiesQuery = useRepartoTeachingActivities(processId);
-  const subjectsQuery = useRepartoSubjects(processId);
   const createRevision = useCreateRepartoAllocationRevision();
-  const previewReconciliation = usePreviewRepartoRequirementReconciliation();
-  const reconcileRequirements = useReconcileRepartoRequirements();
   const [mapped, setError, clearError] = useMappedError();
   const [isAllocationFormOpen, setIsAllocationFormOpen] = useState(false);
   const [allocationValues, setAllocationValues] = useState(
@@ -674,17 +693,10 @@ export function AllocationChangeReconciliation({
   const [allocationErrors, setAllocationErrors] = useState<
     Partial<Record<AllocationRevisionFormErrorKey, string>>
   >({});
-  const [preview, setPreview] =
-    useState<RequirementReconciliationPreview | null>(null);
-  const [reason, setReason] = useState("");
-  const [result, setResult] =
-    useState<RequirementReconciliationResult | null>(null);
-  const plan = planQuery.data ?? null;
   const revisions = useMemo(
     () => revisionsQuery.data?.data ?? [],
     [revisionsQuery.data]
   );
-  const canReconcile = isAllocationReconciliationAvailable(plan);
 
   function handleAllocationSubmit(event: { preventDefault: () => void }) {
     event.preventDefault();
@@ -702,8 +714,7 @@ export function AllocationChangeReconciliation({
         onSuccess: () => {
           setAllocationValues(EMPTY_ALLOCATION_FORM);
           setIsAllocationFormOpen(false);
-          setPreview(null);
-          setResult(null);
+          onRecorded?.();
           repartoToast.success(
             dict.planning.reconciliation.allocationRecorded
           );
@@ -718,6 +729,92 @@ export function AllocationChangeReconciliation({
       }
     );
   }
+
+  const body = (
+    <>
+      <AllocationRevisionHistory
+        dict={dict}
+        isLoading={revisionsQuery.isLoading}
+        revisions={revisions}
+      />
+      {revisionsQuery.isError ? (
+        <p className="text-sm text-destructive" data-reparto-state="error">
+          {revisionsQuery.error instanceof Error
+            ? revisionsQuery.error.message
+            : dict.planning.reconciliation.allocationUnavailable}
+        </p>
+      ) : null}
+      {canAct ? (
+        <RowActions>
+          <ActionButton
+            action="record-allocation-revision"
+            disabled={createRevision.isPending}
+            label={dict.planning.reconciliation.recordAllocationAction}
+            onClick={() => setIsAllocationFormOpen(true)}
+          />
+        </RowActions>
+      ) : (
+        <p className={repartoFieldCaptionClass} data-reparto-state="read-only">
+          {dict.allocation.readOnly}
+        </p>
+      )}
+      {canAct && isAllocationFormOpen ? (
+        <AllocationRevisionForm
+          dict={dict}
+          errors={allocationErrors}
+          isPending={createRevision.isPending}
+          onCancel={() => {
+            setIsAllocationFormOpen(false);
+            setAllocationErrors({});
+          }}
+          onChange={setAllocationValues}
+          onSubmit={handleAllocationSubmit}
+          values={allocationValues}
+        />
+      ) : null}
+      <RepartoFormError mapped={mapped} />
+    </>
+  );
+
+  if (variant === "embedded") return body;
+
+  return (
+    <section
+      className={`${repartoPanelClass} space-y-4`}
+      data-reparto-component="leadership-allocation"
+    >
+      <header>
+        <h2 className="font-semibold">{dict.allocation.panelTitle}</h2>
+        <p className={repartoFieldCaptionClass}>
+          {dict.allocation.panelDescription}
+        </p>
+      </header>
+      {body}
+    </section>
+  );
+}
+
+export function AllocationChangeReconciliation({
+  locale,
+  processId
+}: {
+  locale?: RepartoLocale;
+  processId?: string;
+}) {
+  const dict = useDict(locale);
+  const planQuery = useRepartoTeachingPlan(processId);
+  const activitiesQuery = useRepartoTeachingActivities(processId);
+  const subjectsQuery = useRepartoSubjects(processId);
+  const previewReconciliation = usePreviewRepartoRequirementReconciliation();
+  const reconcileRequirements = useReconcileRepartoRequirements();
+  const [mapped, setError, clearError] = useMappedError();
+  const [preview, setPreview] =
+    useState<RequirementReconciliationPreview | null>(null);
+  const [reason, setReason] = useState("");
+  const [result, setResult] =
+    useState<RequirementReconciliationResult | null>(null);
+  const plan = planQuery.data ?? null;
+  const canReconcile = isAllocationReconciliationAvailable(plan);
 
   function handlePreview() {
     if (!processId || !canReconcile || previewReconciliation.isPending) return;
@@ -800,40 +897,20 @@ export function AllocationChangeReconciliation({
         </p>
       </header>
       <ReconciliationStatusCard dict={dict} plan={plan} />
-      <AllocationRevisionHistory
-        dict={dict}
-        isLoading={revisionsQuery.isLoading}
-        revisions={revisions}
+      {/*
+        The same panel the `/allocation` route mounts, embedded: recording a
+        revision is the first step of resolving a change as much as it is §8.2
+        step 2, and two implementations of one form would drift.
+      */}
+      <LeadershipAllocationPanel
+        locale={locale}
+        onRecorded={() => {
+          setPreview(null);
+          setResult(null);
+        }}
+        processId={processId}
+        variant="embedded"
       />
-      {revisionsQuery.isError ? (
-        <p className="text-sm text-destructive" data-reparto-state="error">
-          {revisionsQuery.error instanceof Error
-            ? revisionsQuery.error.message
-            : dict.planning.reconciliation.allocationUnavailable}
-        </p>
-      ) : null}
-      <RowActions>
-        <ActionButton
-          action="record-allocation-revision"
-          disabled={createRevision.isPending}
-          label={dict.planning.reconciliation.recordAllocationAction}
-          onClick={() => setIsAllocationFormOpen(true)}
-        />
-      </RowActions>
-      {isAllocationFormOpen ? (
-        <AllocationRevisionForm
-          dict={dict}
-          errors={allocationErrors}
-          isPending={createRevision.isPending}
-          onCancel={() => {
-            setIsAllocationFormOpen(false);
-            setAllocationErrors({});
-          }}
-          onChange={setAllocationValues}
-          onSubmit={handleAllocationSubmit}
-          values={allocationValues}
-        />
-      ) : null}
       <RepartoFormError mapped={mapped} />
       {result ? (
         <RequirementReconciliationResultCard dict={dict} result={result} />

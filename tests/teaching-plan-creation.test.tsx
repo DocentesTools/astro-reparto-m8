@@ -6,6 +6,7 @@ import { getRepartoDictionary } from "../src/runtime/i18n/index.js";
 import { RepartoApiError } from "../src/runtime/errors.js";
 import {
   buildTeachingPlanCreationState,
+  buildTeachingPlanUnlockState,
   isDuplicateTeachingPlanError,
   isMissingTeachingPlanError
 } from "../src/runtime/ui/teachingPlan.js";
@@ -180,6 +181,64 @@ describe("teaching-plan presence", () => {
     ]
   ])("classifies %s", (_label, input, expected) => {
     expect(buildTeachingPlanCreationState(input)).toEqual(expected);
+  });
+});
+
+/**
+ * Two questions the unlock surface must keep apart (audit finding `S2-04`):
+ * what §20.14 says the plan requires, and what the served endpoint accepts.
+ * They disagree for every generation-owned status, and collapsing them either
+ * hides the requirement or offers a control that answers 409.
+ */
+describe("teaching-plan unlock state", () => {
+  it.each([
+    [
+      "there is no plan",
+      { canAct: true, plan: null },
+      { requiresUnlock: false, canUnlock: false, blockedReason: "absent" }
+    ],
+    [
+      "the plan is still draft",
+      { canAct: true, plan: planFixture({ status: "draft" }) },
+      { requiresUnlock: false, canUnlock: false, blockedReason: "already-mutable" }
+    ],
+    [
+      "the plan is unbalanced",
+      { canAct: true, plan: planFixture({ status: "unbalanced" }) },
+      { requiresUnlock: false, canUnlock: false, blockedReason: "already-mutable" }
+    ],
+    [
+      "the plan is balanced and editable",
+      { canAct: true, plan: planFixture({ status: "balanced" }) },
+      { requiresUnlock: false, canUnlock: false, blockedReason: "already-mutable" }
+    ],
+    [
+      "the plan is locked and the session may act",
+      { canAct: true, plan: planFixture({ status: "locked" }) },
+      { requiresUnlock: true, canUnlock: true, blockedReason: null }
+    ],
+    [
+      "the plan is locked below the write floor",
+      { canAct: false, plan: planFixture({ status: "locked" }) },
+      { requiresUnlock: true, canUnlock: false, blockedReason: "read-only" }
+    ],
+    [
+      "requirements have been generated",
+      { canAct: true, plan: planFixture({ status: "requirements_generated" }) },
+      { requiresUnlock: true, canUnlock: false, blockedReason: "generation-owned" }
+    ],
+    [
+      "the plan went stale",
+      { canAct: true, plan: planFixture({ status: "stale" }) },
+      { requiresUnlock: true, canUnlock: false, blockedReason: "generation-owned" }
+    ],
+    [
+      "the plan needs reconciliation",
+      { canAct: true, plan: planFixture({ status: "reconciliation_required" }) },
+      { requiresUnlock: true, canUnlock: false, blockedReason: "generation-owned" }
+    ]
+  ])("classifies %s", (_label, input, expected) => {
+    expect(buildTeachingPlanUnlockState(input)).toEqual(expected);
   });
 });
 

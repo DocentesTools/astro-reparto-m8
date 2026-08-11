@@ -128,6 +128,7 @@ export {
 export {
   PlanLockAndRequirementGeneration,
   PlanLockConfirmation,
+  PlanUnlockControl,
   PlanValidationSummary,
   RequirementGenerationPreviewCard,
   RequirementGenerationResultCard,

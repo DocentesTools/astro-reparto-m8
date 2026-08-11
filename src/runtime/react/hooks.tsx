@@ -701,6 +701,33 @@ export function useLockRepartoTeachingPlan() {
   });
 }
 
+/**
+ * Return a locked pre-generation plan to balanced editing (§20.14, §20.15).
+ *
+ * The exact inverse of `useLockRepartoTeachingPlan`, so it invalidates exactly
+ * what the lock does: the plan itself, its validations (whose blocking findings
+ * are re-derived against an editable plan) and the two projections carrying
+ * `plan_status`. Nothing else moves — an unlock changes what may be edited, not
+ * any requirement slot or assignment, and invalidating those would claim a
+ * change that did not happen.
+ */
+export function useUnlockRepartoTeachingPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => teachingPlans.unlock(processId),
+    onSuccess: (_data, processId) => {
+      for (const queryKey of [
+        repartoKeys.teachingPlan(processId),
+        repartoKeys.teachingPlanValidations(processId),
+        repartoKeys.dashboard(processId),
+        repartoKeys.summary(processId)
+      ]) {
+        void queryClient.invalidateQueries({ queryKey });
+      }
+    }
+  });
+}
+
 export function useRepartoTeachingActivities(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);
   return useQuery({

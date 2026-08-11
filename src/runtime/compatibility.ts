@@ -301,6 +301,11 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/teaching-plan/lock",
     response: "TeachingPlanPublic"
   },
+  "teachingPlans.unlock": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-plan/unlock",
+    response: "TeachingPlanPublic"
+  },
   "teachingPlans.feasibilityWitness": {
     method: "GET",
     path:

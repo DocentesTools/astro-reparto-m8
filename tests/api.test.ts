@@ -1807,6 +1807,20 @@ describe("teaching-plan and activity API wrappers", () => {
     );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
 
+    // §20.14/§20.15: the way back out. Without it locking is a one-way door,
+    // so both the method and the `/unlock` suffix are part of the assertion.
+    fetchMock.mockResolvedValueOnce(
+      response({ ...planBody, status: "balanced", locked_at: null })
+    );
+    await expect(teachingPlans.unlock(processId)).resolves.toMatchObject({
+      status: "balanced",
+      locked_at: null
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/unlock`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
     fetchMock.mockResolvedValueOnce(
       response({
         teaching_plan_id: planId,

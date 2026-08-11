@@ -68,11 +68,14 @@ export {
 } from "./feasibility.js";
 export {
   buildTeachingPlanCreationState,
+  buildTeachingPlanUnlockState,
   isDuplicateTeachingPlanError,
   isMissingTeachingPlanError,
   type TeachingPlanCreationBlockedReason,
   type TeachingPlanCreationState,
-  type TeachingPlanPresence
+  type TeachingPlanPresence,
+  type TeachingPlanUnlockBlockedReason,
+  type TeachingPlanUnlockState
 } from "./teachingPlan.js";
 export {
   buildActivitySyncPreviewState,

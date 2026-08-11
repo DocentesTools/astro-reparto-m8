@@ -13,12 +13,14 @@ import type {
   RequirementGenerationResult,
   TeachingPlanPublic
 } from "../../../schemas.js";
+import { buildTeachingPlanUnlockState } from "../../../ui/teachingPlan.js";
 import {
   useGenerateRepartoRequirements,
   useLockRepartoTeachingPlan,
   usePreviewRepartoRequirementGeneration,
   useRepartoTeachingPlan,
-  useRepartoTeachingPlanValidations
+  useRepartoTeachingPlanValidations,
+  useUnlockRepartoTeachingPlan
 } from "../../hooks.js";
 import {
   repartoFieldCaptionClass,
@@ -32,7 +34,8 @@ import {
   RepartoFormError,
   RowActions,
   useDict,
-  useMappedError
+  useMappedError,
+  useRepartoCanAct
 } from "../process-crud/shared.js";
 
 const GENERATABLE_STATUSES = new Set(["locked", "stale"]);
@@ -242,6 +245,86 @@ export function PlanLockConfirmation({
   );
 }
 
+/**
+ * The way back out of a locked plan (audit finding `S2-04`).
+ *
+ * Without it locking is a one-way door: every planning mutation refuses a plan
+ * outside `draft`/`unbalanced`/`balanced`, and nothing on screen could return
+ * it there. The card is not permanent — it appears exactly while the plan says
+ * an unlock is required, which is every non-mutable status, and says so even
+ * for the statuses the served endpoint refuses. In those the operator is told
+ * where the real way forward is instead of being handed a button that answers
+ * 409.
+ */
+export function PlanUnlockControl({
+  dict,
+  isPending = false,
+  onUnlock,
+  plan
+}: {
+  dict: RepartoDictionary;
+  isPending?: boolean;
+  onUnlock?: () => void;
+  plan: TeachingPlanPublic | null;
+}) {
+  // Read from the signed-in session, never from a prop (§21.5): a capability a
+  // caller can pass in is a capability disconnected from the session holding it.
+  const canAct = useRepartoCanAct("planning");
+  const state = buildTeachingPlanUnlockState({ canAct, plan });
+  if (!state.requiresUnlock) return null;
+
+  return (
+    <section
+      className="space-y-2 rounded-md border border-border/70 p-4"
+      data-reparto-slot="plan-unlock"
+      data-teaching-plan-status={plan?.status}
+    >
+      <h3 className="font-semibold">{dict.planning.generation.unlockTitle}</h3>
+      {/* §20.14 states the requirement; it is not an error that anything went
+          wrong, so it announces itself as status. */}
+      <p data-reparto-state="unlock-required" role="status">
+        {dict.planning.generation.unlockRequired}
+      </p>
+      {state.blockedReason === "generation-owned" ? (
+        <p
+          className={repartoFieldCaptionClass}
+          data-reparto-state="generation-owned"
+        >
+          {dict.planning.generation.unlockBlockedGeneration}
+        </p>
+      ) : null}
+      {state.blockedReason === "read-only" ? (
+        <p className={repartoFieldCaptionClass} data-reparto-state="read-only">
+          {dict.planning.generation.unlockReadOnly}
+        </p>
+      ) : null}
+      {state.canUnlock ? (
+        <>
+          <p
+            className={repartoFieldCaptionClass}
+            data-reparto-slot="plan-unlock-consequence"
+          >
+            {dict.planning.generation.unlockConsequence}
+          </p>
+          <RowActions>
+            <ActionButton
+              action="unlock-plan"
+              disabled={isPending}
+              label={dict.planning.generation.unlockAction}
+              onClick={onUnlock}
+            />
+          </RowActions>
+        </>
+      ) : null}
+      {isPending ? (
+        <p data-reparto-state="unlock-pending" role="status">
+          {dict.planning.generation.unlockPending}
+        </p>
+      ) : null}
+    </section>
+  );
+}
+
 export function RequirementGenerationPreviewCard({
   dict,
   isPending,
@@ -378,9 +461,11 @@ export function PlanLockAndRequirementGeneration({
   processId?: string;
 }) {
   const dict = useDict(locale);
+  const canAct = useRepartoCanAct("planning");
   const planQuery = useRepartoTeachingPlan(processId);
   const validationsQuery = useRepartoTeachingPlanValidations(processId);
   const lockMutation = useLockRepartoTeachingPlan();
+  const unlockMutation = useUnlockRepartoTeachingPlan();
   const previewMutation = usePreviewRepartoRequirementGeneration();
   const generateMutation = useGenerateRepartoRequirements();
   const [mapped, setError, clearError] = useMappedError();
@@ -416,6 +501,28 @@ export function PlanLockAndRequirementGeneration({
         setError(error);
         repartoToast.error(
           dict.planning.generation.lockError,
+          error instanceof Error ? error.message : undefined
+        );
+      }
+    });
+  }
+
+  function handleUnlock() {
+    if (!processId || !canAct || unlockMutation.isPending) return;
+    clearError();
+    unlockMutation.mutate(processId, {
+      onSuccess: () => {
+        // The locally remembered lock is what the panel shows while the plan
+        // read catches up; keeping it after an unlock would leave the card
+        // claiming a lock the service has just cleared.
+        setLockedPlan(null);
+        setIsLockConfirming(false);
+        repartoToast.success(dict.planning.generation.unlockSuccess);
+      },
+      onError: (error) => {
+        setError(error);
+        repartoToast.error(
+          dict.planning.generation.unlockError,
           error instanceof Error ? error.message : undefined
         );
       }
@@ -506,6 +613,12 @@ export function PlanLockAndRequirementGeneration({
         onReview={() => setIsLockConfirming(true)}
         plan={plan}
         report={validationsQuery.data ?? null}
+      />
+      <PlanUnlockControl
+        dict={dict}
+        isPending={unlockMutation.isPending}
+        onUnlock={handleUnlock}
+        plan={plan}
       />
       <RepartoFormError mapped={mapped} />
       {result ? (

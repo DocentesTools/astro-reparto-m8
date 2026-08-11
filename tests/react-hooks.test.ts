@@ -99,6 +99,7 @@ const mocks = vi.hoisted(() => ({
     feasibilityWitness: vi.fn(),
     create: vi.fn(),
     lock: vi.fn(),
+    unlock: vi.fn(),
     materializeMain: vi.fn()
   },
   teachingActivities: {
@@ -255,6 +256,7 @@ describe("reparto React hooks", () => {
     mocks.teachingPlans.feasibilityWitness.mockClear();
     mocks.teachingPlans.create.mockClear();
     mocks.teachingPlans.lock.mockClear();
+    mocks.teachingPlans.unlock.mockClear();
     mocks.teachingPlans.materializeMain.mockClear();
     mocks.teachingActivities.list.mockClear();
     mocks.teachingActivities.create.mockClear();
@@ -896,7 +898,8 @@ describe("reparto React hooks", () => {
       useLockRepartoTeachingPlan,
       usePreviewRepartoRequirementGeneration,
       useRepartoTeachingPlan,
-      useRepartoTeachingPlanValidations
+      useRepartoTeachingPlanValidations,
+      useUnlockRepartoTeachingPlan
     } = await import("../src/runtime/react/hooks.js");
 
     useRepartoTeachingPlan("p1");
@@ -924,6 +927,21 @@ describe("reparto React hooks", () => {
     const lock = useLockRepartoTeachingPlan();
     lock.mutate("p1");
     expect(mocks.teachingPlans.lock).toHaveBeenCalledWith("p1");
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "p1", "teaching-plan"],
+      ["reparto", "processes", "detail", "p1", "teaching-plan", "validations"],
+      ["reparto", "processes", "detail", "p1", "dashboard"],
+      ["reparto", "processes", "detail", "p1", "summary"]
+    ]);
+
+    // The unlock is the lock's inverse (audit `S2-04`), so it moves exactly the
+    // same four keys: what may be edited changed, no slot or assignment did.
+    mocks.invalidateQueries.mockClear();
+    const unlock = useUnlockRepartoTeachingPlan();
+    unlock.mutate("p1");
+    expect(mocks.teachingPlans.unlock).toHaveBeenCalledWith("p1");
     expect(
       mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
     ).toEqual([

@@ -377,7 +377,9 @@ in §12; see that entry before reusing either name.
 > Added **2026-07-30** by the three-stage adaptation and completed
 > **2026-08-02** against the feasibility-gated backend lock endpoint. Lock state
 > remains service-owned; the mutation result or a subsequent plan read is the
-> only source of a confirmed lock.
+> only source of a confirmed lock. Extended **2026-08-11** (audit `S2-04`) with
+> the unlock surface: the package named a lock and no way out of it, so the
+> `plan-unlock*` names below are frozen with the control that renders them.
 
 | Concept | DOM slot | Contract |
 | --- | --- | --- |
@@ -388,6 +390,11 @@ in §12; see that entry before reusing either name.
 | Lock review action | `data-reparto-action="review-plan-lock"` | enabled only for a balanced, feasible plan with zero blocking validations |
 | Lock confirmation | `data-reparto-dialog="plan-lock-confirmation"` | focused confirmation after validations and before the backend mutation |
 | Lock action | `data-reparto-action="lock-plan"` | `POST /teaching-plan/lock`; backend remains the final feasibility authority |
+| Unlock | `data-reparto-slot="plan-unlock"` | rendered only while the plan's status refuses planning edits; carries `data-teaching-plan-status` |
+| Unlock requirement | `data-reparto-state="unlock-required"` | plan §20.14 / §20.15 stated as `role="status"`, never an alert |
+| Unlock refusal | `data-reparto-state="generation-owned"` | `requirements_generated` / `stale` / `reconciliation_required`: the service unlocks a locked pre-generation plan only, so the card names regeneration or reconciliation instead |
+| Unlock consequence | `data-reparto-slot="plan-unlock-consequence"` | states what returns to editing and what is withheld until a re-lock; shown only with the action |
+| Unlock action | `data-reparto-action="unlock-plan"` | `POST /teaching-plan/unlock`; `admin` write floor, withheld (not disabled) below it |
 | Plan status | `data-teaching-plan-status` | raw service status; never a client-invented state |
 | Preview action | `data-reparto-action="preview-requirement-generation"` | enabled only for `locked` or `stale` |
 | Preview confirmation | `data-reparto-dialog="requirement-generation-confirmation"` | separate preview/apply boundary |

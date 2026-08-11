@@ -87,6 +87,7 @@ export {
   MainSubjectMaterializationTable,
   PlanLockAndRequirementGeneration,
   PlanLockConfirmation,
+  PlanUnlockControl,
   PlanValidationSummary,
   PlanningBalanceHeader,
   ReconciliationStatusCard,

@@ -66,6 +66,23 @@ export const teachingPlans = {
       auth: true
     }),
   /**
+   * Return a locked pre-generation plan to balanced editing (§20.14, §20.15).
+   *
+   * Locking is otherwise a one-way door: every planning mutation refuses a plan
+   * outside `draft`/`unbalanced`/`balanced`, and this is the only path back.
+   * The backend answers 404 with no plan and **409 for any status other than
+   * `locked`** — once requirements exist the way forward is regeneration or
+   * reconciliation, never an unlock, so callers must not present this as the
+   * remedy for a `stale` or `reconciliation_required` plan.
+   */
+  unlock: (processId: string) =>
+    request<TeachingPlanPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/teaching-plan/unlock`,
+      schema: TeachingPlanPublicSchema,
+      auth: true
+    }),
+  /**
    * Run or reuse the serialized bounded solver for the exact current
    * fingerprint (department-head/admin only). Teachers can never trigger a
    * full evaluation; the endpoint reuses a matching cached result instead of

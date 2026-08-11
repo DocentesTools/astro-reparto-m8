@@ -172,6 +172,13 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/teaching-plan/lock",
       response: "TeachingPlanPublic"
     });
+    // The way back out of a lock (audit `S2-04`): the plugin declared no
+    // unlock at all, so locking was a one-way door on a served endpoint.
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingPlans.unlock"]).toEqual({
+      method: "POST",
+      path: "/assignment-processes/{process_id}/teaching-plan/unlock",
+      response: "TeachingPlanPublic"
+    });
     expect(
       REPARTO_CONTRACT_OPERATIONS["teachingPlans.feasibilityWitness"]
     ).toEqual({
@@ -247,7 +254,7 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(66);
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(67);
   });
 });
 

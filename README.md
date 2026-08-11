@@ -218,6 +218,15 @@ create/preserve/retire/conflict diff and requires a separate confirmation before
 generation. The applied result shows the generation number and authoritative
 live-slot count; conflicts disable apply and direct the user to reconciliation.
 
+Locking is not a one-way door. The same panel carries the unlock control: it
+appears whenever the plan's status refuses planning edits, states the plan
+§20.14 / §20.15 requirement as a status line rather than an error, and offers
+`POST …/teaching-plan/unlock` behind the `admin` write floor. The service
+accepts an unlock for a locked pre-generation plan only, so a
+`requirements_generated`, `stale` or `reconciliation_required` plan is told that
+regeneration or reconciliation is its way forward instead of being handed a
+control that would answer 409.
+
 `AllocationChangeReconciliation` supplies that explicit reconciliation surface
 and is mounted by `/planning`. Department heads can record an immutable,
 reasoned allocation revision; history remains visible while the service marks

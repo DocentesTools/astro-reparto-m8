@@ -101,12 +101,15 @@ const state = vi.hoisted(() => ({
   reportLoading: false,
   reportError: null as unknown,
   lockPending: false,
+  unlockPending: false,
   previewPending: false,
-  generatePending: false
+  generatePending: false,
+  canAct: true
 }));
 
 const hooks = vi.hoisted(() => ({
   lock: vi.fn(),
+  unlock: vi.fn(),
   preview: vi.fn(),
   generate: vi.fn()
 }));
@@ -130,6 +133,10 @@ vi.mock("../src/runtime/react/hooks.js", () => ({
     mutate: hooks.lock,
     isPending: state.lockPending
   }),
+  useUnlockRepartoTeachingPlan: () => ({
+    mutate: hooks.unlock,
+    isPending: state.unlockPending
+  }),
   usePreviewRepartoRequirementGeneration: () => ({
     mutate: hooks.preview,
     isPending: state.previewPending
@@ -138,6 +145,13 @@ vi.mock("../src/runtime/react/hooks.js", () => ({
     mutate: hooks.generate,
     isPending: state.generatePending
   })
+}));
+
+vi.mock("../src/runtime/react/useRepartoRole.js", () => ({
+  useRepartoCanAct: () => state.canAct,
+  RepartoRouteGuard: ({ children }: { children: unknown }) => children,
+  Shell: ({ children }: { children: unknown }) => children,
+  WithSelectedProcess: ({ children }: { children: unknown }) => children
 }));
 
 vi.mock("../src/runtime/react/ui/toast-notification.js", () => ({
@@ -172,8 +186,10 @@ beforeEach(() => {
   state.reportLoading = false;
   state.reportError = null;
   state.lockPending = false;
+  state.unlockPending = false;
   state.previewPending = false;
   state.generatePending = false;
+  state.canAct = true;
   vi.clearAllMocks();
 });
 
@@ -295,6 +311,149 @@ describe("plan lock gate", () => {
     expect(
       document.querySelector('[data-reparto-dialog="plan-lock-confirmation"]')
     ).toBeNull();
+  });
+});
+
+/**
+ * The way back out of a lock (audit finding `S2-04`).
+ *
+ * `POST …/teaching-plan/unlock` is served and §20.14/§20.15 require it, but the
+ * plugin had no wrapper, no hook and no control, so locking was a one-way door:
+ * every planning mutation refuses a non-mutable plan and nothing on screen
+ * could return it. What is held here is that the card appears exactly while an
+ * unlock is required, that the two §20.14 states the service refuses are told
+ * where the real way forward is instead of being handed a 409, and that the
+ * panel stops claiming a lock the service has cleared.
+ */
+describe("plan unlock", () => {
+  function unlockCard(): HTMLElement | null {
+    return document.querySelector('[data-reparto-slot="plan-unlock"]');
+  }
+
+  it("offers the unlock for a locked plan and states its consequence", async () => {
+    state.plan = planFixture({ status: "locked", locked_at: now });
+    await renderPanel();
+
+    const card = unlockCard();
+    expect(card).not.toBeNull();
+    // The requirement is a statement about the plan, not a failure.
+    const required = card?.querySelector('[data-reparto-state="unlock-required"]');
+    expect(required?.getAttribute("role")).toBe("status");
+    expect(required?.textContent).toBe(dict.planning.generation.unlockRequired);
+    expect(card?.querySelector('[role="alert"]')).toBeNull();
+    expect(
+      card?.querySelector('[data-reparto-slot="plan-unlock-consequence"]')
+        ?.textContent
+    ).toBe(dict.planning.generation.unlockConsequence);
+    expect(requireAction("unlock-plan").disabled).toBe(false);
+  });
+
+  it.each([["draft"], ["unbalanced"], ["balanced"]])(
+    "says nothing for a %s plan, which already accepts edits",
+    async (status) => {
+      state.plan = planFixture({
+        status: status as TeachingPlanPublic["status"]
+      });
+      await renderPanel();
+
+      expect(unlockCard()).toBeNull();
+    }
+  );
+
+  // The served endpoint accepts a locked pre-generation plan only, so offering
+  // the control here would be a button that answers 409. §20.14 still says an
+  // unlock is required, so the requirement is stated and the real path named.
+  it.each([["requirements_generated"], ["stale"], ["reconciliation_required"]])(
+    "states the requirement for a %s plan but withholds the control",
+    async (status) => {
+      state.plan = planFixture({
+        status: status as TeachingPlanPublic["status"]
+      });
+      await renderPanel();
+
+      const card = unlockCard();
+      expect(card).not.toBeNull();
+      expect(
+        card?.querySelector('[data-reparto-state="generation-owned"]')?.textContent
+      ).toBe(dict.planning.generation.unlockBlockedGeneration);
+      expect(action("unlock-plan")).toBeNull();
+    }
+  );
+
+  it("withholds the control below the admin write floor", async () => {
+    state.plan = planFixture({ status: "locked" });
+    state.canAct = false;
+    await renderPanel();
+
+    expect(action("unlock-plan")).toBeNull();
+    expect(
+      unlockCard()?.querySelector('[data-reparto-state="read-only"]')?.textContent
+    ).toBe(dict.planning.generation.unlockReadOnly);
+  });
+
+  it("unlocks the selected process and stops claiming the cleared lock", async () => {
+    await renderPanel();
+
+    // Lock first, so the panel is holding the locally remembered locked plan.
+    fireEvent.click(requireAction("review-plan-lock"));
+    fireEvent.click(requireAction("lock-plan"));
+    hooks.lock.mock.calls[0][1].onSuccess(
+      planFixture({ status: "locked", locked_at: now, locked_by_user_id: userId })
+    );
+    await waitFor(() => requireAction("unlock-plan"));
+
+    fireEvent.click(requireAction("unlock-plan"));
+    expect(hooks.unlock).toHaveBeenCalledWith(processId, expect.anything());
+    hooks.unlock.mock.calls[0][1].onSuccess(planFixture({ status: "balanced" }));
+
+    await waitFor(() => {
+      expect(
+        document
+          .querySelector('[data-reparto-slot="plan-lock-confirmation"]')
+          ?.getAttribute("data-plan-lock-confirmed")
+      ).toBe("false");
+    });
+    expect(toasts.success).toHaveBeenCalledWith(
+      dict.planning.generation.unlockSuccess
+    );
+    // The read now drives the panel again, so the unlock card is gone.
+    expect(unlockCard()).toBeNull();
+  });
+
+  it("keeps the lock when the service refuses the unlock", async () => {
+    state.plan = planFixture({ status: "locked", locked_at: now });
+    await renderPanel();
+
+    fireEvent.click(requireAction("unlock-plan"));
+    hooks.unlock.mock.calls[0][1].onError(
+      new RepartoApiError(409, "Cannot unlock the teaching plan while it is stale.")
+    );
+
+    await waitFor(() => {
+      expect(toasts.error).toHaveBeenCalledWith(
+        dict.planning.generation.unlockError,
+        "Cannot unlock the teaching plan while it is stale."
+      );
+    });
+    // The service's own words reach the form, and the plan stays locked.
+    expect(document.body.textContent).toContain(
+      "Cannot unlock the teaching plan while it is stale."
+    );
+    expect(requireAction("unlock-plan")).not.toBeNull();
+  });
+
+  it("reports the unlock in flight and holds the control", async () => {
+    state.plan = planFixture({ status: "locked" });
+    state.unlockPending = true;
+    await renderPanel();
+
+    expect(
+      unlockCard()?.querySelector('[data-reparto-state="unlock-pending"]')
+        ?.textContent
+    ).toBe(dict.planning.generation.unlockPending);
+    expect(requireAction("unlock-plan").disabled).toBe(true);
+    fireEvent.click(requireAction("unlock-plan"));
+    expect(hooks.unlock).not.toHaveBeenCalled();
   });
 });
 

@@ -464,6 +464,7 @@ its own row state.
 | Summary | `GET /summary` → `PlanBalance` |
 | Validations | `GET /validations` → `PlanValidationReport` |
 | Lock | `POST /lock` → `TeachingPlanPublic` (admin); no request body; requires a balanced plan and a matching current feasible witness |
+| Unlock | `POST /unlock` → `TeachingPlanPublic` (admin); no request body; **409 for any status other than `locked`** — a locked pre-generation plan only |
 | Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
 | Feasibility evaluate | `POST /feasibility/evaluate` → `FeasibilityEvaluationPublic` (admin); no request body; runs the solver on the intended next requirement generation |
 | Feasibility diagnostics | `GET /feasibility/diagnostics` → `FeasibilityDiagnosticsPublic` (admin); **409** when no current fingerprint- and generation-matching evaluation exists |
@@ -597,6 +598,16 @@ the service validation report first, requires a focused confirmation, and then
 uses the returned `TeachingPlanPublic` as the authoritative lock result. The
 backend still rejects a stale or non-feasible witness, and generation remains
 disabled until the service reports `locked` or `stale`.
+
+The live contract also exposes `POST /teaching-plan/unlock`, which the plugin
+declared nowhere until 2026-08-11 (audit `S2-04`) — no wrapper, no contract
+entry, no hook and no control, so locking was a one-way door in a package that
+refuses every planning mutation on a non-mutable plan. Its guard is narrower
+than plan §20.14 reads: `unlock_plan` accepts `LOCKED` alone, so a `stale` or
+`reconciliation_required` plan — the very states §20.14 says *require* an
+unlock — answers 409 and leaves through regeneration or reconciliation instead.
+The UI therefore states the requirement for every non-mutable status and offers
+the control only where the service will accept it.
 
 ### 2.15 Allocation reconciliation — `prefix=/…/requirements`
 

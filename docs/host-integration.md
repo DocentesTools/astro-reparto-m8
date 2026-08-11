@@ -283,9 +283,15 @@ Panels below view level — `TeachingPlanCreation`,
 `TeacherLanWorkspace`, `SharedScreenWorkspace` — take `processId` plus an optional
 `locale` (and, for the workspaces, the same optional payload props as their
 view), and expect the provider pair above them. The purely presentational pieces
-(`PlanningBalanceHeader`, `PlanValidationSummary`, the preview/result cards)
+(`PlanningBalanceHeader`, `PlanValidationSummary`, `PlanLockConfirmation`,
+the preview/result cards)
 take the payload and the dictionary they render and issue no request of their
 own, so a host can drive them from data it already holds.
+
+`PlanUnlockControl` sits between the two: it takes the plan and the dictionary
+like the presentational cards, but reads the `admin` write floor from the
+signed-in session through `useRepartoCanAct` rather than from a prop (§21.5), so
+a host mounting it directly still gets the floor applied.
 
 ---
 

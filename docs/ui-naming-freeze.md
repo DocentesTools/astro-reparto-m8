@@ -141,6 +141,12 @@ ids, etc.) stay internal — no UI label.
 
 ### 3.5 Assignment process
 
+> Amended **2026-08-11** (audit `S2-03` / `S2-05`). These fields had labels and
+> a schema and no form: a process was create-only. The settings surface that now
+> renders them is §3.23. `status` stays **read-only in the form** — the served
+> `update_process` refuses it outright — and the process-level surface names are
+> frozen in §3.23, not here.
+
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `academic_year_id` | Academic year | Année scolaire | Curso académico | yes (form) | FK select |
@@ -559,6 +565,36 @@ in §12; see that entry before reusing either name.
 | Apply action | `data-reparto-action="apply-activity-sync"` | `POST /{cell}/sync-apply` echoing `preview_fingerprint`; a 409 discards the preview rather than retrying |
 | Materialization state | `data-main-materialization-state="out_of_sync"` | the third row state alongside `missing` / `materialized` |
 
+### 3.23 Process settings and reopen
+
+> Added **2026-08-11** by audit findings `S2-03` and `S2-05`. Names are frozen
+> here **before** the dictionary grew, per §12 rule 3. Route: `processSettings`
+> → `/reparto/processes/[processId]/settings`; dictionary root
+> `processSettings.*`; read floor `reader`, write floor `admin`.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route | `data-reparto-route="process-settings"` | §8.2 step 7, last entry of the Stage 1 nav group |
+| Status panel | `data-reparto-panel="process-status"` | read-only; the status is state, never a control |
+| Status line | `data-reparto-slot="process-status"` | the service's own status through `entity.assignmentProcess.status.*`; visible to a `READER` (§21.4) |
+| Settings form | `data-reparto-component="process-settings-form"` / `data-reparto-form="process-settings"` | withheld (not disabled) below the `admin` floor |
+| Fields | `data-reparto-field="default_teacher_hours_reference\|selection_order_enabled\|selection_order_mode\|direct_teacher_selection_enabled\|lan_access_enabled"` | exactly the five fields `update_process` accepts; the wire name is the slot name |
+| Inert mode | `data-reparto-slot="selection-order-mode-inert"` | a stored mode with the order disabled is inert, not invalid; stated, never forced |
+| Unchanged form | `data-reparto-state="unchanged"` | a no-op `PATCH` still writes a `process.updated` audit event, so the save is withheld |
+| Save action | `data-reparto-action="save-process-settings"` | `PATCH /assignment-processes/{id}`, carrying only changed fields |
+| Reopen panel | `data-reparto-component="process-reopen"` | rendered only while the process is frozen; carries `data-process-reopen-blocked-reason` |
+| Frozen statement | `data-reparto-state="process-frozen"` | `ensure_process_mutable`'s refusal stated as `role="status"`, never an alert |
+| Terminal statement | `data-reparto-state="terminal"` | `archived` is frozen and not reopenable; the explanation without the control |
+| Reopen consequence | `data-reparto-slot="process-reopen-consequence"` | what reopening changes, stated before the press |
+| Reopen reason | `data-reparto-field="reopen_reason"` | required, 1–500 chars; recorded on the `process.reopened` audit event |
+| Reopen action | `data-reparto-action="reopen-process"` | `POST /assignment-processes/{id}/reopen`; offered for `final` alone |
+
+**Deliberately absent:** a `status` field and any `transition` control.
+`update_process` answers `400 "Process status is owned by the transition
+endpoint"`, and `create_meeting_session` sets `MEETING_OPEN` itself, so a
+control here would be both rejected and a second mover racing the meeting path.
+`action.transition` therefore stays in §4 as a reserved verb with no surface.
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)
@@ -576,7 +612,7 @@ the same `Cancel` button in two dialogs renders the same word.
 | `action.unarchive` | Unarchive | Désarchiver | Desarchivar | (future) |
 | `action.close` | Close | Clore | Cerrar | Meeting session, process |
 | `action.reopen` | Reopen | Rouvrir | Reabrir | Process |
-| `action.transition` | Transition | Changer d'état | Cambiar de estado | Process status change |
+| `action.transition` | Transition | Changer d'état | Cambiar de estado | Reserved: no surface renders it — see §3.23 for why the process-settings route has no transition control |
 | `action.save` | Save changes | Enregistrer | Guardar cambios | Form submit (idempotent) |
 | `action.cancel` | Cancel | Annuler | Cancelar | Form cancel |
 | `action.confirm` | Confirm | Confirmer | Confirmar | Generic confirm |
@@ -744,6 +780,7 @@ Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
 | `nav.item.shared` | Shared screen | Écran partagé | Pantalla compartida |
 | `nav.item.versions` | Versions | Versions | Versiones |
 | `nav.item.exports` | Exports | Exports | Exportaciones |
+| `nav.item.processSettings` | Process settings | Paramètres du processus | Ajustes del proceso |
 | `nav.item.audit` | Audit | Audit | Auditoría |
 
 ---

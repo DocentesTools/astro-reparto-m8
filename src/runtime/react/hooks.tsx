@@ -27,6 +27,7 @@ import type {
   AssignmentCreate,
   AssignmentDirectChoice,
   AssignmentProcessCreate,
+  AssignmentProcessUpdate,
   AssignmentReassign,
   AssignmentUndo,
   AssignmentUpdate,
@@ -40,6 +41,7 @@ import type {
   GroupSubjectCreateInput,
   GroupSubjectUpdateInput,
   MainActivitySyncApplyRequestInput,
+  ProcessReopen,
   ProcessTeacherCreateInput,
   ProcessTeacherExtraHoursInput,
   ProcessTeacherUpdateInput,
@@ -93,6 +95,76 @@ export function useCreateRepartoProcess() {
       assignmentProcesses.create(body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: repartoKeys.processes() });
+    }
+  });
+}
+
+/**
+ * Everything a process mutation makes stale, in one place.
+ *
+ * The settings and the reopen edge both change what the *whole* process
+ * offers — whether a selection order applies, whether a teacher may choose
+ * directly, whether the LAN surface answers, and whether any child resource
+ * accepts a write at all — so the process prefix (its detail, dashboard,
+ * summary and LAN projection) goes, and so does every page of the list, which
+ * prints the status of a row that may sit on any page.
+ */
+function invalidateProcessProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string
+) {
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.process(processId)
+  });
+  void queryClient.invalidateQueries({ queryKey: repartoKeys.processLists() });
+}
+
+/**
+ * Save the §8.2 step 7 process settings (audit finding `S2-03`).
+ *
+ * The wrapper and `AssignmentProcessUpdateSchema` predate this hook by the
+ * whole three-stage adaptation; with nothing calling them a process was
+ * create-only and the Stage 3 LAN and direct-selection surfaces could never be
+ * switched on. The body is built by `buildProcessSettingsRequest`, which sends
+ * only changed fields and never `status` — the service reserves that for
+ * `transition`.
+ */
+export function useUpdateRepartoProcess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: AssignmentProcessUpdate;
+    }) => assignmentProcesses.update(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateProcessProjections(queryClient, processId);
+    }
+  });
+}
+
+/**
+ * Apply the `final` → `reopened` edge with its recorded reason (`S2-05`).
+ *
+ * The service's `ensure_process_mutable` answers *"reopen it first"* on every
+ * child write of a closed process, and until this hook existed there was no
+ * way to comply. Reopening lifts that refusal for every child resource, so it
+ * invalidates exactly what a settings save does.
+ */
+export function useReopenRepartoProcess() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: ProcessReopen;
+    }) => assignmentProcesses.reopen(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateProcessProjections(queryClient, processId);
     }
   });
 }

@@ -795,6 +795,7 @@ export const en = {
       classrooms: "Classrooms",
       classroomStages: "Classroom stages",
       groupSubjects: "Group-subject matrix",
+      processSettings: "Process settings",
       subjects: "Subjects",
       planning: "Planning",
       requirements: "Requirements",
@@ -1011,6 +1012,55 @@ export const en = {
     updateError: "The matrix cell could not be updated.",
     selectClassroom: "Select a classroom",
     selectSubject: "Select a subject"
+  },
+  processSettings: {
+    pageTitle: "Process settings",
+    description: "How this process will be run: the hours reference participants are measured against, the selection order used at the meeting, and the two surfaces teachers reach on their own.",
+    formTitle: "Selection and LAN settings",
+    field: {
+      defaultTeacherHoursReference: "Default hours reference",
+      selectionOrderEnabled: "Selection order enabled",
+      selectionOrderMode: "Selection order mode",
+      directTeacherSelectionEnabled: "Direct teacher selection",
+      lanAccessEnabled: "LAN access"
+    },
+    hint: {
+      defaultTeacherHoursReference: "Leave the field blank for no reference. A typed 0 is a real zero and is not the same as blank.",
+      selectionOrderEnabled: "Records a selection order for the meeting; participants then take their positions in that order.",
+      selectionOrderMode: "The mode is stored on its own and applies only while the selection order is enabled.",
+      modeInert: "The selection order is disabled, so this mode is stored but does not apply.",
+      directTeacherSelectionEnabled: "Lets a participant take a position from their own view instead of waiting for their turn to be recorded.",
+      lanAccessEnabled: "Opens the read-only view teachers reach over the local network during the meeting."
+    },
+    mode: { none: "No order", informative: "Informative", strict: "Strict" },
+    statusTitle: "Current status",
+    statusLine: "Status: {status}.",
+    statusOwnedElsewhere: "The status is not a setting: the transition endpoint owns it, and opening a meeting session sets it directly.",
+    unchanged: "Nothing has changed, so there is nothing to save.",
+    loading: "Loading the process.",
+    unavailable: "The process is unavailable.",
+    readOnly: "Changing process settings is a department-head action.",
+    saved: "Process settings saved.",
+    saveError: "The process settings could not be saved.",
+    hoursError: {
+      not_a_number: "Enter an hour value such as 18 or 18.50.",
+      too_many_decimals: "Hours take at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "This hour value is too large."
+    },
+    reopen: {
+      title: "Reopen the process",
+      frozen: "This process is closed. Configuration, planning and assignment changes are all refused until it is reopened.",
+      terminal: "This process is archived. Archiving is terminal, so it cannot be reopened.",
+      readOnly: "Reopening a process is a department-head action.",
+      reasonLabel: "Reopen reason",
+      reasonRequired: "State why the process is being reopened.",
+      reasonTooLong: "The reopen reason cannot exceed 500 characters.",
+      consequence: "Reopening moves the process to reopened, clears its closing stamp and lets configuration, planning and assignment changes through again. Nothing already recorded is removed, and the reason you give is the only trace of why it was reopened.",
+      action: "Reopen process",
+      reopened: "The process was reopened.",
+      error: "The process could not be reopened."
+    }
   },
   classroomSelection: {
     selectAllVisible: "Select all visible classrooms",

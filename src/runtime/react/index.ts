@@ -32,6 +32,8 @@ export {
   useRepartoPreviousYearComparison,
   useRepartoProcess,
   useRepartoProcesses,
+  useReopenRepartoProcess,
+  useUpdateRepartoProcess,
   useRepartoSchools,
   useRepartoSummary,
   useRepartoTeacherLan,

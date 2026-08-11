@@ -78,8 +78,13 @@ export const repartoKeys = {
   all: ["reparto"] as const,
   classroomStages: () => [...repartoKeys.all, "classroom-stages"] as const,
   processes: () => [...repartoKeys.all, "processes"] as const,
+  // Every page of the process list, without its params. A settings change
+  // rewrites a row that may sit on any page and there is no way to know which,
+  // so the prefix — not one `processList(params)` key — is what a process
+  // mutation invalidates.
+  processLists: () => [...repartoKeys.processes(), "list"] as const,
   processList: (params: RepartoListParams = {}) =>
-    [...repartoKeys.processes(), "list", normalizeListParams(params)] as const,
+    [...repartoKeys.processLists(), normalizeListParams(params)] as const,
   process: (processId?: string) =>
     [...repartoKeys.processes(), "detail", resolveProcessId(processId) ?? null] as const,
   dashboard: (processId?: string) =>

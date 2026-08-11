@@ -116,7 +116,7 @@ a free-form bool, not a status enum.
 | Events (SSE) | `GET /{process_id}/events?audience=department_head\|teacher\|shared_screen` → bearer-authenticated `text/event-stream`; strict role projection and registered event names in §3.3 | eventsUrl + `useRepartoEventStream` | ✓ |
 | Create required | `academic_year_id, school_id, department_id` (all `uuid`) | `academic_year_id*`, `school_id*`, `department_id*` | ✓ |
 | Public shape | base + `id, closed_at, closed_by_user_id, created_by_user_id, created_at, updated_at` | (n/a) | ✓ |
-| Patch fields | `status, default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` | (n/a) | ✓ |
+| Patch fields | `default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` — the schema also declares `status` and the served `update_process` **refuses it** with `400 "Process status is owned by the transition endpoint"`, so no settings surface offers it (audit `S2-03`) | (n/a) | ✓ |
 | Delete | **not exposed** | patch/transition/reopen (no delete) | ✓ |
 
 Process status enum (`AssignmentProcessStatus`, plan §8.4):
@@ -129,8 +129,21 @@ final, reopened, archived
 
 Transition validation is owned by the backend
 (`reparto_service.services.process_lifecycle`); runtime MUST NOT re-implement
-the state machine. UI surfaces a `<Select>` of legal transitions + an inline
-reason input for `reopen`.
+the state machine.
+
+The plugin ships the patch and the reopen edge, and deliberately **not** the
+transition control (audit `S2-03` / `S2-05`, landed 2026-08-11):
+
+* `processSettings` (`/reparto/processes/[processId]/settings`) carries the five
+  patch fields above behind the `admin` write floor, sending only the fields
+  that changed. `status` is shown as state and never offered.
+* The reopen control is the `final` → `reopened` edge with its required reason,
+  and appears only while the process is frozen. `ensure_process_mutable` freezes
+  child writes for `final` **and** `archived`, but `reopen_process` accepts
+  `final` alone (`archived` is terminal), so the two are stated separately:
+  an archived process gets the explanation without the control.
+* No `transition` control exists. `create_meeting_session` sets `MEETING_OPEN`
+  itself, so a second mover here would race the meeting path.
 
 ### 2.2 Subject — `prefix=/assignment-processes/{process_id}/subjects`
 

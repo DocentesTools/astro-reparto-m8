@@ -1093,6 +1093,9 @@ export {
   type GroupSubjectMatrixListProps
 } from "./process-crud/group-subjects/list.js";
 
+export { ProcessSettingsForm } from "./process-crud/process-settings/settings-form.js";
+export { ProcessReopenControl } from "./process-crud/process-settings/reopen.js";
+
 export {
   RepartoAssignmentsView,
   RepartoAuditView,
@@ -1100,6 +1103,7 @@ export {
   RepartoGroupSubjectsView,
   RepartoHourRequirementsView,
   RepartoProcessParticipantsView,
+  RepartoProcessSettingsView,
   RepartoSubjectsView
 } from "./process-crud/exports.js";
 

@@ -89,6 +89,7 @@ mutations that route issues.
 | `subjects` | `/reparto/processes/[processId]/subjects` | `RepartoSubjectsView` | reader | admin |
 | `classrooms` | `/reparto/processes/[processId]/classrooms` | `RepartoClassroomsView` | reader | admin |
 | `groupSubjects` | `/reparto/processes/[processId]/group-subjects` | `RepartoGroupSubjectsView` | reader | admin |
+| `processSettings` | `/reparto/processes/[processId]/settings` | `RepartoProcessSettingsView` | reader | admin |
 | `planning` | `/reparto/processes/[processId]/planning` | `RepartoPlanningView` | reader | admin |
 | `requirements` | `/reparto/processes/[processId]/requirements` | `RepartoHourRequirementsView` | reader | admin |
 | `dashboard` | `/reparto` | `RepartoDashboardView` | reader | admin |
@@ -323,7 +324,7 @@ Public modules are reachable only through explicit package subpaths:
 | Wrapper | Covers |
 | --- | --- |
 | `schools`, `academicYears`, `departments`, `teacherProfiles`, `classroomStages` | stage-1 global setup |
-| `assignmentProcesses` | processes, dashboard, summary, `myLanSummary`, versions, exports |
+| `assignmentProcesses` | processes, `update` (the five settings fields — never `status`), `reopen`, dashboard, summary, `myLanSummary`, versions, exports |
 | `processTeachers` | participants, and the reason-required extra-hours operation |
 | `subjects`, `teachingGroups`, `groupSubjects` | subjects, groups, and the matrix with its preview/apply pair; a cell leaves the plan through `retire`, never a delete |
 | `allocationRevisions` | `list` / `current` / `create` — no update, no delete, by contract |
@@ -413,6 +414,18 @@ Leadership's weekly group-hour allocation is recorded here as the first
 immutable revision (`allocationRevisions.create`). Until one exists,
 `allocationRevisions.current` answers **404** — a normal state for a new process,
 not an error to surface as a failure.
+
+Stage 1 closes with `processSettings` (§8.2 step 7): the hours reference every
+participant is measured against, the selection order and its mode, and the two
+switches that decide whether Stage 3 has a direct-selection and a LAN surface at
+all. Only the fields the operator changed are sent. The route also carries the
+reopen control — `POST …/reopen` with its required reason — which appears only
+while the process is `final` or `archived`, because that is when every child
+write is refused with *"reopen it first"*. Reopening is accepted for `final`
+alone; `archived` is terminal and gets the explanation without the control.
+There is no status or transition control anywhere in the package: the service
+reserves `status` for `POST …/transition`, and opening a meeting session already
+sets `MEETING_OPEN` itself.
 
 ### Stage 2 — Planning
 

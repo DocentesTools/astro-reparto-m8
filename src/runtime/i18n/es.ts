@@ -794,6 +794,7 @@ export const es: RepartoDictionary = {
       classrooms: "Grupos",
       classroomStages: "Etapas educativas",
       groupSubjects: "Matriz grupo-materia",
+      processSettings: "Ajustes del proceso",
       subjects: "Materias",
       planning: "Planificación",
       requirements: "Horas necesarias",
@@ -1010,6 +1011,55 @@ export const es: RepartoDictionary = {
     updateError: "No se pudo actualizar la celda de la matriz.",
     selectClassroom: "Seleccionar un grupo",
     selectSubject: "Seleccionar una materia"
+  },
+  processSettings: {
+    pageTitle: "Ajustes del proceso",
+    description: "Cómo se llevará este proceso: las horas de referencia con las que se compara a los participantes, el orden de selección usado en la sesión y los dos espacios a los que el profesorado llega por su cuenta.",
+    formTitle: "Ajustes de selección y acceso LAN",
+    field: {
+      defaultTeacherHoursReference: "Horas de referencia",
+      selectionOrderEnabled: "Orden de selección activado",
+      selectionOrderMode: "Modo de orden",
+      directTeacherSelectionEnabled: "Selección directa del docente",
+      lanAccessEnabled: "Acceso LAN"
+    },
+    hint: {
+      defaultTeacherHoursReference: "Deja el campo vacío si no hay referencia. Un 0 escrito es un cero real y no equivale a dejarlo vacío.",
+      selectionOrderEnabled: "Registra un orden de selección para la sesión; los participantes toman entonces sus puestos en ese orden.",
+      selectionOrderMode: "El modo se guarda por separado y solo se aplica mientras el orden de selección está activado.",
+      modeInert: "El orden de selección está desactivado, así que este modo se guarda pero no se aplica.",
+      directTeacherSelectionEnabled: "Permite que un participante tome un puesto desde su propia vista, sin esperar a que se registre su turno.",
+      lanAccessEnabled: "Abre la vista de solo lectura a la que el profesorado llega por la red local durante la sesión."
+    },
+    mode: { none: "Sin orden", informative: "Informativo", strict: "Estricto" },
+    statusTitle: "Estado actual",
+    statusLine: "Estado: {status}.",
+    statusOwnedElsewhere: "El estado no es un ajuste: pertenece al punto de transición, y abrir una sesión lo fija directamente.",
+    unchanged: "No ha cambiado nada, así que no hay nada que guardar.",
+    loading: "Cargando el proceso.",
+    unavailable: "El proceso no está disponible.",
+    readOnly: "Cambiar los ajustes del proceso es una acción del jefe de departamento.",
+    saved: "Ajustes del proceso guardados.",
+    saveError: "No se pudieron guardar los ajustes del proceso.",
+    hoursError: {
+      not_a_number: "Introduce un valor horario como 18 o 18,50.",
+      too_many_decimals: "Las horas admiten como máximo dos decimales.",
+      negative: "Las horas no pueden ser negativas.",
+      out_of_range: "Este valor horario es demasiado grande."
+    },
+    reopen: {
+      title: "Reabrir el proceso",
+      frozen: "Este proceso está cerrado. Los cambios de configuración, planificación y asignación se rechazan hasta que se reabra.",
+      terminal: "Este proceso está archivado. El archivado es terminal, así que no se puede reabrir.",
+      readOnly: "Reabrir un proceso es una acción del jefe de departamento.",
+      reasonLabel: "Motivo de reapertura",
+      reasonRequired: "Indica por qué se reabre el proceso.",
+      reasonTooLong: "El motivo de reapertura no puede superar los 500 caracteres.",
+      consequence: "Reabrir devuelve el proceso al estado reabierto, borra su marca de cierre y vuelve a permitir cambios de configuración, planificación y asignación. No se elimina nada de lo ya registrado, y el motivo que indiques es el único rastro de la razón.",
+      action: "Reabrir el proceso",
+      reopened: "El proceso se reabrió.",
+      error: "No se pudo reabrir el proceso."
+    }
   },
   classroomSelection: {
     selectAllVisible: "Seleccionar todos los grupos visibles",

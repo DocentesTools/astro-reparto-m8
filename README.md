@@ -47,7 +47,9 @@ stage-3 work is refused against a plan that has not completed stage 2.
    teacher roster; then per process: participants and their base/extra hours,
    subjects and their suggested defaults, teaching groups, and the
    group-subject matrix that holds the actual planning values. The leadership
-   allocation is recorded here as the first immutable revision.
+   allocation is recorded here as the first immutable revision, and the process
+   settings — the hours reference, the selection order and the direct-selection
+   and LAN switches — close the stage.
 2. **Planning** — `/planning` materializes main-subject activities from that
    matrix, adds secondary activities, keeps the two balances visible, surfaces
    the service's validations, and then locks the plan and generates the
@@ -61,7 +63,7 @@ stage-3 work is refused against a plan that has not completed stage 2.
 
 | Stage | Routes |
 | --- | --- |
-| Configuration | `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{participants,subjects,classrooms}` |
+| Configuration | `/reparto/setup/{schools,academic-years,departments,classroom-stages,teacher-roster}`, `/reparto/processes/[processId]/{participants,subjects,classrooms,group-subjects,settings}` |
 | Planning | `/reparto/processes/[processId]/{planning,requirements}` |
 | Assignment | `/reparto`, `/reparto/processes`, `/reparto/processes/[processId]/{assignments,my-view,shared,versions,exports,audit}`, `/reparto/meeting/[processId]` |
 
@@ -167,6 +169,28 @@ stage/grade filters, and renders the complete create/update/unchanged/conflict
 preview before enabling apply. Apply is a separate confirmation step. A 409
 clears the preview and requires a fresh preview; the component never retries a
 stale selection.
+
+## Process settings and reopen
+
+`RepartoProcessSettingsView` is the settings starter route
+(`/reparto/processes/[processId]/settings`, `reader`/`admin`). It saves the five
+fields `PATCH /assignment-processes/{id}` accepts —
+`default_teacher_hours_reference`, `selection_order_enabled`,
+`selection_order_mode`, `direct_teacher_selection_enabled` and
+`lan_access_enabled` — through `useUpdateRepartoProcess`, sending only the ones
+that changed. A blank hours reference is an explicit `null`; a typed `0` is a
+real zero.
+
+`status` is shown and never offered: the service answers **400** for a `status`
+field on the patch (*"owned by the transition endpoint"*), and opening a meeting
+session sets `MEETING_OPEN` itself, so the package ships no transition control.
+
+The same route carries `ProcessReopenControl`. It appears only while the process
+is frozen — `final` or `archived`, the two statuses in which every child write
+is refused — and offers the reason-carrying `POST …/reopen` for `final` alone,
+since `archived` is terminal. `buildProcessSettingsRequest`,
+`buildProcessReopenState` and their helpers are exported framework-free from
+`@mano8/astro-reparto-m8/ui`.
 
 ## Teaching plans and activities
 

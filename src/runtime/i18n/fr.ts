@@ -795,6 +795,7 @@ export const fr: RepartoDictionary = {
       classrooms: "Classes",
       classroomStages: "Niveaux scolaires",
       groupSubjects: "Matrice groupe-matière",
+      processSettings: "Paramètres du processus",
       subjects: "Matières",
       planning: "Planification",
       requirements: "Besoins horaires",
@@ -1011,6 +1012,55 @@ export const fr: RepartoDictionary = {
     updateError: "La cellule de la matrice n'a pas pu être mise à jour.",
     selectClassroom: "Sélectionner une classe",
     selectSubject: "Sélectionner une matière"
+  },
+  processSettings: {
+    pageTitle: "Paramètres du processus",
+    description: "Comment ce processus sera mené : les heures de référence auxquelles les participants sont comparés, l'ordre de sélection utilisé en séance et les deux espaces que les enseignants atteignent par eux-mêmes.",
+    formTitle: "Paramètres de sélection et d'accès LAN",
+    field: {
+      defaultTeacherHoursReference: "Heures de référence",
+      selectionOrderEnabled: "Ordre de sélection activé",
+      selectionOrderMode: "Mode d'ordre",
+      directTeacherSelectionEnabled: "Sélection directe par l'enseignant",
+      lanAccessEnabled: "Accès LAN"
+    },
+    hint: {
+      defaultTeacherHoursReference: "Laissez le champ vide s'il n'y a aucune référence. Un 0 saisi est un vrai zéro et n'équivaut pas à un champ vide.",
+      selectionOrderEnabled: "Enregistre un ordre de sélection pour la séance ; les participants prennent alors leurs postes dans cet ordre.",
+      selectionOrderMode: "Le mode est enregistré indépendamment et ne s'applique que lorsque l'ordre de sélection est activé.",
+      modeInert: "L'ordre de sélection est désactivé : ce mode est enregistré mais ne s'applique pas.",
+      directTeacherSelectionEnabled: "Permet à un participant de prendre un poste depuis son propre espace, sans attendre l'enregistrement de son tour.",
+      lanAccessEnabled: "Ouvre la vue en lecture seule que les enseignants atteignent sur le réseau local pendant la séance."
+    },
+    mode: { none: "Aucun ordre", informative: "Informatif", strict: "Strict" },
+    statusTitle: "État actuel",
+    statusLine: "État : {status}.",
+    statusOwnedElsewhere: "L'état n'est pas un paramètre : il appartient au point d'entrée de transition, et l'ouverture d'une séance le fixe directement.",
+    unchanged: "Rien n'a changé, il n'y a donc rien à enregistrer.",
+    loading: "Chargement du processus.",
+    unavailable: "Le processus est indisponible.",
+    readOnly: "Modifier les paramètres du processus est une action du chef de département.",
+    saved: "Paramètres du processus enregistrés.",
+    saveError: "Les paramètres du processus n'ont pas pu être enregistrés.",
+    hoursError: {
+      not_a_number: "Saisissez une valeur horaire telle que 18 ou 18,50.",
+      too_many_decimals: "Les heures acceptent au plus deux décimales.",
+      negative: "Les heures ne peuvent pas être négatives.",
+      out_of_range: "Cette valeur horaire est trop grande."
+    },
+    reopen: {
+      title: "Rouvrir le processus",
+      frozen: "Ce processus est clos. Toute modification de configuration, de planification et d'affectation est refusée tant qu'il n'est pas rouvert.",
+      terminal: "Ce processus est archivé. L'archivage est terminal : il ne peut pas être rouvert.",
+      readOnly: "Rouvrir un processus est une action du chef de département.",
+      reasonLabel: "Motif de réouverture",
+      reasonRequired: "Indiquez pourquoi le processus est rouvert.",
+      reasonTooLong: "Le motif de réouverture ne peut pas dépasser 500 caractères.",
+      consequence: "La réouverture place le processus en état rouvert, efface son horodatage de clôture et laisse de nouveau passer les modifications de configuration, de planification et d'affectation. Rien de ce qui est déjà enregistré n'est supprimé, et le motif que vous indiquez est la seule trace de la raison.",
+      action: "Rouvrir le processus",
+      reopened: "Le processus a été rouvert.",
+      error: "Le processus n'a pas pu être rouvert."
+    }
   },
   classroomSelection: {
     selectAllVisible: "Sélectionner toutes les classes visibles",

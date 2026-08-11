@@ -56,6 +56,8 @@ export async function renderRepartoRoute(
       return renderToStaticMarkup(<ui.RepartoClassroomsView {...scoped} />);
     case "groupSubjects":
       return renderToStaticMarkup(<ui.RepartoGroupSubjectsView {...scoped} />);
+    case "processSettings":
+      return renderToStaticMarkup(<ui.RepartoProcessSettingsView {...scoped} />);
     case "audit":
       return renderToStaticMarkup(<ui.RepartoAuditView {...scoped} />);
     case "classroomStages":

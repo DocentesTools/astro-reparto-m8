@@ -48,9 +48,12 @@ export type FaRepartoAstroOptions = {
 // slots. `classrooms`/`subjects`/`processParticipants` are process-scoped
 // resources but are configured once per process before planning starts, so
 // they sit in Stage 1 alongside the school-wide setup entries. `groupSubjects`
-// closes that group: the matrix is the last thing Stage 1 produces and the only
-// input main-subject materialization has, so it follows subjects and classrooms
-// and precedes the Stage 2 entries that consume it.
+// then closes the matrix work: the matrix is the last thing Stage 1 produces
+// for materialization and the only input main-subject materialization has, so
+// it follows subjects and classrooms and precedes the Stage 2 entries that
+// consume it. `processSettings` is §8.2 step 7 and comes last in the group:
+// selection order, direct selection and LAN access describe how Stage 3 will be
+// run, and they are the final configuration decision before planning starts.
 export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
   configuration: {
     labelKey: "nav.group.configuration",
@@ -63,7 +66,8 @@ export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
       { labelKey: "nav.item.processParticipants", route: "participants" },
       { labelKey: "nav.item.subjects", route: "subjects" },
       { labelKey: "nav.item.classrooms", route: "classrooms" },
-      { labelKey: "nav.item.groupSubjects", route: "groupSubjects" }
+      { labelKey: "nav.item.groupSubjects", route: "groupSubjects" },
+      { labelKey: "nav.item.processSettings", route: "processSettings" }
     ]
   },
   planning: {
@@ -135,6 +139,7 @@ const ROUTE_ENTRYPOINTS = {
   classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
   classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
   groupSubjects: "@mano8/astro-reparto-m8/routes/group-subjects.astro",
+  processSettings: "@mano8/astro-reparto-m8/routes/settings.astro",
   planning: "@mano8/astro-reparto-m8/routes/planning.astro",
   requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
   participants: "@mano8/astro-reparto-m8/routes/participants.astro",

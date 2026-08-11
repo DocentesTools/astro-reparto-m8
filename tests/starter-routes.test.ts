@@ -23,6 +23,7 @@ const routeCases = [
     "RepartoGroupSubjectsView",
     "Reparto group-subject matrix"
   ],
+  ["settings.astro", "RepartoProcessSettingsView", "Reparto process settings"],
   ["planning.astro", "RepartoPlanningView", "dict.planning.pageTitle"],
   ["requirements.astro", "RepartoHourRequirementsView", "dict.requirements.pageTitle"],
   ["participants.astro", "RepartoProcessParticipantsView", "Reparto participants"],
@@ -77,6 +78,7 @@ describe("starter route shells", () => {
       ["default-ui", "process-crud", "subjects", "index.tsx"],
       ["default-ui", "process-crud", "classrooms", "index.tsx"],
       ["default-ui", "process-crud", "group-subjects", "index.tsx"],
+      ["default-ui", "process-crud", "process-settings", "index.tsx"],
       ["default-ui", "process-crud", "requirements", "index.tsx"],
       ["default-ui", "process-crud", "participants", "index.tsx"],
       ["default-ui", "process-crud", "assignments", "index.tsx"],

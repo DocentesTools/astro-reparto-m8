@@ -27,6 +27,8 @@ const mocks = vi.hoisted(() => ({
   assignmentProcesses: {
     list: vi.fn(),
     get: vi.fn(),
+    update: vi.fn(),
+    reopen: vi.fn(),
     dashboard: vi.fn(),
     summary: vi.fn(),
     myLanSummary: vi.fn()
@@ -220,6 +222,8 @@ describe("reparto React hooks", () => {
     mocks.assignmentProcesses.summary.mockClear();
     mocks.assignmentProcesses.myLanSummary.mockClear();
     mocks.assignmentProcesses.get.mockClear();
+    mocks.assignmentProcesses.update.mockClear();
+    mocks.assignmentProcesses.reopen.mockClear();
     mocks.history.listVersions.mockClear();
     mocks.history.createVersion.mockClear();
     mocks.history.compareVersions.mockClear();
@@ -347,6 +351,47 @@ describe("reparto React hooks", () => {
       false,
       false,
       false
+    ]);
+  });
+
+  it("saves process settings and reopens a closed process (§13.2a S2-03, S2-05)", async () => {
+    const { useReopenRepartoProcess, useUpdateRepartoProcess } = await import(
+      "../src/runtime/react/hooks.js"
+    );
+
+    // The settings change what the whole process offers — its LAN surface, its
+    // direct selection, its selection order — so the process prefix goes with
+    // every page of the list, and nothing narrower would do.
+    mocks.invalidateQueries.mockClear();
+    useUpdateRepartoProcess().mutate({
+      processId: "process-1",
+      body: { lan_access_enabled: true }
+    });
+    expect(mocks.assignmentProcesses.update).toHaveBeenCalledWith("process-1", {
+      lan_access_enabled: true
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "process-1"],
+      ["reparto", "processes", "list"]
+    ]);
+
+    // Reopening lifts `ensure_process_mutable` for every child resource, so it
+    // moves exactly what a settings save does.
+    mocks.invalidateQueries.mockClear();
+    useReopenRepartoProcess().mutate({
+      processId: "process-1",
+      body: { reason: "leadership returned the proposal" }
+    });
+    expect(mocks.assignmentProcesses.reopen).toHaveBeenCalledWith("process-1", {
+      reason: "leadership returned the proposal"
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "process-1"],
+      ["reparto", "processes", "list"]
     ]);
   });
 

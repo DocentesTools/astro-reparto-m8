@@ -31,6 +31,7 @@ describe("routes", () => {
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
+      processSettings: "/reparto/processes/[processId]/settings",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -53,6 +54,7 @@ describe("routes", () => {
       classrooms: "/reparto/processes/[processId]/classrooms",
       classroomStages: "/reparto/setup/classroom-stages",
       groupSubjects: "/reparto/processes/[processId]/group-subjects",
+      processSettings: "/reparto/processes/[processId]/settings",
       planning: "/reparto/processes/[processId]/planning",
       requirements: "/reparto/processes/[processId]/requirements",
       participants: "/reparto/processes/[processId]/participants",
@@ -301,7 +303,7 @@ describe("integration", () => {
         }
       }
     });
-    expect(injectRoute).toHaveBeenCalledTimes(20);
+    expect(injectRoute).toHaveBeenCalledTimes(21);
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {
@@ -320,7 +322,7 @@ describe("integration", () => {
     expect(logger.warn).toHaveBeenCalledWith(
       "@mano8/astro-auth-m8 is required for official M8 usage"
     );
-    expect(injectRoute).toHaveBeenCalledTimes(19);
+    expect(injectRoute).toHaveBeenCalledTimes(20);
   });
 
   it("injects the fa-auth bridge only for the fa-auth-astro provider", () => {
@@ -415,7 +417,7 @@ describe("integration", () => {
       pattern: "/es/reparto/processes/[processId]/group-subjects",
       entrypoint: "@mano8/astro-reparto-m8/routes/group-subjects.astro"
     });
-    expect(injectRoute).toHaveBeenCalledTimes(40);
+    expect(injectRoute).toHaveBeenCalledTimes(42);
   });
 
   it("skips routes in headless mode and warns for auth none", () => {
@@ -458,7 +460,8 @@ describe("integration", () => {
       "nav.item.processParticipants",
       "nav.item.subjects",
       "nav.item.classrooms",
-      "nav.item.groupSubjects"
+      "nav.item.groupSubjects",
+      "nav.item.processSettings"
     ]);
     expect(DEFAULT_REPARTO_NAV.planning.labelKey).toBe("nav.group.planning");
     expect(DEFAULT_REPARTO_NAV.planning.entries.map((entry) => entry.labelKey)).toEqual([

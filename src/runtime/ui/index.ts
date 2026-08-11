@@ -78,6 +78,24 @@ export {
   type TeachingPlanUnlockState
 } from "./teachingPlan.js";
 export {
+  buildProcessReopenRequest,
+  buildProcessReopenState,
+  buildProcessSettingsRequest,
+  buildProcessSettingsValues,
+  isSelectionOrderModeEffective,
+  EMPTY_PROCESS_SETTINGS_VALUES,
+  PROCESS_REOPEN_REASON_MAX_LENGTH,
+  PROCESS_SETTINGS_FIELDS,
+  type ProcessReopenBlockedReason,
+  type ProcessReopenReasonError,
+  type ProcessReopenRequestResult,
+  type ProcessReopenState,
+  type ProcessSettingsErrorKey,
+  type ProcessSettingsField,
+  type ProcessSettingsRequestResult,
+  type ProcessSettingsValues
+} from "./processSettings.js";
+export {
   buildActivitySyncPreviewState,
   listOutOfSyncActivities,
   type ActivitySyncBlockedReason,

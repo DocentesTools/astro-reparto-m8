@@ -224,11 +224,15 @@ describe("the groupSubjects route is declared in all four maps", () => {
     const entry = DEFAULT_REPARTO_NAV.configuration.entries.find(
       (candidate) => candidate.route === "groupSubjects"
     );
-    // Stage 1, and last in it: the matrix is what Stage 1 produces for Stage 2.
+    // Stage 1, and last of the entries that build the matrix: it is what Stage
+    // 1 produces for Stage 2. Only `processSettings` (§8.2 step 7) follows it.
     expect(entry?.labelKey).toBe("nav.item.groupSubjects");
-    expect(
-      DEFAULT_REPARTO_NAV.configuration.entries.at(-1)?.route
-    ).toBe("groupSubjects");
+    const configurationRoutes = DEFAULT_REPARTO_NAV.configuration.entries.map(
+      (candidate) => candidate.route
+    );
+    expect(configurationRoutes.indexOf("groupSubjects")).toBe(
+      configurationRoutes.indexOf("processSettings") - 1
+    );
     expect(
       DEFAULT_REPARTO_NAV.planning.entries.some(
         (candidate) => candidate.route === "groupSubjects"

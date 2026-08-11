@@ -295,6 +295,29 @@ like the presentational cards, but reads the `admin` write floor from the
 signed-in session through `useRepartoCanAct` rather than from a prop (§21.5), so
 a host mounting it directly still gets the floor applied.
 
+### 6.1 Exports no starter route mounts
+
+Every other exported view and panel is mounted by a starter route, directly or
+through one that is. These five are the exceptions — back-compatible aliases
+kept for headless hosts that adopted the older name, each rendering the view its
+route already mounts:
+
+| Export | Renders | Mounted by |
+| --- | --- | --- |
+| `DepartmentHeadView` | `RepartoDashboardView` | the `dashboard` route |
+| `ProcessesView` | `RepartoProcessesView` | the `processList` route |
+| `TeacherLanView` | `RepartoMyView` | the `teacherView` route |
+| `SharedScreenView` | `RepartoSharedView` | the `sharedScreen` route |
+| `RepartoExportCenterView` | `RepartoExportsView` | the `exports` route |
+
+This table is a gate, not a note: `tests/surface-reachability.test.ts` walks the
+mount graph from every injected route and fails if an exported component is
+reachable from none of them and is not listed here — and fails if this table and
+that test disagree. It exists because §13.2a found nine components that were
+built, localized and tested with nothing mounting them, and because the version
+of this document that called `GroupSubjectBulkEditor` host-mounted is what left
+the matrix unreachable in a host that mounts starter routes and nothing else.
+
 ---
 
 ## 7. API surface

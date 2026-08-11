@@ -40,7 +40,12 @@ host source edits outside documented registration points.
 - `docs/host-integration.md` is the consumer-facing integration reference
   (options, route map and role floors, view props, API and hook surface, auth
   assumptions, three-stage walkthrough, starter and headless host examples);
-  `fixtures/**` are the build-verified examples behind it.
+  `fixtures/**` are the build-verified examples behind it. Its §6.1 table names
+  every exported component no starter route mounts, and
+  `tests/surface-reachability.test.ts` gates it: the test walks the mount graph
+  from each `ROUTE_ENTRYPOINTS` page and fails on an exported view or panel that
+  is reachable from no route and absent from that table. A component nothing
+  mounts is unreachable however well it is tested.
 - `src/runtime/api/**` owns global and process-scoped wrappers plus the single
   backend-error-to-field/form mapping source. `src/runtime/i18n/**` owns the
   English-first `en`/`fr`/`es` dictionary and rejects missing keys, bare

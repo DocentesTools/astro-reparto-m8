@@ -21,6 +21,7 @@ import { teacherProfiles } from "../api/teacherProfiles.js";
 import { teachingActivities } from "../api/teachingActivities.js";
 import { teachingGroups } from "../api/teachingGroups.js";
 import { teachingPlans } from "../api/teachingPlans.js";
+import type { SetupChecklistObservations } from "../ui/index.js";
 import type {
   AcademicYearCreate,
   AcademicYearUpdate,
@@ -1169,6 +1170,36 @@ export function useRepartoAllocationRevisions(processId?: string) {
     queryFn: () => allocationRevisions.list(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
   });
+}
+
+/**
+ * The Stage 1 counts the setup checklist tests (`S2-07`).
+ *
+ * The dashboard payload reports on a plan, not on the reference data behind it,
+ * so a surface that wants honest *subjects / classrooms / matrix / allocation*
+ * steps has to read them. Five list reads, all of them the same reads the Stage
+ * 1 routes make — the shared query cache answers most of them from a route the
+ * operator has already visited.
+ *
+ * Without a process every query is disabled and every count is `null`, which is
+ * exactly what `buildSetupChecklist` reads as *not observed* rather than as
+ * zero.
+ */
+export function useRepartoSetupObservations(processId?: string) {
+  const resolvedProcessId = resolveProcessId(processId) ?? null;
+  const allocationQuery = useRepartoAllocationRevisions(processId);
+  const participantsQuery = useRepartoProcessTeachers(processId);
+  const subjectsQuery = useRepartoSubjects(processId);
+  const classroomsQuery = useRepartoTeachingGroups(processId);
+  const groupSubjectsQuery = useRepartoGroupSubjects(processId);
+  return {
+    allocationRevisionCount: allocationQuery.data?.count ?? null,
+    classroomCount: classroomsQuery.data?.count ?? null,
+    groupSubjectCount: groupSubjectsQuery.data?.count ?? null,
+    participantCount: participantsQuery.data?.count ?? null,
+    processId: resolvedProcessId,
+    subjectCount: subjectsQuery.data?.count ?? null
+  } satisfies SetupChecklistObservations;
 }
 
 export function useRepartoCurrentAllocationRevision(processId?: string) {

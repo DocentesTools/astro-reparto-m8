@@ -67,10 +67,21 @@ export {
   type FeasibilityRelatedKind
 } from "./feasibility.js";
 export {
+  buildSetupChecklist,
+  type SetupChecklist,
+  type SetupChecklistBlockedReason,
+  type SetupChecklistObservations,
+  type SetupChecklistStage,
+  type SetupChecklistStep,
+  type SetupChecklistStepKey,
+  type SetupChecklistStepStatus
+} from "./setupChecklist.js";
+export {
   buildTeachingPlanCreationState,
   buildTeachingPlanUnlockState,
   isDuplicateTeachingPlanError,
   isMissingTeachingPlanError,
+  isMutablePlanStatus,
   type TeachingPlanCreationBlockedReason,
   type TeachingPlanCreationState,
   type TeachingPlanPresence,

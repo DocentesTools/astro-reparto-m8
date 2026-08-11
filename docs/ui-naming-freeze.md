@@ -813,25 +813,71 @@ The table:
 
 ## 8. Setup-checklist card (plan §4 requirement)
 
-The setup-checklist card is shown on `/reparto` when no process
-exists. Each step links to its create flow. Dictionary root:
-`flow.bootstrap.*`.
+> **Rewritten 2026-08-11** by audit finding `S2-07`. The nine steps this table
+> used to hold were the pre-three-stage workflow: they named no allocation, no
+> group-subject matrix, no teaching plan and no lock, and they framed requirement
+> generation — a Stage 2 *output* — as a setup step. The dashboard had meanwhile
+> rewired the conditions **under the unchanged labels**, so *Add subjects* tested
+> that a teaching plan existed and *Add classrooms* that a plan balance did, and
+> two labels tested the same participant count. An operator who had added
+> subjects was told to add subjects. The retired step name is in §12.
+
+The setup-checklist card is shown by the process picker (before a process is
+selected) and by the department-head dashboard (after). Both render it from the
+**one** derivation, `buildSetupChecklist` (`src/runtime/ui/setupChecklist.ts`),
+through the one component, `SetupChecklistSteps`. Dictionary root:
+`flow.bootstrap.*`; steps are grouped by the three stages under the existing
+`nav.group.*` labels, so the checklist and the sidebar name the stages
+identically.
+
+**The label states the condition.** The right-hand column below is the condition
+`buildSetupChecklist` actually tests; a change to either column without the
+other is the defect this section was rewritten to prevent.
+
+| Key | en | Condition tested |
+| --- | --- | --- |
+| `flow.bootstrap.step.school` | Create a school | a school exists — or a process does, which requires one |
+| `flow.bootstrap.step.academicYear` | Create an academic year | an academic year exists — or a process does |
+| `flow.bootstrap.step.department` | Create a department | a department exists — or a process does |
+| `flow.bootstrap.step.process` | Create an assignment process | a process exists or is selected |
+| `flow.bootstrap.step.allocation` | Record the leadership hour allocation | an allocation revision exists, or the plan balance carries allocated group hours (§8.2 step 2) |
+| `flow.bootstrap.step.participants` | Add process participants and their target hours | `processTeachers` count > 0 (§8.2 step 3) |
+| `flow.bootstrap.step.subjects` | Add the subjects taught | `subjects` count > 0 (§8.2 step 4) |
+| `flow.bootstrap.step.classrooms` | Add the classrooms | `teachingGroups` count > 0 (§8.2 step 5) |
+| `flow.bootstrap.step.groupSubjects` | Fill the group-subject matrix | `groupSubjects` count > 0 (§8.2 step 6) |
+| `flow.bootstrap.step.configurationReview` | Review the configuration and the selection settings | every configuration step above is done (§8.2 step 8) |
+| `flow.bootstrap.step.teachingPlan` | Create the teaching plan | `plan_status` is not null (§8.2 step 9 — continuing to planning *is* creating the plan) |
+| `flow.bootstrap.step.planBalance` | Balance the group hours and the teacher load | both `plan_balance` axes report `is_balanced` |
+| `flow.bootstrap.step.planLock` | Lock the teaching plan | the plan status is outside the service's mutable set |
+| `flow.bootstrap.step.requirements` | Generate the requirement slots | `total_slots` > 0 |
+| `flow.bootstrap.step.meeting` | Hand out the positions in the meeting | a turn is current, or a slot is assigned |
 
 | Key | en | fr | es |
 | --- | --- | --- | --- |
 | `flow.bootstrap.title` | Set up your reparto | Configurer votre répartition | Configurar el reparto |
-| `flow.bootstrap.subtitle` | A few steps before you can run the meeting. | Quelques étapes avant de pouvoir tenir la séance. | Algunos pasos antes de iniciar la sesión. |
-| `flow.bootstrap.step.school` | Create a school | Créer un établissement | Crear un centro |
-| `flow.bootstrap.step.academicYear` | Create an academic year | Créer une année scolaire | Crear un curso académico |
-| `flow.bootstrap.step.department` | Create a department | Créer un département | Crear un departamento |
-| `flow.bootstrap.step.process` | Create a process | Créer un processus | Crear un proceso |
-| `flow.bootstrap.step.subjects` | Add subjects | Ajouter des matières | Añadir materias |
-| `flow.bootstrap.step.classrooms` | Add classrooms | Ajouter des classes | Añadir grupos |
-| `flow.bootstrap.step.teacherRoster` | Add teachers | Ajouter des enseignants | Añadir docentes |
-| `flow.bootstrap.step.requirements` | Generate requirement slots | Générer les créneaux de besoin | Generar puestos horarios |
-| `flow.bootstrap.step.participants` | Add process participants | Ajouter des participants | Añadir participantes |
+| `flow.bootstrap.subtitle` | The three stages, from the first record to the meeting. | Les trois étapes, du premier enregistrement à la séance. | Las tres fases, del primer registro a la sesión. |
 | `flow.bootstrap.done` | Done | Terminé | Hecho |
 | `flow.bootstrap.open` | Open | Ouvrir | Abrir |
+| `flow.bootstrap.unknown` | Not checked here | Non vérifié ici | No comprobado aquí |
+| `flow.bootstrap.reason.no-process` | Select a process first. | Sélectionnez d'abord un processus. | Seleccione antes un proceso. |
+| `flow.bootstrap.reason.not-observed` | This screen does not read that. | Cet écran ne lit pas cette donnée. | Esta pantalla no lee ese dato. |
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Card | `data-reparto-panel="setup-checklist"` | one panel per surface; the list inside it is shared |
+| List | `data-reparto-checklist=""` | wraps the three stage groups |
+| Stage group | `data-reparto-checklist-group="configuration\|planning\|assignment"` | labelled from `nav.group.*`, never a second set of stage names |
+| Step | `data-reparto-checklist-step="<key>"` | the dictionary key is the slot name |
+| Step state | `data-reparto-checklist-state="done\|pending\|unknown"` | `unknown` is new: the condition was **not tested here**, which is not the same statement as "not done" |
+| Blocked reason | `data-reparto-checklist-blocked="no-process\|not-observed"` alongside `data-reparto-disabled-reason=""` | why the condition could not be tested |
+| Status word | `data-reparto-step-status="done\|pending\|unknown"` | shown where the surface offers no way in |
+| Open action | `data-reparto-action="open-<key>"` | offered only for a **pending** step the surface can actually open; an unknown step never gets one |
+| Progress | `data-reparto-slot="setup-progress"` (picker) / `data-reparto-slot="checklist-progress"` (dashboard) | `{done}/{total}`; untested steps are counted separately and never folded into "not done" |
+
+**Deliberately absent:** a step for the selection and LAN settings (§8.2 step 7).
+They ship with defaults, so there is no "not done" state to report and a
+permanently-pending step would be a false demand; `configurationReview` is where
+the operator is told to look at them.
 
 ---
 
@@ -949,6 +995,7 @@ Amendment rules:
 | `ExportCenterState.finalBlocked` / `availableExportTypes` / `restoreDraftEnabled`, the `view.exports.finalBlocked` / `finalReady` / `finalExport` labels, the `data-reparto-slot="export-state"` slot and `final` as one entry in the export-type button row | export center | §3.19: three families with their own panels — planning artifacts (`planning-exports`, never withheld for an inexact plan), stored documents (`export-center`) and the strict final assignment export (`final-close`) with `data-final-blocked-reason` per refusal and a confirmation, because it archives the process | 2026-08-02 |
 | Shared-screen panels `global-state` / `turn-state` and the `dashboard` prop on `SharedScreenWorkspace` / `RepartoSharedView`; the meeting route rendering the dashboard a second time | shared screen / meeting control | `shared-balance`, `shared-slots` and a `turn-state` panel fed only by `ProcessSummary`, plus the meeting-control panels `meeting-turn-control`, `pending-slots`, `reconciliation-state`, `authorized-overloads`; slots `shared-state`, `shared-plan-balance`, `meeting-state`, `lifecycle-state`, `lifecycle-detail`, `pending-slots`, `overload-count`, `overload-hours`, `authorized-overloads`, `no-authorized-overloads`; attributes `data-reparto-lifecycle-state`, `data-reparto-selection-blocked`, `data-reparto-plan-stale`, `data-reparto-reconciliation-required`; disabled reasons as stable codes on `data-disabled-reason` | 2026-08-02 |
 | `data-reparto-invariant="readiness"` as the third invariant's key, and `dashboard.invariant.readiness` as its only label | dashboard / meeting control / shared screen | the third invariant is `data-reparto-invariant="feasibility"` (plan §20.19 8/8.7 — group balance, teacher-load balance and **feasibility**), carrying `data-reparto-invariant-source` to say which vocabulary its state is in: `plan` for the department-head-only `TeachingPlanPublic.feasibility_status` (`dashboard.feasibility.*`, label `dashboard.invariant.feasibility`) and `readiness` for the coarse §20.25 projection every tier receives (`dashboard.readiness.*`, label `dashboard.invariant.readiness`, unchanged). `buildProcessInvariants` (`runtime/ui/invariants.ts`) owns the three-slot shape | 2026-08-03 |
+| `flow.bootstrap.step.teacherRoster` ("Add teachers") | §8 | nothing — it tested `participants.length > 0`, the identical condition `flow.bootstrap.step.participants` tested one row below it, so the checklist counted one act twice and told an operator who had added teachers to add teachers (audit `S2-07`). The teacher roster keeps its own sidebar entry (`nav.item.teacherRoster`); participants cannot exist without it | 2026-08-11 |
 | The secondary-activity row action `delete` (`data-reparto-row-action="delete"`, `action.delete` as its label) and the `planning.secondary.deleted` / `deleteError` / `deleteTitle` / `deleteBody` copy | §3.14 | guarded §20.12 retirement: `data-reparto-row-action="retire"` labelled `action.retire`, `planning.secondary.retired` / `retireError` / `retireTitle` / `retireBody` plus the new `retireConsequence` shown on `data-reparto-slot="secondary-activity-retire-consequence"`. The wrapper is `POST …/{activity_id}/retire`; the served backend supports `GET, PATCH` only on the plain path and answered **405** to the old control (audit `S2-08`) | 2026-08-11 |
 
 The versions bullet closed the last surface that still parsed a float hour

@@ -814,10 +814,17 @@ export const en = {
   flow: {
     bootstrap: {
       title: "Set up your reparto",
-      subtitle: "A few steps before you can run the meeting.",
-      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create a process", subjects: "Add subjects", classrooms: "Add classrooms", teacherRoster: "Add teachers", requirements: "Generate requirement slots", participants: "Add process participants" },
+      subtitle: "The three stages, from the first record to the meeting.",
+      // Every label states the condition `buildSetupChecklist` tests for it —
+      // the pair is frozen side by side in `docs/ui-naming-freeze.md` §8.
+      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create an assignment process", allocation: "Record the leadership hour allocation", participants: "Add process participants and their target hours", subjects: "Add the subjects taught", classrooms: "Add the classrooms", groupSubjects: "Fill the group-subject matrix", configurationReview: "Review the configuration and the selection settings", teachingPlan: "Create the teaching plan", planBalance: "Balance the group hours and the teacher load", planLock: "Lock the teaching plan", requirements: "Generate the requirement slots", meeting: "Hand out the positions in the meeting" },
       done: "Done",
-      open: "Open"
+      open: "Open",
+      unknown: "Not checked here",
+      reason: {
+        "no-process": "Select a process first.",
+        "not-observed": "This screen does not read that."
+      }
     }
   },
   meeting: {

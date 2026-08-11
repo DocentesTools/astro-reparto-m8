@@ -8,6 +8,10 @@ export {
   VersionsView,
   type VersionComparisonSource
 } from "./DepartmentHeadWorkspace.js";
+export {
+  SetupChecklistProgress,
+  SetupChecklistSteps
+} from "./SetupChecklist.js";
 export { MeetingControlWorkspace } from "./MeetingWorkspace.js";
 export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
 export {
@@ -35,6 +39,7 @@ export {
   useReopenRepartoProcess,
   useUpdateRepartoProcess,
   useRepartoSchools,
+  useRepartoSetupObservations,
   useRepartoSummary,
   useRepartoTeacherLan,
   useRepartoTeacherProfiles,

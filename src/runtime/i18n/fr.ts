@@ -814,10 +814,15 @@ export const fr: RepartoDictionary = {
   flow: {
     bootstrap: {
       title: "Configurer votre répartition",
-      subtitle: "Quelques étapes avant de pouvoir tenir la séance.",
-      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus", subjects: "Ajouter des matières", classrooms: "Ajouter des classes", teacherRoster: "Ajouter des enseignants", requirements: "Générer les créneaux de besoin", participants: "Ajouter des participants" },
+      subtitle: "Les trois étapes, du premier enregistrement à la séance.",
+      step: { school: "Créer un établissement", academicYear: "Créer une année scolaire", department: "Créer un département", process: "Créer un processus d'affectation", allocation: "Enregistrer la dotation horaire de la direction", participants: "Ajouter les participants et leurs heures cibles", subjects: "Ajouter les matières enseignées", classrooms: "Ajouter les classes", groupSubjects: "Remplir la matrice classe-matière", configurationReview: "Vérifier la configuration et les paramètres de sélection", teachingPlan: "Créer le plan d'enseignement", planBalance: "Équilibrer les heures de classe et la charge enseignante", planLock: "Verrouiller le plan d'enseignement", requirements: "Générer les créneaux de besoin", meeting: "Attribuer les postes en séance" },
       done: "Terminé",
-      open: "Ouvrir"
+      open: "Ouvrir",
+      unknown: "Non vérifié ici",
+      reason: {
+        "no-process": "Sélectionnez d'abord un processus.",
+        "not-observed": "Cet écran ne lit pas cette donnée."
+      }
     }
   },
   meeting: {

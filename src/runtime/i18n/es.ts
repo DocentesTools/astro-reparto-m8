@@ -813,10 +813,15 @@ export const es: RepartoDictionary = {
   flow: {
     bootstrap: {
       title: "Configurar el reparto",
-      subtitle: "Algunos pasos antes de iniciar la sesión.",
-      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso", subjects: "Añadir materias", classrooms: "Añadir grupos", teacherRoster: "Añadir docentes", requirements: "Generar puestos horarios", participants: "Añadir participantes" },
+      subtitle: "Las tres fases, del primer registro a la sesión.",
+      step: { school: "Crear un centro", academicYear: "Crear un curso académico", department: "Crear un departamento", process: "Crear un proceso de reparto", allocation: "Registrar la dotación horaria de la dirección", participants: "Añadir participantes y sus horas objetivo", subjects: "Añadir las materias impartidas", classrooms: "Añadir los grupos", groupSubjects: "Rellenar la matriz grupo-materia", configurationReview: "Revisar la configuración y los ajustes de selección", teachingPlan: "Crear el plan docente", planBalance: "Equilibrar las horas de grupo y la carga del profesorado", planLock: "Bloquear el plan docente", requirements: "Generar los puestos horarios", meeting: "Repartir los puestos en la sesión" },
       done: "Hecho",
-      open: "Abrir"
+      open: "Abrir",
+      unknown: "No comprobado aquí",
+      reason: {
+        "no-process": "Seleccione antes un proceso.",
+        "not-observed": "Esta pantalla no lee ese dato."
+      }
     }
   },
   meeting: {

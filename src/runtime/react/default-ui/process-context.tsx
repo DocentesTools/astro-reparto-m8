@@ -19,9 +19,13 @@ import {
   useRepartoEventStream,
   type RepartoEventStreamState
 } from "../useRepartoEvents.js";
+import {
+  SetupChecklistProgress,
+  SetupChecklistSteps
+} from "../SetupChecklist.js";
+import { buildSetupChecklist, type SetupChecklistStepKey } from "../../ui/index.js";
 import { resolveProcessId } from "../../queryKeys.js";
 import {
-  formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
   type RepartoLocale
@@ -178,59 +182,24 @@ export function ProcessPicker({
     value: department.id,
     label: department.name
   }));
-  const checklistSteps: Array<{
-    key: keyof typeof dict.flow.bootstrap.step;
-    done: boolean;
-    disabledReason?: string;
-    onOpen?: () => void;
-  }> = [
-    {
-      key: "school",
-      done: schoolOptions.length > 0,
-      onOpen: () => setInlineCreate("school")
-    },
-    {
-      key: "academicYear",
-      done: yearOptions.length > 0,
-      onOpen: () => setInlineCreate("academicYear")
-    },
-    {
-      key: "department",
-      done: departmentOptions.length > 0,
-      onOpen: () => setInlineCreate("department")
-    },
-    {
-      key: "process",
-      done: processes.length > 0,
-      onOpen: () => undefined
-    },
-    {
-      key: "subjects",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "classrooms",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "teacherRoster",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "requirements",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "participants",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    }
-  ];
-  const checklistDoneCount = checklistSteps.filter((step) => step.done).length;
+  // The same derivation the dashboard uses (`S2-07`). The picker's copy used to
+  // be a second list whose last five steps were hard-coded "not done"; they are
+  // now genuinely untested here — no process is selected by construction — and
+  // the checklist says so instead of asserting an operator has not done work
+  // this screen never looked at.
+  const checklist = buildSetupChecklist({
+    academicYearCount: yearOptions.length,
+    departmentCount: departmentOptions.length,
+    processCount: processes.length,
+    schoolCount: schoolOptions.length
+  });
+  const inlineCreateHandlers: Partial<
+    Record<SetupChecklistStepKey, () => void>
+  > = {
+    school: () => setInlineCreate("school"),
+    academicYear: () => setInlineCreate("academicYear"),
+    department: () => setInlineCreate("department")
+  };
 
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
@@ -247,56 +216,13 @@ export function ProcessPicker({
               {dict.flow.bootstrap.subtitle}
             </p>
           </div>
-          <span
-            className="text-sm text-muted-foreground"
-            data-reparto-slot="setup-progress"
-          >
-            {formatRepartoMessage("{done}/9", { done: checklistDoneCount })}
-          </span>
+          <SetupChecklistProgress checklist={checklist} />
         </div>
-        <ol className="mt-3 grid gap-2" data-reparto-checklist="">
-          {checklistSteps.map((step) => (
-            <li
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
-              data-reparto-checklist-step={step.key}
-              data-reparto-checklist-state={step.done ? "done" : "pending"}
-              key={step.key}
-            >
-              <div className="min-w-0">
-                <strong className="block text-foreground">
-                  {dict.flow.bootstrap.step[step.key]}
-                </strong>
-                {step.disabledReason ? (
-                  <span
-                    className="text-xs text-muted-foreground"
-                    data-reparto-disabled-reason=""
-                  >
-                    {step.disabledReason}
-                  </span>
-                ) : null}
-              </div>
-              {step.done ? (
-                <span
-                  className="text-xs font-medium text-primary"
-                  data-reparto-step-status="done"
-                >
-                  {dict.flow.bootstrap.done}
-                </span>
-              ) : (
-                <button
-                  className={repartoButtonClass}
-                  data-reparto-action={`open-${step.key}`}
-                  data-disabled-reason={step.disabledReason ?? undefined}
-                  disabled={Boolean(step.disabledReason)}
-                  onClick={step.onOpen ?? (() => undefined)}
-                  type="button"
-                >
-                  {dict.flow.bootstrap.open}
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
+        <SetupChecklistSteps
+          checklist={checklist}
+          locale={locale}
+          onOpenStep={(key) => inlineCreateHandlers[key] ?? null}
+        />
       </section>
       ) : null}
       <section className={repartoPanelClass} data-reparto-panel="process-picker">

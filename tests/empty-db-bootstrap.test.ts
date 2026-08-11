@@ -334,15 +334,28 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       "flow.bootstrap.step.academicYear",
       "flow.bootstrap.step.department",
       "flow.bootstrap.step.process",
+      "flow.bootstrap.step.allocation",
+      "flow.bootstrap.step.participants",
       "flow.bootstrap.step.subjects",
       "flow.bootstrap.step.classrooms",
-      "flow.bootstrap.step.teacherRoster",
+      "flow.bootstrap.step.groupSubjects",
+      "flow.bootstrap.step.configurationReview",
+      "flow.bootstrap.step.teachingPlan",
+      "flow.bootstrap.step.planBalance",
+      "flow.bootstrap.step.planLock",
       "flow.bootstrap.step.requirements",
-      "flow.bootstrap.step.participants"
+      "flow.bootstrap.step.meeting"
     ];
     for (const key of required) {
       expect(checklist, `missing bootstrap key: ${key}`).toContain(key);
     }
+    // `teacherRoster` tested the same condition as `participants` and was
+    // retired by audit finding `S2-07`; §12 records what happened to it, so the
+    // §8 table must not still carry it (freeze §12 rule 1).
+    expect(checklist).not.toContain("flow.bootstrap.step.teacherRoster");
+    expect(section(freeze, "Three-stage adaptation amendments")).toContain(
+      "flow.bootstrap.step.teacherRoster"
+    );
   });
 
   it("forbids en/fr/es drift in singular vs plural roots", () => {

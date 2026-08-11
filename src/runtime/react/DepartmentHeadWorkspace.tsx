@@ -25,6 +25,7 @@ import {
   buildExportCenterState,
   buildPlanningImportDraftState,
   buildProcessInvariants,
+  buildSetupChecklist,
   buildVersionComparisonView,
   buildVersionSelectionState,
   nextLeadershipWorkflowAction,
@@ -34,9 +35,11 @@ import {
   type ProcessInvariant,
   type PlanningExportBlockedReason,
   type PlanningImportDraftError,
+  type SetupChecklistObservations,
   type VersionComparisonDelta,
   type VersionComparisonView
 } from "../ui/index.js";
+import { SetupChecklistSteps } from "./SetupChecklist.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -451,6 +454,7 @@ export function DepartmentHeadWorkspace({
   dashboard,
   feasibility = null,
   locale,
+  setup,
   summary = null
 }: {
   dashboard?: ProcessDashboard | null;
@@ -461,6 +465,15 @@ export function DepartmentHeadWorkspace({
    */
   feasibility?: FeasibilityStatus | null;
   locale?: RepartoLocale;
+  /**
+   * Stage 1 counts the dashboard payload does not carry (`S2-07`).
+   *
+   * The dashboard reports on a plan, not on the reference data behind it, so the
+   * subject, classroom, matrix and allocation conditions can only come from the
+   * caller. A caller that has not read them passes nothing and those steps say
+   * *not checked here* rather than claiming they are undone.
+   */
+  setup?: SetupChecklistObservations;
   summary?: ProcessSummary | null;
 }) {
   // The turn controls below are department-head actions, so the mode comes from
@@ -478,21 +491,18 @@ export function DepartmentHeadWorkspace({
   const totalSlots = activeSummary?.total_slots ?? 0;
   const assignedSlots = activeSummary?.assigned_slots ?? 0;
   const availableSlots = activeSummary?.available_slots ?? 0;
-  const checklistSteps = [
-    { key: "school", done: Boolean(activeSummary) },
-    { key: "academicYear", done: Boolean(activeSummary) },
-    { key: "department", done: Boolean(activeSummary) },
-    { key: "process", done: Boolean(activeSummary) },
-    // The plan replaces the subject and classroom counts the old checklist
-    // derived from `requirement_balances`: a plan exists once its inputs do,
-    // and the plan status is the service's own statement about them.
-    { key: "subjects", done: planning?.teaching_plan_id !== null && planning !== null },
-    { key: "classrooms", done: Boolean(balance) },
-    { key: "teacherRoster", done: participants.length > 0 },
-    { key: "requirements", done: totalSlots > 0 },
-    { key: "participants", done: participants.length > 0 }
-  ] as const;
-  const checklistDoneCount = checklistSteps.filter((step) => step.done).length;
+  // One derivation, shared with the process picker (`S2-07`). The labels used to
+  // be rewired conditions under unchanged words — *Add subjects* testing that a
+  // teaching plan existed — so nothing is derived here beyond handing the helper
+  // what this payload proves: the dashboard's participant rows are the
+  // participant count, and the summary is the whole Stage 2/3 source.
+  const checklist = buildSetupChecklist({
+    ...setup,
+    participantCount:
+      setup?.participantCount ?? (dashboard ? participants.length : null),
+    processId: setup?.processId ?? activeSummary?.process_id ?? null,
+    summary: activeSummary
+  });
   const actions = [
     {
       key: "initialize-turns",
@@ -685,28 +695,14 @@ export function DepartmentHeadWorkspace({
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.checklist}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="checklist-progress">
-              {checklistDoneCount}/{checklistSteps.length}
+              {checklist.doneCount}/{checklist.total}
             </span>
           </div>
-          <ol className="mt-3 grid gap-2">
-            {checklistSteps.map((step) => (
-              <li
-                className="flex items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
-                data-reparto-checklist-state={step.done ? "done" : "pending"}
-                data-reparto-checklist-step={step.key}
-                key={step.key}
-              >
-                <span>{dict.flow.bootstrap.step[step.key]}</span>
-                <strong className="text-xs text-primary">
-                  {step.done ? dict.flow.bootstrap.done : dict.flow.bootstrap.open}
-                </strong>
-              </li>
-            ))}
-          </ol>
+          <SetupChecklistSteps checklist={checklist} locale={locale} />
           <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="checklist-summary">
             {formatRepartoMessage(dict.dashboard.summary.checklist, {
-              done: checklistDoneCount,
-              total: checklistSteps.length
+              done: checklist.doneCount,
+              total: checklist.total
             })}
           </p>
         </section>

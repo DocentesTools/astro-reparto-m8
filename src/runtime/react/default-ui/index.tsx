@@ -26,6 +26,7 @@ import {
   useRepartoPreviousYearComparison,
   useRepartoProcess,
   useRepartoProcesses,
+  useRepartoSetupObservations,
   useRepartoSummary,
   useRepartoTeacherLan,
   useRepartoTeachingPlan,
@@ -219,6 +220,9 @@ function RepartoDashboardContent({
   // request is supplementary — a process with no plan 404s here, and the row
   // then reports the readiness projection rather than blocking the dashboard.
   const planQuery = useRepartoTeachingPlan(processId);
+  // The Stage 1 counts the dashboard payload does not carry, so the setup
+  // checklist can test its own labels rather than approximate them (`S2-07`).
+  const setup = useRepartoSetupObservations(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
   const isLoading =
@@ -243,6 +247,7 @@ function RepartoDashboardContent({
         dashboard={activeDashboard}
         feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
+        setup={setup}
         summary={activeSummary}
       />
       <QueryState

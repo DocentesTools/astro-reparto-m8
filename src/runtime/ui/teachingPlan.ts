@@ -1,5 +1,5 @@
 import { RepartoApiError } from "../errors.js";
-import type { TeachingPlanPublic } from "../schemas.js";
+import type { TeachingPlanPublic, TeachingPlanStatus } from "../schemas.js";
 
 /**
  * What the teaching-plan read proves, and whether creation may be offered
@@ -110,6 +110,17 @@ export function buildTeachingPlanCreationState({
  * elsewhere would drift the moment a status is added.
  */
 const MUTABLE_PLAN_STATUSES = new Set(["draft", "unbalanced", "balanced"]);
+
+/**
+ * Does the backend still accept planning mutations in this status?
+ *
+ * Exported so the setup checklist can ask *"has the plan been locked?"* without
+ * re-listing the statuses: a locked plan is exactly a plan that is no longer
+ * mutable, and one list is the only way that stays true when a status is added.
+ */
+export function isMutablePlanStatus(status: TeachingPlanStatus): boolean {
+  return MUTABLE_PLAN_STATUSES.has(status);
+}
 
 /** Why the unlock affordance is withheld, when it is. */
 export type TeachingPlanUnlockBlockedReason =

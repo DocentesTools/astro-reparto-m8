@@ -104,10 +104,13 @@ export function ActionButton({
   row?: boolean;
   type?: "button" | "submit";
 }) {
-  const isDelete = action === "delete" || action === "delete-selected";
+  // Guarded retirement (§20.12) takes a row out of the plan without removing
+  // it, so it reads as destructive here even though nothing is deleted.
+  const isDestructive =
+    action === "delete" || action === "delete-selected" || action === "retire";
   return (
     <button
-      className={isDelete ? repartoButtonDeleteClass : repartoButtonClass}
+      className={isDestructive ? repartoButtonDeleteClass : repartoButtonClass}
       data-reparto-action={action}
       data-reparto-row-action={row ? action : undefined}
       data-disabled-reason={disabledReason ?? undefined}

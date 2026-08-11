@@ -105,7 +105,7 @@ const mocks = vi.hoisted(() => ({
     list: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
-    remove: vi.fn()
+    retire: vi.fn()
   },
   teachingGroups: {
     list: vi.fn(),
@@ -259,7 +259,7 @@ describe("reparto React hooks", () => {
     mocks.teachingActivities.list.mockClear();
     mocks.teachingActivities.create.mockClear();
     mocks.teachingActivities.update.mockClear();
-    mocks.teachingActivities.remove.mockClear();
+    mocks.teachingActivities.retire.mockClear();
     mocks.teachingGroups.list.mockClear();
     mocks.teachingGroups.create.mockClear();
     mocks.teachingGroups.update.mockClear();
@@ -583,7 +583,7 @@ describe("reparto React hooks", () => {
       useRepartoTeachingActivities,
       useCreateRepartoTeachingActivity,
       useUpdateRepartoTeachingActivity,
-      useDeleteRepartoTeachingActivity,
+      useRetireRepartoTeachingActivity,
       useRepartoTeachingPlanSummary,
       useMaterializeRepartoMainActivities,
       usePreviewRepartoGroupSubjects,
@@ -685,8 +685,8 @@ describe("reparto React hooks", () => {
         group_subject_ids: ["gs1", "gs2"]
       }
     });
-    const deleteActivity = useDeleteRepartoTeachingActivity();
-    deleteActivity.mutate({ processId: "p1", activityId: "ta1" });
+    const retireActivity = useRetireRepartoTeachingActivity();
+    retireActivity.mutate({ processId: "p1", activityId: "ta1" });
     expect(
       mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
     ).toEqual(
@@ -836,7 +836,7 @@ describe("reparto React hooks", () => {
       required_teacher_count: 2,
       group_subject_ids: ["gs1", "gs2"]
     });
-    expect(mocks.teachingActivities.remove).toHaveBeenCalledWith("p1", "ta1");
+    expect(mocks.teachingActivities.retire).toHaveBeenCalledWith("p1", "ta1");
     expect(mocks.useMutation).toHaveBeenCalledTimes(21);
   });
 

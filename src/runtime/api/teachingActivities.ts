@@ -53,10 +53,18 @@ export const teachingActivities = {
       schema: TeachingActivityPublicSchema,
       auth: true
     }),
-  remove: (processId: string, activityId: string) =>
+  /**
+   * Guarded retirement (§20.12); there is no `DELETE` on this path.
+   *
+   * The row is never removed: the backend stamps `retired_at` (§20.18) and
+   * routes any live requirement through regeneration or, once assigned,
+   * explicit reconciliation. **409** when the activity is already retired, or
+   * when it has no requirements and its plan is locked — unlock it first.
+   */
+  retire: (processId: string, activityId: string) =>
     request<TeachingActivityPublic>({
-      method: "DELETE",
-      path: `/assignment-processes/${processId}/teaching-activities/${activityId}`,
+      method: "POST",
+      path: `/assignment-processes/${processId}/teaching-activities/${activityId}/retire`,
       schema: TeachingActivityPublicSchema,
       auth: true
     })

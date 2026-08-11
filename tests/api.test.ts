@@ -1083,15 +1083,18 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       group_weekly_hours: null
     });
 
+    // §20.12: the cell leaves the plan through the guarded retire action. The
+    // served backend answers 405 on DELETE for this path, so the method and
+    // the `/retire` suffix are both part of the assertion.
     fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
     await expect(
-      groupSubjects.remove(processId, groupSubjectId)
+      groupSubjects.retire(processId, groupSubjectId)
     ).resolves.toMatchObject({ id: groupSubjectId });
     expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
-      `/assignment-processes/${processId}/group-subjects/${groupSubjectId}`
+      `/assignment-processes/${processId}/group-subjects/${groupSubjectId}/retire`
     );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
+      "POST"
     );
 
     expect(() =>
@@ -2104,12 +2107,17 @@ describe("teaching-plan and activity API wrappers", () => {
       required_teacher_count: 1
     });
 
+    // §20.12: guarded retirement, not deletion — the served backend supports
+    // GET and PATCH only on the activity path and answers 405 on DELETE.
     fetchMock.mockResolvedValueOnce(response(activityBody));
     await expect(
-      teachingActivities.remove(processId, activityId)
+      teachingActivities.retire(processId, activityId)
     ).resolves.toMatchObject({ id: activityId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-activities/${activityId}/retire`
+    );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
+      "POST"
     );
   });
 

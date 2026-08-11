@@ -19,7 +19,7 @@ import type {
 } from "../../../schemas.js";
 import {
   useCreateRepartoTeachingActivity,
-  useDeleteRepartoTeachingActivity,
+  useRetireRepartoTeachingActivity,
   useRepartoGroupSubjects,
   useRepartoSubjects,
   useRepartoTeachingActivities,
@@ -550,13 +550,13 @@ export function SecondaryActivityForm({
 
 export function SecondaryActivityTable({
   dict,
-  onDelete,
   onEdit,
+  onRetire,
   rows
 }: {
   dict: Dict;
-  onDelete: (activity: TeachingActivityPublic) => void;
   onEdit: (activity: TeachingActivityPublic) => void;
+  onRetire: (activity: TeachingActivityPublic) => void;
   rows: SecondaryActivityRow[];
 }) {
   if (rows.length === 0) {
@@ -593,9 +593,9 @@ export function SecondaryActivityTable({
                 row
               />
               <ActionButton
-                action="delete"
-                label={dict.action.delete}
-                onClick={() => onDelete(row.activity)}
+                action="retire"
+                label={dict.action.retire}
+                onClick={() => onRetire(row.activity)}
                 row
               />
             </RowActions>
@@ -665,9 +665,9 @@ export function SecondaryActivityEditor({
   const activitiesQuery = useRepartoTeachingActivities(processId);
   const createMutation = useCreateRepartoTeachingActivity();
   const updateMutation = useUpdateRepartoTeachingActivity();
-  const deleteMutation = useDeleteRepartoTeachingActivity();
+  const retireMutation = useRetireRepartoTeachingActivity();
   const [editor, setEditor] = useState<EditorState | null>(null);
-  const [deleting, setDeleting] = useState<TeachingActivityPublic | null>(null);
+  const [retiring, setRetiring] = useState<TeachingActivityPublic | null>(null);
   const [values, setValues] = useState<SecondaryActivityFormValues>(
     secondaryActivityFormValues(null)
   );
@@ -788,19 +788,19 @@ export function SecondaryActivityEditor({
     );
   };
 
-  const confirmDelete = () => {
-    if (!deleting || !processId) return;
+  const confirmRetire = () => {
+    if (!retiring || !processId) return;
     clearMappedError();
-    deleteMutation.mutate(
-      { processId, activityId: deleting.id },
+    retireMutation.mutate(
+      { processId, activityId: retiring.id },
       {
         onSuccess: () => {
-          repartoToast.success(dict.planning.secondary.deleted);
-          setDeleting(null);
+          repartoToast.success(dict.planning.secondary.retired);
+          setRetiring(null);
         },
         onError: (error) => {
           setMappedError(error);
-          repartoToast.error(dict.planning.secondary.deleteError);
+          repartoToast.error(dict.planning.secondary.retireError);
         }
       }
     );
@@ -847,8 +847,8 @@ export function SecondaryActivityEditor({
       {!isLoading && !queryError ? (
         <SecondaryActivityTable
           dict={dict}
-          onDelete={setDeleting}
           onEdit={openEdit}
+          onRetire={setRetiring}
           rows={rows}
         />
       ) : null}
@@ -882,20 +882,25 @@ export function SecondaryActivityEditor({
           />
         </EntityDialogShell>
       ) : null}
-      {deleting ? (
+      {retiring ? (
         <EntityDeleteDialog
-          body={formatRepartoMessage(dict.planning.secondary.deleteBody, {
+          body={formatRepartoMessage(dict.planning.secondary.retireBody, {
             subject:
-              subjects.find((subject) => subject.id === deleting.subject_id)
-                ?.name ?? deleting.subject_id
+              subjects.find((subject) => subject.id === retiring.subject_id)
+                ?.name ?? retiring.subject_id
           })}
           cancelLabel={dict.action.cancel}
-          isPending={deleteMutation.isPending}
+          confirmWarning={
+            <p data-reparto-slot="secondary-activity-retire-consequence">
+              {dict.planning.secondary.retireConsequence}
+            </p>
+          }
+          isPending={retireMutation.isPending}
           mapped={mapped}
-          onClose={() => setDeleting(null)}
-          onConfirm={confirmDelete}
-          proceedLabel={dict.action.delete}
-          title={dict.planning.secondary.deleteTitle}
+          onClose={() => setRetiring(null)}
+          onConfirm={confirmRetire}
+          proceedLabel={dict.action.retire}
+          title={dict.planning.secondary.retireTitle}
         />
       ) : null}
     </section>

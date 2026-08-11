@@ -30,7 +30,7 @@ import {
  * One cell declares that a subject applies to a teaching group inside one
  * process, with the actual planning values the teaching plan materializes from.
  * `teaching_group_id` / `subject_id` are the immutable identity of a cell: to
- * re-target one, delete it and create another.
+ * re-target one, retire it and create another.
  *
  * `bulkPreview` and `bulkApply` are a **pair**. Preview is a dry run that
  * returns the create/update/unchanged split plus `expected_affected_count`;
@@ -76,10 +76,19 @@ export const groupSubjects = {
       schema: GroupSubjectPublicSchema,
       auth: true
     }),
-  remove: (processId: string, groupSubjectId: string) =>
+  /**
+   * Guarded retirement (§20.12); there is no `DELETE` on this path.
+   *
+   * The cell is never removed: the backend clears `active`, which is also why
+   * `update` refuses an `active: false` patch — a boolean would be a second,
+   * quieter way out of the plan. **409** when the process is not draft, when
+   * the cell is already retired, or while a live downstream activity still
+   * points at it; retire that activity through its own flow first.
+   */
+  retire: (processId: string, groupSubjectId: string) =>
     request<GroupSubjectPublic>({
-      method: "DELETE",
-      path: `/assignment-processes/${processId}/group-subjects/${groupSubjectId}`,
+      method: "POST",
+      path: `/assignment-processes/${processId}/group-subjects/${groupSubjectId}/retire`,
       schema: GroupSubjectPublicSchema,
       auth: true
     }),

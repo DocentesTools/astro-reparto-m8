@@ -356,7 +356,7 @@ both through `HoursSchema` and always **sends** the canonical string.
 | Create | `POST /` → `201` `GroupSubjectPublic` (process writer) |
 | Get | `GET /{group_subject_id}` → `GroupSubjectPublic` |
 | Patch | `PATCH /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
-| Delete | `DELETE /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
+| Retire | `POST /{group_subject_id}/retire` → `GroupSubjectPublic` (admin) — **there is no `DELETE`** |
 | Bulk preview | `POST /bulk-preview` → `GroupSubjectBulkPreview` (process writer, dry run) |
 | Bulk apply | `POST /bulk-apply` → `GroupSubjectBulkResult` (process writer) |
 | Sync preview | `POST /{group_subject_id}/sync-preview` → `MainActivitySyncPreview` (admin) |
@@ -371,6 +371,14 @@ DB-enforced (`400` on violation). A cross-process group or subject reference is
 `404`; a payload `assignment_process_id` that disagrees with the URL is `400`; a
 `final`/`archived` process is `400`. A `null` hour **inherits the subject
 default** — it is not zero, and the two must never be collapsed in a form.
+
+Retirement (corrected **2026-08-11**, audit `S2-09`): the row is never removed;
+`retire` clears `active`, which is also why `PATCH` answers `409` on an
+`active: false` patch — a boolean would be a second, quieter way out of the
+plan. `409` when the process is not `draft`, when the cell is already retired,
+or while a live downstream activity still points at it. The plugin previously
+declared `DELETE /{group_subject_id}` here; the served backend supports
+`GET, PATCH` only on that path and answers `405`.
 
 Bulk request body (shared by both bulk routes): `subject_id`, `mode`
 (`create_missing`/`update_existing`/`upsert`), the optional selection filters
@@ -533,7 +541,7 @@ The diagnostics panel renders the department-head-only report through
 | Create | `POST /` → `201` `TeachingActivityPublic` (process writer) |
 | Get | `GET /{activity_id}` → `TeachingActivityPublic` |
 | Patch | `PATCH /{activity_id}` → `TeachingActivityPublic` (process writer) |
-| Delete | `DELETE /{activity_id}` → `TeachingActivityPublic` (process writer; retirement/downstream rules remain backend-authoritative) |
+| Retire | `POST /{activity_id}/retire` → `TeachingActivityPublic` (admin; retirement/downstream rules remain backend-authoritative) — **there is no `DELETE`** |
 | Create required | `subject_id`, `group_weekly_hours_per_group: float>=0`, `teacher_weekly_hours_per_position: float>=0` |
 | Create optional | `allocation_category` (default `secondary`), `activity_type` (default `ordinary`), `required_teacher_count: int>=1` (default 1), `notes`, `source` (only `secondary_manual` accepted), `group_subject_ids` (default empty) |
 | Patch fields | `allocation_category, activity_type, group_weekly_hours_per_group, teacher_weekly_hours_per_position, required_teacher_count, notes, group_subject_ids` |
@@ -543,7 +551,13 @@ The diagnostics panel renders the department-head-only report through
 Source values: `main_generated, secondary_manual,
 copied_from_previous_year, imported`. Sync values: `in_sync, out_of_sync`.
 Retirement is represented by nullable `retired_at`, not a second generic status
-enum. A main activity may carry `source_group_subject_id`; manual activities do
+enum, and is reached only through `POST /{activity_id}/retire` (corrected
+**2026-08-11**, audit `S2-08`): the row survives, live unassigned slots force a
+stale regeneration and live assigned slots force explicit reconciliation.
+`409` when the activity is already retired, or when it has no generated
+requirements and its plan is locked — unlock first. The plugin previously
+declared `DELETE /{activity_id}` here; the served backend supports `GET, PATCH`
+only on that path and answered `405` to the editor's own delete control. A main activity may carry `source_group_subject_id`; manual activities do
 not. `group_subject_ids` is the complete unique link set and
 `linked_group_count` must equal its length. Every link must belong to the
 process and activity subject; subject flags decide whether zero or multiple

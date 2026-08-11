@@ -327,8 +327,12 @@ alone, which reads as a list of subjects:
 | Cell positions | `data-reparto-field="group-subject-cell-teacher-count"` | positive integer; blank omits the field |
 
 There is deliberately no *deactivate* control on the cell form: §20.12 retires a
-cell through its own action, and a boolean toggle would be a second, quieter way
-to take a cell out of the plan.
+cell through its own action (`groupSubjects.retire` → `POST
+…/{group_subject_id}/retire`, corrected 2026-08-11 under audit `S2-09`), and a
+boolean toggle would be a second, quieter way to take a cell out of the plan.
+The backend refuses an `active: false` patch for the same reason. The wrapper is
+in place; the matrix route offers **no** retirement affordance yet, so no slot
+is frozen here — the one that lands must be named in this table first.
 
 ### 3.14 Secondary teaching activity
 
@@ -360,6 +364,13 @@ The editor freezes these surface slots:
 | Linked groups | `data-reparto-field="secondary-activity-groups"` | checkboxes over active same-subject `GroupSubject` cells |
 | Notes | `data-reparto-field="secondary-activity-notes"` | optional textarea |
 | Dialog | `data-reparto-dialog="secondary-activity-editor"` | create/edit surface |
+| Retire row action | `data-reparto-row-action="retire"` | guarded §20.12 retirement; styled destructive, but nothing is deleted |
+| Retirement consequence | `data-reparto-slot="secondary-activity-retire-consequence"` | states regeneration/reconciliation before the operator confirms |
+
+The row action is **Retire**, never *Delete*: the backend serves `GET, PATCH`
+only on `/{activity_id}` and stamps `retired_at` through `POST …/retire`
+(§20.12, §20.18). The `delete` row action this table used to freeze is retired
+in §12; see that entry before reusing either name.
 
 ### 3.15 Plan lock and requirement generation
 
@@ -552,7 +563,8 @@ the same `Cancel` button in two dialogs renders the same word.
 | --- | --- | --- | --- | --- |
 | `action.create` | Create | Créer | Crear | Create buttons in tables/toolbars |
 | `action.edit` | Edit | Modifier | Editar | Edit row action |
-| `action.delete` | Delete | Supprimer | Eliminar | Destructive row action |
+| `action.delete` | Delete | Supprimer | Eliminar | Destructive row action, where a row really is removed |
+| `action.retire` | Retire | Retirer | Retirar | Guarded §20.12 retirement — the row survives with a retirement marker; never a synonym for `action.delete` |
 | `action.archive` | Archive | Archiver | Archivar | Academic year row action |
 | `action.unarchive` | Unarchive | Désarchiver | Desarchivar | (future) |
 | `action.close` | Close | Clore | Cerrar | Meeting session, process |
@@ -867,6 +879,7 @@ Amendment rules:
 | `ExportCenterState.finalBlocked` / `availableExportTypes` / `restoreDraftEnabled`, the `view.exports.finalBlocked` / `finalReady` / `finalExport` labels, the `data-reparto-slot="export-state"` slot and `final` as one entry in the export-type button row | export center | §3.19: three families with their own panels — planning artifacts (`planning-exports`, never withheld for an inexact plan), stored documents (`export-center`) and the strict final assignment export (`final-close`) with `data-final-blocked-reason` per refusal and a confirmation, because it archives the process | 2026-08-02 |
 | Shared-screen panels `global-state` / `turn-state` and the `dashboard` prop on `SharedScreenWorkspace` / `RepartoSharedView`; the meeting route rendering the dashboard a second time | shared screen / meeting control | `shared-balance`, `shared-slots` and a `turn-state` panel fed only by `ProcessSummary`, plus the meeting-control panels `meeting-turn-control`, `pending-slots`, `reconciliation-state`, `authorized-overloads`; slots `shared-state`, `shared-plan-balance`, `meeting-state`, `lifecycle-state`, `lifecycle-detail`, `pending-slots`, `overload-count`, `overload-hours`, `authorized-overloads`, `no-authorized-overloads`; attributes `data-reparto-lifecycle-state`, `data-reparto-selection-blocked`, `data-reparto-plan-stale`, `data-reparto-reconciliation-required`; disabled reasons as stable codes on `data-disabled-reason` | 2026-08-02 |
 | `data-reparto-invariant="readiness"` as the third invariant's key, and `dashboard.invariant.readiness` as its only label | dashboard / meeting control / shared screen | the third invariant is `data-reparto-invariant="feasibility"` (plan §20.19 8/8.7 — group balance, teacher-load balance and **feasibility**), carrying `data-reparto-invariant-source` to say which vocabulary its state is in: `plan` for the department-head-only `TeachingPlanPublic.feasibility_status` (`dashboard.feasibility.*`, label `dashboard.invariant.feasibility`) and `readiness` for the coarse §20.25 projection every tier receives (`dashboard.readiness.*`, label `dashboard.invariant.readiness`, unchanged). `buildProcessInvariants` (`runtime/ui/invariants.ts`) owns the three-slot shape | 2026-08-03 |
+| The secondary-activity row action `delete` (`data-reparto-row-action="delete"`, `action.delete` as its label) and the `planning.secondary.deleted` / `deleteError` / `deleteTitle` / `deleteBody` copy | §3.14 | guarded §20.12 retirement: `data-reparto-row-action="retire"` labelled `action.retire`, `planning.secondary.retired` / `retireError` / `retireTitle` / `retireBody` plus the new `retireConsequence` shown on `data-reparto-slot="secondary-activity-retire-consequence"`. The wrapper is `POST …/{activity_id}/retire`; the served backend supports `GET, PATCH` only on the plain path and answered **405** to the old control (audit `S2-08`) | 2026-08-11 |
 
 The versions bullet closed the last surface that still parsed a float hour
 delta: every hour figure the package reads is now a canonical decimal string.

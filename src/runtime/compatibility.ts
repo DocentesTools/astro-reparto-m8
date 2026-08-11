@@ -260,9 +260,10 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
     response: "GroupSubjectPublic"
   },
-  "groupSubjects.remove": {
-    method: "DELETE",
-    path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+  "groupSubjects.retire": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/group-subjects/{group_subject_id}/retire",
     response: "GroupSubjectPublic"
   },
   "groupSubjects.bulkPreview": {
@@ -331,9 +332,10 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
     response: "TeachingActivityPublic"
   },
-  "teachingActivities.remove": {
-    method: "DELETE",
-    path: "/assignment-processes/{process_id}/teaching-activities/{activity_id}",
+  "teachingActivities.retire": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/teaching-activities/{activity_id}/retire",
     response: "TeachingActivityPublic"
   },
   "hourRequirements.generationPreview": {

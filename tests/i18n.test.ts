@@ -233,13 +233,23 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(collectKeys(es.planning.secondary).sort()).toEqual(
       collectKeys(en.planning.secondary).sort()
     );
-    expect(fr.planning.secondary.deleteBody).not.toBe(
-      en.planning.secondary.deleteBody
+    expect(fr.planning.secondary.retireBody).not.toBe(
+      en.planning.secondary.retireBody
     );
-    expect(es.planning.secondary.deleteBody).not.toBe(
-      en.planning.secondary.deleteBody
+    expect(es.planning.secondary.retireBody).not.toBe(
+      en.planning.secondary.retireBody
     );
-    expect(en.planning.secondary.deleteBody).toContain("{subject}");
+    expect(en.planning.secondary.retireBody).toContain("{subject}");
+    // §20.18 vocabulary: the confirmation must not promise a deletion the
+    // backend does not perform, in any of the three locales.
+    for (const dict of [en, fr, es]) {
+      expect(dict.planning.secondary).not.toHaveProperty("deleted");
+      expect(dict.planning.secondary).not.toHaveProperty("deleteBody");
+      expect(dict.planning.secondary.retireConsequence.length).toBeGreaterThan(
+        0
+      );
+      expect(dict.action.retire).not.toBe(dict.action.delete);
+    }
     expect(collectKeys(fr.planning.generation).sort()).toEqual(
       collectKeys(en.planning.generation).sort()
     );

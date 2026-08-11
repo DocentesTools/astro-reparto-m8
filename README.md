@@ -178,8 +178,10 @@ hours and teacher workload independent; signed differences are canonical
 decimal strings, and the validation report exposes stable codes plus entity
 references rather than requiring consumers to parse display text.
 
-`teachingActivities` exposes the live activity list and CRUD contract. An
-activity carries its complete planning values, source and sync state,
+`teachingActivities` exposes the live activity list and its create/read/update
+contract, plus guarded `retire`: neither a teaching activity nor a
+group-subject cell is ever deleted, so the plugin sends no `DELETE` on either
+path. An activity carries its complete planning values, source and sync state,
 materialization lineage, retirement timestamp, and the full
 `group_subject_ids` link set. Outgoing hours are canonicalized to two-place
 strings. Duplicate links, immutable identity fields, non-positive teacher

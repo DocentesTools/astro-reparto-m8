@@ -319,10 +319,10 @@ Public modules are reachable only through explicit package subpaths:
 | `schools`, `academicYears`, `departments`, `teacherProfiles`, `classroomStages` | stage-1 global setup |
 | `assignmentProcesses` | processes, dashboard, summary, `myLanSummary`, versions, exports |
 | `processTeachers` | participants, and the reason-required extra-hours operation |
-| `subjects`, `teachingGroups`, `groupSubjects` | subjects, groups, and the matrix with its preview/apply pair |
+| `subjects`, `teachingGroups`, `groupSubjects` | subjects, groups, and the matrix with its preview/apply pair; a cell leaves the plan through `retire`, never a delete |
 | `allocationRevisions` | `list` / `current` / `create` — no update, no delete, by contract |
 | `teachingPlans` | plan get/create, summary, validations, lock, materialization, generation and reconciliation preview/apply |
-| `teachingActivities` | live activity CRUD and linked groups |
+| `teachingActivities` | live activity create/read/update, linked groups, and `retire` — no delete, by contract |
 | `hourRequirements` | generated slots, read-only |
 | `assignments` | create, notes update, `undo`, `reassign`, direct choice, validations |
 | `meetingSessions`, `selectionTurns` | the meeting and its turns |

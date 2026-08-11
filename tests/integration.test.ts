@@ -136,11 +136,27 @@ describe("compatibility", () => {
       path: "/assignment-processes/{process_id}/group-subjects/bulk-apply",
       response: "GroupSubjectBulkResult"
     });
-    expect(REPARTO_CONTRACT_OPERATIONS["groupSubjects.remove"]).toEqual({
-      method: "DELETE",
-      path: "/assignment-processes/{process_id}/group-subjects/{group_subject_id}",
+    expect(REPARTO_CONTRACT_OPERATIONS["groupSubjects.retire"]).toEqual({
+      method: "POST",
+      path:
+        "/assignment-processes/{process_id}/group-subjects/{group_subject_id}/retire",
       response: "GroupSubjectPublic"
     });
+    expect(REPARTO_CONTRACT_OPERATIONS["teachingActivities.retire"]).toEqual({
+      method: "POST",
+      path:
+        "/assignment-processes/{process_id}/teaching-activities/{activity_id}/retire",
+      response: "TeachingActivityPublic"
+    });
+    // §20.12 withdrew DELETE on both paths; the table must not claim it back.
+    expect(
+      Object.entries(REPARTO_CONTRACT_OPERATIONS).filter(
+        ([name, operation]) =>
+          operation.method === "DELETE" &&
+          (name.startsWith("groupSubjects.") ||
+            name.startsWith("teachingActivities."))
+      )
+    ).toEqual([]);
     expect(REPARTO_CONTRACT_OPERATIONS["teachingPlans.summary"]).toEqual({
       method: "GET",
       path: "/assignment-processes/{process_id}/teaching-plan/summary",

@@ -307,8 +307,8 @@ describe("secondary activity editor", () => {
     const html = renderToStaticMarkup(
       <SecondaryActivityTable
         dict={dict}
-        onDelete={() => undefined}
         onEdit={() => undefined}
+        onRetire={() => undefined}
         rows={rows}
       />
     );
@@ -318,7 +318,13 @@ describe("secondary activity editor", () => {
     expect(html).toContain("1A, 1B");
     expect(html.match(/2.00 h × 2 = 4.00 h/g)).toHaveLength(2);
     expect(html).toContain('data-reparto-row-action="edit"');
-    expect(html).toContain('data-reparto-row-action="delete"');
+    // §20.12/§20.18: the row action is retirement, not deletion — the backend
+    // stamps `retired_at` and keeps the row. The old `delete` slot must be
+    // gone, not merely relabelled, or a skin keeps styling a withdrawn action.
+    expect(html).toContain('data-reparto-row-action="retire"');
+    expect(html).not.toContain('data-reparto-row-action="delete"');
+    expect(html).toContain(dict.action.retire);
+    expect(html).not.toContain(dict.action.delete);
   });
 
   it("renders all activity controls including multi-group selection", () => {

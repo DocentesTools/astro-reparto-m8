@@ -765,7 +765,14 @@ export function useUpdateRepartoTeachingActivity() {
   });
 }
 
-export function useDeleteRepartoTeachingActivity() {
+/**
+ * Guarded retirement (§20.12), not deletion: the activity keeps its row and
+ * gains a `retired_at` stamp, and the plan may move to a state that requires
+ * regeneration or reconciliation. That is why this invalidates the same five
+ * projections a create or an update does — retiring an activity changes the
+ * plan's balances and its generated slots, not just the activity list.
+ */
+export function useRetireRepartoTeachingActivity() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -774,7 +781,7 @@ export function useDeleteRepartoTeachingActivity() {
     }: {
       processId: string;
       activityId: string;
-    }) => teachingActivities.remove(processId, activityId),
+    }) => teachingActivities.retire(processId, activityId),
     onSuccess: (_data, { processId }) => {
       invalidateTeachingActivityProjections(queryClient, processId);
     }

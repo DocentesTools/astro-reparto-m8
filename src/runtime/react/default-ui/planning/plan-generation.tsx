@@ -46,15 +46,41 @@ export function isRequirementGenerationAvailable(
   return plan !== null && GENERATABLE_STATUSES.has(plan.status);
 }
 
+/**
+ * The one blocking finding a lockable plan is *expected* to carry.
+ *
+ * `plan.requirements_not_generated` says the slots have not been generated —
+ * which they cannot be, because generation runs on a locked plan. Counting it
+ * against the lock made the two steps each other's precondition, and the button
+ * was disabled on every plan that had reached the point of being lockable
+ * (§13.6 walk-through). It is a statement about the next step, not this one.
+ */
+const LOCK_EXPECTED_BLOCKING_CODES = new Set(["plan.requirements_not_generated"]);
+
+/** Blocking findings that actually stand between this plan and its lock. */
+export function blockingFindingsAgainstLock(
+  report: PlanValidationReport | null
+): number {
+  if (report === null) return 0;
+  return report.messages.filter(
+    (message) =>
+      message.severity === "blocking" &&
+      !LOCK_EXPECTED_BLOCKING_CODES.has(message.code)
+  ).length;
+}
+
 export function isPlanLockAvailable(
   plan: TeachingPlanPublic | null,
   report: PlanValidationReport | null
 ): boolean {
+  // Mirror the service's own lock gate — balanced, feasible, and nothing
+  // blocking beyond the slots this very action unblocks. A client condition
+  // stricter than the service's is a refusal the service would not make.
   return (
     plan?.status === "balanced" &&
     plan.feasibility_status === "feasible" &&
     report !== null &&
-    report.blocking_count === 0
+    blockingFindingsAgainstLock(report) === 0
   );
 }
 
@@ -201,7 +227,7 @@ export function PlanLockConfirmation({
             disabledReason={
               report === null || report === undefined
                 ? dict.planning.generation.lockDisabledValidations
-                : report.blocking_count > 0
+                : blockingFindingsAgainstLock(report) > 0
                   ? dict.planning.generation.lockDisabledBlocking
                   : plan.feasibility_status !== "feasible"
                     ? dict.planning.generation.lockDisabledFeasibility

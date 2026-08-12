@@ -212,7 +212,30 @@ describe("plan lock gate", () => {
     ],
     [
       "a blocking finding is open",
-      { report: reportFixture({ blocking_count: 2 }) },
+      {
+        report: reportFixture({
+          blocking_count: 2,
+          // The findings, not the bare count: the gate has to name which ones
+          // stand in the way, because the one that says the slots are not
+          // generated yet is true of every plan that is ready to be locked.
+          messages: [
+            {
+              severity: "blocking",
+              code: "plan.group_hours_not_exact",
+              message: "The planned group hours are not exact.",
+              entity_type: "teaching_plan",
+              entity_id: planId
+            },
+            {
+              severity: "blocking",
+              code: "plan.teacher_hours_not_exact",
+              message: "The planned teacher hours are not exact.",
+              entity_type: "teaching_plan",
+              entity_id: planId
+            }
+          ]
+        })
+      },
       "lockDisabledBlocking"
     ],
     [

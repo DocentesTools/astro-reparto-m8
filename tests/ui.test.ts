@@ -214,6 +214,61 @@ describe("LAN UI state", () => {
     ).toBe("no_slot_chosen");
   });
 
+  it("reads the session's selection mode the way the service does", () => {
+    // Strict: the service accepts a choice only inside the caller's own active
+    // turn, so *no* active turn is a refusal too — not merely someone else's.
+    expect(
+      buildTeacherChoiceState(choiceInput({ currentTurn: null })).disabledReason
+    ).toBe("not_your_turn");
+    expect(
+      buildTeacherChoiceState(
+        choiceInput({
+          currentTurn: { ...ownTurn, process_teacher_id: otherTeacherId }
+        })
+      ).disabledReason
+    ).toBe("not_your_turn");
+    // …and the caller's own active turn still clears it.
+    expect(buildTeacherChoiceState(choiceInput()).disabledReason).toBeNull();
+
+    // Informative/none: the service ignores turns, and with none active the
+    // panel opens. The mode is therefore read, never assumed.
+    for (const selection_mode of ["informative", "none"] as const) {
+      expect(
+        buildTeacherChoiceState(
+          choiceInput({
+            currentTurn: null,
+            meetingSession: { ...session, selection_mode }
+          })
+        ).disabledReason
+      ).toBeNull();
+    }
+  });
+
+  it("treats a reopened meeting as open for direct selection", () => {
+    // The service accepts open / selecting / reopened
+    // (`_get_direct_selection_session`); a reopened meeting is running again.
+    expect(
+      buildTeacherChoiceState(
+        choiceInput({ meetingSession: { ...session, status: "reopened" } })
+      ).disabledReason
+    ).toBeNull();
+    expect(
+      buildTeacherChoiceState(
+        choiceInput({ meetingSession: { ...session, status: "open" } })
+      ).disabledReason
+    ).toBeNull();
+    expect(
+      buildTeacherChoiceState(
+        choiceInput({ meetingSession: { ...session, status: "prepared" } })
+      ).disabledReason
+    ).toBe("meeting_not_open");
+    expect(
+      buildTeacherChoiceState(
+        choiceInput({ meetingSession: { ...session, status: "closed" } })
+      ).disabledReason
+    ).toBe("meeting_not_open");
+  });
+
   it("fails closed when the service state is not known", () => {
     // An unknown readiness or blocked flag is not an implicit "go": a teacher
     // client never assumes the assignment stage is open.

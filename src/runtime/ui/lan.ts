@@ -274,7 +274,14 @@ function sessionDisabledReason(
   input: TeacherChoiceInput
 ): TeacherChoiceDisabledReason | null {
   const session = input.meetingSession;
-  if (session === null || !["open", "selecting"].includes(session.status)) {
+  // The three statuses the service accepts a direct choice under
+  // (`AssignmentController._get_direct_selection_session`). `reopened` belongs
+  // with the other two: a meeting reopened after a correction is running again,
+  // and refusing it here would close a panel the backend would have served.
+  if (
+    session === null ||
+    !["open", "selecting", "reopened"].includes(session.status)
+  ) {
     return "meeting_not_open";
   }
   if (!session.direct_teacher_selection_enabled) {
@@ -285,6 +292,18 @@ function sessionDisabledReason(
   }
   if (input.readiness !== "ready") return "plan_not_ready";
   if (input.selectionBlocked !== false) return "selection_blocked";
+  // Turn gating reads the session's own selection mode, because the service's
+  // does (`AssignmentController._enforce_direct_turn`). Under `strict` a choice
+  // is legal *only* inside the caller's own active turn, so **no active turn at
+  // all is still a refusal** — the case the plain "someone else holds it" rule
+  // let through, offering a button the service answers with 400.
+  if (session.selection_mode === "strict" && !isOwnTurn(input)) {
+    return "not_your_turn";
+  }
+  // Outside `strict` the service ignores turns entirely, and this stays
+  // deliberately stricter than it: while a colleague's turn is on the table the
+  // panel waits. Withholding an action the backend would accept is a meeting
+  // protocol; offering one it refuses is a broken screen.
   if (input.currentTurn !== null && !isOwnTurn(input)) return "not_your_turn";
   return null;
 }

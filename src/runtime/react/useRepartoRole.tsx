@@ -44,9 +44,32 @@ function readSyncSession(): RepartoRoleState {
   if (!adapter.getCurrentUser) return ANONYMOUS;
   const answer = adapter.getCurrentUser();
   if (answer && typeof (answer as Promise<unknown>).then === "function") {
+    // This probe is discarded — the effect performs the real read. Claim its
+    // rejection anyway: an unowned promise that settles as a refusal becomes an
+    // unhandled rejection, which is reported as a page error and, on a cold
+    // start, is the very failure this hook is meant to absorb.
+    void (answer as Promise<unknown>).catch(() => undefined);
     return UNRESOLVED;
   }
   return { resolved: true, user: (answer as RepartoCurrentUser | null) ?? null };
+}
+
+/**
+ * One shared cold-start recovery, so concurrent mounts refresh once.
+ *
+ * Every view on a route mounts this hook, and on a static host they all mount
+ * in the same tick. Without this, each one would run its own refresh; the
+ * issuer rotates the refresh token, so the losers of that race are refused and
+ * a session that was perfectly valid reports itself expired.
+ */
+let coldStartRecovery: Promise<RepartoCurrentUser | null> | null = null;
+
+async function recoverSession(): Promise<RepartoCurrentUser | null> {
+  const adapter = getRepartoAuthAdapter();
+  if (!(await adapter.getAccessToken()) && adapter.refresh) {
+    await adapter.refresh();
+  }
+  return (await adapter.getCurrentUser?.()) ?? null;
 }
 
 /**
@@ -57,17 +80,34 @@ function readSyncSession(): RepartoRoleState {
  * arrives in an effect. The starter routes mount every view with
  * `client:only="react"`, so that effect is the first and only paint a user ever
  * sees.
+ *
+ * That single paint is why every path here must end in `resolved: true`. A
+ * route mounts before the host's auth provider has restored the session from
+ * its refresh cookie, so the first `getCurrentUser` asks the issuer with no
+ * token and is refused. A rejection is therefore a *cold start*, not a refusal:
+ * the recovery below restores the session and asks again, and only a second
+ * failure is read as "no session". Leaving the rejection unhandled would strand
+ * the route on its waiting state permanently, because nothing paints twice.
  */
 export function useRepartoCurrentUser(): RepartoRoleState {
   const [state, setState] = useState<RepartoRoleState>(readSyncSession);
 
   useEffect(() => {
     let active = true;
-    void Promise.resolve(
-      getRepartoAuthAdapter().getCurrentUser?.() ?? null
-    ).then((user) => {
+    const settle = (user: RepartoCurrentUser | null) => {
       if (active) setState({ resolved: true, user });
-    });
+    };
+    void Promise.resolve(getRepartoAuthAdapter().getCurrentUser?.() ?? null)
+      .catch(() => {
+        coldStartRecovery ??= recoverSession().finally(() => {
+          coldStartRecovery = null;
+        });
+        // Fail closed on a second failure rather than never resolving: an
+        // anonymous session renders the route's refusal, which a reader can act
+        // on, where the waiting state is a dead end.
+        return coldStartRecovery.catch(() => null);
+      })
+      .then(settle);
     return () => {
       active = false;
     };

@@ -79,13 +79,54 @@ describe("compatibility", () => {
     expect(() =>
       assertRepartoCompatibility({ reparto_contract_version: "reparto-docente-m8@2.0.0" })
     ).not.toThrow();
-    expect(() => assertRepartoCompatibility({ contract_version: "2.0.0" })).not.toThrow();
+    // A bare "2.0.0" is only admitted once contract.name has identified the
+    // service: unqualified, it is any sibling's version number.
+    expect(() =>
+      assertRepartoCompatibility({
+        contract_version: "2.0.0",
+        contract: { name: "reparto-docente-m8" }
+      })
+    ).not.toThrow();
+    expect(() => assertRepartoCompatibility({ contract_version: "2.0.0" })).toThrow(
+      "Unsupported reparto-docente-m8 contract: 2.0.0"
+    );
     expect(() => assertRepartoCompatibility({ service_version: "x" })).toThrow(
       "Unsupported reparto-docente-m8 contract: unknown"
     );
     expect(() => assertRepartoCompatibility({ contract_version: "0.1" })).toThrow(
       "Unsupported reparto-docente-m8 contract: 0.1"
     );
+  });
+
+  it("rejects another service's /meta even when its contract version matches", () => {
+    // Every M8 service serves this payload shape from the shared auth-sdk-m8
+    // `mount_service_meta` helper, and prompt-engine-m8 serves exactly
+    // contract.version "2.0.0" — the digits this guard expects. Before the name
+    // check a host pointed at the prompt engine read as valid reparto.
+    const promptEngineMeta = {
+      service: "PromptEngineM8",
+      version: "2.0.0",
+      api_version: "v1",
+      contract: {
+        name: "prompt-engine-m8",
+        version: "2.0.0",
+        range: ">=2.0.0 <3.0.0"
+      }
+    };
+    expect(() => assertRepartoCompatibility(promptEngineMeta)).toThrow(
+      "Expected the reparto-docente-m8 contract, received the prompt-engine-m8 contract"
+    );
+    // The wrong service is named as a wrong service, not as a version mismatch.
+    expect(() => assertRepartoCompatibility(promptEngineMeta)).not.toThrow(
+      /Unsupported reparto-docente-m8 contract/
+    );
+    // Name mismatch wins over an otherwise supported flat legacy contract too.
+    expect(() =>
+      assertRepartoCompatibility({
+        reparto_contract_version: REPARTO_CONTRACT_VERSION,
+        contract: { name: "prompt-engine-m8", version: "2.0.0" }
+      })
+    ).toThrow("received the prompt-engine-m8 contract");
   });
 
   it("admits the live reparto-docente-m8 GET /meta payload verbatim", () => {

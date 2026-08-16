@@ -13,7 +13,10 @@ export type RepartoMetaLike = {
   api_version?: unknown;
 };
 
-export const REPARTO_CONTRACT_VERSION = "reparto-docente-m8@2.0.0";
+export const REPARTO_CONTRACT_ID = "reparto-docente-m8";
+export const REPARTO_CONTRACT_VERSION_NUMBER = "2.0.0";
+export const REPARTO_CONTRACT_VERSION =
+  `${REPARTO_CONTRACT_ID}@${REPARTO_CONTRACT_VERSION_NUMBER}` as const;
 
 export type RepartoContractMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
@@ -375,7 +378,12 @@ export const REPARTO_CONTRACT_OPERATIONS = {
   }
 } as const satisfies Record<string, RepartoContractOperation>;
 
-const SUPPORTED_CONTRACTS = new Set([REPARTO_CONTRACT_VERSION, "2.0.0"]);
+// Name-qualified only. A bare ``"2.0.0"`` used to sit in this set, and
+// prompt-engine-m8 serves exactly ``contract.version == "2.0.0"`` — so any
+// sibling's /meta read as a valid reparto contract. A bare version is now
+// admitted only after ``contract.name`` has identified the service (see
+// ``qualifyContract`` below).
+const SUPPORTED_CONTRACTS = new Set<string>([REPARTO_CONTRACT_VERSION]);
 
 function stringValue(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -391,6 +399,31 @@ function contractObjectVersion(value: unknown): string | undefined {
   return undefined;
 }
 
+// Read ``contract.name`` from the GET /meta nested contract object, matching the
+// reader astro-auth-m8 already carries rather than inventing a second dialect.
+//
+// The flat contract forms carry the issuer id inline
+// (``reparto-docente-m8@2.0.0``), but the nested object splits id and version
+// apart. Without reading ``name`` the version check alone would bless any
+// service whose contract happens to sit at the same version — and
+// ``mount_service_meta`` is a shared auth-sdk-m8 helper, so every M8 service
+// serves this same payload shape at ``{API_PREFIX}/meta``. A host pointed at the
+// wrong sibling is exactly the misconfiguration this guard exists to name.
+function contractObjectName(value: unknown): string | undefined {
+  if (typeof value === "object" && value !== null) {
+    return stringValue((value as { name?: unknown }).name);
+  }
+  return undefined;
+}
+
+// Qualify a bare version (``"2.0.0"``) with the issuer id, but only once the
+// payload has named this service. An unnamed bare version stays unqualified and
+// therefore unsupported: it could have come from any sibling.
+function qualifyContract(contract: string, contractName: string | undefined): string {
+  if (contract.includes("@") || contractName !== REPARTO_CONTRACT_ID) return contract;
+  return `${REPARTO_CONTRACT_ID}@${contract}`;
+}
+
 /**
  * Assert the service metadata names a supported reparto-docente-m8 contract.
  *
@@ -398,18 +431,25 @@ function contractObjectVersion(value: unknown): string | undefined {
  * actually serves at ``{API_PREFIX}/meta`` first, then falls back to the flat
  * legacy keys. Throws on anything else — this guard is binary and fail-closed.
  *
- * Note: the ``contract.name`` check is intentionally not performed here; it
- * lands with the fleet-wide contract-identity guard alongside the bare
- * ``"2.0.0"`` entry in SUPPORTED_CONTRACTS, which a sibling service serving the
- * same version digits would otherwise satisfy.
+ * ``contract.name`` is checked *before* the version so a host pointed at the
+ * wrong sibling is reported as a wrong service rather than as a version
+ * mismatch.
  */
 export function assertRepartoCompatibility(meta: RepartoMetaLike): void {
+  const contractName = contractObjectName(meta.contract);
+  if (contractName && contractName !== REPARTO_CONTRACT_ID) {
+    throw new Error(
+      `Expected the ${REPARTO_CONTRACT_ID} contract, received the ${contractName} contract` +
+        " - check the configured reparto API base"
+    );
+  }
+
   const contract =
     stringValue(meta.reparto_contract_version) ??
     stringValue(meta.contract_version) ??
     contractObjectVersion(meta.contract) ??
     stringValue(meta.contract);
-  if (!contract || !SUPPORTED_CONTRACTS.has(contract)) {
+  if (!contract || !SUPPORTED_CONTRACTS.has(qualifyContract(contract, contractName))) {
     throw new Error(`Unsupported reparto-docente-m8 contract: ${contract ?? "unknown"}`);
   }
 }

@@ -39,6 +39,14 @@ import { assertRepartoCompatibility } from "@mano8/astro-reparto-m8/compatibilit
 assertRepartoCompatibility(meta);
 ```
 
+`contract.name` is checked **before** the version, so a host pointed at a sibling
+M8 service is told it reached the wrong service rather than the wrong version —
+every M8 service serves this same payload shape from the shared `auth-sdk-m8`
+`mount_service_meta` helper, and `prompt-engine-m8` serves the very same
+`contract.version` of `2.0.0`. A **bare** version string is therefore only
+accepted once `contract.name` has identified the service; unqualified, pass the
+name-qualified `reparto-docente-m8@2.0.0` form instead.
+
 `REPARTO_CONTRACT_VERSION` is that expected version string, and
 `REPARTO_CONTRACT_OPERATIONS` is the frozen method/path/response table every
 wrapper is checked against — the package's own record of the contract it speaks.

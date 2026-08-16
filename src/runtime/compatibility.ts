@@ -1,7 +1,16 @@
 export type RepartoMetaLike = {
-  contract_version?: string;
-  reparto_contract_version?: string;
-  service_version?: string;
+  // ``contract`` accepts the GET /meta nested object ``{ name, version, range }``
+  // — the shape auth-sdk-m8 ServiceMeta actually returns — or a flat string.
+  // The flat ``*_contract_version`` keys below are the legacy shape and stay
+  // accepted; reparto-docente-m8 itself serves neither of them.
+  contract?: unknown;
+  contract_version?: unknown;
+  reparto_contract_version?: unknown;
+  service_version?: unknown;
+  // Extra GET /meta keys, accepted so the raw payload is assignable as-is.
+  service?: unknown;
+  version?: unknown;
+  api_version?: unknown;
 };
 
 export const REPARTO_CONTRACT_VERSION = "reparto-docente-m8@2.0.0";
@@ -368,8 +377,38 @@ export const REPARTO_CONTRACT_OPERATIONS = {
 
 const SUPPORTED_CONTRACTS = new Set([REPARTO_CONTRACT_VERSION, "2.0.0"]);
 
+function stringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+// Read ``contract.version`` from the GET /meta nested contract object, matching
+// the reader astro-auth-m8, astro-media-m8 and astro-prompt-m8 already carry
+// rather than inventing a fourth dialect.
+function contractObjectVersion(value: unknown): string | undefined {
+  if (typeof value === "object" && value !== null) {
+    return stringValue((value as { version?: unknown }).version);
+  }
+  return undefined;
+}
+
+/**
+ * Assert the service metadata names a supported reparto-docente-m8 contract.
+ *
+ * Reads the nested ``contract: { name, version, range }`` object the service
+ * actually serves at ``{API_PREFIX}/meta`` first, then falls back to the flat
+ * legacy keys. Throws on anything else — this guard is binary and fail-closed.
+ *
+ * Note: the ``contract.name`` check is intentionally not performed here; it
+ * lands with the fleet-wide contract-identity guard alongside the bare
+ * ``"2.0.0"`` entry in SUPPORTED_CONTRACTS, which a sibling service serving the
+ * same version digits would otherwise satisfy.
+ */
 export function assertRepartoCompatibility(meta: RepartoMetaLike): void {
-  const contract = meta.reparto_contract_version ?? meta.contract_version;
+  const contract =
+    stringValue(meta.reparto_contract_version) ??
+    stringValue(meta.contract_version) ??
+    contractObjectVersion(meta.contract) ??
+    stringValue(meta.contract);
   if (!contract || !SUPPORTED_CONTRACTS.has(contract)) {
     throw new Error(`Unsupported reparto-docente-m8 contract: ${contract ?? "unknown"}`);
   }

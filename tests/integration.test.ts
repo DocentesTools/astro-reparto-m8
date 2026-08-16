@@ -88,6 +88,50 @@ describe("compatibility", () => {
     );
   });
 
+  it("admits the live reparto-docente-m8 GET /meta payload verbatim", () => {
+    // Verbatim auth-sdk-m8 ServiceMeta as reparto-docente-m8 serves it at
+    // {API_PREFIX}/meta: the contract identity is nested under `contract`, and
+    // the flat `*_contract_version` keys the guard used to read exclusively are
+    // absent — so this payload made the guard throw against its own service.
+    const meta = {
+      service: "M8FastApi",
+      version: "1.0.0",
+      api_version: "v1",
+      contract: {
+        name: "reparto-docente-m8",
+        version: "2.0.0",
+        range: ">=2.0.0 <3.0.0"
+      }
+    };
+    expect(() => assertRepartoCompatibility(meta)).not.toThrow();
+
+    // Adjacent out-of-range contract version on the same payload shape.
+    expect(() =>
+      assertRepartoCompatibility({ ...meta, contract: { ...meta.contract, version: "3.0.0" } })
+    ).toThrow("Unsupported reparto-docente-m8 contract: 3.0.0");
+    // A nested contract carrying no version is still "unknown", not admitted.
+    expect(() => assertRepartoCompatibility({ ...meta, contract: {} })).toThrow(
+      "Unsupported reparto-docente-m8 contract: unknown"
+    );
+  });
+
+  it("prefers the flat legacy keys over the nested contract object", () => {
+    expect(() =>
+      assertRepartoCompatibility({
+        reparto_contract_version: "reparto-docente-m8@2.0.0",
+        contract: { name: "reparto-docente-m8", version: "0.1" }
+      })
+    ).not.toThrow();
+    // A flat contract string (no nested object at all) is still read.
+    expect(() =>
+      assertRepartoCompatibility({ contract: "reparto-docente-m8@2.0.0" })
+    ).not.toThrow();
+    // Blank strings are ignored rather than admitted as a contract.
+    expect(() => assertRepartoCompatibility({ contract_version: "   " })).toThrow(
+      "Unsupported reparto-docente-m8 contract: unknown"
+    );
+  });
+
   it("freezes the backend-facing operation contract for the UI rebuild", () => {
     expect(REPARTO_CONTRACT_VERSION).toBe("reparto-docente-m8@2.0.0");
     expect(REPARTO_CONTRACT_OPERATIONS["assignmentProcesses.dashboard"]).toEqual({

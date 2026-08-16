@@ -32,8 +32,10 @@ discovering drift inside a view:
 ```ts
 import { assertRepartoCompatibility } from "@mano8/astro-reparto-m8/compatibility";
 
-// meta is the service metadata the host fetches, carrying
-// `reparto_contract_version` (or `contract_version`). Throws on anything else.
+// meta is the GET {API_PREFIX}/meta payload the host fetches, passed straight
+// through: the nested `contract: { name, version, range }` object is read first,
+// with the flat `reparto_contract_version` / `contract_version` keys accepted as
+// the legacy shape. Throws on anything else.
 assertRepartoCompatibility(meta);
 ```
 

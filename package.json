@@ -1,6 +1,6 @@
 {
   "name": "@mano8/astro-reparto-m8",
-  "version": "3.0.0",
+  "version": "2.0.0",
   "description": "Astro integration and headless client for reparto-docente-m8.",
   "type": "module",
   "license": "MIT",
@@ -131,7 +131,7 @@
   },
   "repartoDocenteM8": {
     "contract": "reparto-docente-m8@2.0.0",
-    "testedServiceVersion": "0.1.0-alpha.0",
-    "serviceVersionRange": ">=0.1.0 <0.2.0"
+    "testedServiceVersion": "2.0.0",
+    "serviceVersionRange": ">=2.0.0 <3.0.0"
   }
 }

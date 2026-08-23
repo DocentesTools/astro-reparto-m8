@@ -22,7 +22,7 @@ import type {
   TeacherProfileCreate,
   TeacherProfilePublic
 } from "@mano8/astro-reparto-m8/schemas";
-import { RepartoDeleteConfirm } from "./reparto-delete-confirm.js";
+import { RepartoDeleteConfirm } from "@/components/fa-reparto/reparto-delete-confirm";
 
 export interface RepartoTeacherRosterDialogLabels {
   title: string;

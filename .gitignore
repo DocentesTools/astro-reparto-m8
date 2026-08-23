@@ -146,3 +146,6 @@ vite.config.ts.timestamp-*
 
 # Astro generated files
 **/.astro/
+
+# Scratch directory the verify:* gates build their fixtures in.
+.tmp/

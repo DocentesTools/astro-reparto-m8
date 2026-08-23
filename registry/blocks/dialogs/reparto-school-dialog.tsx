@@ -67,7 +67,9 @@ export function RepartoSchoolDialog({
       name: name.trim(),
       locality: locality.trim() || null,
       province: province.trim() || null,
-      region: region.trim() || null,
+      // `region` is the one optional school field the service schema declares
+      // non-nullable, so an empty input is absent rather than explicitly null.
+      region: region.trim() || undefined,
       address: address.trim() || null,
       notes: notes.trim() || null
     };

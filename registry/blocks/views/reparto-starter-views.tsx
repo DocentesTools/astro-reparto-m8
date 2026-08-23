@@ -145,18 +145,18 @@ export function RepartoVersionsView({
 export function RepartoExportsView({
   config,
   exports,
-  processId,
-  summary
+  processId
 }: RepartoStarterViewProps & {
   exports?: ExportArtifactPublic[];
-  summary?: ProcessSummary;
 }) {
+  // The package view names this prop `artifacts`; the skin keeps `exports` as
+  // its own public name and maps it here. It takes no `summary` — the prop was
+  // being forwarded into a view that has never accepted one.
   return (
     <PackageExportsView
+      artifacts={exports}
       config={config}
-      exports={exports}
       processId={processId}
-      summary={summary}
     />
   );
 }

@@ -13,7 +13,13 @@ export default defineConfig([
     "**/coverage/**",
     "**/.astro/**",
     "**/pagefind/**",
+    "**/.tmp/**",
     "registry/r/**",
+    // Stand-ins for packages a consumer supplies (shadcn primitives,
+    // react-hook-form, sonner). `verify:registry-consumer` type-checks the
+    // installed skins against them; they are not this package's source, and
+    // unlike `fixtures/**`'s host examples they are never built or shipped.
+    "fixtures/registry-consumer/**",
     ".npm/**",
     ".npm-cache/**",
   ]),

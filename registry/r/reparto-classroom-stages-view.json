@@ -11,7 +11,7 @@
   "files": [
     {
       "path": "registry/blocks/views/reparto-classroom-stages-view.tsx",
-      "content": "\"use client\";\r\n\r\nimport { RepartoClassroomStagesView } from \"@mano8/astro-reparto-m8/default-ui\";\r\nimport { ToastNotificationHost } from \"@/components/m8-ui/toast-notification\";\r\n\r\nexport function RepartoClassroomStagesRegistryView(\r\n  props: Parameters<typeof RepartoClassroomStagesView>[0]\r\n) {\r\n  return (\r\n    <>\r\n      <ToastNotificationHost />\r\n      <RepartoClassroomStagesView {...props} />\r\n    </>\r\n  );\r\n}\r\n",
+      "content": "\"use client\";\n\nimport { RepartoClassroomStagesView } from \"@mano8/astro-reparto-m8/default-ui\";\nimport { ToastNotificationHost } from \"@/components/m8-ui/toast-notification\";\n\nexport function RepartoClassroomStagesRegistryView(\n  props: Parameters<typeof RepartoClassroomStagesView>[0]\n) {\n  return (\n    <>\n      <ToastNotificationHost />\n      <RepartoClassroomStagesView {...props} />\n    </>\n  );\n}\n",
       "type": "registry:block",
       "target": "components/fa-reparto/reparto-classroom-stages-view.tsx"
     }

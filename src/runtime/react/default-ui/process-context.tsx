@@ -4,6 +4,7 @@ type FormSubmitEvent = { preventDefault: () => void };
 type InputChangeEvent = { target: { value: string } };
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
+import { RepartoErrorBoundary } from "../RepartoErrorBoundary.js";
 import { useRepartoCanAct, useRepartoViewMode } from "../useRepartoRole.js";
 import {
   useCreateRepartoAcademicYear,
@@ -49,6 +50,10 @@ export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
 const LAST_PROCESS_STORAGE_KEY = "reparto.lastProcessId";
 
+// The boundary is the outermost wrapper on purpose (`A-C3`). Inside the
+// providers it would be unmounted by a throw in a provider's own render, which
+// is exactly the case that leaves an island blank — and with `client:only`
+// there is no server-rendered markup underneath to fall back to.
 export function Shell({
   children,
   config
@@ -57,9 +62,11 @@ export function Shell({
   config?: ViewConfig;
 }) {
   return (
-    <RepartoQueryProvider>
-      <RepartoProvider config={config}>{children}</RepartoProvider>
-    </RepartoQueryProvider>
+    <RepartoErrorBoundary>
+      <RepartoQueryProvider>
+        <RepartoProvider config={config}>{children}</RepartoProvider>
+      </RepartoQueryProvider>
+    </RepartoErrorBoundary>
   );
 }
 

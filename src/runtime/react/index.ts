@@ -105,6 +105,12 @@ export {
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";
 export {
+  RepartoErrorBoundary,
+  type RepartoErrorBoundaryFallbackProps,
+  type RepartoErrorBoundaryLabels,
+  type RepartoErrorBoundaryProps
+} from "./RepartoErrorBoundary.js";
+export {
   useRepartoEventStream,
   type RepartoEventStreamState
 } from "./useRepartoEvents.js";

@@ -216,6 +216,57 @@ describe("buildProcessSettingsRequest", () => {
     });
   });
 
+  it("carries each selection field independently when only it changed", () => {
+    const process = makeProcess();
+    const base = buildProcessSettingsValues(process);
+
+    expect(
+      buildProcessSettingsRequest({ ...base, selectionOrderEnabled: true }, process)
+    ).toEqual({ ok: true, changed: true, request: { selection_order_enabled: true } });
+
+    expect(
+      buildProcessSettingsRequest({ ...base, selectionOrderMode: "strict" }, process)
+    ).toEqual({ ok: true, changed: true, request: { selection_order_mode: "strict" } });
+
+    expect(
+      buildProcessSettingsRequest(
+        { ...base, directTeacherSelectionEnabled: true },
+        process
+      )
+    ).toEqual({
+      ok: true,
+      changed: true,
+      request: { direct_teacher_selection_enabled: true }
+    });
+  });
+
+  it("sends every field when there is no process to diff against", () => {
+    // A settings form opened before the row loads has nothing to compare to, so
+    // every field is a change rather than silently nothing.
+    const built = buildProcessSettingsRequest(
+      {
+        defaultTeacherHoursReference: "18",
+        selectionOrderEnabled: true,
+        selectionOrderMode: "strict",
+        directTeacherSelectionEnabled: true,
+        lanAccessEnabled: true
+      },
+      null
+    );
+
+    expect(built).toEqual({
+      ok: true,
+      changed: true,
+      request: {
+        default_teacher_hours_reference: 18,
+        selection_order_enabled: true,
+        selection_order_mode: "strict",
+        direct_teacher_selection_enabled: true,
+        lan_access_enabled: true
+      }
+    });
+  });
+
   it("reports an untouched form as unchanged rather than an empty PATCH", () => {
     const process = makeProcess();
     expect(

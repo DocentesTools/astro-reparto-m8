@@ -25,6 +25,18 @@ export default defineConfig({
 });
 ```
 
+### Requirements
+
+| Requirement | Version |
+| --- | --- |
+| `reparto-docente-m8` (backend) | **`2.0.0`** — the compatibility gate refuses an older contract |
+| `@mano8/astro-auth-m8` (peer) | **`^2.2.0`** |
+| `@mano8/astro-ui-m8` (dependency) | `^1.5.0`, installed for you |
+
+`2.0.0` is a major release: the backend contract, the UI vocabulary (Classroom →
+teaching group) and the auth peer all move. See
+[`CHANGELOG.md`](CHANGELOG.md) before upgrading from `1.0.0`.
+
 `@mano8/astro-auth-m8` is listed first on purpose: the backend accepts
 `fa-auth-m8` tokens, and the integration warns when its auth peer is missing or
 ordered after it. `mode: "starter"` injects the whole route map below;
@@ -36,6 +48,19 @@ reference**: integration options, the route map with its role floors, the props
 every view takes, the API and hook surface, the auth assumptions, and worked
 starter and headless host examples. The sections below describe what each
 surface *does*.
+
+## Error boundaries and the dev preview
+
+Every React island root this plugin mounts is wrapped in an error boundary: a
+throw inside a view renders the canonical `astro-ui-m8` error state in place of
+that island rather than tearing it down and leaving a blank region on the host
+page. Nothing is required of the host.
+
+`npm run preview:dev` serves a development-only `/_preview` gallery that mounts
+every shipped island against an in-memory stand-in for `reparto-docente-m8`.
+Only `fetch` is replaced, so the views, hooks, API wrappers and Zod schemas you
+see are the shipped ones; one panel deliberately throws to show the boundary.
+The gallery is not part of the published tarball.
 
 ## The three stages
 

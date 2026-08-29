@@ -235,15 +235,21 @@ service's administrator read floors.
   `role` and `is_superuser` disagree. The two claims must now agree, and the role
   decides — matching both the service and `@mano8/astro-auth-m8`, which read it
   this way already.
-- **The role hierarchy is a verified mirror rather than a second opinion**
-  (`RBAC-06`). `authAdapter.ts` now exposes the auth peer's exact surface —
-  `ORDERED_ROLES` (highest privilege first), `hasMinimumRole(currentRole,
-  requiredRole)`, `privilegeClaimsAreConsistent` and `hasSuperuserPrivileges` —
-  and `tests/authorization-mirror.test.ts` asserts agreement with
-  `@mano8/astro-auth-m8/authorization` across every role pair and every
-  role/flag pair, so it cannot drift. It is a copy and not an import because the
-  fleet's `no-cross-plugin-import` gate (`C12`) forbids one business plugin
-  importing another at runtime.
+- **The role hierarchy is imported, not re-implemented** (`RBAC-06`,
+  remediation `W7.7`). `authAdapter.ts` re-exports `ORDERED_ROLES`,
+  `hasMinimumRole`, `privilegeClaimsAreConsistent` and `hasSuperuserPrivileges`
+  straight from `@mano8/astro-auth-m8/authorization` — the TypeScript mirror of
+  `auth_sdk_m8/authorization.py` — under the same names, so the package surface
+  is unchanged and the fleet now states its hierarchy exactly once.
+  `W6.1` had to land this as a *copy* pinned by an exhaustive agreement test,
+  because the fleet's `no-cross-plugin-import` gate (`C12`) refused the import;
+  the fleet-wide decision behind `W7.7` widened that gate for this one exact
+  specifier, and a new `authorization-purity` gate keeps the exemption honest by
+  walking the module's import closure and failing on React, on any bare
+  dependency but `zod`, or on any runtime global. Nothing else in
+  `@mano8/astro-auth-m8` is importable. `tests/authorization-mirror.test.ts`
+  now asserts these *are* the peer's own bindings by identity, so a re-fork
+  fails the build where a behavioural comparison would have passed.
 - **Every planning panel carries its own `admin` write floor** (`W6.3`, §21.5).
   The six connected panels — main materialization, activity sync, secondary
   activities, plan lock/requirement generation, feasibility diagnostics and

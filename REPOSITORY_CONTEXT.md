@@ -21,6 +21,20 @@ host source edits outside documented registration points.
   contract, tested at service version `2.0.0` and supporting `>=2.0.0 <3.0.0`.
 - Require `@mano8/astro-auth-m8` as the official M8 auth peer. Couple only through
   `RepartoAuthAdapter` / `createFaAuthAdapter`, wiring it after `faAuth`.
+- The role hierarchy is the auth peer's, imported. `authAdapter.ts` re-exports
+  `ORDERED_ROLES`, `hasMinimumRole`, `privilegeClaimsAreConsistent` and
+  `hasSuperuserPrivileges` from `@mano8/astro-auth-m8/authorization` — the
+  framework-neutral mirror of `auth_sdk_m8/authorization.py` — so the fleet
+  states that hierarchy exactly once (`RBAC-06`) and this package never holds a
+  second opinion about who may do what. This is the **one** cross-plugin import
+  the fleet's `no-cross-plugin-import` gate (`C12`) permits: one exact
+  specifier, never `@mano8/astro-auth-m8/*`, so no other part of the peer is
+  reachable and the plugins stay independently installable. The
+  `authorization-purity` gate beside it keeps that exemption honest — it walks
+  the module's import closure and fails on React, on any bare dependency but
+  `zod`, or on any runtime global. `sessionHasMinimumRole` is the only
+  predicate this package adds on top, and `tests/authorization-mirror.test.ts`
+  asserts the re-exports are the peer's own bindings by identity.
 - Model public backend responses only; never expose secret or session fields.
 - Export public modules only through explicit `package.json` subpaths.
 
@@ -66,7 +80,9 @@ host source edits outside documented registration points.
   `exports` read the same tier after the fact (`W7.1`). The floor mirrors the
   service; a `reader` floor on a route the backend answers `403` would render a
   shell around a refused request. `authAdapter.ts` owns the single role
-  comparison behind it; no view re-derives its own. `RepartoRouteGuard` applies
+  comparison behind it, re-exported from the auth peer rather than restated
+  (see *Backend and authentication boundary*); no view re-derives its own.
+  `RepartoRouteGuard` applies
   the read floor and `useRepartoCanAct` the write floor, both from the signed-in
   user and never from a caller-supplied prop. The guard states what to show; the
   service remains the authorization boundary.

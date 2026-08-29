@@ -12,66 +12,72 @@ import {
   hasSuperuserPrivileges,
   ORDERED_ROLES,
   privilegeClaimsAreConsistent,
+  sessionHasMinimumRole,
   type RepartoRole
 } from "../src/runtime/authAdapter.js";
 
 /**
- * `authAdapter.ts` mirrors `@mano8/astro-auth-m8/authorization`, which mirrors
- * `auth_sdk_m8/authorization.py`. This file is what makes that a mirror rather
- * than a second opinion (`RBAC-06`).
+ * `RBAC-06` — one role hierarchy — is now met by an import, not by a mirror.
  *
- * It exists because the two cannot simply be one import: the fleet's
- * `no-cross-plugin-import` gate (`C12`) forbids a business plugin importing
- * another at runtime, and `src/` is what that gate scans. `tests/` is not, so
- * the agreement is proven here instead — exhaustively, not by spot check, so
- * any divergence in order, in the hierarchy comparison or in the role/flag
- * truth table fails the build on the next run.
+ * Until 2026-08-29 `authAdapter.ts` re-implemented the hierarchy because the
+ * fleet's `no-cross-plugin-import` gate (`C12`) refused the import, and this
+ * file proved the copy agreed with `@mano8/astro-auth-m8/authorization` across
+ * every role pair and every role/flag pair. Decision 4 widened the gate for
+ * that one pure, framework-neutral specifier, so the copy is deleted.
  *
- * If the gate is ever widened for a pure authorization module, or these
- * primitives move to the shared layer, the local copy goes and this file goes
- * with it.
+ * What is worth gating now is not agreement but **identity**: that the package
+ * still re-exports the peer's own bindings and has not quietly grown a second
+ * implementation that merely behaves the same today. `toBe` is the whole point
+ * here — a re-fork would still pass a behavioural comparison on the day it
+ * landed, and fail this.
+ *
+ * The behavioural truth table itself is the peer's to test, and it does
+ * (`astro-auth-m8/tests/authorization.test.ts`); what stays here is the one
+ * predicate this package adds on top, `sessionHasMinimumRole`.
  */
-describe("role authorization mirrors the auth peer exactly", () => {
-  it("orders the roles identically", () => {
-    expect([...ORDERED_ROLES]).toEqual([...SHARED_ORDERED_ROLES]);
+describe("the role hierarchy is the auth peer's, by identity", () => {
+  it("re-exports the peer's ORDERED_ROLES, not a copy of it", () => {
+    expect(ORDERED_ROLES).toBe(SHARED_ORDERED_ROLES);
   });
 
-  it("answers hasMinimumRole identically for all 25 role pairs", () => {
-    for (const held of ORDERED_ROLES) {
-      for (const required of ORDERED_ROLES) {
-        expect(
-          hasMinimumRole(held, required),
-          `${held} >= ${required}`
-        ).toBe(sharedHasMinimumRole(held, required));
-      }
-    }
+  it("re-exports the peer's three predicates, not copies of them", () => {
+    expect(hasMinimumRole).toBe(sharedHasMinimumRole);
+    expect(privilegeClaimsAreConsistent).toBe(sharedPrivilegeClaimsAreConsistent);
+    expect(hasSuperuserPrivileges).toBe(sharedHasSuperuserPrivileges);
+  });
+});
+
+describe("sessionHasMinimumRole, the seam this package adds", () => {
+  it("fails closed on no session and on an unresolved one", () => {
+    expect(sessionHasMinimumRole(null, "user")).toBe(false);
+    expect(sessionHasMinimumRole(undefined, "user")).toBe(false);
   });
 
-  it("answers the claim truth table identically for all 10 role/flag pairs", () => {
+  it("answers the imported hierarchy for every consistent role pair", () => {
     for (const role of ORDERED_ROLES) {
-      for (const isSuperuser of [true, false]) {
+      const is_superuser = role === "superadmin";
+      for (const minimum of ORDERED_ROLES) {
         expect(
-          privilegeClaimsAreConsistent(role, isSuperuser),
-          `${role}/${isSuperuser}`
-        ).toBe(sharedPrivilegeClaimsAreConsistent(role, isSuperuser));
-        expect(
-          hasSuperuserPrivileges(role, isSuperuser),
-          `${role}/${isSuperuser}`
-        ).toBe(sharedHasSuperuserPrivileges(role, isSuperuser));
+          sessionHasMinimumRole({ id: "u", role, is_superuser }, minimum),
+          `${role} >= ${minimum}`
+        ).toBe(hasMinimumRole(role, minimum));
       }
     }
   });
 
-  it("fails closed on an unrecognised role in both implementations", () => {
+  it("refuses a session whose role and flag disagree, in both directions", () => {
+    expect(sessionHasMinimumRole({ id: "u", role: "admin", is_superuser: true }, "user")).toBe(
+      false
+    );
+    expect(
+      sessionHasMinimumRole({ id: "u", role: "superadmin", is_superuser: false }, "user")
+    ).toBe(false);
+  });
+
+  it("fails closed on a role the client does not recognise", () => {
     const ghost = "ghost" as RepartoRole;
-    expect(hasMinimumRole(ghost, "user")).toBe(sharedHasMinimumRole(ghost, "user"));
-    expect(hasMinimumRole(ghost, "user")).toBe(false);
-    expect(privilegeClaimsAreConsistent(ghost, true)).toBe(
-      sharedPrivilegeClaimsAreConsistent(ghost, true)
+    expect(sessionHasMinimumRole({ id: "u", role: ghost, is_superuser: false }, "user")).toBe(
+      false
     );
-    expect(privilegeClaimsAreConsistent(ghost, false)).toBe(
-      sharedPrivilegeClaimsAreConsistent(ghost, false)
-    );
-    expect(hasSuperuserPrivileges(ghost, true)).toBe(false);
   });
 });

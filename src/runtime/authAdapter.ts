@@ -1,3 +1,10 @@
+import {
+  hasMinimumRole,
+  hasSuperuserPrivileges,
+  ORDERED_ROLES,
+  privilegeClaimsAreConsistent
+} from "@mano8/astro-auth-m8/authorization";
+
 export type RepartoAuthAdapter = {
   getAccessToken: () => string | null | Promise<string | null>;
   refresh?: () => string | null | Promise<string | null>;
@@ -6,101 +13,36 @@ export type RepartoAuthAdapter = {
 };
 
 /**
- * Roles ordered from **highest** to **lowest** privilege.
+ * The fleet's one role hierarchy and role/flag truth table, re-exported.
  *
- * A mirror of `auth_sdk_m8/authorization.py` — the canonical source both this
- * package and `@mano8/astro-auth-m8` answer to — reproduced here rather than
- * imported, and reproduced *exactly*: same order, same names, same signatures
- * as the peer's `@mano8/astro-auth-m8/authorization`. The fleet's
- * `no-cross-plugin-import` gate (`C12`, `scripts/verify-fleet-gates.mjs`)
- * forbids one business plugin importing another at runtime, which is what keeps
- * these packages independently installable, so the deletion `RBAC-06` asks for
- * cannot be a plain import today.
+ * `@mano8/astro-auth-m8/authorization` is the TypeScript mirror of
+ * `auth_sdk_m8/authorization.py`, the canonical source both this package and
+ * the auth peer answer to. These four bindings were *copied* here until
+ * 2026-08-29: the fleet's `no-cross-plugin-import` gate (`C12`,
+ * `scripts/verify-fleet-gates.mjs`) refused the import, so `RBAC-06` — one
+ * hierarchy — could only be met by a mirror pinned with an exhaustive test.
  *
- * What stands in for it is `tests/authorization-mirror.test.ts`: it imports the
- * peer's bindings and asserts agreement across every role pair and every
- * role/flag pair, so this file cannot drift from the peer — or, through it,
- * from the SDK — without failing the build. It is one hierarchy verified in two
- * places, not two opinions. Widening the fleet gate for a pure, framework-
- * neutral authorization module, or lifting these primitives into the shared
- * layer, would let the copy go; both are fleet-wide decisions.
+ * Decision 4 widened that gate for exactly this specifier, and the copy is
+ * gone. The exemption is narrow on purpose: the module is pure and
+ * framework-neutral, every other subpath of the auth peer is still refused, and
+ * this package already requires `@mano8/astro-auth-m8` as its official auth
+ * peer (`peerDependencies`), so the import adds no install a consumer did not
+ * already owe. `tests/authorization-mirror.test.ts` now asserts these *are* the
+ * peer's own bindings, by identity, so a re-fork fails the build.
+ *
+ * Re-exported under the names this module already published, so the package
+ * surface is unchanged and `authAdapter.ts` remains the one place reparto
+ * states the hierarchy.
  */
-export const ORDERED_ROLES = [
-  "superadmin",
-  "admin",
-  "writer",
-  "reader",
-  "user"
-] as const;
+export {
+  hasMinimumRole,
+  hasSuperuserPrivileges,
+  ORDERED_ROLES,
+  privilegeClaimsAreConsistent
+};
 
+/** The five roles, highest privilege first, as the peer orders them. */
 export type RepartoRole = (typeof ORDERED_ROLES)[number];
-
-/** The single role that carries superuser authority. */
-const SUPERADMIN_ROLE: RepartoRole = "superadmin";
-
-function isKnownRole(role: RepartoRole): boolean {
-  return (ORDERED_ROLES as readonly string[]).includes(role);
-}
-
-/**
- * Whether `currentRole` meets or exceeds `requiredRole`.
- *
- * The one hierarchy comparison in the package (`RBAC-06`): no view re-derives
- * its own, and none compares roles by exact membership — exact membership hides
- * an admin surface from a superadmin. Returns `false` for an insufficient or
- * unrecognised role.
- */
-export function hasMinimumRole(
-  currentRole: RepartoRole,
-  requiredRole: RepartoRole
-): boolean {
-  const current = ORDERED_ROLES.indexOf(currentRole);
-  const required = ORDERED_ROLES.indexOf(requiredRole);
-  if (current === -1 || required === -1) return false;
-  return current <= required;
-}
-
-/**
- * Whether `role` and `isSuperuser` agree per the canonical truth table.
- *
- * ```text
- * role         is_superuser=false    is_superuser=true
- * user         valid, non-superuser  invalid
- * reader       valid, non-superuser  invalid
- * writer       valid, non-superuser  invalid
- * admin        valid, non-superuser  invalid
- * superadmin   invalid               valid superuser
- * ```
- *
- * Compared strictly rather than by truthiness, and an unrecognised role is not
- * one of the five rows, so it fails closed.
- */
-export function privilegeClaimsAreConsistent(
-  role: RepartoRole,
-  isSuperuser: boolean
-): boolean {
-  if (!isKnownRole(role)) return false;
-  if (role === SUPERADMIN_ROLE) return isSuperuser === true;
-  return isSuperuser === false;
-}
-
-/**
- * The dual-evidence canonical-superuser predicate.
- *
- * Requires both the consistency invariant and the canonical pair, so a stray
- * `is_superuser: true` on a non-superadmin role — or the reverse — never grants
- * superuser privileges.
- */
-export function hasSuperuserPrivileges(
-  role: RepartoRole,
-  isSuperuser: boolean
-): boolean {
-  return (
-    privilegeClaimsAreConsistent(role, isSuperuser) &&
-    role === SUPERADMIN_ROLE &&
-    isSuperuser === true
-  );
-}
 
 export type RepartoCurrentUser = {
   id: string;

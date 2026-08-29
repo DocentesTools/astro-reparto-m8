@@ -30,7 +30,7 @@ export default defineConfig({
 | Requirement | Version |
 | --- | --- |
 | `reparto-docente-m8` (backend) | **`2.0.0`** — the compatibility gate refuses an older contract |
-| `@mano8/astro-auth-m8` (peer) | **`^2.2.0`** |
+| `@mano8/astro-auth-m8` (peer) | **`^2.3.0`** — the release that coordinates the two token-refresh paths |
 | `@mano8/astro-ui-m8` (dependency) | `^1.5.0`, installed for you |
 
 `2.0.0` is a major release: the backend contract, the UI vocabulary (Classroom →

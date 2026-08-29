@@ -93,6 +93,41 @@ service's administrator read floors.
 
 ### Added
 
+- **The contract table declares every operation the wrappers call, and a gate
+  holds it there** (remediation `W7.2`). `REPARTO_CONTRACT_OPERATIONS` declared
+  67 operations while `src/runtime/api/` called 115. The two teacher-profile
+  claim operations `W1.4` added were the visible half — the plugin shipped
+  `issueClaimCode` and `claim` wrappers against endpoints its own compatibility
+  statement did not say the service serves — but whole resource groups had
+  never been declared at all: `schools`, `academicYears`, `departments`,
+  `classroomStages`, `teacherProfiles`, `subjects`, `teachingGroups` and
+  `auditEvents`, plus the participant roster, the two feasibility reads, the
+  matrix sync pair and the requirement list/get pair. The table is now all 115
+  wrapper operations plus the SSE stream. **Existing entries keep their names,
+  methods and paths**, so a host reading the table by key is unaffected; this
+  is additive.
+
+  `npm run verify:contract-operations` (new, and wired into CI) checks both
+  directions: every declared operation appears in the service's published
+  surface, and every `request({ method, path })` under `src/runtime/api/`
+  appears in the table. The second direction is the one that had never been
+  checked by anything, and it is the one the claim pair failed. The gate reads
+  `contract/served-api-surface.json`, a tracked copy of
+  `reparto-docente-m8/docs/served-api-surface.json` refreshed by
+  `npm run refresh:served-surface` — vendored rather than read across
+  repositories so the gate runs from a bare `npm ci` of this package alone,
+  and refreshed by a deliberate act with a reviewable diff, the same rule the
+  service applies to producing the artifact.
+
+  The `response` column names the **service's** response model, not this
+  package's local type for it. The two differ on the three feasibility reads,
+  where the client models `FeasibilityWitnessPublic` as
+  `FeasibilityWitnessReport`; the existing witness entry already had this
+  right, and the two newly declared reads follow it with
+  `FeasibilityEvaluationPublic` and `FeasibilityDiagnosticsPublic`. The gate
+  compares method and path only — the published surface artifact records no
+  response models, so that column stays reviewed rather than checked.
+
 - **The shared screen and the control room show balanced/pending/overloaded
   participant counts** (remediation `W1.6`). `ProcessSummary` gains
   `balanced_participant_count`, `pending_participant_count` and

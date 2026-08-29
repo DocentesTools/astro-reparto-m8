@@ -389,6 +389,16 @@ Public modules are reachable only through explicit package subpaths:
 | `/error-mapping` | backend error → field/form/disabled-reason mapping |
 | `/compatibility` | contract version, operation table, assertion |
 
+`REPARTO_CONTRACT_OPERATIONS` on that last subpath is the full operation table:
+every one of the 115 operations the `/api` wrappers put on the wire, plus the
+SSE stream, which `EventSource` reads rather than the fetch client. It is not
+documentation — `npm run verify:contract-operations` gates it in both
+directions against `contract/served-api-surface.json`, a tracked copy of the
+service's own published surface refreshed by `npm run refresh:served-surface`.
+A declared operation the service does not serve fails, and so does a wrapper
+the table does not declare. The fixture is vendored rather than read across
+repositories so the gate runs from a bare `npm ci` of this package alone.
+
 `/api` groups one object per resource, each method being one backend operation:
 
 | Wrapper | Covers |

@@ -343,7 +343,96 @@ describe("compatibility", () => {
           operation.method === "DELETE" && operation.path.includes("/assignments/")
       )
     ).toBe(false);
-    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(67);
+    // The claim-code pair (`W1.4`). The plugin shipped wrappers for both while
+    // the table declared neither, so it called two endpoints its own
+    // compatibility statement did not say the service serves (`W7.2`). Minting
+    // is a department-head act on a named profile; the claim carries the code
+    // and nothing else, because the account it binds is read from the token.
+    expect(REPARTO_CONTRACT_OPERATIONS["teacherProfiles.issueClaimCode"]).toEqual({
+      method: "POST",
+      path: "/teacher-profiles/{profile_id}/claim-code",
+      response: "TeacherProfileClaimCode"
+    });
+    expect(REPARTO_CONTRACT_OPERATIONS["teacherProfiles.claim"]).toEqual({
+      method: "POST",
+      path: "/teacher-profiles/claim",
+      response: "TeacherProfilePublic"
+    });
+    // The table is now every operation the wrappers call, not the subset that
+    // happened to be transcribed: 115 wrapper operations plus the SSE stream,
+    // which is read by `EventSource` rather than by the fetch client.
+    // `npm run verify:contract-operations` is what holds that true in both
+    // directions; this length is the reminder that the count is not incidental.
+    expect(Object.keys(REPARTO_CONTRACT_OPERATIONS)).toHaveLength(116);
+    expect(REPARTO_CONTRACT_OPERATIONS["assignmentProcesses.events"]).toEqual({
+      method: "GET",
+      path: "/assignment-processes/{process_id}/events",
+      response: "text/event-stream"
+    });
+  });
+
+  // The gate's own subject matter, asserted here so a table edit that breaks it
+  // fails in `npm test` too and not only in the CI step that runs the script.
+  it("declares every operation the API wrappers call", async () => {
+    const { readdirSync, readFileSync } = await import("node:fs");
+    const declared = new Set(
+      Object.values(REPARTO_CONTRACT_OPERATIONS).map(
+        (operation) => `${operation.method} ${operation.path}`
+      )
+    );
+    const undeclared: string[] = [];
+    for (const file of readdirSync("src/runtime/api").filter(
+      (name) => name.endsWith(".ts") && name !== "index.ts"
+    )) {
+      const source = readFileSync(`src/runtime/api/${file}`, "utf8");
+      // Module-local path helpers (`selectionTurns.ts`), inlined before the
+      // parameter holes are rendered.
+      const helpers = new Map<string, { parameters: string[]; template: string }>();
+      for (const match of source.matchAll(
+        /const\s+([A-Za-z_$][\w$]*)\s*=\s*\(([^)]*)\)\s*=>\s*\n?\s*`([^`]*)`/g
+      )) {
+        helpers.set(match[1], {
+          parameters: match[2]
+            .split(",")
+            .map((parameter) => parameter.trim().split(":")[0].trim())
+            .filter(Boolean),
+          template: match[3]
+        });
+      }
+      for (const call of source.matchAll(/request<[^>]*>\(\{([\s\S]*?)\}\)/g)) {
+        const method = call[1].match(/method:\s*"([A-Z]+)"/)?.[1];
+        const expression = call[1].match(/path:\s*([\s\S]*?),\s*(?=[A-Za-z]+\s*:)/)?.[1];
+        expect(method).toBeDefined();
+        expect(expression).toBeDefined();
+        const segments = [...expression!.matchAll(/`([^`]*)`/g)].map((part) => part[1]);
+        let path = segments.length
+          ? segments.join("")
+          : (expression!.match(/^\s*"([^"]*)"\s*$/)?.[1] ?? "");
+        path = path.replace(
+          /\$\{([A-Za-z_$][\w$]*)\(([^)]*)\)\}/g,
+          (whole, name: string, argumentList: string) => {
+            const helper = helpers.get(name);
+            if (!helper) return whole;
+            const args = argumentList.split(",").map((argument) => argument.trim());
+            let expanded = helper.template;
+            helper.parameters.forEach((parameter, index) => {
+              if (args[index] === undefined) return;
+              expanded = expanded.split(`\${${parameter}}`).join(`\${${args[index]}}`);
+            });
+            return expanded;
+          }
+        );
+        path = path.replace(
+          /\$\{([A-Za-z_$][\w$]*)\}/g,
+          (_, identifier: string) =>
+            `{${identifier.replace(/[A-Z]/g, (character) => `_${character.toLowerCase()}`)}}`
+        );
+        // A hole that survived both passes is reported, never skipped.
+        expect(path).not.toContain("${");
+        if (!declared.has(`${method} ${path}`)) undeclared.push(`${method} ${path} (${file})`);
+      }
+    }
+    expect(undeclared).toEqual([]);
   });
 });
 

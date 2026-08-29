@@ -44,6 +44,13 @@ jobs:
       - name: Fleet alignment gates
         run: npm run verify:fleet-gates
 
+      # Both directions of the contract table: every operation it declares is
+      # served, and every wrapper under `src/runtime/api/` is declared. Reads
+      # the vendored `contract/served-api-surface.json`, never a sibling
+      # checkout, so it runs from a bare `npm ci` of this repository alone.
+      - name: Contract table against the served surface
+        run: npm run verify:contract-operations
+
       - name: Registry drift
         run: npm run verify:registry-drift
 

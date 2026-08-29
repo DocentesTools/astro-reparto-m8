@@ -27,6 +27,136 @@ export type RepartoContractOperation = {
 };
 
 export const REPARTO_CONTRACT_OPERATIONS = {
+  "schools.list": {
+    method: "GET",
+    path: "/schools/",
+    response: "SchoolsPublic"
+  },
+  "schools.get": {
+    method: "GET",
+    path: "/schools/{school_id}",
+    response: "SchoolPublic"
+  },
+  "schools.create": {
+    method: "POST",
+    path: "/schools/",
+    response: "SchoolPublic"
+  },
+  "schools.update": {
+    method: "PATCH",
+    path: "/schools/{school_id}",
+    response: "SchoolPublic"
+  },
+  "academicYears.list": {
+    method: "GET",
+    path: "/academic-years/",
+    response: "AcademicYearsPublic"
+  },
+  "academicYears.get": {
+    method: "GET",
+    path: "/academic-years/{year_id}",
+    response: "AcademicYearPublic"
+  },
+  "academicYears.create": {
+    method: "POST",
+    path: "/academic-years/",
+    response: "AcademicYearPublic"
+  },
+  "academicYears.update": {
+    method: "PATCH",
+    path: "/academic-years/{year_id}",
+    response: "AcademicYearPublic"
+  },
+  "academicYears.archive": {
+    method: "POST",
+    path: "/academic-years/{year_id}/archive",
+    response: "AcademicYearPublic"
+  },
+  "departments.list": {
+    method: "GET",
+    path: "/departments/",
+    response: "DepartmentsPublic"
+  },
+  "departments.get": {
+    method: "GET",
+    path: "/departments/{department_id}",
+    response: "DepartmentPublic"
+  },
+  "departments.create": {
+    method: "POST",
+    path: "/departments/",
+    response: "DepartmentPublic"
+  },
+  "departments.update": {
+    method: "PATCH",
+    path: "/departments/{department_id}",
+    response: "DepartmentPublic"
+  },
+  "classroomStages.list": {
+    method: "GET",
+    path: "/classroom-stages/",
+    response: "ClassroomStagesPublic"
+  },
+  "classroomStages.get": {
+    method: "GET",
+    path: "/classroom-stages/{stage_id}",
+    response: "ClassroomStagePublic"
+  },
+  "classroomStages.create": {
+    method: "POST",
+    path: "/classroom-stages/",
+    response: "ClassroomStagePublic"
+  },
+  "classroomStages.update": {
+    method: "PATCH",
+    path: "/classroom-stages/{stage_id}",
+    response: "ClassroomStagePublic"
+  },
+  "classroomStages.remove": {
+    method: "DELETE",
+    path: "/classroom-stages/{stage_id}",
+    response: "ClassroomStagePublic"
+  },
+  "teacherProfiles.list": {
+    method: "GET",
+    path: "/teacher-profiles/",
+    response: "TeacherProfilesPublic"
+  },
+  "teacherProfiles.get": {
+    method: "GET",
+    path: "/teacher-profiles/{profile_id}",
+    response: "TeacherProfilePublic"
+  },
+  "teacherProfiles.create": {
+    method: "POST",
+    path: "/teacher-profiles/",
+    response: "TeacherProfilePublic"
+  },
+  "teacherProfiles.update": {
+    method: "PATCH",
+    path: "/teacher-profiles/{profile_id}",
+    response: "TeacherProfilePublic"
+  },
+  "teacherProfiles.linkUser": {
+    method: "POST",
+    path: "/teacher-profiles/{profile_id}/link-user",
+    response: "TeacherProfilePublic"
+  },
+  "teacherProfiles.issueClaimCode": {
+    method: "POST",
+    path: "/teacher-profiles/{profile_id}/claim-code",
+    response: "TeacherProfileClaimCode"
+  },
+  "teacherProfiles.claim": {
+    method: "POST",
+    path: "/teacher-profiles/claim",
+    response: "TeacherProfilePublic"
+  },
+  "teacherProfiles.remove": {
+    method: "DELETE",
+    path: "/teacher-profiles/{profile_id}",
+    response: "TeacherProfilePublic"
+  },
   "assignmentProcesses.list": {
     method: "GET",
     path: "/assignment-processes/",
@@ -97,6 +227,31 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path:
       "/assignment-processes/{process_id}/meeting-sessions/{meeting_session_id}/close",
     response: "MeetingSessionPublic"
+  },
+  "processTeachers.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teachers/",
+    response: "ProcessTeachersPublic"
+  },
+  "processTeachers.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/teachers/{process_teacher_id}",
+    response: "ProcessTeacherPublic"
+  },
+  "processTeachers.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teachers/",
+    response: "ProcessTeacherPublic"
+  },
+  "processTeachers.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/teachers/{process_teacher_id}",
+    response: "ProcessTeacherPublic"
+  },
+  "processTeachers.remove": {
+    method: "DELETE",
+    path: "/assignment-processes/{process_id}/teachers/{process_teacher_id}",
+    response: "ProcessTeacherPublic"
   },
   "processTeachers.extraHours": {
     method: "POST",
@@ -212,6 +367,11 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/exports",
     response: "ExportArtifactPublic"
   },
+  "auditEvents.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/audit-events/",
+    response: "AuditEventsPublic"
+  },
   "planningExchange.exportDraft": {
     method: "POST",
     path: "/assignment-processes/{process_id}/exports/planning-draft",
@@ -252,6 +412,61 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path: "/assignment-processes/{process_id}/allocation-revisions/",
     response: "DepartmentHourAllocationRevisionPublic"
   },
+  "subjects.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/subjects/",
+    response: "SubjectsPublic"
+  },
+  "subjects.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/subjects/{subject_id}",
+    response: "SubjectPublic"
+  },
+  "subjects.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/subjects/",
+    response: "SubjectPublic"
+  },
+  "subjects.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/subjects/{subject_id}",
+    response: "SubjectPublic"
+  },
+  "subjects.remove": {
+    method: "DELETE",
+    path: "/assignment-processes/{process_id}/subjects/{subject_id}",
+    response: "SubjectPublic"
+  },
+  "teachingGroups.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/groups/",
+    response: "TeachingGroupsPublic"
+  },
+  "teachingGroups.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/groups/{group_id}",
+    response: "TeachingGroupPublic"
+  },
+  "teachingGroups.create": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/groups/",
+    response: "TeachingGroupPublic"
+  },
+  "teachingGroups.bulkCreate": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/groups/bulk",
+    response: "TeachingGroupsPublic"
+  },
+  "teachingGroups.update": {
+    method: "PATCH",
+    path: "/assignment-processes/{process_id}/groups/{group_id}",
+    response: "TeachingGroupPublic"
+  },
+  "teachingGroups.remove": {
+    method: "DELETE",
+    path: "/assignment-processes/{process_id}/groups/{group_id}",
+    response: "TeachingGroupPublic"
+  },
   "groupSubjects.list": {
     method: "GET",
     path: "/assignment-processes/{process_id}/group-subjects/",
@@ -287,6 +502,18 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     method: "POST",
     path: "/assignment-processes/{process_id}/group-subjects/bulk-apply",
     response: "GroupSubjectBulkResult"
+  },
+  "groupSubjects.syncPreview": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/group-subjects/{group_subject_id}/sync-preview",
+    response: "MainActivitySyncPreview"
+  },
+  "groupSubjects.syncApply": {
+    method: "POST",
+    path:
+      "/assignment-processes/{process_id}/group-subjects/{group_subject_id}/sync-apply",
+    response: "MainActivitySyncResult"
   },
   "teachingPlans.get": {
     method: "GET",
@@ -324,6 +551,17 @@ export const REPARTO_CONTRACT_OPERATIONS = {
       "/assignment-processes/{process_id}/teaching-plan/feasibility/witness",
     response: "FeasibilityWitnessPublic"
   },
+  "teachingPlans.evaluateFeasibility": {
+    method: "POST",
+    path: "/assignment-processes/{process_id}/teaching-plan/feasibility/evaluate",
+    response: "FeasibilityEvaluationPublic"
+  },
+  "teachingPlans.feasibilityDiagnostics": {
+    method: "GET",
+    path:
+      "/assignment-processes/{process_id}/teaching-plan/feasibility/diagnostics",
+    response: "FeasibilityDiagnosticsPublic"
+  },
   "teachingPlans.materializeMain": {
     method: "POST",
     path: "/assignment-processes/{process_id}/teaching-plan/materialize-main",
@@ -354,6 +592,16 @@ export const REPARTO_CONTRACT_OPERATIONS = {
     path:
       "/assignment-processes/{process_id}/teaching-activities/{activity_id}/retire",
     response: "TeachingActivityPublic"
+  },
+  "hourRequirements.list": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/requirements/",
+    response: "HourRequirementsPublic"
+  },
+  "hourRequirements.get": {
+    method: "GET",
+    path: "/assignment-processes/{process_id}/requirements/{requirement_id}",
+    response: "HourRequirementPublic"
   },
   "hourRequirements.generationPreview": {
     method: "POST",

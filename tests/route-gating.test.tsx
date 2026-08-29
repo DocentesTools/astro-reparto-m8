@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { getRepartoDictionary } from "../src/runtime/i18n/index.js";
 import { REPARTO_ROUTE_ACCESS } from "../src/runtime/routeAccess.js";
 import type { RepartoRouteName } from "../src/runtime/routes.js";
-import { REPARTO_ROLE_ORDER, type RepartoRole } from "../src/runtime/authAdapter.js";
+import { ORDERED_ROLES, type RepartoRole } from "../src/runtime/authAdapter.js";
 import { renderRepartoRoute, repartoActions } from "./support/routes.js";
 import {
   repartoUser,
@@ -327,17 +327,21 @@ describe("§8.1 route map — ADMIN and SUPERADMIN get the department-head surfa
     expect(actionCount(html)).toBeGreaterThan(0);
   });
 
-  it("treats is_superuser as superadmin, whatever the role name says", async () => {
+  it("refuses a session whose role and is_superuser disagree", async () => {
+    // Neither claim is read on its own. A `USER` carrying the superuser flag is
+    // a pair `auth_sdk_m8`'s `UserModel` will not validate, so the route shows
+    // the refusal rather than a department-head surface the service would 403.
     signIn("user", { is_superuser: true });
-    const html = await renderRoute("planning");
+    expect(isForbidden(await renderRoute("planning"))).toBe(true);
 
-    expect(isForbidden(html)).toBe(false);
-    expect(actionCount(html)).toBeGreaterThan(0);
+    // The mirror case: a `superadmin` whose flag disagrees is refused too.
+    signIn("superadmin", { is_superuser: false });
+    expect(isForbidden(await renderRoute("planning"))).toBe(true);
   });
 
   it("keeps the projector screen action-free for every role", async () => {
     // The shared screen has no affordance at any tier: it is a display.
-    for (const role of REPARTO_ROLE_ORDER) {
+    for (const role of ORDERED_ROLES) {
       if (role === "user") continue;
       signIn(role);
       expect(actionCount(await renderRoute("sharedScreen")), role).toBe(0);

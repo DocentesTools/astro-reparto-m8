@@ -4,8 +4,7 @@ import { useState } from "react";
 
 import {
   formatRepartoMessage,
-  type RepartoDictionary,
-  type RepartoLocale
+  type RepartoDictionary
 } from "../../../i18n/index.js";
 import type {
   PlanValidationReport,
@@ -37,6 +36,10 @@ import {
   useMappedError,
   useRepartoCanAct
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 const GENERATABLE_STATUSES = new Set(["locked", "stale"]);
 
@@ -479,13 +482,16 @@ export function RequirementGenerationResultCard({
   );
 }
 
-export function PlanLockAndRequirementGeneration({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** Lock the plan, then preview and generate its hour requirements. */
+export function PlanLockAndRequirementGeneration(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <PlanLockAndRequirementGenerationBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function PlanLockAndRequirementGenerationBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const canAct = useRepartoCanAct("planning");
   const planQuery = useRepartoTeachingPlan(processId);

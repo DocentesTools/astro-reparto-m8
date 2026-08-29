@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getRepartoDictionary } from "../src/runtime/i18n/index.js";
 import { RepartoApiError } from "../src/runtime/errors.js";
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
 import type {
   FeasibilityDiagnosticsReport,
   TeachingPlanPublic
@@ -187,6 +192,9 @@ async function renderPanel() {
 }
 
 beforeEach(() => {
+  // The panel owns its own `admin` write floor now — and its diagnostics read
+  // is `CurrentAdmin` on the service — so every case says who is looking.
+  signInReparto(repartoUser("admin"));
   state.plan = planFixture();
   state.planLoading = false;
   state.planError = null;
@@ -198,7 +206,10 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetRepartoAuthAdapter();
+});
 
 describe("department-head feasibility diagnostics panel", () => {
   it("requests the findings and renders them with resolved labels", async () => {

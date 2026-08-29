@@ -29,13 +29,23 @@ export function signInRepartoAsync(user: RepartoCurrentUser | null): void {
   });
 }
 
+/**
+ * A session whose `role`/`is_superuser` pair is one of the five canonical rows.
+ *
+ * `is_superuser` defaults to `role === "superadmin"` because that is the only
+ * pairing the platform admits: `auth_sdk_m8`'s `UserModel` refuses to validate
+ * any other combination, so a fixture that hard-coded `false` for a
+ * `superadmin` would be describing a token no service ever issues. A test that
+ * wants an inconsistent pair still asks for one through `overrides`, and gets
+ * the fail-closed answer.
+ */
 export function repartoUser(
   role: RepartoRole,
   overrides: Partial<RepartoCurrentUser> = {}
 ): RepartoCurrentUser {
   return {
     id: "00000000-0000-4000-8000-00000000f00d",
-    is_superuser: false,
+    is_superuser: role === "superadmin",
     role,
     ...overrides
   };

@@ -4,6 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getRepartoDictionary } from "../src/runtime/i18n/index.js";
 import { RepartoApiError } from "../src/runtime/errors.js";
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
 
 /**
  * The connected OUT_OF_SYNC panel (§20.20 "OUT_OF_SYNC activity state and
@@ -194,6 +199,9 @@ async function renderPanel() {
 }
 
 beforeEach(() => {
+  // The panel owns its own `admin` write floor now, so every case below has to
+  // say who is looking at it. `planning-panel-gates.test.tsx` proves the floor.
+  signInReparto(repartoUser("admin"));
   state.activities = { data: [activityBody], count: 1 };
   state.activitiesLoading = false;
   state.activitiesError = null;
@@ -202,7 +210,10 @@ beforeEach(() => {
   vi.clearAllMocks();
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  resetRepartoAuthAdapter();
+});
 
 describe("connected out-of-sync activity panel", () => {
   it("previews the selected cell and applies its exact fingerprint", async () => {

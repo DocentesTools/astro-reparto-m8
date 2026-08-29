@@ -1,4 +1,8 @@
-import { hasMinimumRole, type RepartoCurrentUser, type RepartoRole } from "./authAdapter.js";
+import {
+  sessionHasMinimumRole,
+  type RepartoCurrentUser,
+  type RepartoRole
+} from "./authAdapter.js";
 import type { RepartoRouteName } from "./routes.js";
 
 /**
@@ -71,7 +75,7 @@ export function canViewRepartoRoute(
   user: RepartoCurrentUser | null | undefined,
   route: RepartoRouteName
 ): boolean {
-  return hasMinimumRole(user, REPARTO_ROUTE_ACCESS[route].view);
+  return sessionHasMinimumRole(user, REPARTO_ROUTE_ACCESS[route].view);
 }
 
 /**
@@ -85,5 +89,5 @@ export function canActOnRepartoRoute(
   user: RepartoCurrentUser | null | undefined,
   route: RepartoRouteName
 ): boolean {
-  return hasMinimumRole(user, REPARTO_ROUTE_ACCESS[route].act);
+  return sessionHasMinimumRole(user, REPARTO_ROUTE_ACCESS[route].act);
 }

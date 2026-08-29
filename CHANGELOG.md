@@ -4,6 +4,42 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- **`is_superuser` no longer grants anything on its own** (remediation `W6.1`).
+  `authAdapter.ts` used to read `is_superuser: true` as `superadmin` whatever
+  the role said, which gave the department-head surface to a session the service
+  refuses outright: `reparto-docente-m8` decides from the role alone
+  (`AUTH-INV-01`) and `auth_sdk_m8`'s `UserModel` will not validate a token whose
+  `role` and `is_superuser` disagree. The two claims must now agree, and the role
+  decides — matching both the service and `@mano8/astro-auth-m8`, which read it
+  this way already.
+- **The role hierarchy is a verified mirror rather than a second opinion**
+  (`RBAC-06`). `authAdapter.ts` now exposes the auth peer's exact surface —
+  `ORDERED_ROLES` (highest privilege first), `hasMinimumRole(currentRole,
+  requiredRole)`, `privilegeClaimsAreConsistent` and `hasSuperuserPrivileges` —
+  and `tests/authorization-mirror.test.ts` asserts agreement with
+  `@mano8/astro-auth-m8/authorization` across every role pair and every
+  role/flag pair, so it cannot drift. It is a copy and not an import because the
+  fleet's `no-cross-plugin-import` gate (`C12`) forbids one business plugin
+  importing another at runtime.
+- **Every planning panel carries its own `admin` write floor** (`W6.3`, §21.5).
+  The six connected panels — main materialization, activity sync, secondary
+  activities, plan lock/requirement generation, feasibility diagnostics and
+  allocation reconciliation — were exported individually while their gate lived
+  in `RepartoPlanningView`, so a host composing its own planning page got an
+  ungated mutation surface. Each now renders nothing below the floor, and mounts
+  none of its queries there either. `PlanningPanelGate` is exported for a host
+  gating a panel of its own.
+
+### Breaking changes
+
+- **`REPARTO_ROLE_ORDER` is removed** from `@mano8/astro-reparto-m8/auth-adapter`
+  in favour of `ORDERED_ROLES`, which runs **highest** privilege first (the
+  removed constant ran lowest first). `hasMinimumRole` keeps its name but now
+  takes two roles, matching the auth peer and the SDK; the session-shaped helper
+  it replaced is `sessionHasMinimumRole(user, minimum)`.
+
 ## [2.0.0] - 2026-08-25
 
 `2.0.0` is a major release. Read the **Breaking changes** section before

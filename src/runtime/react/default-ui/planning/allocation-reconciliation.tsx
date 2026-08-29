@@ -45,6 +45,10 @@ import {
   useMappedError,
   useRepartoCanAct
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 export type AllocationRevisionFormValues = {
   allocatedHours: string;
@@ -794,13 +798,16 @@ export function LeadershipAllocationPanel({
   );
 }
 
-export function AllocationChangeReconciliation({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** Record an allocation revision and reconcile the requirements it staled. */
+export function AllocationChangeReconciliation(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <AllocationChangeReconciliationBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function AllocationChangeReconciliationBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const planQuery = useRepartoTeachingPlan(processId);
   const activitiesQuery = useRepartoTeachingActivities(processId);

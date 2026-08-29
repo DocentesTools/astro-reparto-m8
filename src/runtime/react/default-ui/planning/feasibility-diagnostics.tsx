@@ -5,8 +5,7 @@ import { useMemo } from "react";
 import { RepartoApiError } from "../../../errors.js";
 import {
   formatRepartoMessage,
-  type RepartoDictionary,
-  type RepartoLocale
+  type RepartoDictionary
 } from "../../../i18n/index.js";
 import type {
   HourRequirementPublic,
@@ -39,6 +38,10 @@ import {
   useDict,
   useMappedError
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 /**
  * The department-head infeasibility panel (backend plan §20.20).
@@ -225,13 +228,16 @@ export function FeasibilityDiagnosticsView({
 }
 
 /** The connected department-head panel: queries, lookup and the evaluate action. */
-export function FeasibilityDiagnosticsPanel({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** The connected department-head panel: queries, lookup and the evaluate action. */
+export function FeasibilityDiagnosticsPanel(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <FeasibilityDiagnosticsPanelBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function FeasibilityDiagnosticsPanelBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const planQuery = useRepartoTeachingPlan(processId);
   // A 404 here is the documented "no plan yet" answer, not a failure; every

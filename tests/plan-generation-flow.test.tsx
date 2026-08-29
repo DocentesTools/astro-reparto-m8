@@ -404,9 +404,16 @@ describe("plan unlock", () => {
   );
 
   it("withholds the control below the admin write floor", async () => {
-    state.plan = planFixture({ status: "locked" });
+    // Mounted on its own, because the panel around it is withheld entirely
+    // below the floor now: what is proven here is that the control itself
+    // states the refusal rather than simply vanishing.
     state.canAct = false;
-    await renderPanel();
+    const { PlanUnlockControl } = await import(
+      "../src/runtime/react/default-ui/planning/plan-generation.js"
+    );
+    render(
+      <PlanUnlockControl dict={dict} plan={planFixture({ status: "locked" })} />
+    );
 
     expect(action("unlock-plan")).toBeNull();
     expect(

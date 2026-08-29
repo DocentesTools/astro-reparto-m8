@@ -4,8 +4,7 @@ import { useMemo, useState } from "react";
 
 import {
   formatRepartoMessage,
-  type RepartoDictionary,
-  type RepartoLocale
+  type RepartoDictionary
 } from "../../../i18n/index.js";
 import type {
   GroupSubjectPublic,
@@ -35,6 +34,10 @@ import {
   useDict,
   useMappedError
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 export type MainSubjectMaterializationRow = {
   groupSubjectId: string;
@@ -268,13 +271,16 @@ export function MainSubjectMaterializationTable({
   );
 }
 
-export function MainSubjectMaterialization({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** Materialize the main `GroupSubject` rows into teaching activities. */
+export function MainSubjectMaterialization(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <MainSubjectMaterializationBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function MainSubjectMaterializationBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const subjectsQuery = useRepartoSubjects(processId);
   const groupsQuery = useRepartoTeachingGroups(processId);

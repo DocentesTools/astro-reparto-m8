@@ -388,10 +388,22 @@ frozen in [`ui-naming-freeze.md`](ui-naming-freeze.md).
 - **The service is the authorization boundary.** Every gate in this package is a
   statement about what to *show*; each request behind it is authorized again by
   `reparto-docente-m8`.
-- **One role order, one comparison.** `REPARTO_ROLE_ORDER` is
-  `user < reader < writer < admin < superadmin`, mirroring the service's own
-  `has_minimum_role`. `hasMinimumRole` is the single implementation; no view
-  re-derives it. `is_superuser` reads as `superadmin`.
+- **One role order, one comparison.** `ORDERED_ROLES` is
+  `superadmin > admin > writer > reader > user` — highest privilege first,
+  mirroring `auth_sdk_m8`'s `RoleType.get_ordered_roles()` through
+  `@mano8/astro-auth-m8/authorization`, which `tests/authorization-mirror.test.ts`
+  pins exhaustively. `hasMinimumRole(currentRole, requiredRole)` is the single
+  comparison and `sessionHasMinimumRole(user, minimum)` is the session-shaped
+  seam over it; no view re-derives either.
+- **Neither claim decides alone.** `role` and `is_superuser` must be one of the
+  five canonical pairs, and the role is what is compared. A `USER` carrying
+  `is_superuser: true` — or a `superadmin` without it — is a token the service
+  will not validate, so this package grants it nothing rather than offering
+  controls every request behind them would refuse.
+- **Panels gate themselves.** A view mounted by this package's routes and a
+  panel a host mounts on a page of its own reach the same floor: the six
+  planning panels apply `planning`'s `act` floor internally, and
+  `PlanningPanelGate` is exported for a host gating one of its own.
 - **Fails closed.** No session, an unresolved session and an unrecognised role
   all answer "no". While the adapter has not answered, `RepartoRouteGuard`
   renders neither the content nor a refusal — "not yet" is not "not allowed".

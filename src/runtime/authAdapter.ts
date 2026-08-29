@@ -6,22 +6,101 @@ export type RepartoAuthAdapter = {
 };
 
 /**
- * The role hierarchy, lowest capability first.
+ * Roles ordered from **highest** to **lowest** privilege.
  *
- * This mirrors the service's own `has_minimum_role` order (§21.1). It is the
- * single ordering in the package: no view re-derives its own role comparison
- * (`RBAC-06`), and no view decides what a role may do from anything other than
- * the signed-in user reported here (`RBAC-05`).
+ * A mirror of `auth_sdk_m8/authorization.py` — the canonical source both this
+ * package and `@mano8/astro-auth-m8` answer to — reproduced here rather than
+ * imported, and reproduced *exactly*: same order, same names, same signatures
+ * as the peer's `@mano8/astro-auth-m8/authorization`. The fleet's
+ * `no-cross-plugin-import` gate (`C12`, `scripts/verify-fleet-gates.mjs`)
+ * forbids one business plugin importing another at runtime, which is what keeps
+ * these packages independently installable, so the deletion `RBAC-06` asks for
+ * cannot be a plain import today.
+ *
+ * What stands in for it is `tests/authorization-mirror.test.ts`: it imports the
+ * peer's bindings and asserts agreement across every role pair and every
+ * role/flag pair, so this file cannot drift from the peer — or, through it,
+ * from the SDK — without failing the build. It is one hierarchy verified in two
+ * places, not two opinions. Widening the fleet gate for a pure, framework-
+ * neutral authorization module, or lifting these primitives into the shared
+ * layer, would let the copy go; both are fleet-wide decisions.
  */
-export const REPARTO_ROLE_ORDER = [
-  "user",
-  "reader",
-  "writer",
+export const ORDERED_ROLES = [
+  "superadmin",
   "admin",
-  "superadmin"
+  "writer",
+  "reader",
+  "user"
 ] as const;
 
-export type RepartoRole = (typeof REPARTO_ROLE_ORDER)[number];
+export type RepartoRole = (typeof ORDERED_ROLES)[number];
+
+/** The single role that carries superuser authority. */
+const SUPERADMIN_ROLE: RepartoRole = "superadmin";
+
+function isKnownRole(role: RepartoRole): boolean {
+  return (ORDERED_ROLES as readonly string[]).includes(role);
+}
+
+/**
+ * Whether `currentRole` meets or exceeds `requiredRole`.
+ *
+ * The one hierarchy comparison in the package (`RBAC-06`): no view re-derives
+ * its own, and none compares roles by exact membership — exact membership hides
+ * an admin surface from a superadmin. Returns `false` for an insufficient or
+ * unrecognised role.
+ */
+export function hasMinimumRole(
+  currentRole: RepartoRole,
+  requiredRole: RepartoRole
+): boolean {
+  const current = ORDERED_ROLES.indexOf(currentRole);
+  const required = ORDERED_ROLES.indexOf(requiredRole);
+  if (current === -1 || required === -1) return false;
+  return current <= required;
+}
+
+/**
+ * Whether `role` and `isSuperuser` agree per the canonical truth table.
+ *
+ * ```text
+ * role         is_superuser=false    is_superuser=true
+ * user         valid, non-superuser  invalid
+ * reader       valid, non-superuser  invalid
+ * writer       valid, non-superuser  invalid
+ * admin        valid, non-superuser  invalid
+ * superadmin   invalid               valid superuser
+ * ```
+ *
+ * Compared strictly rather than by truthiness, and an unrecognised role is not
+ * one of the five rows, so it fails closed.
+ */
+export function privilegeClaimsAreConsistent(
+  role: RepartoRole,
+  isSuperuser: boolean
+): boolean {
+  if (!isKnownRole(role)) return false;
+  if (role === SUPERADMIN_ROLE) return isSuperuser === true;
+  return isSuperuser === false;
+}
+
+/**
+ * The dual-evidence canonical-superuser predicate.
+ *
+ * Requires both the consistency invariant and the canonical pair, so a stray
+ * `is_superuser: true` on a non-superadmin role — or the reverse — never grants
+ * superuser privileges.
+ */
+export function hasSuperuserPrivileges(
+  role: RepartoRole,
+  isSuperuser: boolean
+): boolean {
+  return (
+    privilegeClaimsAreConsistent(role, isSuperuser) &&
+    role === SUPERADMIN_ROLE &&
+    isSuperuser === true
+  );
+}
 
 export type RepartoCurrentUser = {
   id: string;
@@ -30,22 +109,34 @@ export type RepartoCurrentUser = {
 };
 
 /**
- * Whether the signed-in user holds at least `minimum`.
+ * Whether the signed-in session holds at least `minimum`.
  *
+ * The session-shaped seam over `hasMinimumRole`, which compares two roles.
  * Fails closed on every unknown: no session, an unresolved session and a role
- * the client does not recognise all answer `false`. `is_superuser` is read as
- * `superadmin` because the service treats the flag and the role as one canonical
- * truth, and a client that ignored it would hide affordances the backend grants.
+ * the client does not recognise all answer `false`.
+ *
+ * **`is_superuser` does not decide anything here, and the pair must agree.**
+ * The service reaches the same answer the same way: `DomainController.
+ * _require_role` measures `current_user.role` alone through the SDK's
+ * `has_minimum_role` and deliberately never inspects the flag (`AUTH-INV-01`),
+ * while the SDK's `UserModel` refuses to validate a token whose `role` and
+ * `is_superuser` disagree at all. So a disagreeing pair is not a privileged
+ * session this client should second-guess — it is a session the service would
+ * reject outright, and granting it the administrative surface would only offer
+ * controls whose every request comes back refused.
+ *
+ * This replaces an earlier reading that treated `is_superuser: true` as
+ * `superadmin` on its own. That reading granted the admin surface to a pair the
+ * backend rejects, hid nothing the backend grants, and was the one point on
+ * which this package and `@mano8/astro-auth-m8` disagreed.
  */
-export function hasMinimumRole(
+export function sessionHasMinimumRole(
   user: RepartoCurrentUser | null | undefined,
   minimum: RepartoRole
 ): boolean {
   if (!user) return false;
-  const held = user.is_superuser ? "superadmin" : user.role;
-  const heldRank = REPARTO_ROLE_ORDER.indexOf(held);
-  if (heldRank < 0) return false;
-  return heldRank >= REPARTO_ROLE_ORDER.indexOf(minimum);
+  if (!privilegeClaimsAreConsistent(user.role, user.is_superuser)) return false;
+  return hasMinimumRole(user.role, minimum);
 }
 
 /**
@@ -67,11 +158,13 @@ export type RepartoViewMode = "admin" | "readonly";
 export function resolveRepartoViewMode(
   user: RepartoCurrentUser | null | undefined
 ): RepartoViewMode {
-  return hasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE) ? "admin" : "readonly";
+  return sessionHasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE)
+    ? "admin"
+    : "readonly";
 }
 
 export function canManageClassroomStages(user: RepartoCurrentUser | null): boolean {
-  return hasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE);
+  return sessionHasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE);
 }
 
 let activeAdapter: RepartoAuthAdapter = createInMemoryAuthAdapter();

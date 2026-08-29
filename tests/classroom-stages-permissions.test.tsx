@@ -90,7 +90,7 @@ function signIn(user: RepartoCurrentUser | null) {
 
 function user(
   role: RepartoCurrentUser["role"],
-  is_superuser = false
+  is_superuser = role === "superadmin"
 ): RepartoCurrentUser {
   return { id: "user-1", role, is_superuser };
 }
@@ -135,9 +135,7 @@ afterEach(() => {
 describe("classroom stages — role visibility", () => {
   it.each([
     ["admin", user("admin")],
-    ["superadmin", user("superadmin")],
-    // `is_superuser` is sufficient on its own, whatever the role name says.
-    ["user with is_superuser", user("user", true)]
+    ["superadmin", user("superadmin")]
   ])("gives %s the create, edit and delete affordances", async (_label, who) => {
     signIn(who);
     await renderView();

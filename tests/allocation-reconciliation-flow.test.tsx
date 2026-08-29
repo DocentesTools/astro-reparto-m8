@@ -262,8 +262,14 @@ afterEach(cleanup);
 
 describe("allocation revision recording", () => {
   it("withholds the record control below the admin floor and says so", async () => {
+    // Mounted as the `/allocation` route mounts it. The reconciliation panel
+    // that embeds it is withheld entirely below the floor now, so this case
+    // asks the panel that a `READER` is actually shown.
     state.canAct = false;
-    await renderPanel();
+    const { LeadershipAllocationPanel } = await import(
+      "../src/runtime/react/default-ui/planning/allocation-reconciliation.js"
+    );
+    render(<LeadershipAllocationPanel locale="en" processId={processId} />);
 
     expect(action("record-allocation-revision")).toBeNull();
     expect(

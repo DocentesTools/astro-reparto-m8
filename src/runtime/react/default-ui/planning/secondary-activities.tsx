@@ -7,7 +7,7 @@ import {
   multiplyHours,
   parseHoursField
 } from "../../../decimals.js";
-import { formatRepartoMessage, type RepartoLocale } from "../../../i18n/index.js";
+import { formatRepartoMessage } from "../../../i18n/index.js";
 import type {
   ActivityType,
   GroupSubjectPublic,
@@ -50,6 +50,10 @@ import {
   useMappedError,
   type Dict
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 const ACTIVITY_TYPES: readonly ActivityType[] = [
   "ordinary",
@@ -651,13 +655,16 @@ type EditorState =
   | { mode: "create"; activity: null }
   | { mode: "edit"; activity: TeachingActivityPublic };
 
-export function SecondaryActivityEditor({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** Create, edit and retire the plan's secondary teaching activities. */
+export function SecondaryActivityEditor(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <SecondaryActivityEditorBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function SecondaryActivityEditorBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const subjectsQuery = useRepartoSubjects(processId);
   const groupSubjectsQuery = useRepartoGroupSubjects(processId);

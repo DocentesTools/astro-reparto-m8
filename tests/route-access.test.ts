@@ -8,7 +8,7 @@ import {
 } from "../src/runtime/routeAccess.js";
 import { buildRepartoRoutes, type RepartoRouteName } from "../src/runtime/routes.js";
 import {
-  REPARTO_ROLE_ORDER,
+  ORDERED_ROLES,
   type RepartoCurrentUser,
   type RepartoRole
 } from "../src/runtime/authAdapter.js";
@@ -21,7 +21,14 @@ import {
  * should be readable and provable without mounting React.
  */
 
-function who(role: RepartoRole, is_superuser = false): RepartoCurrentUser {
+/**
+ * A session on one of the five canonical rows of the role/flag truth table.
+ *
+ * `is_superuser` follows the role because no other pairing is issuable: the
+ * SDK's `UserModel` rejects a disagreeing pair outright. The last case below
+ * asks for a disagreeing one deliberately.
+ */
+function who(role: RepartoRole, is_superuser = role === "superadmin"): RepartoCurrentUser {
   return { id: "user-1", role, is_superuser };
 }
 
@@ -56,8 +63,10 @@ describe("reparto route access map", () => {
   it("never lets a route act below the role it lets view", () => {
     for (const route of ROUTES) {
       const { act, view } = repartoRouteAccess(route);
+      // `ORDERED_ROLES` runs highest privilege first, so the more privileged
+      // floor is the one with the lower index.
       expect(
-        REPARTO_ROLE_ORDER.indexOf(act) >= REPARTO_ROLE_ORDER.indexOf(view),
+        ORDERED_ROLES.indexOf(act) <= ORDERED_ROLES.indexOf(view),
         route
       ).toBe(true);
     }
@@ -71,7 +80,7 @@ describe("reparto route access map", () => {
       admin: { view: true, adminAct: true, writerAct: true },
       superadmin: { view: true, adminAct: true, writerAct: true }
     };
-    for (const role of REPARTO_ROLE_ORDER) {
+    for (const role of ORDERED_ROLES) {
       for (const route of ROUTES) {
         const answer = expected[role];
         expect(canViewRepartoRoute(who(role), route), `${role}/${route}`).toBe(
@@ -86,10 +95,15 @@ describe("reparto route access map", () => {
     }
   });
 
-  it("reads is_superuser as superadmin, and fails closed on no session", () => {
-    // The flag and the role are one truth on the service, so a `USER` carrying
-    // it clears every floor; nobody at all clears the lowest one.
-    expect(canActOnRepartoRoute(who("user", true), "planning")).toBe(true);
+  it("refuses a disagreeing role/is_superuser pair, and every absent session", () => {
+    // The role decides, and the pair must be one the platform can issue. A
+    // `USER` carrying the flag is not a superadmin the service would honour —
+    // it is a token `UserModel` refuses to validate at all — so the client
+    // offers it nothing rather than affordances that come back 403.
+    expect(canActOnRepartoRoute(who("user", true), "planning")).toBe(false);
+    expect(canViewRepartoRoute(who("user", true), "dashboard")).toBe(false);
+    // The mirror case: a `superadmin` whose flag disagrees is refused too.
+    expect(canActOnRepartoRoute(who("superadmin", false), "planning")).toBe(false);
     expect(canViewRepartoRoute(null, "dashboard")).toBe(false);
     expect(canActOnRepartoRoute(undefined, "teacherView")).toBe(false);
   });

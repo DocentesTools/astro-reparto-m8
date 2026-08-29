@@ -5,8 +5,7 @@ import { useMemo, useState } from "react";
 import { RepartoApiError } from "../../../errors.js";
 import {
   formatRepartoMessage,
-  type RepartoDictionary,
-  type RepartoLocale
+  type RepartoDictionary
 } from "../../../i18n/index.js";
 import type {
   GroupSubjectPublic,
@@ -40,6 +39,10 @@ import {
   useDict,
   useMappedError
 } from "../process-crud/shared.js";
+import {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 
 /**
  * The OUT_OF_SYNC main-activity panel (backend plan §20.10, §20.20).
@@ -304,13 +307,16 @@ export function ActivitySyncView({
 }
 
 /** The connected department-head panel: queries, preview and explicit apply. */
-export function MainActivitySyncPanel({
-  locale,
-  processId
-}: {
-  locale?: RepartoLocale;
-  processId?: string;
-}) {
+/** The connected department-head panel: queries, preview and explicit apply. */
+export function MainActivitySyncPanel(props: PlanningPanelProps) {
+  return (
+    <PlanningPanelGate>
+      <MainActivitySyncPanelBody {...props} />
+    </PlanningPanelGate>
+  );
+}
+
+function MainActivitySyncPanelBody({ locale, processId }: PlanningPanelProps) {
   const dict = useDict(locale);
   const activitiesQuery = useRepartoTeachingActivities(processId);
   const groupSubjectsQuery = useRepartoGroupSubjects(processId);

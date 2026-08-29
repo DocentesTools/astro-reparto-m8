@@ -75,7 +75,7 @@ function signIn(user: RepartoCurrentUser | null) {
   });
 }
 
-function who(role: RepartoRole, is_superuser = false): RepartoCurrentUser {
+function who(role: RepartoRole, is_superuser = role === "superadmin"): RepartoCurrentUser {
   return { id: "user-1", role, is_superuser };
 }
 
@@ -104,8 +104,7 @@ afterEach(() => {
 describe("department-head workspace — mode follows the session", () => {
   it.each([
     ["admin", who("admin")],
-    ["superadmin", who("superadmin")],
-    ["is_superuser", who("user", true)]
+    ["superadmin", who("superadmin")]
   ])("gives %s the turn controls and the admin heading", async (_label, user) => {
     signIn(user);
     await renderWorkspace();

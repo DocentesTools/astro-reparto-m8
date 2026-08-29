@@ -40,6 +40,11 @@ function PlanningContent({
   // a surface whose every request comes back 403 (§21.5). The balance header
   // stays, because §8.3 requires both summaries to remain visible and the
   // plan-summary read is at the `READER` floor.
+  //
+  // Each panel now carries this same floor itself (`PlanningPanelGate`), so a
+  // host composing its own planning page is gated too. The block below is kept
+  // because it states the rule where the page is read, and because it is what
+  // keeps the panels' own gates from mounting at all.
   const canAct = useRepartoCanAct("planning");
   const balanceQuery = useRepartoTeachingPlanSummary(processId);
 
@@ -98,6 +103,10 @@ export function RepartoPlanningView({
   );
 }
 
+export {
+  PlanningPanelGate,
+  type PlanningPanelProps
+} from "./panel-gate.js";
 export { PlanningBalanceHeader } from "./balance-header.js";
 export { TeachingPlanCreation } from "./plan-creation.js";
 export {

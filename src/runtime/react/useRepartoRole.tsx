@@ -9,8 +9,8 @@ import {
 import type { RepartoRouteName } from "../routes.js";
 import {
   getRepartoAuthAdapter,
-  hasMinimumRole,
   resolveRepartoViewMode,
+  sessionHasMinimumRole,
   type RepartoCurrentUser,
   type RepartoRole,
   type RepartoViewMode
@@ -126,7 +126,7 @@ export function useRepartoCurrentUser(): RepartoRoleState {
 export function useRepartoMinimumRole(minimum: RepartoRole): boolean | null {
   const { resolved, user } = useRepartoCurrentUser();
   if (!resolved) return null;
-  return hasMinimumRole(user, minimum);
+  return sessionHasMinimumRole(user, minimum);
 }
 
 /**

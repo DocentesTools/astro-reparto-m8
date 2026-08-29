@@ -113,6 +113,26 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Breaking changes
 
+- **Four routes move to an administrator view floor** (remediation `W5.3`).
+  `REPARTO_ROUTE_ACCESS` gives `dashboard`, `meeting`, `participants` and
+  `assignments` `view: "admin"`; every other route keeps `view: "reader"`. The
+  four are the ones built on `GET …/dashboard` or `GET …/teachers`, and
+  `reparto-docente-m8` now serves both to an administrator only: they carry the
+  confidentiality tier §20.25 calls *department head* — every participant's
+  target, assigned and remaining hours, the validation findings that name them,
+  and the head's written extra-hours reason — which the SSE teacher tier and the
+  shared screen have always redacted. Leaving the floor at `reader` would render
+  a shell around a request the service refuses, which is the same mistake as
+  offering an affordance the backend would reject, one layer up.
+
+  A `READER` or `WRITER` session now meets `RepartoRouteGuard`'s refusal on
+  those four instead of a read-only page. **The teacher's own route is
+  untouched:** *My view* reads `…/lan/me` and the projected screen reads
+  `…/summary`, both still at the reader floor, so a participant keeps their own
+  five figures, the free positions, whose turn it is and the aggregate balances.
+  A host that overrode `REPARTO_ROUTE_ACCESS`, or that mounts these views behind
+  its own gate, should re-check that gate against the service's floor.
+
 - **`REPARTO_ROLE_ORDER` is removed** from `@mano8/astro-reparto-m8/auth-adapter`
   in favour of `ORDERED_ROLES`, which runs **highest** privilege first (the
   removed constant ran lowest first). `hasMinimumRole` keeps its name but now

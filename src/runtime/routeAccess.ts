@@ -8,11 +8,20 @@ import type { RepartoRouteName } from "./routes.js";
 /**
  * The two floors every reparto route carries.
  *
- * `view` is the minimum role that may see the route at all, and it is `reader`
- * everywhere: the service gates every read at `>= READER` (plan §21.4), so a
+ * `view` is the minimum role that may see the route at all. It is `reader` on
+ * most routes — the service gates every read at `>= READER` (plan §21.4), so a
  * `USER`-role session — a valid platform identity with zero capability in this
  * application (§21.1) — renders no reparto view, and an unidentified session
  * renders none either.
+ *
+ * It is `admin` on the four routes whose *data* is department-head-only
+ * (remediation `W5.3`). `GET …/dashboard` and `GET …/teachers` carry the
+ * confidentiality tier §20.25 calls department-head — every participant's
+ * hours, the validation findings that name them, and the head's written
+ * extra-hours reason — and the service now answers `403` below `ADMIN` on both.
+ * A `view` floor left at `reader` there would render a shell around a refused
+ * request, which is the same mistake as offering an affordance the backend
+ * refuses, one layer up.
  *
  * `act` is the minimum role at which the route's write affordances may appear.
  * It mirrors the service's own gate on the mutations the route issues, so a
@@ -26,6 +35,12 @@ export type RepartoRouteAccess = {
 
 /**
  * The §8.1 route map, each route against the role it requires.
+ *
+ * `view` is `admin` on `dashboard`, `meeting`, `participants` and `assignments`
+ * — the four routes built on `GET …/dashboard` or `GET …/teachers`, both of
+ * which the service serves to an administrator only (`W5.3`). The teacher's own
+ * route reads `…/lan/me` and the projected screen reads `…/summary`, so both
+ * stay at `reader`.
  *
  * `act` is `admin` on every department-head and platform-setup route (§21.2:
  * department-head authority is `ADMIN`/`SUPERADMIN` and nothing else), and
@@ -42,8 +57,9 @@ export type RepartoRouteAccess = {
  * affordance at all, never that this particular record is theirs.
  */
 export const REPARTO_ROUTE_ACCESS: Record<RepartoRouteName, RepartoRouteAccess> = {
-  dashboard: { view: "reader", act: "admin" },
-  meeting: { view: "reader", act: "admin" },
+  // `useRepartoDashboard` — the department-head payload (`W5.3`).
+  dashboard: { view: "admin", act: "admin" },
+  meeting: { view: "admin", act: "admin" },
   processList: { view: "reader", act: "admin" },
   teacherView: { view: "reader", act: "writer" },
   sharedScreen: { view: "reader", act: "admin" },
@@ -61,8 +77,11 @@ export const REPARTO_ROUTE_ACCESS: Record<RepartoRouteName, RepartoRouteAccess> 
   allocation: { view: "reader", act: "admin" },
   planning: { view: "reader", act: "admin" },
   requirements: { view: "reader", act: "admin" },
-  participants: { view: "reader", act: "admin" },
-  assignments: { view: "reader", act: "admin" },
+  // `useRepartoProcessTeachers` — every participant's hours and the
+  // extra-hours reason (`W5.3`); the assignment board reads the same roster
+  // alongside the feasibility witness, which was already admin-only.
+  participants: { view: "admin", act: "admin" },
+  assignments: { view: "admin", act: "admin" },
   audit: { view: "reader", act: "admin" }
 };
 

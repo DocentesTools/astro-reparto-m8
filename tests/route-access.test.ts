@@ -34,6 +34,21 @@ function who(role: RepartoRole, is_superuser = role === "superadmin"): RepartoCu
 
 const ROUTES = Object.keys(REPARTO_ROUTE_ACCESS) as RepartoRouteName[];
 
+/**
+ * The four routes whose data is the department-head tier (`W5.3`).
+ *
+ * `dashboard` and `meeting` read `GET …/dashboard`; `participants` and
+ * `assignments` read `GET …/teachers`. The service answers both `403` below
+ * `ADMIN`, so a `reader` floor here would render a shell around a refused
+ * request.
+ */
+const ADMIN_VIEW_ROUTES: RepartoRouteName[] = [
+  "assignments",
+  "dashboard",
+  "meeting",
+  "participants"
+];
+
 describe("reparto route access map", () => {
   it("covers exactly the built route set, with no route left ungated", () => {
     expect(ROUTES.sort()).toEqual(
@@ -41,12 +56,32 @@ describe("reparto route access map", () => {
     );
   });
 
-  it("puts every route's read floor at READER — no route is open to USER", () => {
+  it("opens no route to USER, and the department-head reads to no one below ADMIN", () => {
     for (const route of ROUTES) {
-      expect(repartoRouteAccess(route).view, route).toBe("reader");
+      const admin = ADMIN_VIEW_ROUTES.includes(route);
+      expect(repartoRouteAccess(route).view, route).toBe(admin ? "admin" : "reader");
       expect(canViewRepartoRoute(who("user"), route), route).toBe(false);
-      expect(canViewRepartoRoute(who("reader"), route), route).toBe(true);
+      expect(canViewRepartoRoute(who("reader"), route), route).toBe(!admin);
+      expect(canViewRepartoRoute(who("writer"), route), route).toBe(!admin);
+      expect(canViewRepartoRoute(who("admin"), route), route).toBe(true);
     }
+  });
+
+  it("names the department-head-only routes explicitly, so a fifth cannot appear unnoticed", () => {
+    const byMap = ROUTES.filter(
+      (route) => REPARTO_ROUTE_ACCESS[route].view === "admin"
+    );
+    expect(byMap.sort()).toEqual([...ADMIN_VIEW_ROUTES].sort());
+  });
+
+  it("keeps the teacher and shared-screen routes at the reader floor", () => {
+    // `teacherView` reads `…/lan/me` and `sharedScreen` reads `…/summary`.
+    // Neither carries another participant's figures, so neither moved with
+    // `W5.3` — and narrowing that took either away would have cost a screen.
+    expect(repartoRouteAccess("teacherView").view).toBe("reader");
+    expect(repartoRouteAccess("sharedScreen").view).toBe("reader");
+    expect(canViewRepartoRoute(who("reader"), "teacherView")).toBe(true);
+    expect(canViewRepartoRoute(who("reader"), "sharedScreen")).toBe(true);
   });
 
   it("puts every write floor at ADMIN except the two own-data routes", () => {
@@ -84,7 +119,9 @@ describe("reparto route access map", () => {
       for (const route of ROUTES) {
         const answer = expected[role];
         expect(canViewRepartoRoute(who(role), route), `${role}/${route}`).toBe(
-          answer.view
+          REPARTO_ROUTE_ACCESS[route].view === "admin"
+            ? answer.adminAct
+            : answer.view
         );
         expect(canActOnRepartoRoute(who(role), route), `${role}/${route}`).toBe(
           REPARTO_ROUTE_ACCESS[route].act === "writer"

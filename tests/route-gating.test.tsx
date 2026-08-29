@@ -202,7 +202,9 @@ describe("§8.1 route map — a USER-role session renders no reparto view", () =
 
     expect(isForbidden(html)).toBe(true);
     expect(html).toContain(dict.view.access.forbidden);
-    expect(html).toContain(`data-reparto-required-role="reader"`);
+    expect(html).toContain(
+      `data-reparto-required-role="${REPARTO_ROUTE_ACCESS[route].view}"`
+    );
     // Nothing of the route itself is rendered — no content, no control.
     expect(actionCount(html)).toBe(0);
   });
@@ -215,8 +217,15 @@ describe("§8.1 route map — a USER-role session renders no reparto view", () =
   });
 });
 
-describe("§8.1 route map — a READER reads every route and acts on none", () => {
-  it.each(ROUTES)("renders %s read-only", async (route) => {
+const READER_ROUTES = ROUTES.filter(
+  (route) => REPARTO_ROUTE_ACCESS[route].view === "reader"
+);
+const ADMIN_VIEW_ROUTES = ROUTES.filter(
+  (route) => REPARTO_ROUTE_ACCESS[route].view === "admin"
+);
+
+describe("§8.1 route map — a READER reads every reader route and acts on none", () => {
+  it.each(READER_ROUTES)("renders %s read-only", async (route) => {
     signIn("reader");
     const html = await renderRoute(route);
 
@@ -227,8 +236,35 @@ describe("§8.1 route map — a READER reads every route and acts on none", () =
   });
 });
 
+describe("§8.1 route map — the department-head reads are refused below ADMIN", () => {
+  // `W5.3`: these four are built on `GET …/dashboard` or `GET …/teachers`,
+  // which the service serves to an administrator only. The refusal is rendered
+  // here rather than left to the request, so a teacher meets an explanation
+  // instead of a shell around a 403.
+  it.each(ADMIN_VIEW_ROUTES)("refuses %s to a reader", async (route) => {
+    signIn("reader");
+    const html = await renderRoute(route);
+
+    expect(isForbidden(html)).toBe(true);
+    expect(html).toContain(`data-reparto-required-role="admin"`);
+    expect(actionCount(html)).toBe(0);
+  });
+
+  it.each(ADMIN_VIEW_ROUTES)("refuses %s to a writer too", async (route) => {
+    signIn("writer");
+    expect(isForbidden(await renderRoute(route))).toBe(true);
+  });
+
+  it.each(ADMIN_VIEW_ROUTES)("renders %s for an admin", async (route) => {
+    signIn("admin");
+    expect(isForbidden(await renderRoute(route))).toBe(false);
+  });
+});
+
 describe("§8.1 route map — a WRITER gains only its own-data affordances", () => {
-  it.each(ROUTES.filter((route) => REPARTO_ROUTE_ACCESS[route].act === "admin"))(
+  it.each(
+    READER_ROUTES.filter((route) => REPARTO_ROUTE_ACCESS[route].act === "admin")
+  )(
     "still offers a writer nothing on %s",
     async (route) => {
       signIn("writer");

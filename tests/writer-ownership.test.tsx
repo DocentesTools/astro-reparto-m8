@@ -396,16 +396,22 @@ describe("teacher roster — the one own-record affordance in the package", () =
 });
 
 describe("participants and assignments — a writer edits nobody's record, own included", () => {
-  it("offers a writer no participant control, not even on their own row", async () => {
+  it("refuses a writer the participant roster outright, own row included", async () => {
     // `ProcessTeacher` is the caller's own participation, and it is still
     // department-head-only (§21.3): base hours, extra hours and selection order
     // are the head's decisions about a teacher, not the teacher's own data.
+    // Since `W5.3` that holds for *reading* it too — the row carries every
+    // participant's hours and the head's extra-hours reason, so the service
+    // serves `GET …/teachers` to an administrator only and the route's view
+    // floor follows it. A writer no longer reads the names read-only; they meet
+    // the refusal, and their own figures are on *My view*.
     signIn("writer");
     const html = await render("participants");
 
+    expect(html).toContain('data-reparto-state="forbidden"');
     expect(repartoRowActions(html)).toEqual([]);
-    expect(html).toContain("Ada Lovelace");
-    expect(html).toContain("Grace Hopper");
+    expect(html).not.toContain("Ada Lovelace");
+    expect(html).not.toContain("Grace Hopper");
   });
 
   it("offers an admin the full participant row surface", async () => {
@@ -425,9 +431,12 @@ describe("participants and assignments — a writer edits nobody's record, own i
   it("offers a writer no assignment control, including on the slot they hold", async () => {
     // A `WRITER` takes a slot through the teacher view's direct choice and never
     // edits, reassigns or undoes the record afterwards — the board is the head's.
+    // Since `W5.3` the board is not theirs to read either: it composes the
+    // participant roster, so it carries the same department-head tier.
     signIn("writer");
     const html = await render("assignments");
 
+    expect(html).toContain('data-reparto-state="forbidden"');
     expect(repartoRowActions(html)).toEqual([]);
   });
 
@@ -447,10 +456,17 @@ describe("participants and assignments — a writer edits nobody's record, own i
 
   it("offers a reader no row control on any of the three", async () => {
     signIn("reader");
+    const roster = await render("teacherRoster");
+    const participants = await render("participants");
+    const assignments = await render("assignments");
 
-    expect(repartoRowActions(await render("teacherRoster"))).toEqual([]);
-    expect(repartoRowActions(await render("participants"))).toEqual([]);
-    expect(repartoRowActions(await render("assignments"))).toEqual([]);
+    // The roster is a scoped read a reader keeps (colleagues' names, no
+    // figures); the other two are refused outright since `W5.3`, which is a
+    // stronger answer than an empty control set.
+    expect(repartoRowActions(roster)).toEqual([]);
+    expect(roster).not.toContain('data-reparto-state="forbidden"');
+    expect(participants).toContain('data-reparto-state="forbidden"');
+    expect(assignments).toContain('data-reparto-state="forbidden"');
   });
 });
 

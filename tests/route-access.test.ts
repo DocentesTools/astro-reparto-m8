@@ -35,18 +35,31 @@ function who(role: RepartoRole, is_superuser = role === "superadmin"): RepartoCu
 const ROUTES = Object.keys(REPARTO_ROUTE_ACCESS) as RepartoRouteName[];
 
 /**
- * The four routes whose data is the department-head tier (`W5.3`).
+ * The eight routes whose data is the department-head tier.
  *
- * `dashboard` and `meeting` read `GET …/dashboard`; `participants` and
- * `assignments` read `GET …/teachers`. The service answers both `403` below
- * `ADMIN`, so a `reader` floor here would render a shell around a refused
- * request.
+ * The live four (`W5.3`): `dashboard` and `meeting` read `GET …/dashboard`;
+ * `participants` and `assignments` read `GET …/teachers`.
+ *
+ * The after-the-fact four (`W7.1`): `planning` reads
+ * `GET …/teaching-plan/validations`, whose messages have named the participant
+ * a finding is about since `W5.1`; `audit` reads `GET …/audit-events/`, whose
+ * extra-hours event carries the head's written `reason` beside that
+ * participant's hours; `versions` reads `GET …/versions` and
+ * `GET …/compare-previous-year`, both whole-process snapshots; `exports` reads
+ * `GET …/exports`, the inventory built from all of it.
+ *
+ * The service answers `403` below `ADMIN` on every one, so a `reader` floor
+ * here would render a shell around a refused request.
  */
 const ADMIN_VIEW_ROUTES: RepartoRouteName[] = [
   "assignments",
+  "audit",
   "dashboard",
+  "exports",
   "meeting",
-  "participants"
+  "participants",
+  "planning",
+  "versions"
 ];
 
 describe("reparto route access map", () => {
@@ -67,7 +80,7 @@ describe("reparto route access map", () => {
     }
   });
 
-  it("names the department-head-only routes explicitly, so a fifth cannot appear unnoticed", () => {
+  it("names the department-head-only routes explicitly, so a ninth cannot appear unnoticed", () => {
     const byMap = ROUTES.filter(
       (route) => REPARTO_ROUTE_ACCESS[route].view === "admin"
     );
@@ -77,7 +90,10 @@ describe("reparto route access map", () => {
   it("keeps the teacher and shared-screen routes at the reader floor", () => {
     // `teacherView` reads `…/lan/me` and `sharedScreen` reads `…/summary`.
     // Neither carries another participant's figures, so neither moved with
-    // `W5.3` — and narrowing that took either away would have cost a screen.
+    // `W5.3` or `W7.1` — and narrowing that took either away would have cost a
+    // screen. `sharedScreen` in particular is what keeps the planning
+    // narrowing a tier decision rather than a loss of function: the nameless
+    // readiness counts a participant actually needs are on `…/summary`.
     expect(repartoRouteAccess("teacherView").view).toBe("reader");
     expect(repartoRouteAccess("sharedScreen").view).toBe("reader");
     expect(canViewRepartoRoute(who("reader"), "teacherView")).toBe(true);

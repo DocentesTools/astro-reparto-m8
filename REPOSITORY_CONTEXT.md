@@ -56,10 +56,16 @@ host source edits outside documented registration points.
   No hour value may be validated, compared or calculated in binary floating
   point anywhere else in the package.
 - `src/runtime/routeAccess.ts` owns the one route-to-role map: every route names
-  the minimum role that may see it (`reader` everywhere — a `USER`-role session
-  has no capability in this application) and the minimum role at which its write
+  the minimum role that may see it and the minimum role at which its write
   affordances may appear (`admin`, except `teacherView` and `teacherRoster`,
-  whose own-data actions are `writer`). `authAdapter.ts` owns the single role
+  whose own-data actions are `writer`). The view floor is `reader` on most
+  routes — a `USER`-role session has no capability in this application — and
+  `admin` on the eight whose data is the service's department-head
+  confidentiality tier: `dashboard`, `meeting`, `participants` and `assignments`
+  read the live payload (`W5.3`), and `planning`, `audit`, `versions` and
+  `exports` read the same tier after the fact (`W7.1`). The floor mirrors the
+  service; a `reader` floor on a route the backend answers `403` would render a
+  shell around a refused request. `authAdapter.ts` owns the single role
   comparison behind it; no view re-derives its own. `RepartoRouteGuard` applies
   the read floor and `useRepartoCanAct` the write floor, both from the signed-in
   user and never from a caller-supplied prop. The guard states what to show; the

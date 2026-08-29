@@ -82,11 +82,13 @@ navigation. `mode: "starter"` injects the whole route map below.
 
 ## 3. Routes and access
 
-Every route carries two floors. `view` is the minimum role that may see it —
-`reader` everywhere, because a `USER`-role session is a valid platform identity
-with no capability in this application. `act` is the minimum role at which the
-route's write affordances may appear, mirroring the service's own gate on the
-mutations that route issues.
+Every route carries two floors. `view` is the minimum role that may see it.
+It is `reader` on most routes, because a `USER`-role session is a valid platform
+identity with no capability in this application — and **`admin` on the eight
+routes whose data is the department-head confidentiality tier**, which the
+service serves to an administrator only (`W5.3`, `W7.1`). `act` is the minimum
+role at which the route's write affordances may appear, mirroring the service's
+own gate on the mutations that route issues.
 
 | Route name | Default path | Package view | `view` | `act` |
 | --- | --- | --- | --- | --- |
@@ -95,23 +97,40 @@ mutations that route issues.
 | `departments` | `/reparto/setup/departments` | `RepartoDepartmentsView` | reader | admin |
 | `classroomStages` | `/reparto/setup/classroom-stages` | `RepartoClassroomStagesView` | reader | admin |
 | `teacherRoster` | `/reparto/setup/teacher-roster` | `RepartoTeacherRosterView` | reader | **writer** |
-| `participants` | `/reparto/processes/[processId]/participants` | `RepartoProcessParticipantsView` | reader | admin |
+| `participants` | `/reparto/processes/[processId]/participants` | `RepartoProcessParticipantsView` | **admin** | admin |
 | `subjects` | `/reparto/processes/[processId]/subjects` | `RepartoSubjectsView` | reader | admin |
 | `teachingGroups` | `/reparto/processes/[processId]/teaching-groups` | `RepartoTeachingGroupsView` | reader | admin |
 | `groupSubjects` | `/reparto/processes/[processId]/group-subjects` | `RepartoGroupSubjectsView` | reader | admin |
 | `processSettings` | `/reparto/processes/[processId]/settings` | `RepartoProcessSettingsView` | reader | admin |
 | `allocation` | `/reparto/processes/[processId]/allocation` | `RepartoAllocationView` | reader | admin |
-| `planning` | `/reparto/processes/[processId]/planning` | `RepartoPlanningView` | reader | admin |
+| `planning` | `/reparto/processes/[processId]/planning` | `RepartoPlanningView` | **admin** | admin |
 | `requirements` | `/reparto/processes/[processId]/requirements` | `RepartoHourRequirementsView` | reader | admin |
-| `dashboard` | `/reparto` | `RepartoDashboardView` | reader | admin |
+| `dashboard` | `/reparto` | `RepartoDashboardView` | **admin** | admin |
 | `processList` | `/reparto/processes` | `RepartoProcessesView` | reader | admin |
-| `assignments` | `/reparto/processes/[processId]/assignments` | `RepartoAssignmentsView` | reader | admin |
-| `meeting` | `/reparto/meeting/[processId]` | `RepartoMeetingView` | reader | admin |
+| `assignments` | `/reparto/processes/[processId]/assignments` | `RepartoAssignmentsView` | **admin** | admin |
+| `meeting` | `/reparto/meeting/[processId]` | `RepartoMeetingView` | **admin** | admin |
 | `teacherView` | `/reparto/processes/[processId]/my-view` | `RepartoMyView` | reader | **writer** |
 | `sharedScreen` | `/reparto/processes/[processId]/shared` | `RepartoSharedView` | reader | admin |
-| `versions` | `/reparto/processes/[processId]/versions` | `RepartoVersionsView` | reader | admin |
-| `exports` | `/reparto/processes/[processId]/exports` | `RepartoExportsView` | reader | admin |
-| `audit` | `/reparto/processes/[processId]/audit` | `RepartoAuditView` | reader | admin |
+| `versions` | `/reparto/processes/[processId]/versions` | `RepartoVersionsView` | **admin** | admin |
+| `exports` | `/reparto/processes/[processId]/exports` | `RepartoExportsView` | **admin** | admin |
+| `audit` | `/reparto/processes/[processId]/audit` | `RepartoAuditView` | **admin** | admin |
+
+The eight `admin` view floors are the confidentiality tier, not extra caution.
+Four read the live department-head payload — `dashboard` and `meeting` read
+`GET …/dashboard`, `participants` and `assignments` read `GET …/teachers`
+(`W5.3`). Four read the same tier after the fact (`W7.1`): `planning` reads
+`GET …/teaching-plan/validations`, whose findings name the participant they are
+about and quote their hours; `audit` reads `GET …/audit-events/`, whose
+extra-hours event carries the head's written reason beside that participant's
+hours; `versions` reads the whole-process snapshots and their comparisons; and
+`exports` reads the inventory built from all of it. The service answers `403`
+below `ADMIN` on every one, so a `reader` floor here would render a shell
+around a refused request.
+
+A participant is not left without a view. `teacherView` reads `…/lan/me` — the
+caller's own participation row plus identifier-free aggregate balances — and
+`sharedScreen` reads `…/summary`, the nameless readiness counts a projected
+screen shows. Both stay at `reader`.
 
 The map itself is exported: `REPARTO_ROUTE_ACCESS`, `repartoRouteAccess`,
 `canViewRepartoRoute` and `canActOnRepartoRoute` from

@@ -133,6 +133,32 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   A host that overrode `REPARTO_ROUTE_ACCESS`, or that mounts these views behind
   its own gate, should re-check that gate against the service's floor.
 
+- **Four more routes move to an administrator view floor** (remediation
+  `W7.1`). `REPARTO_ROUTE_ACCESS` gives `planning`, `audit`, `versions` and
+  `exports` `view: "admin"`, joining `W5.3`'s four. Where those four read the
+  *live* department-head payload, these four read the same tier **after the
+  fact**, and `reparto-docente-m8` now serves all of it to an administrator
+  only:
+
+  | Route | Read it is built on |
+  | --- | --- |
+  | `planning` | `GET …/teaching-plan/validations` — since `W5.1` every finding names the participant it is about and quotes their hours |
+  | `audit` | `GET …/audit-events/` — the extra-hours event carries the head's written reason beside that participant's hours |
+  | `versions` | `GET …/versions`, `GET …/compare-previous-year` and `GET …/versions/{left}/compare/{right}` — whole-process snapshots |
+  | `exports` | `GET …/exports` — the inventory of artefacts built from all of it |
+
+  A `READER` or `WRITER` session now meets `RepartoRouteGuard`'s refusal on
+  these four instead of a read-only page. **A participant keeps their own
+  view:** *My view* reads `…/lan/me` and the projected screen reads `…/summary`,
+  both still at the reader floor — and `…/summary` is where the nameless
+  readiness counts live, which is the question a participant actually asked of
+  a validation report. A host that overrode `REPARTO_ROUTE_ACCESS`, or that
+  mounts these views behind its own gate, should re-check that gate against the
+  service's floor.
+
+  `docs/host-integration.md`'s route table now prints the `view` floor
+  correctly for all eight; it had still shown `reader` for `W5.3`'s four.
+
 - **`REPARTO_ROLE_ORDER` is removed** from `@mano8/astro-reparto-m8/auth-adapter`
   in favour of `ORDERED_ROLES`, which runs **highest** privilege first (the
   removed constant ran lowest first). `hasMinimumRole` keeps its name but now

@@ -307,6 +307,13 @@ export const en = {
       hours: "{hours} teacher hours",
       impact: "Taking this position assigns {hours} teacher hours to you in full.",
       remainingTarget: "{hours} hours remain before your target.",
+      select: "Select",
+      selected: "Selected",
+      passReasonLabel: "Reason",
+      passReasonPlaceholder: "Why you are passing your turn",
+      passReasonDefault: "Turn passed by the teacher.",
+      passReasonHint: "Passing a turn is audited. Leave this blank to record the default reason.",
+      pending: "Working…",
       disabled: {
         meeting_not_open: "The meeting is not open.",
         direct_selection_disabled: "Direct selection is disabled.",
@@ -848,7 +855,24 @@ export const en = {
     pendingTitle: "Positions",
     overloadTitle: "Authorized extra hours",
     overloadDetail: "{base} h base + {extra} h authorized = {target} h target",
-    noOverloads: "No participant is carrying authorized extra hours."
+    noOverloads: "No participant is carrying authorized extra hours.",
+    // Why one turn control is closed, as the reason code the button already
+    // carried in `data-disabled-reason`. The attribute alone told a test what
+    // was wrong and told the head nothing; these are the same codes said out
+    // loud next to the button that is refusing.
+    actionDisabled: {
+      no_process_data: "No process data has been loaded yet.",
+      plan_not_ready: "The plan is not ready for selection yet.",
+      reconciliation_required: "An allocation change must be reconciled before selection continues.",
+      turn_active: "A turn is already running.",
+      no_active_turn: "No turn is running.",
+      reason_required: "Give a reason first."
+    },
+    reasonLabel: "Reason",
+    reasonPlaceholder: "Why this turn is skipped or overridden",
+    reasonHint: "Skipping or overriding a turn is audited, so it needs a reason.",
+    actionPending: "Working…",
+    actionFailed: "The turn action failed."
   },
   dashboard: {
     balanceState: { balanced: "Balanced", unbalanced: "Not balanced", unknown: "Unknown" },

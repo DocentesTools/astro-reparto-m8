@@ -51,6 +51,14 @@ const mocks = vi.hoisted(() => ({
   meetingSessions: {
     list: vi.fn()
   },
+  selectionTurns: {
+    list: vi.fn(),
+    initialize: vi.fn(),
+    start: vi.fn(),
+    complete: vi.fn(),
+    skip: vi.fn(),
+    override: vi.fn()
+  },
   schools: {
     list: vi.fn(),
     create: vi.fn(),
@@ -158,6 +166,9 @@ vi.mock("../src/runtime/api/history.js", () => ({
 }));
 vi.mock("../src/runtime/api/meetingSessions.js", () => ({
   meetingSessions: mocks.meetingSessions
+}));
+vi.mock("../src/runtime/api/selectionTurns.js", () => ({
+  selectionTurns: mocks.selectionTurns
 }));
 vi.mock("../src/runtime/api/planningExchange.js", () => ({
   planningExchange: mocks.planningExchange,
@@ -1228,5 +1239,108 @@ describe("reparto React hooks", () => {
       false,
       false
     ]);
+  });
+});
+
+/**
+ * The selection-turn surface behind the five meeting controls (`W1.1`).
+ *
+ * The API wrappers were complete and nothing called them, so what these prove
+ * is the wiring itself: each control reaches its own endpoint with the ids in
+ * the right order, the audited actions carry their reason, and every one of
+ * them invalidates the projections a turn moves — because a screen still
+ * showing a finished turn as live is the defect the binding exists to end.
+ */
+describe("selection-turn hooks", () => {
+  const processId = "process-1";
+  const sessionId = "session-1";
+  const turnId = "turn-1";
+
+  beforeEach(() => {
+    mocks.useQuery.mockClear();
+    mocks.invalidateQueries.mockClear();
+    for (const call of Object.values(mocks.selectionTurns)) {
+      call.mockClear();
+    }
+  });
+
+  it("reads one session's turn order and asks nothing without a session", async () => {
+    const { useRepartoSelectionTurns } = await import(
+      "../src/runtime/react/hooks.js"
+    );
+
+    useRepartoSelectionTurns(processId, sessionId);
+    expect(mocks.selectionTurns.list).toHaveBeenCalledWith(processId, sessionId);
+
+    // No session is not an empty order, it is an unanswerable question.
+    mocks.selectionTurns.list.mockClear();
+    useRepartoSelectionTurns(processId);
+    useRepartoSelectionTurns(undefined, sessionId);
+    expect(mocks.selectionTurns.list).not.toHaveBeenCalled();
+  });
+
+  it("sends each control to its own endpoint, reasons included", async () => {
+    const { useSelectionTurns } = await import("../src/runtime/react/hooks.js");
+    const turns = useSelectionTurns(processId, sessionId);
+    const scope = { processId, meetingSessionId: sessionId };
+
+    turns.initialize.mutate(scope);
+    turns.start.mutate({ ...scope, turnId });
+    turns.complete.mutate({ ...scope, turnId });
+    turns.skip.mutate({ ...scope, turnId, body: { reason: "Absent" } });
+    turns.override.mutate({ ...scope, turnId, body: { reason: "Chair ruling" } });
+
+    expect(mocks.selectionTurns.initialize).toHaveBeenCalledWith(processId, sessionId);
+    expect(mocks.selectionTurns.start).toHaveBeenCalledWith(
+      processId,
+      sessionId,
+      turnId
+    );
+    // Completing carries no assignment unless the caller has one: the service
+    // owns whether the position was handed out, and the hook invents nothing.
+    expect(mocks.selectionTurns.complete).toHaveBeenCalledWith(
+      processId,
+      sessionId,
+      turnId,
+      {}
+    );
+    expect(mocks.selectionTurns.skip).toHaveBeenCalledWith(
+      processId,
+      sessionId,
+      turnId,
+      { reason: "Absent" }
+    );
+    expect(mocks.selectionTurns.override).toHaveBeenCalledWith(
+      processId,
+      sessionId,
+      turnId,
+      { reason: "Chair ruling" }
+    );
+  });
+
+  it("invalidates the turn order and every projection a turn moves", async () => {
+    const { useSkipRepartoTurn } = await import("../src/runtime/react/hooks.js");
+    const { repartoKeys } = await import("../src/runtime/queryKeys.js");
+
+    useSkipRepartoTurn().mutate({
+      processId,
+      meetingSessionId: sessionId,
+      turnId,
+      body: { reason: "Absent" }
+    });
+
+    const invalidated = mocks.invalidateQueries.mock.calls.map(
+      ([call]) => (call as { queryKey: readonly unknown[] }).queryKey
+    );
+    for (const queryKey of [
+      repartoKeys.selectionTurns(processId, sessionId),
+      repartoKeys.summary(processId),
+      repartoKeys.dashboard(processId),
+      repartoKeys.teacherLan(processId),
+      repartoKeys.assignments(processId),
+      repartoKeys.auditEvents(processId)
+    ]) {
+      expect(invalidated).toContainEqual(queryKey);
+    }
   });
 });

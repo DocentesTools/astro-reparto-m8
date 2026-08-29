@@ -93,6 +93,17 @@ export const repartoKeys = {
     [...repartoKeys.process(processId), "summary"] as const,
   meetingSessions: (processId?: string) =>
     [...repartoKeys.process(processId), "meeting-sessions"] as const,
+  // The turn order belongs to one meeting session, not to the process: a
+  // reopened meeting is a second session with its own turns, and caching both
+  // under the process key would serve the closed session's order to the open
+  // one. Nested under `meetingSessions` so closing or reopening a session
+  // invalidates its turns with the same prefix.
+  selectionTurns: (processId?: string, meetingSessionId?: string) =>
+    [
+      ...repartoKeys.meetingSessions(processId),
+      "turns",
+      meetingSessionId ?? null
+    ] as const,
   teacherLan: (processId?: string) =>
     [...repartoKeys.process(processId), "teacher-lan"] as const,
   versions: (processId?: string) =>

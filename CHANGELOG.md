@@ -4,6 +4,36 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **The five meeting turn controls are wired to the selection-turn API**
+  (remediation `W1.1`). The buttons in `MeetingControlWorkspace` rendered with a
+  label, a `data-reparto-action` and a `disabled` flag but **no `onClick`**,
+  while `src/runtime/api/selectionTurns.ts` had been complete since the
+  three-stage adaptation — so the live meeting could be watched from the
+  interface and not run from it. New `useSelectionTurns(processId,
+  meetingSessionId)` in `/react` bundles the turn order with one mutation per
+  action (`useInitializeRepartoTurns`, `useStartRepartoTurn`,
+  `useCompleteRepartoTurn`, `useSkipRepartoTurn`, `useOverrideRepartoTurn`,
+  each also exported on its own), and every one invalidates the turn order and
+  the assignment projections a turn moves. The workspaces take the bound API as
+  an optional prop — `turnControls` on `MeetingControlWorkspace`,
+  `choiceControls` on `TeacherLanWorkspace` — so they still render without a
+  query client and stay inert rather than crashing when a host has not wired
+  them. The starter routes wire both.
+- **Every `data-disabled-reason` is now a visible hint.** The turn controls
+  carried the reason code as an attribute only, which told the e2e suite why a
+  control was shut and told the head nothing; each closed control now states its
+  reason beside itself, and `initialize`/`start`/`complete`/`skip`/`override`
+  render the service's own refusal instead of failing as a silent no-op.
+- **The teacher can pick, take and pass.** The LAN panel's position list was
+  read-only, so *Take this position* sat above a selection nothing could make;
+  the rows are now selectable (`data-reparto-action="select-slot"`), *Take this
+  position* posts the direct choice, and *Pass* skips the caller's **own** turn
+  with an audited reason — defaulted rather than required, so passing a turn
+  that is genuinely theirs is never blocked by an empty field. Skipping or
+  overriding somebody *else's* turn stays closed until the head types one.
+
 ### Changed
 
 - **`is_superuser` no longer grants anything on its own** (remediation `W6.1`).

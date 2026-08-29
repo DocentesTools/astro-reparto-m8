@@ -126,7 +126,8 @@ export {
   buildMeetingControlState,
   type MeetingControlBlockedReason,
   type MeetingControlState,
-  type MeetingTurnAction
+  type MeetingTurnAction,
+  type MeetingTurnActionKey
 } from "./meeting.js";
 export {
   generateTeachingGroupLabel,

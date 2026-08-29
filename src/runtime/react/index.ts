@@ -12,8 +12,15 @@ export {
   SetupChecklistProgress,
   SetupChecklistSteps
 } from "./SetupChecklist.js";
-export { MeetingControlWorkspace } from "./MeetingWorkspace.js";
-export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
+export {
+  MeetingControlWorkspace,
+  type MeetingTurnControls
+} from "./MeetingWorkspace.js";
+export {
+  SharedScreenWorkspace,
+  TeacherLanWorkspace,
+  type TeacherChoiceControls
+} from "./LanWorkspace.js";
 export {
   useArchiveRepartoAcademicYear,
   useCreateRepartoAllocationRevision,
@@ -100,7 +107,15 @@ export {
   useUndoRepartoAssignment,
   useReassignRepartoAssignment,
   useRepartoDirectChoiceAssignment,
-  useRepartoAuditEvents
+  useRepartoAuditEvents,
+  useRepartoSelectionTurns,
+  useInitializeRepartoTurns,
+  useStartRepartoTurn,
+  useCompleteRepartoTurn,
+  useSkipRepartoTurn,
+  useOverrideRepartoTurn,
+  useSelectionTurns,
+  type RepartoSelectionTurnControls
 } from "./hooks.js";
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";

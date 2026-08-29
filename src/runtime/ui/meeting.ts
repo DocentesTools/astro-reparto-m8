@@ -14,9 +14,22 @@ export type MeetingControlBlockedReason =
   | "plan_not_ready"
   | "reconciliation_required";
 
+/**
+ * The five turn controls, as the stable keys the buttons carry in
+ * `data-reparto-action` and the meeting screen dispatches on. Named so a caller
+ * wiring the controls to the service can speak the same five words the state
+ * helper does, instead of restating the union.
+ */
+export type MeetingTurnActionKey =
+  | "initialize-turns"
+  | "start-turn"
+  | "complete-turn"
+  | "skip-turn"
+  | "override-turn";
+
 /** One turn control and whether it can be pressed. */
 export type MeetingTurnAction = {
-  key: "initialize-turns" | "start-turn" | "complete-turn" | "skip-turn" | "override-turn";
+  key: MeetingTurnActionKey;
   disabled: boolean;
   /** Stable reason code, or `null` when the action is available. */
   reason: MeetingControlBlockedReason | "turn_active" | "no_active_turn" | null;

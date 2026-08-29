@@ -307,6 +307,13 @@ export const fr: RepartoDictionary = {
       hours: "{hours} heures enseignant",
       impact: "Prendre ce poste vous affecte {hours} heures enseignant en entier.",
       remainingTarget: "Il reste {hours} heures avant votre cible.",
+      select: "Choisir",
+      selected: "Choisi",
+      passReasonLabel: "Motif",
+      passReasonPlaceholder: "Pourquoi vous passez votre tour",
+      passReasonDefault: "Tour passé par l'enseignant.",
+      passReasonHint: "Passer un tour est audité. Laissez ce champ vide pour enregistrer le motif par défaut.",
+      pending: "En cours…",
       disabled: {
         meeting_not_open: "La réunion n'est pas ouverte.",
         direct_selection_disabled: "La sélection directe est désactivée.",
@@ -846,7 +853,20 @@ export const fr: RepartoDictionary = {
     pendingTitle: "Postes",
     overloadTitle: "Heures supplémentaires autorisées",
     overloadDetail: "{base} h de base + {extra} h autorisées = {target} h de cible",
-    noOverloads: "Aucun participant ne porte d'heures supplémentaires autorisées."
+    noOverloads: "Aucun participant ne porte d'heures supplémentaires autorisées.",
+    actionDisabled: {
+      no_process_data: "Aucune donnée de processus n'a encore été chargée.",
+      plan_not_ready: "Le plan n'est pas encore prêt pour la sélection.",
+      reconciliation_required: "Un changement de dotation doit être réconcilié avant que la sélection continue.",
+      turn_active: "Un tour est déjà en cours.",
+      no_active_turn: "Aucun tour n'est en cours.",
+      reason_required: "Indiquez d'abord un motif."
+    },
+    reasonLabel: "Motif",
+    reasonPlaceholder: "Pourquoi ce tour est passé ou forcé",
+    reasonHint: "Passer ou forcer un tour est audité : un motif est requis.",
+    actionPending: "En cours…",
+    actionFailed: "L'action sur le tour a échoué."
   },
   dashboard: {
     balanceState: { balanced: "Équilibré", unbalanced: "Non équilibré", unknown: "Inconnu" },

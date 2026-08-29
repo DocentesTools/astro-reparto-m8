@@ -16,6 +16,7 @@ import {
 } from "../api/planningExchange.js";
 import { processTeachers } from "../api/processTeachers.js";
 import { schools } from "../api/schools.js";
+import { selectionTurns } from "../api/selectionTurns.js";
 import { subjects } from "../api/subjects.js";
 import { teacherProfiles } from "../api/teacherProfiles.js";
 import { teachingActivities } from "../api/teachingActivities.js";
@@ -54,6 +55,8 @@ import type {
   RequirementReconcileRequestInput,
   SchoolCreate,
   SchoolUpdate,
+  SelectionTurnAction,
+  SelectionTurnComplete,
   SubjectCreateInput,
   SubjectUpdateInput,
   TeacherProfileCreate,
@@ -196,6 +199,170 @@ export function useRepartoMeetingSessions(processId?: string) {
     enabled: Boolean(resolvedProcessId)
   });
 }
+
+/**
+ * One meeting session's turn order (backend plan §9.3).
+ *
+ * Disabled without a session id rather than defaulted to one: the turns of "no
+ * session" are not an empty order, they are an unanswerable question, and a
+ * meeting screen must not read an empty list as "nobody is up next".
+ */
+export function useRepartoSelectionTurns(
+  processId?: string,
+  meetingSessionId?: string
+) {
+  const resolvedProcessId = resolveProcessId(processId);
+  const resolvedSessionId = meetingSessionId?.trim();
+  return useQuery({
+    queryKey: repartoKeys.selectionTurns(processId, resolvedSessionId),
+    queryFn: () =>
+      selectionTurns.list(
+        requireProcessId(processId),
+        requireMeetingSessionId(resolvedSessionId)
+      ),
+    enabled: Boolean(resolvedProcessId) && Boolean(resolvedSessionId)
+  });
+}
+
+function requireMeetingSessionId(meetingSessionId?: string): string {
+  const resolved = meetingSessionId?.trim();
+  if (!resolved) throw new Error("A concrete meeting session id is required.");
+  return resolved;
+}
+
+/**
+ * Everything a turn action makes stale.
+ *
+ * A turn is not a private record of the meeting's bookkeeping: starting,
+ * completing, skipping or overriding one moves whose turn it is on the head's
+ * board, on the projected screen and in every teacher's LAN payload at once,
+ * and completing one may create an assignment. So the turn list goes with the
+ * assignment projections rather than on its own — a screen showing a finished
+ * turn as live is the same defect as a slot shown free after it was taken.
+ */
+function invalidateSelectionTurnProjections(
+  queryClient: ReturnType<typeof useQueryClient>,
+  processId: string,
+  meetingSessionId: string
+) {
+  invalidateAssignmentProjections(queryClient, processId);
+  void queryClient.invalidateQueries({
+    queryKey: repartoKeys.selectionTurns(processId, meetingSessionId)
+  });
+}
+
+type SelectionTurnScope = {
+  processId: string;
+  meetingSessionId: string;
+};
+
+type SelectionTurnTarget = SelectionTurnScope & { turnId: string };
+
+/** Lay down the whole turn order for an open session (§9.3). */
+export function useInitializeRepartoTurns() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, meetingSessionId }: SelectionTurnScope) =>
+      selectionTurns.initialize(processId, meetingSessionId),
+    onSuccess: (_data, { processId, meetingSessionId }) => {
+      invalidateSelectionTurnProjections(queryClient, processId, meetingSessionId);
+    }
+  });
+}
+
+export function useStartRepartoTurn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ processId, meetingSessionId, turnId }: SelectionTurnTarget) =>
+      selectionTurns.start(processId, meetingSessionId, turnId),
+    onSuccess: (_data, { processId, meetingSessionId }) => {
+      invalidateSelectionTurnProjections(queryClient, processId, meetingSessionId);
+    }
+  });
+}
+
+/**
+ * Close the live turn, optionally recording the assignment it produced.
+ *
+ * The body is optional because the position may already have been handed out
+ * through the assignment board; the service owns that decision and this hook
+ * passes on whatever the caller has, never inventing an assignment.
+ */
+export function useCompleteRepartoTurn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      meetingSessionId,
+      turnId,
+      body = {}
+    }: SelectionTurnTarget & { body?: SelectionTurnComplete }) =>
+      selectionTurns.complete(processId, meetingSessionId, turnId, body),
+    onSuccess: (_data, { processId, meetingSessionId }) => {
+      invalidateSelectionTurnProjections(queryClient, processId, meetingSessionId);
+    }
+  });
+}
+
+/** Pass a turn over. The reason is mandatory: every skip is audited. */
+export function useSkipRepartoTurn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      meetingSessionId,
+      turnId,
+      body
+    }: SelectionTurnTarget & { body: SelectionTurnAction }) =>
+      selectionTurns.skip(processId, meetingSessionId, turnId, body),
+    onSuccess: (_data, { processId, meetingSessionId }) => {
+      invalidateSelectionTurnProjections(queryClient, processId, meetingSessionId);
+    }
+  });
+}
+
+/** Take a turn out of the head's hands. Audited like a skip, and for the same
+ * reason: an overridden turn is a decision somebody made about somebody else. */
+export function useOverrideRepartoTurn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      meetingSessionId,
+      turnId,
+      body
+    }: SelectionTurnTarget & { body: SelectionTurnAction }) =>
+      selectionTurns.override(processId, meetingSessionId, turnId, body),
+    onSuccess: (_data, { processId, meetingSessionId }) => {
+      invalidateSelectionTurnProjections(queryClient, processId, meetingSessionId);
+    }
+  });
+}
+
+/**
+ * The whole selection-turn surface for one meeting session, in one call.
+ *
+ * The five turn controls are pressed from a single action row, so they are
+ * wired from a single hook: a screen that had to assemble five mutations by
+ * hand is a screen where one of them quietly stays unbound — which is exactly
+ * the state the control room was in. `turns` is the order itself, needed to
+ * answer *which* turn `start` starts when no turn is live yet.
+ */
+export function useSelectionTurns(
+  processId?: string,
+  meetingSessionId?: string
+) {
+  return {
+    turns: useRepartoSelectionTurns(processId, meetingSessionId),
+    initialize: useInitializeRepartoTurns(),
+    start: useStartRepartoTurn(),
+    complete: useCompleteRepartoTurn(),
+    skip: useSkipRepartoTurn(),
+    override: useOverrideRepartoTurn()
+  } as const;
+}
+
+export type RepartoSelectionTurnControls = ReturnType<typeof useSelectionTurns>;
 
 export function useRepartoTeacherLan(processId?: string) {
   const resolvedProcessId = resolveProcessId(processId);

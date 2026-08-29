@@ -8,9 +8,13 @@ import {
 } from "../DepartmentHeadWorkspace.js";
 import {
   SharedScreenWorkspace,
-  TeacherLanWorkspace
+  TeacherLanWorkspace,
+  type TeacherChoiceControls
 } from "../LanWorkspace.js";
-import { MeetingControlWorkspace } from "../MeetingWorkspace.js";
+import {
+  MeetingControlWorkspace,
+  type MeetingTurnControls
+} from "../MeetingWorkspace.js";
 import {
   useCreateRepartoExportArtifact,
   useCreateRepartoPlanningExport,
@@ -22,6 +26,7 @@ import {
   useRepartoDashboard,
   useRepartoExports,
   useRepartoHourRequirements,
+  useRepartoDirectChoiceAssignment,
   useRepartoMeetingSessions,
   useRepartoPreviousYearComparison,
   useRepartoProcess,
@@ -32,13 +37,16 @@ import {
   useRepartoTeachingPlan,
   useRepartoTeachingPlanValidations,
   useRepartoVersionComparison,
-  useRepartoVersions
+  useRepartoVersions,
+  useSelectionTurns,
+  useSkipRepartoTurn
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
 import {
   buildPlanningImportDraftState,
   buildVersionSelectionState,
-  summarizeProcessDashboard
+  summarizeProcessDashboard,
+  type MeetingTurnActionKey
 } from "../../ui/index.js";
 import { repartoPanelClass } from "../styles.js";
 import type { RepartoEventStreamState } from "../useRepartoEvents.js";
@@ -307,6 +315,79 @@ export function RepartoMeetingView({
 }
 
 /**
+ * Bind the five turn controls to the selection-turn API.
+ *
+ * Which turn an action targets is not the button's business and never was: the
+ * live one comes from the summary's `current_turn`, which every screen in the
+ * room already agrees on, and `start` falls back to the first turn still
+ * `pending` because starting is precisely the case where no turn is live yet.
+ * The session id comes from the live turn when there is one and from the
+ * session list otherwise, so `initialize` — the one action that runs before any
+ * turn exists — still has somewhere to send it.
+ *
+ * With no session at all every action is a no-op rather than a request with a
+ * missing id. That is not the final answer: gating the controls on an open
+ * session is `W1.3`, and until it lands the room can still be handed a control
+ * the service would refuse.
+ */
+function useMeetingTurnControls(
+  processId: string | undefined,
+  summary: ProcessSummary | null
+): MeetingTurnControls {
+  const sessionsQuery = useRepartoMeetingSessions(processId);
+  const currentTurn = summary?.current_turn ?? null;
+  const sessionId =
+    currentTurn?.meeting_session_id ??
+    latestMeetingSession(sessionsQuery.data)?.id ??
+    null;
+  const turns = useSelectionTurns(processId, sessionId ?? undefined);
+  const resolvedProcessId = resolveProcessId(processId);
+  const order = turns.turns.data?.data ?? [];
+  const activeTurnId =
+    currentTurn?.selection_turn_id ??
+    order.find((turn) => turn.status === "active")?.id ??
+    null;
+  const nextTurnId =
+    activeTurnId ?? order.find((turn) => turn.status === "pending")?.id ?? null;
+  const mutations = [
+    ["initialize-turns", turns.initialize],
+    ["start-turn", turns.start],
+    ["complete-turn", turns.complete],
+    ["skip-turn", turns.skip],
+    ["override-turn", turns.override]
+  ] as const;
+  const pending = mutations.find(([, mutation]) => mutation.isPending);
+  const failed = mutations.find(([, mutation]) => mutation.error);
+  return {
+    error: failed?.[1].error ?? null,
+    pendingAction: (pending?.[0] as MeetingTurnActionKey | undefined) ?? null,
+    onAction: (action, { reason }) => {
+      if (!resolvedProcessId || !sessionId) return;
+      const scope = { processId: resolvedProcessId, meetingSessionId: sessionId };
+      if (action === "initialize-turns") {
+        turns.initialize.mutate(scope);
+        return;
+      }
+      if (action === "start-turn") {
+        if (nextTurnId) turns.start.mutate({ ...scope, turnId: nextTurnId });
+        return;
+      }
+      if (!activeTurnId) return;
+      const target = { ...scope, turnId: activeTurnId };
+      if (action === "complete-turn") {
+        turns.complete.mutate(target);
+        return;
+      }
+      if (action === "skip-turn") {
+        turns.skip.mutate({ ...target, body: { reason } });
+        return;
+      }
+      turns.override.mutate({ ...target, body: { reason } });
+    }
+  };
+}
+
+/**
  * The meeting control reads the **dashboard**, not the summary.
  *
  * It is the head's own admin surface, and the two things it needs beyond the
@@ -333,6 +414,7 @@ function RepartoMeetingContent({
   // the stored feasibility status, the projected screen next door does not.
   const planQuery = useRepartoTeachingPlan(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
+  const turnControls = useMeetingTurnControls(processId, summary ?? dashboardSummary(activeDashboard));
   const isLoading =
     dashboardQuery.isLoading &&
     Boolean(resolveProcessId(processId)) &&
@@ -357,6 +439,7 @@ function RepartoMeetingContent({
         locale={locale}
         processId={processId}
         summary={summary}
+        turnControls={turnControls}
       />
       <QueryState
         error={dashboardQuery.error}
@@ -493,6 +576,64 @@ export function RepartoMyView({
   );
 }
 
+/**
+ * Bind the teacher's *choose* and *pass turn* controls.
+ *
+ * Both are own-data actions and both were unbound. Choosing is the direct-choice
+ * endpoint, which takes the session and the position and nothing else — the
+ * caller is the token. Passing is a skip on the caller's *own* turn, which is
+ * why the turn id is read from `current_turn` and never from the order: a
+ * teacher may not pass somebody else's turn, and the client should not be able
+ * to name one.
+ *
+ * The refusal is returned rather than swallowed, and the panel classifies it
+ * through `classifyDirectChoiceConflict` — a 409 mid-meeting means the reparto
+ * moved, and a teacher must be told that rather than shown a dead button.
+ */
+function useTeacherChoiceControls(
+  processId: string | undefined,
+  meetingSession: MeetingSessionPublic | null,
+  summary: TeacherLanSummary | null,
+  onSlotChosen: (slotId: string) => void
+): { controls: TeacherChoiceControls; error: unknown } {
+  const directChoice = useRepartoDirectChoiceAssignment();
+  const skipTurn = useSkipRepartoTurn();
+  const resolvedProcessId = resolveProcessId(processId);
+  const currentTurn = summary?.current_turn ?? null;
+  const sessionId = meetingSession?.id ?? currentTurn?.meeting_session_id ?? null;
+  const ownTurn =
+    currentTurn && currentTurn.process_teacher_id === summary?.process_teacher_id
+      ? currentTurn
+      : null;
+  return {
+    error: directChoice.error ?? skipTurn.error ?? null,
+    controls: {
+      pendingAction: directChoice.isPending
+        ? "direct-choice"
+        : skipTurn.isPending
+          ? "pass-turn"
+          : null,
+      onSelectSlot: onSlotChosen,
+      onChoose: ({ slotId }) => {
+        if (!resolvedProcessId || !sessionId) return;
+        directChoice.mutate({
+          processId: resolvedProcessId,
+          body: { meeting_session_id: sessionId, hour_requirement_id: slotId }
+        });
+      },
+      onPassTurn: ({ reason }) => {
+        if (!resolvedProcessId || !ownTurn) return;
+        skipTurn.mutate({
+          processId: resolvedProcessId,
+          meetingSessionId: ownTurn.meeting_session_id,
+          turnId: ownTurn.selection_turn_id,
+          body: { reason }
+        });
+      }
+    }
+  };
+}
+
 function RepartoMyContent({
   assignments,
   locale,
@@ -527,6 +668,18 @@ function RepartoMyContent({
   const assignmentsQuery = useRepartoAssignments(processId);
   const activeSummary = summary ?? summaryQuery.data ?? null;
   const activeSession = meetingSession ?? latestMeetingSession(sessionsQuery.data);
+  // A position cannot be taken before it is picked, and the list was read-only:
+  // the panel offered a *Take this position* button over a selection nothing
+  // could make. The host may still drive the selection through the prop; this
+  // is the fallback for the starter routes, which have no state of their own.
+  const [chosenSlotId, setChosenSlotId] = useState<string | null>(null);
+  const selectedSlot = selectedSlotId ?? chosenSlotId;
+  const choice = useTeacherChoiceControls(
+    processId,
+    activeSession,
+    activeSummary,
+    setChosenSlotId
+  );
   const hasProcess = Boolean(resolveProcessId(processId));
   const isLoading =
     ((summaryQuery.isLoading && !summary) ||
@@ -547,13 +700,15 @@ function RepartoMyContent({
     <>
       <TeacherLanWorkspace
         assignments={assignments ?? assignmentsQuery.data?.data ?? []}
+        choiceControls={choice.controls}
+        conflict={choice.error}
         locale={locale}
         meetingSession={activeSession}
         processId={processId}
         readiness={readiness}
         remainingTargetHours={remainingTargetHours}
         requirements={requirements ?? requirementsQuery.data?.data ?? []}
-        selectedSlotId={selectedSlotId}
+        selectedSlotId={selectedSlot}
         selectionBlocked={selectionBlocked}
         summary={activeSummary}
         connectionState={eventState.connectionState}

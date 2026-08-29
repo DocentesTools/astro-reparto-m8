@@ -300,6 +300,18 @@ the preview/result cards)
 take the payload and the dictionary they render and issue no request of their
 own, so a host can drive them from data it already holds.
 
+`MeetingControlWorkspace` and `TeacherLanWorkspace` take one further optional
+prop each, because the controls they render call the service and the workspaces
+themselves do not fetch: `turnControls` (`MeetingTurnControls` — an `onAction`
+receiving one of the five `data-reparto-action` keys and the reason typed beside
+it, plus an optional `error` and `pendingAction`) and `choiceControls`
+(`TeacherChoiceControls` — `onChoose`, `onPassTurn`, an optional `onSelectSlot`
+and `pendingAction`). The starter routes wire both from `useSelectionTurns`
+(`/react`), which bundles the turn order with one mutation per action. Omitting
+them renders the controls exactly as before — gated by the same lifecycle state,
+and inert when pressed — so a headless host that has not wired them cannot
+crash, only decline to act.
+
 `PlanUnlockControl` sits between the two: it takes the plan and the dictionary
 like the presentational cards, but reads the `admin` write floor from the
 signed-in session through `useRepartoCanAct` rather than from a prop (§21.5), so

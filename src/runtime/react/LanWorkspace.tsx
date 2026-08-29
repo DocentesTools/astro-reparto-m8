@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { assignmentProcesses } from "../api/assignmentProcesses.js";
 import type {
   AssignmentPublic,
@@ -28,7 +29,11 @@ import {
   repartoChoiceLayoutClass,
   repartoConfirmationClass,
   repartoEyebrowClass,
+  repartoFieldCaptionClass,
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
   repartoHeaderClass,
+  repartoInputClass,
   repartoMainGridClass,
   repartoMetricItemClass,
   repartoMetricLabelClass,
@@ -83,6 +88,30 @@ const fallbackTeacherSummary: TeacherLanSummary = {
 };
 
 /**
+ * How the teacher panel reaches the service.
+ *
+ * The same shape as the control room's turn controls, and for the same reason:
+ * the panel decides *whether* a position may be taken - that is
+ * `buildTeacherChoiceState`, shared with the head's board - and the host decides
+ * what taking it calls. Passing a turn is a skip on the caller's own turn and is
+ * audited like any other, so it carries a reason and stays closed until one is
+ * typed.
+ *
+ * A refusal comes back through `conflict`, which the panel already classifies
+ * and shows; nothing is swallowed.
+ */
+export type TeacherChoiceControls = {
+  /** Take the selected position. */
+  onChoose: (input: { slotId: string }) => void;
+  /** Pass the caller's own turn, with the audited reason. */
+  onPassTurn: (input: { reason: string }) => void;
+  /** Pick a position. Absent leaves the list read-only, as it was. */
+  onSelectSlot?: (slotId: string) => void;
+  /** The action in flight; both controls wait for it. */
+  pendingAction?: "direct-choice" | "pass-turn" | null;
+};
+
+/**
  * Teacher direct-selection panel.
  *
  * Takes the live positions rather than a required/assigned hour pair: under the
@@ -94,6 +123,7 @@ const fallbackTeacherSummary: TeacherLanSummary = {
 function TeacherDirectChoicePanel({
   assignments = [],
   conflict = null,
+  controls,
   locale,
   meetingSession = null,
   readiness = null,
@@ -106,6 +136,7 @@ function TeacherDirectChoicePanel({
 }: {
   assignments?: AssignmentPublic[];
   conflict?: unknown;
+  controls?: TeacherChoiceControls;
   locale?: RepartoLocale;
   meetingSession?: MeetingSessionPublic | null;
   readiness?: PlanReadiness | null;
@@ -117,6 +148,7 @@ function TeacherDirectChoicePanel({
   summary: TeacherLanSummary;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const [passReason, setPassReason] = useState("");
   // Direct selection and passing a turn are the caller's own-data actions, and
   // `WRITER` is the floor the service puts on both (§21.3). A `READER` reads
   // this page — their hours, the live positions, whose turn it is — and is
@@ -186,6 +218,19 @@ function TeacherDirectChoicePanel({
                     {dict.view.choice.disabled[slot.disabledReason]}
                   </span>
                 ) : null}
+                {controls?.onSelectSlot ? (
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="select-slot"
+                    disabled={!slot.canChoose || controls.pendingAction != null}
+                    onClick={() => controls.onSelectSlot?.(slot.slotId)}
+                    type="button"
+                  >
+                    {slot.slotId === selectedSlotId
+                      ? dict.view.choice.selected
+                      : dict.view.choice.select}
+                  </button>
+                ) : null}
               </li>
             ))
           )}
@@ -211,25 +256,68 @@ function TeacherDirectChoicePanel({
         </aside>
       </div>
       {canChoose ? (
-        <div className={repartoActionRowClass}>
-          <button
-            className={repartoButtonClass}
-            data-reparto-action="direct-choice"
-            data-reparto-selectable-slots={choice.selectableCount}
-            disabled={!choice.canChoose}
-            type="button"
-          >
-            {dict.view.choice.choose}
-          </button>
-          <button
-            className={repartoButtonClass}
-            data-reparto-action="pass-turn"
-            disabled={!choice.passTurnEnabled}
-            type="button"
-          >
-            {dict.view.choice.pass}
-          </button>
-        </div>
+        <>
+          <div className={repartoFieldGridClass}>
+            <label className={repartoFieldLabelClass}>
+              {dict.view.choice.passReasonLabel}
+              <input
+                className={repartoInputClass}
+                data-reparto-field="pass-reason"
+                onChange={(event: { target: { value: string } }) =>
+              setPassReason(event.target.value)
+            }
+                placeholder={dict.view.choice.passReasonPlaceholder}
+                type="text"
+                value={passReason}
+              />
+            </label>
+            <p className={repartoFieldCaptionClass} data-reparto-slot="pass-reason-hint">
+              {dict.view.choice.passReasonHint}
+            </p>
+          </div>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="direct-choice"
+              data-reparto-pending={
+                controls?.pendingAction === "direct-choice" ? "true" : undefined
+              }
+              data-reparto-selectable-slots={choice.selectableCount}
+              disabled={!choice.canChoose || controls?.pendingAction != null}
+              onClick={() => {
+                if (choice.selectedSlot) {
+                  controls?.onChoose({ slotId: choice.selectedSlot.slotId });
+                }
+              }}
+              type="button"
+            >
+              {controls?.pendingAction === "direct-choice"
+                ? dict.view.choice.pending
+                : dict.view.choice.choose}
+            </button>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="pass-turn"
+              data-reparto-pending={
+                controls?.pendingAction === "pass-turn" ? "true" : undefined
+              }
+              disabled={!choice.passTurnEnabled || controls?.pendingAction != null}
+              onClick={() =>
+                controls?.onPassTurn({
+                  // The service audits every skip and will not take a blank
+                  // reason, so an unfilled field records the default rather
+                  // than closing a control the teacher's own turn has opened.
+                  reason: passReason.trim() || dict.view.choice.passReasonDefault
+                })
+              }
+              type="button"
+            >
+              {controls?.pendingAction === "pass-turn"
+                ? dict.view.choice.pending
+                : dict.view.choice.pass}
+            </button>
+          </div>
+        </>
       ) : null}
       {conflictState ? (
         <div
@@ -383,6 +471,7 @@ function TeacherHoursPanel({
 
 export function TeacherLanWorkspace({
   assignments = [],
+  choiceControls,
   connectionState = "disconnected",
   conflict = null,
   lastEventType = null,
@@ -398,6 +487,8 @@ export function TeacherLanWorkspace({
   summary = null
 }: {
   assignments?: AssignmentPublic[];
+  /** The bound direct-selection API; without it both controls render inert. */
+  choiceControls?: TeacherChoiceControls;
   connectionState?: LanConnectionState;
   conflict?: unknown;
   lastEventType?: SseEventType | null;
@@ -445,6 +536,7 @@ export function TeacherLanWorkspace({
         <TeacherDirectChoicePanel
           assignments={assignments}
           conflict={conflict}
+          controls={choiceControls}
           locale={locale}
           meetingSession={meetingSession}
           // The LAN payload carries the authoritative gate state and the

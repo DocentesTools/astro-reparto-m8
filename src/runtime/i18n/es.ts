@@ -306,6 +306,13 @@ export const es: RepartoDictionary = {
       hours: "{hours} horas docentes",
       impact: "Tomar este puesto le asigna {hours} horas docentes completas.",
       remainingTarget: "Le quedan {hours} horas antes de su objetivo.",
+      select: "Elegir",
+      selected: "Elegido",
+      passReasonLabel: "Motivo",
+      passReasonPlaceholder: "Por qué pasa su turno",
+      passReasonDefault: "Turno pasado por el docente.",
+      passReasonHint: "Pasar un turno queda auditado. Deje el campo vacío para registrar el motivo por defecto.",
+      pending: "En curso…",
       disabled: {
         meeting_not_open: "La reunión no está abierta.",
         direct_selection_disabled: "La selección directa está desactivada.",
@@ -845,7 +852,20 @@ export const es: RepartoDictionary = {
     pendingTitle: "Puestos",
     overloadTitle: "Horas extra autorizadas",
     overloadDetail: "{base} h de base + {extra} h autorizadas = {target} h de objetivo",
-    noOverloads: "Ningún participante lleva horas extra autorizadas."
+    noOverloads: "Ningún participante lleva horas extra autorizadas.",
+    actionDisabled: {
+      no_process_data: "Todavía no se han cargado datos del proceso.",
+      plan_not_ready: "El plan aún no está listo para la selección.",
+      reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la selección.",
+      turn_active: "Ya hay un turno en curso.",
+      no_active_turn: "No hay ningún turno en curso.",
+      reason_required: "Indique primero un motivo."
+    },
+    reasonLabel: "Motivo",
+    reasonPlaceholder: "Por qué se omite o se fuerza este turno",
+    reasonHint: "Omitir o forzar un turno queda auditado: hace falta un motivo.",
+    actionPending: "En curso…",
+    actionFailed: "La acción sobre el turno ha fallado."
   },
   dashboard: {
     balanceState: { balanced: "Equilibrado", unbalanced: "No equilibrado", unknown: "Desconocido" },

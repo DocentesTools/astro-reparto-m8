@@ -1,10 +1,17 @@
+import { useState } from "react";
+import { mapRepartoError } from "../errorMapping.js";
 import type {
   FeasibilityStatus,
   ParticipantBalance,
   ProcessDashboard,
   ProcessSummary
 } from "../schemas.js";
-import { buildMeetingControlState, summarizeProcessDashboard } from "../ui/index.js";
+import {
+  buildMeetingControlState,
+  summarizeProcessDashboard,
+  type MeetingTurnAction,
+  type MeetingTurnActionKey
+} from "../ui/index.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -21,7 +28,11 @@ import {
   repartoActionRowClass,
   repartoButtonClass,
   repartoEyebrowClass,
+  repartoFieldCaptionClass,
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
   repartoHeaderClass,
+  repartoInputClass,
   repartoListClass,
   repartoListItemClass,
   repartoMainGridClass,
@@ -83,6 +94,146 @@ function AuthorizedOverloadList({
 }
 
 /**
+ * How the control room reaches the selection-turn API.
+ *
+ * The room does not call the service itself, for the same reason no other
+ * workspace in this package does: it is a view a host may mount on its own, and
+ * a view that fetches cannot be rendered without a query client. What it owns is
+ * the *press* - which control, and the reason typed next to it - while
+ * `useSelectionTurns` owns the five calls behind it.
+ *
+ * With no controls supplied the buttons still render, still closed by the same
+ * lifecycle gate, and simply do nothing when pressed: an unwired room is the
+ * state this replaces, and it must not become a crash.
+ */
+export type MeetingTurnControls = {
+  onAction: (action: MeetingTurnActionKey, input: { reason: string }) => void;
+  /** The last refusal, mapped and shown rather than swallowed. */
+  error?: unknown;
+  /** The control whose request is in flight; every button waits for it. */
+  pendingAction?: MeetingTurnActionKey | null;
+};
+
+/** Skipping and overriding are audited, so neither goes without a reason. */
+function turnActionNeedsReason(action: MeetingTurnActionKey): boolean {
+  return action === "skip-turn" || action === "override-turn";
+}
+
+function turnActionLabelKey(
+  action: MeetingTurnActionKey
+): "initializeTurns" | "startTurn" | "completeTurn" | "skipTurn" | "overrideTurn" {
+  switch (action) {
+    case "initialize-turns":
+      return "initializeTurns";
+    case "start-turn":
+      return "startTurn";
+    case "complete-turn":
+      return "completeTurn";
+    case "skip-turn":
+      return "skipTurn";
+    default:
+      return "overrideTurn";
+  }
+}
+
+/**
+ * The five turn controls, bound.
+ *
+ * Every button already carried a `data-reparto-action`, a label and a
+ * `disabled` flag; what none of them carried was an `onClick`, so the room
+ * offered a meeting it could not run. Two things change beyond the binding.
+ * The reason is collected *before* the press rather than after the refusal:
+ * the service requires one to skip or override, so those two stay closed with
+ * `reason_required` until it is typed - the same "never offer a control the
+ * service would refuse" rule the state helper exists to enforce, applied to the
+ * one gate the summary cannot see. And every `data-disabled-reason` is said out
+ * loud beside its button: the attribute told the e2e suite why a control was
+ * shut and told the head nothing.
+ */
+function TurnControlRow({
+  actions,
+  controls,
+  dict
+}: {
+  actions: readonly MeetingTurnAction[];
+  controls?: MeetingTurnControls;
+  dict: ReturnType<typeof getRepartoDictionary>;
+}) {
+  const [reason, setReason] = useState("");
+  const pendingAction = controls?.pendingAction ?? null;
+  const mappedError = controls?.error
+    ? mapRepartoError(controls.error).formError?.message ?? dict.meeting.actionFailed
+    : null;
+  return (
+    <div data-reparto-slot="turn-controls">
+      <div className={repartoFieldGridClass}>
+        <label className={repartoFieldLabelClass}>
+          {dict.meeting.reasonLabel}
+          <input
+            className={repartoInputClass}
+            data-reparto-field="turn-reason"
+            onChange={(event: { target: { value: string } }) =>
+              setReason(event.target.value)
+            }
+            placeholder={dict.meeting.reasonPlaceholder}
+            type="text"
+            value={reason}
+          />
+        </label>
+        <p className={repartoFieldCaptionClass} data-reparto-slot="turn-reason-hint">
+          {dict.meeting.reasonHint}
+        </p>
+      </div>
+      <div className={repartoActionRowClass}>
+        {actions.map((action) => {
+          const reasonMissing =
+            turnActionNeedsReason(action.key) && reason.trim().length === 0;
+          const disabledReason =
+            action.reason ?? (reasonMissing ? "reason_required" : null);
+          const pending = pendingAction === action.key;
+          return (
+            <span data-reparto-slot="turn-control" key={action.key}>
+              <button
+                className={repartoButtonClass}
+                data-disabled-reason={disabledReason ?? undefined}
+                data-reparto-action={action.key}
+                data-reparto-pending={pending ? "true" : undefined}
+                disabled={action.disabled || reasonMissing || pendingAction !== null}
+                onClick={() =>
+                  controls?.onAction(action.key, { reason: reason.trim() })
+                }
+                type="button"
+              >
+                {pending
+                  ? dict.meeting.actionPending
+                  : dict.action[turnActionLabelKey(action.key)]}
+              </button>
+              {disabledReason ? (
+                <span
+                  className={repartoFieldCaptionClass}
+                  data-reparto-slot="turn-disabled-hint"
+                >
+                  {dict.meeting.actionDisabled[disabledReason]}
+                </span>
+              ) : null}
+            </span>
+          );
+        })}
+      </div>
+      {mappedError ? (
+        <p
+          className={repartoFieldCaptionClass}
+          data-reparto-slot="turn-error"
+          role="alert"
+        >
+          {mappedError}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * The meeting control room.
  *
  * It used to be the dashboard rendered a second time with a different route
@@ -107,7 +258,8 @@ export function MeetingControlWorkspace({
   feasibility = null,
   locale,
   processId,
-  summary = null
+  summary = null,
+  turnControls
 }: {
   dashboard?: ProcessDashboard | null;
   /**
@@ -120,6 +272,8 @@ export function MeetingControlWorkspace({
   locale?: RepartoLocale;
   processId?: string;
   summary?: ProcessSummary | null;
+  /** The bound selection-turn API; without it the controls render inert. */
+  turnControls?: MeetingTurnControls;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   // The control room runs other participants' turns — initialize, start,
@@ -175,30 +329,11 @@ export function MeetingControlWorkspace({
             readiness={activeSummary?.readiness ?? "not_ready"}
           />
           {canAct ? (
-            <div className={repartoActionRowClass}>
-              {control.actions.map((action) => (
-                <button
-                  className={repartoButtonClass}
-                  data-disabled-reason={action.reason ?? undefined}
-                  data-reparto-action={action.key}
-                  disabled={action.disabled}
-                  key={action.key}
-                  type="button"
-                >
-                  {dict.action[
-                    action.key === "initialize-turns"
-                      ? "initializeTurns"
-                      : action.key === "start-turn"
-                        ? "startTurn"
-                        : action.key === "complete-turn"
-                          ? "completeTurn"
-                          : action.key === "skip-turn"
-                            ? "skipTurn"
-                            : "overrideTurn"
-                  ]}
-                </button>
-              ))}
-            </div>
+            <TurnControlRow
+              actions={control.actions}
+              controls={turnControls}
+              dict={dict}
+            />
           ) : null}
         </section>
         <PlanningBalancePanel

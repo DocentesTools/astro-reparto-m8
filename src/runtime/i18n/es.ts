@@ -937,7 +937,10 @@ export const es: RepartoDictionary = {
       targetHours: "Objetivo",
       assignedHours: "Asignadas",
       remainingHours: "Restantes",
-      blocking: "Bloqueantes"
+      blocking: "Bloqueantes",
+      balancedParticipants: "Equilibrados",
+      pendingParticipants: "Pendientes",
+      overloadedParticipants: "Con sobrecarga"
     },
     participantState: {
       pending: "Todavía no ha alcanzado su objetivo.",

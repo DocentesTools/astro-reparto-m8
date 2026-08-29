@@ -76,6 +76,9 @@ const summaryBody = {
   total_slots: 10,
   assigned_slots: 4,
   available_slots: 6,
+  balanced_participant_count: 3,
+  pending_participant_count: 1,
+  overloaded_participant_count: 0,
   current_turn: {
     meeting_session_id: "22222222-2222-4222-8222-222222222222",
     selection_turn_id: "33333333-3333-4333-8333-333333333333",

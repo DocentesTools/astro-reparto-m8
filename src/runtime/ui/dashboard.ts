@@ -1,4 +1,27 @@
-import type { ProcessDashboard, ProcessSummary } from "../schemas.js";
+import type { ParticipantBalance, ProcessDashboard, ProcessSummary } from "../schemas.js";
+
+/**
+ * Count participants by state, the same way the service's `/summary` endpoint
+ * does (`DashboardController._participant_state_counts`): read off the
+ * per-participant `state` the assignment summary already carries, never
+ * re-derived from raw hours, so a client-side projection can never disagree
+ * with the service's own count of the same rows.
+ */
+function countParticipantsByState(participants: readonly ParticipantBalance[]): {
+  balanced: number;
+  pending: number;
+  overloaded: number;
+} {
+  let balanced = 0;
+  let pending = 0;
+  let overloaded = 0;
+  for (const participant of participants) {
+    if (participant.state === "balanced") balanced += 1;
+    else if (participant.state === "pending") pending += 1;
+    else if (participant.state === "overloaded_authorized") overloaded += 1;
+  }
+  return { balanced, pending, overloaded };
+}
 
 /**
  * Project the full dashboard onto the lightweight summary payload.
@@ -10,6 +33,9 @@ import type { ProcessDashboard, ProcessSummary } from "../schemas.js";
  * recomputed. In particular `blocking_validation_count` is copied rather than
  * re-summed from the two reports, because the service's sum is the authority
  * and a client that adds them itself will drift the day a third stage appears.
+ * The three participant-state counts are the one exception: the dashboard
+ * carries the per-participant rows the summary endpoint does not, so they are
+ * counted here from the same `state` field the service counts from.
  *
  * The projection deliberately drops the per-participant rows and both message
  * lists: what is left names no teacher, which is the same property that makes
@@ -21,6 +47,7 @@ import type { ProcessDashboard, ProcessSummary } from "../schemas.js";
 export function summarizeProcessDashboard(
   dashboard: ProcessDashboard
 ): ProcessSummary {
+  const counts = countParticipantsByState(dashboard.assignment.summary.participants);
   return {
     process_id: dashboard.process_id,
     generated_at: dashboard.generated_at,
@@ -30,6 +57,9 @@ export function summarizeProcessDashboard(
     total_slots: dashboard.assignment.summary.total_slots,
     assigned_slots: dashboard.assignment.summary.assigned_slots,
     available_slots: dashboard.assignment.summary.available_slots,
+    balanced_participant_count: counts.balanced,
+    pending_participant_count: counts.pending,
+    overloaded_participant_count: counts.overloaded,
     current_turn: dashboard.current_turn,
     blocking_validation_count: dashboard.blocking_validation_count
   };

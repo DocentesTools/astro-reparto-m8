@@ -6,6 +6,20 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Added
 
+- **The shared screen and the control room show balanced/pending/overloaded
+  participant counts** (remediation `W1.6`). `ProcessSummary` gains
+  `balanced_participant_count`, `pending_participant_count` and
+  `overloaded_participant_count`, computed by the service from the same
+  per-participant `state` the head's dashboard already reads — nameless
+  aggregates, so they are safe on the projected `SharedScreenWorkspace`, which
+  now renders all three in a new "Participants" panel. `MeetingControlWorkspace`
+  drops its local `participants.filter((p) => p.is_overloaded).length` in favor
+  of the shared `overloaded_participant_count` field, so the count can no longer
+  disagree with the service's own arithmetic over the same rows.
+  `summarizeProcessDashboard` computes the three counts from the dashboard's
+  own participant rows for a view that already holds a `ProcessDashboard` and
+  must not make a second round trip to `/summary`.
+
 - **A teacher claims their own profile with a code** (remediation `W1.4`).
   The roster's *Link user* linked `currentUserId`, so a head pressing it on a
   colleague's row linked **themselves**, and *My view* answered a teacher with

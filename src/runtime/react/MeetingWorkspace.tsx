@@ -522,7 +522,7 @@ export function MeetingControlWorkspace({
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.meeting.overloadTitle}</h2>
             <span className="text-sm text-muted-foreground" data-reparto-slot="overload-count">
-              {participants.filter((participant) => participant.is_overloaded).length}
+              {activeSummary?.overloaded_participant_count ?? 0}
             </span>
           </div>
           <AuthorizedOverloadList dict={dict} participants={participants} />

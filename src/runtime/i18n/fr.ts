@@ -938,7 +938,10 @@ export const fr: RepartoDictionary = {
       targetHours: "Cible",
       assignedHours: "Affectées",
       remainingHours: "Restantes",
-      blocking: "Bloquantes"
+      blocking: "Bloquantes",
+      balancedParticipants: "Équilibrés",
+      pendingParticipants: "En attente",
+      overloadedParticipants: "En surcharge"
     },
     participantState: {
       pending: "N'a pas encore atteint sa cible.",

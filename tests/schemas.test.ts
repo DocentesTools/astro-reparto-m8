@@ -395,6 +395,9 @@ describe("reparto schemas", () => {
       total_slots: 10,
       assigned_slots: 1,
       available_slots: 9,
+      balanced_participant_count: 8,
+      pending_participant_count: 1,
+      overloaded_participant_count: 0,
       current_turn: null,
       blocking_validation_count: 0
     });
@@ -402,6 +405,11 @@ describe("reparto schemas", () => {
     // aggregate at the endpoint, not by a redaction the client must remember.
     expect(JSON.stringify(summary)).not.toContain("display_name");
     expect(summary.available_slots).toBe(9);
+    // The three participant-state counts are read off the same per-participant
+    // `state` the dashboard's assignment summary carries, never re-derived.
+    expect(summary.balanced_participant_count).toBe(8);
+    expect(summary.pending_participant_count).toBe(1);
+    expect(summary.overloaded_participant_count).toBe(0);
     expect(() =>
       ProcessSummarySchema.parse({
         process_id: processId,
@@ -412,6 +420,9 @@ describe("reparto schemas", () => {
         total_slots: 0,
         assigned_slots: 0,
         available_slots: 0,
+        balanced_participant_count: 0,
+        pending_participant_count: 0,
+        overloaded_participant_count: 0,
         current_turn: null,
         blocking_validation_count: 0,
         participants: []

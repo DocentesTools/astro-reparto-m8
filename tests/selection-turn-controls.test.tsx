@@ -68,6 +68,9 @@ const summary: ProcessSummary = {
   total_slots: 8,
   assigned_slots: 3,
   available_slots: 5,
+  balanced_participant_count: 2,
+  pending_participant_count: 1,
+  overloaded_participant_count: 0,
   current_turn: {
     meeting_session_id: sessionId,
     selection_turn_id: turnId,

@@ -56,14 +56,18 @@ vi.mock("../src/runtime/react/useRepartoEvents.js", () => ({
 
 const summary: ProcessSummary = {
   process_id: "11111111-1111-4111-8111-111111111111",
-  status: "in_progress",
+  generated_at: "2026-08-11T10:00:00Z",
   plan_status: "locked",
   plan_balance: null,
   readiness: "ready",
   total_slots: 4,
   assigned_slots: 1,
   available_slots: 3,
-  current_turn: null
+  balanced_participant_count: 1,
+  pending_participant_count: 0,
+  overloaded_participant_count: 0,
+  current_turn: null,
+  blocking_validation_count: 0
 };
 
 function signIn(user: RepartoCurrentUser | null) {

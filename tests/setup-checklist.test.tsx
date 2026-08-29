@@ -54,6 +54,9 @@ function summaryFixture(overrides: Partial<ProcessSummary> = {}): ProcessSummary
     total_slots: 0,
     assigned_slots: 0,
     available_slots: 0,
+    balanced_participant_count: 0,
+    pending_participant_count: 0,
+    overloaded_participant_count: 0,
     current_turn: null,
     blocking_validation_count: 0,
     ...overrides

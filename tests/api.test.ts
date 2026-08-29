@@ -127,6 +127,9 @@ const summaryBody = {
   total_slots: 6,
   assigned_slots: 4,
   available_slots: 2,
+  balanced_participant_count: 3,
+  pending_participant_count: 1,
+  overloaded_participant_count: 0,
   current_turn: null,
   blocking_validation_count: 0
 };

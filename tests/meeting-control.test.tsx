@@ -58,6 +58,9 @@ const summary: ProcessSummary = {
   total_slots: 8,
   assigned_slots: 3,
   available_slots: 5,
+  balanced_participant_count: 2,
+  pending_participant_count: 1,
+  overloaded_participant_count: 1,
   current_turn: {
     meeting_session_id: "44444444-4444-4444-8444-444444444444",
     selection_turn_id: "55555555-5555-4555-8555-555555555555",
@@ -273,6 +276,24 @@ describe("meeting control view", () => {
     expect(html).toContain("18.00 h base + 2.00 h authorized = 20.00 h target");
   });
 
+  it("takes the overload count from the shared field, not a local filter", () => {
+    // `dashboard` carries one overloaded and one pending participant; the
+    // projected `overloaded_participant_count` (computed from the same
+    // `participants` rows by `summarizeProcessDashboard`) must be what the
+    // count slot shows, not a second, locally-filtered opinion of the same
+    // list.
+    const html = renderToStaticMarkup(
+      <MeetingControlWorkspace
+        dashboard={dashboard}
+        processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: openSession }}
+      />
+    );
+    expect(html).toContain(
+      '<span class="text-sm text-muted-foreground" data-reparto-slot="overload-count">1</span>'
+    );
+  });
+
   it("shows the head the stored feasibility status, not the readiness projection", () => {
     const html = renderToStaticMarkup(
       <MeetingControlWorkspace
@@ -370,6 +391,13 @@ describe("shared screen", () => {
     expect(html).not.toContain("Ada Lovelace");
     expect(html).not.toContain('data-reparto-slot="authorized-overloads"');
     expect(html).not.toContain('data-reparto-panel="participant-balances"');
+
+    // The three participant-state counts are nameless aggregates, so the room
+    // gets them directly from `summary` rather than never at all.
+    expect(html).toContain('data-reparto-panel="shared-participants"');
+    expect(html).toContain('data-reparto-slot="balanced-participants">2<');
+    expect(html).toContain('data-reparto-slot="pending-participants">1<');
+    expect(html).toContain('data-reparto-slot="overloaded-participants">1<');
   });
 
   it("shows the blocked lifecycle state to the room", () => {

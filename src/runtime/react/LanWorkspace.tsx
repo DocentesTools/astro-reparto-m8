@@ -570,9 +570,11 @@ export function TeacherLanWorkspace({
  * nobody, which is exactly why plan §8.7 puts it on this screen.
  *
  * What it shows is what a room needs: both balances and the three invariants,
- * how many complete positions are left, whether an allocation change has stopped
- * selection, and whose turn it is — by position, because the aggregate carries
- * no name to display and this screen must not learn one.
+ * how many complete positions are left, how many participants are balanced,
+ * pending or carrying an authorized overload, whether an allocation change has
+ * stopped selection, and whose turn it is — by position, because the aggregate
+ * carries no name to display and this screen must not learn one. The three
+ * participant counts are exactly that: counts, never a name attached to one.
  */
 export function SharedScreenWorkspace({
   connectionState = "disconnected",
@@ -675,6 +677,37 @@ export function SharedScreenWorkspace({
               <dt className={repartoMetricLabelClass}>{dict.dashboard.metric.availableSlots}</dt>
               <dd className={repartoMetricValueLargeClass} data-reparto-slot="pending-slots">
                 {control.pendingSlots}
+              </dd>
+            </div>
+          </dl>
+        </section>
+        <section className={repartoPanelClass} data-reparto-panel="shared-participants">
+          <div className={repartoPanelHeaderClass}>
+            <h2>{dict.dashboard.section.participants}</h2>
+          </div>
+          <dl className={repartoMetricsClass}>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>
+                {dict.dashboard.metric.balancedParticipants}
+              </dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="balanced-participants">
+                {summary?.balanced_participant_count ?? 0}
+              </dd>
+            </div>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>
+                {dict.dashboard.metric.pendingParticipants}
+              </dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="pending-participants">
+                {summary?.pending_participant_count ?? 0}
+              </dd>
+            </div>
+            <div className={repartoMetricItemClass}>
+              <dt className={repartoMetricLabelClass}>
+                {dict.dashboard.metric.overloadedParticipants}
+              </dt>
+              <dd className={repartoMetricValueLargeClass} data-reparto-slot="overloaded-participants">
+                {summary?.overloaded_participant_count ?? 0}
               </dd>
             </div>
           </dl>

@@ -944,7 +944,10 @@ export const en = {
       targetHours: "Target",
       assignedHours: "Assigned",
       remainingHours: "Remaining",
-      blocking: "Blocking"
+      blocking: "Blocking",
+      balancedParticipants: "Balanced",
+      pendingParticipants: "Pending",
+      overloadedParticipants: "Overloaded"
     },
     participantState: {
       pending: "Has not reached the target yet.",

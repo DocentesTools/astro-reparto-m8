@@ -2029,6 +2029,9 @@ export const ProcessSummarySchema = z
     total_slots: z.number().int().nonnegative(),
     assigned_slots: z.number().int().nonnegative(),
     available_slots: z.number().int().nonnegative(),
+    balanced_participant_count: z.number().int().nonnegative(),
+    pending_participant_count: z.number().int().nonnegative(),
+    overloaded_participant_count: z.number().int().nonnegative(),
     current_turn: CurrentTurnSummarySchema.nullable(),
     blocking_validation_count: z.number().int().nonnegative()
   })

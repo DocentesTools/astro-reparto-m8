@@ -110,6 +110,9 @@ function dataForKey(queryKey: readonly unknown[]) {
       total_slots: 4,
       assigned_slots: 1,
       available_slots: 3,
+      balanced_participant_count: 0,
+      pending_participant_count: 1,
+      overloaded_participant_count: 0,
       current_turn: currentTurn,
       blocking_validation_count: 1
     };

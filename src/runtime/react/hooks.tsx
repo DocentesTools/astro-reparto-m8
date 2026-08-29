@@ -43,6 +43,7 @@ import type {
   GroupSubjectCreateInput,
   GroupSubjectUpdateInput,
   MainActivitySyncApplyRequestInput,
+  MeetingSessionCreate,
   ProcessReopen,
   ProcessTeacherCreateInput,
   ProcessTeacherExtraHoursInput,
@@ -197,6 +198,48 @@ export function useRepartoMeetingSessions(processId?: string) {
     queryKey: repartoKeys.meetingSessions(processId),
     queryFn: () => meetingSessions.list(requireProcessId(processId)),
     enabled: Boolean(resolvedProcessId)
+  });
+}
+
+/**
+ * Opening a session can flip the process into `meeting_open` and adopts the
+ * session's LAN/direct-selection/selection-mode flags onto the process
+ * (`MeetingSessionController._sync_process_flags`), so a create invalidates
+ * the whole process prefix — sessions, dashboard, summary and the process
+ * detail/list rows that print the status — rather than the session list alone.
+ */
+export function useCreateRepartoMeetingSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      body
+    }: {
+      processId: string;
+      body: MeetingSessionCreate;
+    }) => meetingSessions.create(processId, body),
+    onSuccess: (_data, { processId }) => {
+      invalidateProcessProjections(queryClient, processId);
+    }
+  });
+}
+
+/** Closing a session also disables the process's own LAN and direct-selection
+ * flags (`MeetingSessionController.close_session`), so this invalidates the
+ * same process prefix a create does. */
+export function useCloseRepartoMeetingSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      meetingSessionId
+    }: {
+      processId: string;
+      meetingSessionId: string;
+    }) => meetingSessions.close(processId, meetingSessionId),
+    onSuccess: (_data, { processId }) => {
+      invalidateProcessProjections(queryClient, processId);
+    }
   });
 }
 

@@ -779,7 +779,9 @@ export const fr: RepartoDictionary = {
     completeTurn: "Terminer le tour",
     skipTurn: "Passer le tour",
     overrideTurn: "Forcer le tour",
-    initializeTurns: "Initialiser les tours"
+    initializeTurns: "Initialiser les tours",
+    openSession: "Ouvrir la séance",
+    closeSession: "Clore la séance"
   },
   confirm: {
     delete: { title: "Supprimer {entity} ?", body: "Cette action supprimera définitivement **{name}**. Elle est irréversible.", proceed: "Supprimer définitivement" },
@@ -866,7 +868,15 @@ export const fr: RepartoDictionary = {
     reasonPlaceholder: "Pourquoi ce tour est passé ou forcé",
     reasonHint: "Passer ou forcer un tour est audité : un motif est requis.",
     actionPending: "En cours…",
-    actionFailed: "L'action sur le tour a échoué."
+    actionFailed: "L'action sur le tour a échoué.",
+    session: {
+      title: "Séance de réunion",
+      none: "Aucune séance n'est ouverte.",
+      closeConfirmTitle: "Clore la séance de réunion ?",
+      closeConfirmBody: "Les enseignants perdent l'accès LAN à cette réunion dès que la séance est close.",
+      closeConfirmAction: "Clore la séance",
+      actionFailed: "L'action sur la séance de réunion a échoué."
+    }
   },
   dashboard: {
     balanceState: { balanced: "Équilibré", unbalanced: "Non équilibré", unknown: "Inconnu" },

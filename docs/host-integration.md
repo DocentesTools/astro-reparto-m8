@@ -300,14 +300,19 @@ the preview/result cards)
 take the payload and the dictionary they render and issue no request of their
 own, so a host can drive them from data it already holds.
 
-`MeetingControlWorkspace` and `TeacherLanWorkspace` take one further optional
-prop each, because the controls they render call the service and the workspaces
-themselves do not fetch: `turnControls` (`MeetingTurnControls` — an `onAction`
-receiving one of the five `data-reparto-action` keys and the reason typed beside
-it, plus an optional `error` and `pendingAction`) and `choiceControls`
-(`TeacherChoiceControls` — `onChoose`, `onPassTurn`, an optional `onSelectSlot`
-and `pendingAction`). The starter routes wire both from `useSelectionTurns`
-(`/react`), which bundles the turn order with one mutation per action. Omitting
+`MeetingControlWorkspace` and `TeacherLanWorkspace` take one or two further
+optional props each, because the controls they render call the service and the
+workspaces themselves do not fetch: `turnControls` (`MeetingTurnControls` — an
+`onAction` receiving one of the five `data-reparto-action` keys and the reason
+typed beside it, plus an optional `error` and `pendingAction`),
+`sessionControls` (`MeetingSessionControls`, `MeetingControlWorkspace` only —
+the current `session`, `onOpen`, `onClose`, plus an optional `error` and
+`pendingAction` of `"open" | "close"`, for the *Meeting session* panel above
+the turn controls) and `choiceControls` (`TeacherChoiceControls` — `onChoose`,
+`onPassTurn`, an optional `onSelectSlot` and `pendingAction`). The starter
+routes wire `turnControls`/`choiceControls` from `useSelectionTurns` (`/react`),
+which bundles the turn order with one mutation per action, and
+`sessionControls` from the create/close meeting-session mutations. Omitting
 them renders the controls exactly as before — gated by the same lifecycle state,
 and inert when pressed — so a headless host that has not wired them cannot
 crash, only decline to act.

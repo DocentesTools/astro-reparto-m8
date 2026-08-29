@@ -778,7 +778,9 @@ export const es: RepartoDictionary = {
     completeTurn: "Completar turno",
     skipTurn: "Saltar turno",
     overrideTurn: "Forzar turno",
-    initializeTurns: "Inicializar turnos"
+    initializeTurns: "Inicializar turnos",
+    openSession: "Abrir sesión",
+    closeSession: "Cerrar sesión"
   },
   confirm: {
     delete: { title: "¿Eliminar {entity}?", body: "Esta acción eliminará permanentemente **{name}**. No se puede deshacer.", proceed: "Eliminar permanentemente" },
@@ -865,7 +867,15 @@ export const es: RepartoDictionary = {
     reasonPlaceholder: "Por qué se omite o se fuerza este turno",
     reasonHint: "Omitir o forzar un turno queda auditado: hace falta un motivo.",
     actionPending: "En curso…",
-    actionFailed: "La acción sobre el turno ha fallado."
+    actionFailed: "La acción sobre el turno ha fallado.",
+    session: {
+      title: "Sesión de la reunión",
+      none: "No hay ninguna sesión abierta.",
+      closeConfirmTitle: "¿Cerrar la sesión de la reunión?",
+      closeConfirmBody: "El profesorado pierde el acceso LAN a esta reunión en cuanto se cierra la sesión.",
+      closeConfirmAction: "Cerrar sesión",
+      actionFailed: "La acción sobre la sesión de la reunión ha fallado."
+    }
   },
   dashboard: {
     balanceState: { balanced: "Equilibrado", unbalanced: "No equilibrado", unknown: "Desconocido" },

@@ -13,10 +13,13 @@ import {
 } from "../LanWorkspace.js";
 import {
   MeetingControlWorkspace,
+  type MeetingSessionControls,
   type MeetingTurnControls
 } from "../MeetingWorkspace.js";
 import {
+  useCloseRepartoMeetingSession,
   useCreateRepartoExportArtifact,
+  useCreateRepartoMeetingSession,
   useCreateRepartoPlanningExport,
   useImportRepartoPlanning,
   useRestoreRepartoDraft,
@@ -57,6 +60,7 @@ import {
   type ViewConfig
 } from "./process-context.js";
 import type {
+  AssignmentProcessPublic,
   AssignmentProcessStatus,
   AssignmentPublic,
   ExportArtifactPublic,
@@ -388,6 +392,60 @@ function useMeetingTurnControls(
 }
 
 /**
+ * Bind the meeting-session open/close panel to the create/close API (`W1.2`).
+ *
+ * Opening sends the session straight into `open` — a `prepared` draft would
+ * still need a second start call the panel does not offer — carrying the
+ * process's current LAN/direct-selection/selection-mode settings forward
+ * rather than resetting them, since `_sync_process_flags` adopts whatever the
+ * session declares onto the process the moment it opens. `session` reads the
+ * same "latest known session" fallback `useMeetingTurnControls` already uses,
+ * so the panel and the turn controls beneath it never point at two different
+ * sessions.
+ */
+function useMeetingSessionControls(
+  processId: string | undefined,
+  process: AssignmentProcessPublic | null,
+  sessions?: { data: MeetingSessionPublic[] } | null
+): MeetingSessionControls {
+  const createSession = useCreateRepartoMeetingSession();
+  const closeSession = useCloseRepartoMeetingSession();
+  const resolvedProcessId = resolveProcessId(processId);
+  const session = latestMeetingSession(sessions);
+  const pendingAction = createSession.isPending
+    ? "open"
+    : closeSession.isPending
+      ? "close"
+      : null;
+  return {
+    session,
+    error: createSession.error ?? closeSession.error ?? null,
+    pendingAction,
+    onOpen: () => {
+      if (!resolvedProcessId || pendingAction) return;
+      createSession.mutate({
+        processId: resolvedProcessId,
+        body: {
+          assignment_process_id: resolvedProcessId,
+          status: "open",
+          lan_access_enabled: process?.lan_access_enabled ?? true,
+          direct_teacher_selection_enabled:
+            process?.direct_teacher_selection_enabled ?? false,
+          selection_mode: process?.selection_order_mode ?? "none"
+        }
+      });
+    },
+    onClose: () => {
+      if (!resolvedProcessId || !session || pendingAction) return;
+      closeSession.mutate({
+        processId: resolvedProcessId,
+        meetingSessionId: session.id
+      });
+    }
+  };
+}
+
+/**
  * The meeting control reads the **dashboard**, not the summary.
  *
  * It is the head's own admin surface, and the two things it needs beyond the
@@ -413,8 +471,15 @@ function RepartoMeetingContent({
   // Same department-head-only source as the dashboard: the control room shows
   // the stored feasibility status, the projected screen next door does not.
   const planQuery = useRepartoTeachingPlan(processId);
+  const processQuery = useRepartoProcess(processId);
+  const sessionsQuery = useRepartoMeetingSessions(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const turnControls = useMeetingTurnControls(processId, summary ?? dashboardSummary(activeDashboard));
+  const sessionControls = useMeetingSessionControls(
+    processId,
+    processQuery.data ?? null,
+    sessionsQuery.data
+  );
   const isLoading =
     dashboardQuery.isLoading &&
     Boolean(resolveProcessId(processId)) &&
@@ -438,6 +503,7 @@ function RepartoMeetingContent({
         feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
         processId={processId}
+        sessionControls={sessionControls}
         summary={summary}
         turnControls={turnControls}
       />

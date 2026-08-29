@@ -779,7 +779,9 @@ export const en = {
     completeTurn: "Complete turn",
     skipTurn: "Skip turn",
     overrideTurn: "Override turn",
-    initializeTurns: "Initialize turns"
+    initializeTurns: "Initialize turns",
+    openSession: "Open session",
+    closeSession: "Close session"
   },
   confirm: {
     delete: { title: "Delete {entity}?", body: "This will permanently delete **{name}**. This action cannot be undone.", proceed: "Delete permanently" },
@@ -872,7 +874,15 @@ export const en = {
     reasonPlaceholder: "Why this turn is skipped or overridden",
     reasonHint: "Skipping or overriding a turn is audited, so it needs a reason.",
     actionPending: "Working…",
-    actionFailed: "The turn action failed."
+    actionFailed: "The turn action failed.",
+    session: {
+      title: "Meeting session",
+      none: "No session open.",
+      closeConfirmTitle: "Close the meeting session?",
+      closeConfirmBody: "Teachers lose LAN access to this meeting once the session closes.",
+      closeConfirmAction: "Close session",
+      actionFailed: "The meeting session action failed."
+    }
   },
   dashboard: {
     balanceState: { balanced: "Balanced", unbalanced: "Not balanced", unknown: "Unknown" },

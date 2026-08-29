@@ -247,6 +247,99 @@ describe("meeting turn controls", () => {
   });
 });
 
+describe("meeting session panel", () => {
+  beforeEach(() => {
+    signInReparto(repartoUser("admin"));
+  });
+
+  it("offers Open with no session and reaches the bound action", () => {
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const { container } = render(
+      <MeetingControlWorkspace
+        processId={processId}
+        sessionControls={{ onClose, onOpen, session: null }}
+        summary={summary}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-reparto-slot="session-status"]')?.textContent
+    ).toBe(dict.meeting.session.none);
+    expect(control(container, "close-session").disabled).toBe(true);
+
+    fireEvent.click(control(container, "open-session"));
+    expect(onOpen).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("shuts Open and asks for confirmation before closing an open session", () => {
+    const onOpen = vi.fn();
+    const onClose = vi.fn();
+    const { container } = render(
+      <MeetingControlWorkspace
+        processId={processId}
+        sessionControls={{ onClose, onOpen, session: meetingSession }}
+        summary={summary}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-reparto-slot="session-status"]')?.textContent
+    ).toBe(dict.entity.meetingSession.status.open);
+    expect(control(container, "open-session").disabled).toBe(true);
+    expect(
+      container.querySelector('[data-reparto-dialog="close-session-confirmation"]')
+    ).toBeNull();
+
+    // The close press itself never reaches the caller — it only opens the
+    // confirmation, the same "ask first" rule a delete or a final export uses.
+    fireEvent.click(control(container, "close-session"));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      container.querySelector('[data-reparto-dialog="close-session-confirmation"]')
+    ).not.toBeNull();
+
+    fireEvent.click(control(container, "cancel"));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(
+      container.querySelector('[data-reparto-dialog="close-session-confirmation"]')
+    ).toBeNull();
+
+    fireEvent.click(control(container, "close-session"));
+    fireEvent.click(control(container, "confirm-close-session"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("shows the refusal and does not crash unwired", () => {
+    const { container } = render(
+      <MeetingControlWorkspace
+        processId={processId}
+        sessionControls={{
+          error: new RepartoApiError(400, "An active meeting session already exists for this process."),
+          onClose: vi.fn(),
+          onOpen: vi.fn(),
+          pendingAction: "open",
+          session: null
+        }}
+        summary={summary}
+      />
+    );
+
+    expect(
+      container.querySelector('[data-reparto-slot="session-error"]')?.textContent
+    ).toBe("An active meeting session already exists for this process.");
+    expect(control(container, "open-session").disabled).toBe(true);
+
+    // An unwired panel is the state this replaces; it must stay inert.
+    const { container: unwired } = render(
+      <MeetingControlWorkspace processId={processId} summary={summary} />
+    );
+    expect(() => fireEvent.click(control(unwired, "open-session"))).not.toThrow();
+  });
+});
+
 describe("teacher choice controls", () => {
   beforeEach(() => {
     signInReparto(repartoUser("writer"));

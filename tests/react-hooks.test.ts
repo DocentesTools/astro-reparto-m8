@@ -49,7 +49,9 @@ const mocks = vi.hoisted(() => ({
     importPlanning: vi.fn()
   },
   meetingSessions: {
-    list: vi.fn()
+    list: vi.fn(),
+    create: vi.fn(),
+    close: vi.fn()
   },
   selectionTurns: {
     list: vi.fn(),
@@ -247,6 +249,8 @@ describe("reparto React hooks", () => {
     mocks.planningExchange.exportFinal.mockClear();
     mocks.planningExchange.importPlanning.mockClear();
     mocks.meetingSessions.list.mockClear();
+    mocks.meetingSessions.create.mockClear();
+    mocks.meetingSessions.close.mockClear();
     mocks.schools.list.mockClear();
     mocks.academicYears.list.mockClear();
     mocks.allocationRevisions.list.mockClear();
@@ -398,6 +402,58 @@ describe("reparto React hooks", () => {
     expect(mocks.assignmentProcesses.reopen).toHaveBeenCalledWith("process-1", {
       reason: "leadership returned the proposal"
     });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "process-1"],
+      ["reparto", "processes", "list"]
+    ]);
+  });
+
+  it("opens and closes a meeting session, invalidating the whole process prefix (W1.2)", async () => {
+    const { useCloseRepartoMeetingSession, useCreateRepartoMeetingSession } =
+      await import("../src/runtime/react/hooks.js");
+
+    // Opening adopts the session's flags onto the process
+    // (`_sync_process_flags`) and can flip its status to `meeting_open`, so it
+    // invalidates the same process prefix a settings save does — not only the
+    // session list.
+    mocks.invalidateQueries.mockClear();
+    useCreateRepartoMeetingSession().mutate({
+      processId: "process-1",
+      body: {
+        assignment_process_id: "process-1",
+        status: "open",
+        lan_access_enabled: true,
+        direct_teacher_selection_enabled: false,
+        selection_mode: "none"
+      }
+    });
+    expect(mocks.meetingSessions.create).toHaveBeenCalledWith("process-1", {
+      assignment_process_id: "process-1",
+      status: "open",
+      lan_access_enabled: true,
+      direct_teacher_selection_enabled: false,
+      selection_mode: "none"
+    });
+    expect(
+      mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
+    ).toEqual([
+      ["reparto", "processes", "detail", "process-1"],
+      ["reparto", "processes", "list"]
+    ]);
+
+    // Closing disables the process's own LAN and direct-selection flags, so it
+    // invalidates exactly the same prefix.
+    mocks.invalidateQueries.mockClear();
+    useCloseRepartoMeetingSession().mutate({
+      processId: "process-1",
+      meetingSessionId: "session-1"
+    });
+    expect(mocks.meetingSessions.close).toHaveBeenCalledWith(
+      "process-1",
+      "session-1"
+    );
     expect(
       mocks.invalidateQueries.mock.calls.map(([options]) => options.queryKey)
     ).toEqual([

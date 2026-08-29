@@ -2,6 +2,7 @@ import { useState } from "react";
 import { mapRepartoError } from "../errorMapping.js";
 import type {
   FeasibilityStatus,
+  MeetingSessionPublic,
   ParticipantBalance,
   ProcessDashboard,
   ProcessSummary
@@ -90,6 +91,123 @@ function AuthorizedOverloadList({
         </li>
       ))}
     </ul>
+  );
+}
+
+/**
+ * How the control room opens and closes the meeting session itself.
+ *
+ * `src/runtime/api/meetingSessions.ts` has always had `list`, `create`,
+ * `update` and `close`; nothing called them, so a head could run turns only
+ * against a session created some other way. `session` is whichever one the
+ * host currently treats as current — the same "latest known session" reading
+ * `useMeetingTurnControls` already uses to find a session id for
+ * `initialize-turns` — so this panel and the turn controls beneath it never
+ * disagree about which session is live.
+ */
+export type MeetingSessionControls = {
+  session: MeetingSessionPublic | null;
+  onOpen: () => void;
+  onClose: () => void;
+  /** The last refusal, mapped and shown rather than swallowed. */
+  error?: unknown;
+  /** Which of the two actions is in flight; both buttons wait for it. */
+  pendingAction?: "open" | "close" | null;
+};
+
+/**
+ * Open or close the meeting session, above the turn controls that need one.
+ *
+ * Closing asks first — it ends the session teachers see on the LAN, so
+ * pressing it once must not be enough. Opening does not: creating a session
+ * is reversible (close it, open another), and gating it behind a second press
+ * only slows down the one action a head takes at the very start of the
+ * meeting.
+ */
+function MeetingSessionPanel({
+  controls,
+  dict
+}: {
+  controls?: MeetingSessionControls;
+  dict: ReturnType<typeof getRepartoDictionary>;
+}) {
+  const [confirmingClose, setConfirmingClose] = useState(false);
+  const session = controls?.session ?? null;
+  const sessionOpen = session !== null && session.status !== "closed";
+  const pending = controls?.pendingAction ?? null;
+  const mappedError = controls?.error
+    ? mapRepartoError(controls.error).formError?.message ?? dict.meeting.session.actionFailed
+    : null;
+  return (
+    <section className={repartoPanelClass} data-reparto-panel="meeting-session">
+      <div className={repartoPanelHeaderClass}>
+        <h2>{dict.meeting.session.title}</h2>
+        <span className="text-sm text-muted-foreground" data-reparto-slot="session-status">
+          {session ? dict.entity.meetingSession.status[session.status] : dict.meeting.session.none}
+        </span>
+      </div>
+      <div className={repartoActionRowClass}>
+        <button
+          className={repartoButtonClass}
+          data-reparto-action="open-session"
+          disabled={sessionOpen || pending !== null}
+          onClick={() => controls?.onOpen()}
+          type="button"
+        >
+          {pending === "open" ? dict.meeting.actionPending : dict.action.openSession}
+        </button>
+        <button
+          className={repartoButtonClass}
+          data-reparto-action="close-session"
+          disabled={!sessionOpen || pending !== null}
+          onClick={() => setConfirmingClose(true)}
+          type="button"
+        >
+          {dict.action.closeSession}
+        </button>
+      </div>
+      {confirmingClose && sessionOpen ? (
+        <section
+          aria-labelledby="meeting-session-close-confirmation-title"
+          className="space-y-3 rounded-lg border border-primary/40 bg-muted/30 p-4"
+          data-reparto-dialog="close-session-confirmation"
+          role="alertdialog"
+        >
+          <h3 className="font-semibold" id="meeting-session-close-confirmation-title">
+            {dict.meeting.session.closeConfirmTitle}
+          </h3>
+          <p>{dict.meeting.session.closeConfirmBody}</p>
+          <div className={repartoActionRowClass}>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="confirm-close-session"
+              disabled={pending !== null}
+              onClick={() => {
+                setConfirmingClose(false);
+                controls?.onClose();
+              }}
+              type="button"
+            >
+              {pending === "close" ? dict.meeting.actionPending : dict.meeting.session.closeConfirmAction}
+            </button>
+            <button
+              className={repartoButtonClass}
+              data-reparto-action="cancel"
+              disabled={pending !== null}
+              onClick={() => setConfirmingClose(false)}
+              type="button"
+            >
+              {dict.action.cancel}
+            </button>
+          </div>
+        </section>
+      ) : null}
+      {mappedError ? (
+        <p className={repartoFieldCaptionClass} data-reparto-slot="session-error" role="alert">
+          {mappedError}
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -258,6 +376,7 @@ export function MeetingControlWorkspace({
   feasibility = null,
   locale,
   processId,
+  sessionControls,
   summary = null,
   turnControls
 }: {
@@ -271,6 +390,8 @@ export function MeetingControlWorkspace({
   feasibility?: FeasibilityStatus | null;
   locale?: RepartoLocale;
   processId?: string;
+  /** The bound meeting-session open/close API; without it the panel renders inert. */
+  sessionControls?: MeetingSessionControls;
   summary?: ProcessSummary | null;
   /** The bound selection-turn API; without it the controls render inert. */
   turnControls?: MeetingTurnControls;
@@ -311,6 +432,7 @@ export function MeetingControlWorkspace({
             : dict.meeting.open}
         </p>
       </header>
+      {canAct ? <MeetingSessionPanel controls={sessionControls} dict={dict} /> : null}
       <div className={repartoMainGridClass}>
         <section className={repartoPanelClass} data-reparto-panel="meeting-turn-control">
           <div className={repartoPanelHeaderClass}>

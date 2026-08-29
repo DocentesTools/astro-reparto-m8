@@ -908,6 +908,34 @@ export type TeacherProfileLinkUser = z.infer<
   typeof TeacherProfileLinkUserSchema
 >;
 
+// The claim-code pair. The department head cannot look a colleague's user id
+// up — `fa-auth-m8` owns the accounts directory and restricts it to superusers
+// by its own design — so the head mints a code and the teacher redeems it with
+// their own token. Note what the request schema does *not* carry: there is no
+// `user_id`, because the account a claim binds is the caller's, read from the
+// token by the service. Modelling one here would model a field that does not
+// exist on the wire.
+export const TeacherProfileClaimSchema = z
+  .object({
+    claim_code: z.string().min(1).max(64)
+  })
+  .strict();
+export type TeacherProfileClaim = z.infer<typeof TeacherProfileClaimSchema>;
+
+// Served once, by the mint endpoint only: the service stores the code hashed,
+// so it can never be read back. A lost code is reissued, not recovered.
+export const TeacherProfileClaimCodeSchema = z
+  .object({
+    teacher_profile_id: uuidSchema,
+    display_name: z.string().min(1).max(150),
+    claim_code: z.string().min(1),
+    expires_at: dateTimeSchema
+  })
+  .strict();
+export type TeacherProfileClaimCode = z.infer<
+  typeof TeacherProfileClaimCodeSchema
+>;
+
 // ── Subjects (backend plan §5.3) ─────────────────────────────────────────────
 //
 // The two-stage `stage` column is gone. A subject now classifies itself

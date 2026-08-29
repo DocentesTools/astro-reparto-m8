@@ -854,6 +854,36 @@ describe("global entity API (Phase 1)", () => {
     const removeCall = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
     expect(removeCall?.method).toBe("DELETE");
   });
+
+  it("mints a claim code and redeems one (`W1.4`)", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teacher_profile_id: profileId,
+        display_name: "Ana García",
+        claim_code: "ABCDE-FGHJK-MNPQR-STVWX",
+        expires_at: "2026-09-01T10:00:00Z"
+      })
+    );
+    await expect(
+      teacherProfiles.issueClaimCode(profileId)
+    ).resolves.toMatchObject({ claim_code: "ABCDE-FGHJK-MNPQR-STVWX" });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/teacher-profiles/${profileId}/claim-code`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit)?.method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(response({ ...profileBody, user_id: userId }));
+    await expect(
+      teacherProfiles.claim({ claim_code: "ABCDE-FGHJK-MNPQR-STVWX" })
+    ).resolves.toMatchObject({ user_id: userId });
+    const claimCall = fetchMock.mock.calls.at(-1);
+    expect(claimCall?.[0]).toContain("/teacher-profiles/claim");
+    // The account is the token's, never the payload's: a body carrying a
+    // `user_id` would be a reader-floor account-linking primitive.
+    expect(JSON.parse(String((claimCall?.[1] as RequestInit)?.body))).toEqual({
+      claim_code: "ABCDE-FGHJK-MNPQR-STVWX"
+    });
+  });
 });
 
 describe("classroom stage API", () => {

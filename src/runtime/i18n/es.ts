@@ -32,6 +32,7 @@ export const es: RepartoDictionary = {
     notes: "Notas",
     displayName: "Nombre a mostrar",
     linkedUser: "Usuario vinculado",
+    claimCode: "Código de vinculación",
     active: "Activo",
     startDate: "Fecha de inicio",
     endDate: "Fecha de fin",
@@ -76,6 +77,14 @@ export const es: RepartoDictionary = {
   },
   view: {
     teacherTitle: "Vista docente",
+    claim: {
+      title: "Vincula tu perfil docente",
+      intro: "Ninguna participación en este reparto está vinculada a tu cuenta, así que aquí no hay nada que mostrarte. Si la jefatura de departamento ha preparado un perfil docente para ti, pídele un código de vinculación e introdúcelo abajo: vincula ese perfil con la cuenta con la que has iniciado sesión. Si tu perfil ya está vinculado, pídele que te añada a este reparto.",
+      codeLabel: "Código de vinculación",
+      codePlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX",
+      hint: "Las mayúsculas y los guiones son indiferentes.",
+      linked: "{name} ya está vinculado a tu cuenta."
+    },
     lan: {
       title: "Tus horas",
       metric: {
@@ -769,7 +778,10 @@ export const es: RepartoDictionary = {
     search: "Buscar",
     filter: "Filtrar",
     refresh: "Actualizar",
-    linkUser: "Vincular usuario",
+    linkUser: "Vincular a mi cuenta",
+    issueClaimCode: "Emitir código de vinculación",
+    claimProfile: "Vincular mi perfil",
+    copyCode: "Copiar el código",
     unlinkUser: "Desvincular usuario",
     export: "Exportar",
     restore: "Restaurar borrador",
@@ -820,6 +832,12 @@ export const es: RepartoDictionary = {
     }
   },
   flow: {
+    claimCode: {
+      title: "Código de vinculación para {name}",
+      body: "Entrega este código a {name}. Sirve una sola vez, caduca {expires} y solo se muestra ahora: si se pierde, emite otro.",
+      copied: "Copiado",
+      dismiss: "Hecho"
+    },
     bootstrap: {
       title: "Configurar el reparto",
       subtitle: "Las tres fases, del primer registro a la sesión.",

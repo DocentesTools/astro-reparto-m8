@@ -33,6 +33,7 @@ export const en = {
     notes: "Notes",
     displayName: "Display name",
     linkedUser: "Linked user",
+    claimCode: "Claim code",
     active: "Active",
     startDate: "Start date",
     endDate: "End date",
@@ -77,6 +78,14 @@ export const en = {
   },
   view: {
     teacherTitle: "Teacher view",
+    claim: {
+      title: "Claim your teacher profile",
+      intro: "No participation in this process is linked to your account, so there is nothing here to show you. If your department head has prepared a teacher profile for you, ask them for a claim code and enter it below — it binds that profile to the account you are signed in with. If your profile is already linked, ask them to add you to this process instead.",
+      codeLabel: "Claim code",
+      codePlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX",
+      hint: "Case and dashes do not matter.",
+      linked: "{name} is now linked to your account."
+    },
     lan: {
       title: "Your hours",
       metric: {
@@ -770,7 +779,10 @@ export const en = {
     search: "Search",
     filter: "Filter",
     refresh: "Refresh",
-    linkUser: "Link user",
+    linkUser: "Link to me",
+    issueClaimCode: "Issue claim code",
+    claimProfile: "Claim my profile",
+    copyCode: "Copy code",
     unlinkUser: "Unlink user",
     export: "Export",
     restore: "Restore draft",
@@ -821,6 +833,12 @@ export const en = {
     }
   },
   flow: {
+    claimCode: {
+      title: "Claim code for {name}",
+      body: "Give this code to {name}. It works once, expires {expires}, and is shown only now — if it is lost, issue another.",
+      copied: "Copied",
+      dismiss: "Done"
+    },
     bootstrap: {
       title: "Set up your reparto",
       subtitle: "The three stages, from the first record to the meeting.",

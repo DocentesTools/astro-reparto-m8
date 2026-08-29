@@ -60,6 +60,7 @@ import type {
   SelectionTurnComplete,
   SubjectCreateInput,
   SubjectUpdateInput,
+  TeacherProfileClaim,
   TeacherProfileCreate,
   TeacherProfileLinkUser,
   TeacherProfileUpdate,
@@ -782,6 +783,52 @@ export function useLinkRepartoTeacherProfileUser() {
     }) => teacherProfiles.linkUser(profileId, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+    }
+  });
+}
+
+/**
+ * Mint the single-use code a teacher redeems to claim a profile (`W1.4`).
+ *
+ * The department head cannot look a colleague's user id up — `fa-auth-m8` owns
+ * the accounts directory and restricts it to superusers by its own design — so
+ * the roster's old *Link user* button could only ever link the head to
+ * themselves. This is the other half of the reversal: the head issues a code
+ * and the teacher presents it with their own token.
+ *
+ * The response is the only time the code exists in readable form, so the caller
+ * must show it rather than expect to fetch it back; the roster is invalidated
+ * because the mint marks the row as having an outstanding code.
+ */
+export function useIssueRepartoTeacherProfileClaimCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (profileId: string) => teacherProfiles.issueClaimCode(profileId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.teacherProfiles() });
+    }
+  });
+}
+
+/**
+ * Redeem a claim code against the signed-in account (`W1.4`).
+ *
+ * Takes a code and nothing else: the account it binds is the caller's own, read
+ * from the token by the service, so there is no argument here that could name
+ * somebody else.
+ *
+ * Invalidating the roster is not enough. A successful claim is the moment the
+ * caller *becomes* a participant, and every process-scoped teacher projection —
+ * the LAN summary above all — was answering "no teacher profile is linked to
+ * this auth user" until it happened. So the whole reparto prefix goes, and the
+ * dead end the teacher was looking at resolves into their own view.
+ */
+export function useClaimRepartoTeacherProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: TeacherProfileClaim) => teacherProfiles.claim(body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: repartoKeys.all });
     }
   });
 }

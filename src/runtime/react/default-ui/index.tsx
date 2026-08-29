@@ -41,6 +41,7 @@ import {
   useRepartoTeachingPlanValidations,
   useRepartoVersionComparison,
   useRepartoVersions,
+  useClaimRepartoTeacherProfile,
   useSelectionTurns,
   useSkipRepartoTurn
 } from "../hooks.js";
@@ -51,7 +52,20 @@ import {
   summarizeProcessDashboard,
   type MeetingTurnActionKey
 } from "../../ui/index.js";
-import { repartoPanelClass } from "../styles.js";
+import {
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
+  repartoInputClass,
+  repartoPanelClass
+} from "../styles.js";
+import { RepartoApiError } from "../../errors.js";
+import {
+  EMPTY_REPARTO_MAPPED_ERROR,
+  mapRepartoError,
+  type RepartoMappedError
+} from "../../errorMapping.js";
+import { RepartoFormError } from "./feedback.js";
+import { ActionButton, RowActions } from "./process-crud/shared.js";
 import type { RepartoEventStreamState } from "../useRepartoEvents.js";
 import {
   ProcessPicker,
@@ -751,6 +765,16 @@ function RepartoMyContent({
     ((summaryQuery.isLoading && !summary) ||
       (sessionsQuery.isLoading && meetingSession === undefined)) &&
     hasProcess;
+  // A 404 from `/lan/me` is the one error on this page that is not a failure:
+  // the service is telling the caller that no participation in this process is
+  // linked to their account. That used to render as a bare error string and
+  // ended the road — the teacher had no way to link themselves, because the
+  // only linking action lived on the head's roster and the head cannot look a
+  // user id up (`C1`). The recourse is a claim code, so this is where the form
+  // to redeem one belongs.
+  if (!activeSummary && isNotLinked(summaryQuery.error)) {
+    return <TeacherClaimPanel locale={locale} />;
+  }
   if (isLoading || summaryQuery.isError || sessionsQuery.isError) {
     return (
       <QueryState
@@ -792,6 +816,100 @@ function RepartoMyContent({
         locale={locale}
       />
     </>
+  );
+}
+
+/**
+ * Does this error mean "nothing here is yours" rather than "something broke"?
+ *
+ * Read from the status and not from the message: the detail is the service's
+ * own English sentence and a client that keys on its wording breaks the day it
+ * is rephrased. A `404` on the teacher's own LAN summary has exactly two
+ * causes — the caller has no linked profile, or has one but is not a
+ * participant here — and the panel below is written to be true of both.
+ */
+function isNotLinked(error: unknown): boolean {
+  return error instanceof RepartoApiError && error.status === 404;
+}
+
+/**
+ * Redeem a claim code from *My view* (remediation `W1.4`).
+ *
+ * The teacher's own token carries their user id, so this form needs nothing
+ * but the code: the account it binds is the one already signed in, and the
+ * service reads it from the token rather than from anything typed here.
+ *
+ * On success nothing is rendered by this component — the claim invalidates the
+ * whole reparto prefix, the LAN summary refetches and resolves, and the caller
+ * lands on their own view.
+ */
+function TeacherClaimPanel({ locale }: { locale?: RepartoLocale }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const claim = useClaimRepartoTeacherProfile();
+  const [code, setCode] = useState("");
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
+  const [linked, setLinked] = useState<string | null>(null);
+  const trimmed = code.trim();
+
+  function submit(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    if (!trimmed || claim.isPending) return;
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
+    claim.mutate(
+      { claim_code: trimmed },
+      {
+        onSuccess: (profile) => {
+          setLinked(profile.display_name);
+          setCode("");
+        },
+        onError: (err: unknown) => setMapped(mapRepartoError(err))
+      }
+    );
+  }
+
+  return (
+    <section
+      className={repartoPanelClass}
+      data-reparto-panel="teacher-claim"
+      data-reparto-route="teacher-view"
+    >
+      <h2>{dict.view.claim.title}</h2>
+      <p className="text-sm">{dict.view.claim.intro}</p>
+      <form className={repartoFieldGridClass} data-reparto-form="teacher-claim" onSubmit={submit}>
+        <label className={repartoFieldLabelClass} htmlFor="reparto-claim-code">
+          {dict.view.claim.codeLabel}
+          <input
+            autoComplete="off"
+            className={repartoInputClass}
+            id="reparto-claim-code"
+            name="claim_code"
+            onChange={(event: { target: { value: string } }) =>
+              setCode(event.target.value)
+            }
+            placeholder={dict.view.claim.codePlaceholder}
+            spellCheck={false}
+            value={code}
+          />
+        </label>
+        <p className="text-xs text-muted-foreground">{dict.view.claim.hint}</p>
+        <RepartoFormError mapped={mapped} />
+        {linked ? (
+          <p data-reparto-slot="claim-linked" role="status">
+            {formatRepartoMessage(dict.view.claim.linked, { name: linked })}
+          </p>
+        ) : null}
+        <RowActions>
+          <ActionButton
+            action="claim-profile"
+            disabled={!trimmed || claim.isPending}
+            label={dict.action.claimProfile}
+            type="submit"
+          />
+        </RowActions>
+      </form>
+    </section>
   );
 }
 

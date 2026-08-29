@@ -1,10 +1,14 @@
 import { request } from "../client.js";
 import {
+  TeacherProfileClaimCodeSchema,
+  TeacherProfileClaimSchema,
   TeacherProfileCreateSchema,
   TeacherProfileLinkUserSchema,
   TeacherProfilePublicSchema,
   TeacherProfilesPublicSchema,
   TeacherProfileUpdateSchema,
+  type TeacherProfileClaim,
+  type TeacherProfileClaimCode,
   type TeacherProfileCreate,
   type TeacherProfileLinkUser,
   type TeacherProfilePublic,
@@ -49,6 +53,24 @@ export const teacherProfiles = {
       method: "POST",
       path: `/teacher-profiles/${profileId}/link-user`,
       body: TeacherProfileLinkUserSchema.parse(body),
+      schema: TeacherProfilePublicSchema,
+      auth: true
+    }),
+  // Minting is a department-head act; claiming is the teacher's own, and the
+  // service reads the account to bind from the token — which is why `claim`
+  // takes a code and nothing else.
+  issueClaimCode: (profileId: string) =>
+    request<TeacherProfileClaimCode>({
+      method: "POST",
+      path: `/teacher-profiles/${profileId}/claim-code`,
+      schema: TeacherProfileClaimCodeSchema,
+      auth: true
+    }),
+  claim: (body: TeacherProfileClaim) =>
+    request<TeacherProfilePublic>({
+      method: "POST",
+      path: "/teacher-profiles/claim",
+      body: TeacherProfileClaimSchema.parse(body),
       schema: TeacherProfilePublicSchema,
       auth: true
     }),

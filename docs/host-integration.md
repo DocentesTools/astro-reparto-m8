@@ -394,6 +394,23 @@ Each wrapper has a React Query hook of the same shape in `/react`
 takes `{ processId, body }` and invalidates the affected projections itself, so
 a host does not maintain its own cache map.
 
+**Linking a teacher to their profile is a two-sided flow, not a lookup.**
+`teacherProfiles.issueClaimCode(profileId)` /
+`useIssueRepartoTeacherProfileClaimCode` is the department-head half: it mints a
+single-use, expiring code and returns it **once**, because the service stores
+only its hash — a host that does not show the code to the head has lost it, and
+the recourse is to issue another. `teacherProfiles.claim({ claim_code })` /
+`useClaimRepartoTeacherProfile` is the teacher's half, and takes the code and
+nothing else: the account it binds is the signed-in one, read from the token by
+the service, so there is no argument here that could name somebody else. It sits
+at the reader floor for that reason, and because the head *cannot* look a
+colleague's user id up — `fa-auth-m8` owns the accounts directory and restricts
+it to superusers by its own design. A successful claim invalidates the whole
+reparto prefix, since it is the moment every process-scoped teacher projection
+starts resolving. The starter routes wire both: the roster row offers *Issue
+claim code*, and *My view* offers the redemption form in place of the 404 a
+teacher with no linkage used to be shown.
+
 The exact paths, verbs and response shapes are inventoried in
 [`contract-inventory.md`](contract-inventory.md); the user-visible vocabulary is
 frozen in [`ui-naming-freeze.md`](ui-naming-freeze.md).

@@ -14,6 +14,7 @@ import {
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
   useDeleteRepartoTeacherProfile,
+  useIssueRepartoTeacherProfileClaimCode,
   useLinkRepartoTeacherProfileUser,
   useRepartoAcademicYears,
   useRepartoDepartments,
@@ -61,6 +62,7 @@ import type {
   AcademicYearPublic,
   DepartmentPublic,
   SchoolPublic,
+  TeacherProfileClaimCode,
   TeacherProfilePublic
 } from "../../schemas.js";
 
@@ -935,6 +937,7 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const deleteMutation = useDeleteRepartoTeacherProfile();
   const linkMutation = useLinkRepartoTeacherProfileUser();
   const unlinkMutation = useUpdateRepartoTeacherProfile();
+  const claimCodeMutation = useIssueRepartoTeacherProfileClaimCode();
 
   const [editing, setEditing] = useState<TeacherProfilePublic | null>(null);
   const [creating, setCreating] = useState(false);
@@ -951,6 +954,11 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const [deleteMapped, setDeleteMapped] = useState<RepartoMappedError>(
     EMPTY_REPARTO_MAPPED_ERROR
   );
+  // Held in state because the service will not serve it twice: the code is
+  // stored hashed, so this response is the only readable copy that will ever
+  // exist. Losing it costs a reissue, not a lookup.
+  const [issued, setIssued] = useState<TeacherProfileClaimCode | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // The roster is the one setup route with an own-record action: a `WRITER` may
   // update the profile whose linked user is them and nothing else (§21.3), while
@@ -1049,6 +1057,39 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     }
   }
 
+  /**
+   * Mint the code that lets *this teacher* bind the profile to their account.
+   *
+   * The replacement for the old *Link user*, which linked `currentUserId` — so
+   * a head pressing it on a colleague's row linked **themselves**. The backend
+   * was never the problem: `link-user` accepts any `user_id`. What was missing
+   * was a way for the head to learn a colleague's id, and per `C1` that
+   * directory belongs to the identity service and stays superuser-only. The
+   * teacher's own token already carries their id, so nobody needs to look
+   * anyone up — the head hands over a code instead.
+   */
+  function handleIssueClaimCode(profile: TeacherProfilePublic) {
+    setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
+    setCopied(false);
+    claimCodeMutation.mutate(profile.id, {
+      onSuccess: (code) => setIssued(code),
+      onError: (err: unknown) => setLinkMapped(mapRepartoError(err))
+    });
+  }
+
+  function handleCopyCode() {
+    if (!issued) return;
+    // Not every host exposes an async clipboard (an insecure origin, or a
+    // browser that has not granted it). The code is on screen and selectable
+    // either way, so a missing clipboard is a missing convenience, not a dead
+    // end — and never an unhandled rejection.
+    void Promise.resolve(
+      globalThis.navigator?.clipboard?.writeText?.(issued.claim_code)
+    )
+      .then(() => setCopied(true))
+      .catch(() => setCopied(false));
+  }
+
   function handleUnlink(profile: TeacherProfilePublic) {
     setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
     unlinkMutation.mutate(
@@ -1057,7 +1098,10 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     );
   }
 
-  const linking = linkMutation.isPending || unlinkMutation.isPending;
+  const linking =
+    linkMutation.isPending ||
+    unlinkMutation.isPending ||
+    claimCodeMutation.isPending;
   const anyFormOpen = formOpen || Boolean(confirmDelete);
 
   const columns: DataTableColumn<TeacherProfilePublic>[] = [
@@ -1075,8 +1119,19 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
               {isAdmin || ownsProfile(profile) ? (
                 <ActionButton action="edit" disabled={anyFormOpen} label={dict.action.edit} onClick={() => openEdit(profile)} row />
               ) : null}
+              {/*
+                Three row actions, and which one is offered follows the
+                linkage rather than who is looking. A linked profile offers
+                *Unlink* — including one linked to somebody else, because the
+                service refuses to mint a code over a live linkage and a head
+                who cannot unlink could never recover a mis-claim. An unlinked
+                profile offers *Issue claim code*, the action the teacher
+                needs, and keeps *Link to me* beside it under its true name:
+                it links the pressing head, which is the only thing it ever
+                did.
+              */}
               {isAdmin ? (
-                ownsProfile(profile) ? (
+                profile.user_id ? (
                   <ActionButton
                     action="unlink-user"
                     disabled={anyFormOpen || linking}
@@ -1085,13 +1140,22 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
                     row
                   />
                 ) : (
-                  <ActionButton
-                    action="link-user"
-                    disabled={anyFormOpen || linking || !currentUserId}
-                    label={dict.action.linkUser}
-                    onClick={() => handleLinkToMe(profile)}
-                    row
-                  />
+                  <>
+                    <ActionButton
+                      action="issue-claim-code"
+                      disabled={anyFormOpen || linking}
+                      label={dict.action.issueClaimCode}
+                      onClick={() => handleIssueClaimCode(profile)}
+                      row
+                    />
+                    <ActionButton
+                      action="link-user"
+                      disabled={anyFormOpen || linking || !currentUserId}
+                      label={dict.action.linkUser}
+                      onClick={() => handleLinkToMe(profile)}
+                      row
+                    />
+                  </>
                 )
               ) : null}
               {isAdmin ? (
@@ -1147,6 +1211,50 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
           label={dict.entity.teacherRoster.plural}
         />
         <RepartoFormError mapped={linkMapped} />
+        {issued ? (
+          <EntityDialogShell
+            description={dict.entity.teacherRoster.singular}
+            dialogId="teacher-roster-claim-code"
+            onClose={() => setIssued(null)}
+            title={formatRepartoMessage(dict.flow.claimCode.title, {
+              name: issued.display_name
+            })}
+          >
+            <div className={repartoFieldGridClass} data-reparto-panel="claim-code">
+              <p className="text-sm">
+                {formatRepartoMessage(dict.flow.claimCode.body, {
+                  name: issued.display_name,
+                  expires: new Date(issued.expires_at).toLocaleString(
+                    locale ?? normalizeRepartoLocale()
+                  )
+                })}
+              </p>
+              <output
+                className="font-mono text-lg tracking-widest"
+                data-reparto-slot="claim-code"
+              >
+                {issued.claim_code}
+              </output>
+              {copied ? (
+                <p className="text-sm" data-reparto-slot="claim-code-copied">
+                  {dict.flow.claimCode.copied}
+                </p>
+              ) : null}
+              <RowActions>
+                <ActionButton
+                  action="copy-claim-code"
+                  label={dict.action.copyCode}
+                  onClick={handleCopyCode}
+                />
+                <ActionButton
+                  action="dismiss-claim-code"
+                  label={dict.flow.claimCode.dismiss}
+                  onClick={() => setIssued(null)}
+                />
+              </RowActions>
+            </div>
+          </EntityDialogShell>
+        ) : null}
         {formOpen ? (
           <EntityDialogShell
             description={dict.entity.teacherRoster.plural}

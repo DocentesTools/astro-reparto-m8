@@ -631,8 +631,11 @@ the same `Cancel` button in two dialogs renders the same word.
 | `action.search` | Search | Rechercher | Buscar | Table search input placeholder |
 | `action.filter` | Filter | Filtrer | Filtrar | Table filter |
 | `action.refresh` | Refresh | Actualiser | Actualizar | Manual cache invalidate |
-| `action.linkUser` | Link user | Lier un compte | Vincular usuario | Teacher roster row action |
-| `action.unlinkUser` | Unlink user | Délier le compte | Desvincular usuario | (future) |
+| `action.linkUser` | Link to me | Lier à mon compte | Vincular a mi cuenta | Teacher roster row action. Renamed from *Link user* (`W1.4`): it has only ever linked the head pressing it, and said otherwise |
+| `action.unlinkUser` | Unlink user | Délier le compte | Desvincular usuario | Teacher roster row action on any linked profile |
+| `action.issueClaimCode` | Issue claim code | Émettre un code de rattachement | Emitir código de vinculación | Teacher roster row action on an unlinked profile (`W1.4`) |
+| `action.claimProfile` | Claim my profile | Rattacher mon profil | Vincular mi perfil | *My view* claim form submit (`W1.4`) |
+| `action.copyCode` | Copy code | Copier le code | Copiar el código | Claim-code dialog |
 | `action.export` | Export | Exporter | Exportar | Versions / exports table |
 | `action.restore` | Restore draft | Restaurer le brouillon | Restaurar borrador | History |
 | `action.copyFrom` | Copy from previous year | Copier depuis l'année précédente | Copiar del curso anterior | Process row action |

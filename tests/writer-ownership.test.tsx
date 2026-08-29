@@ -362,15 +362,36 @@ describe("teacher roster — the one own-record affordance in the package", () =
     signIn("admin");
     const html = await render("teacherRoster");
 
-    // The department head edits and deletes any profile; the link control is
-    // the one that differs by row, because a profile already linked to them can
-    // only be unlinked.
+    // The department head edits and deletes any profile; the linkage controls
+    // differ by row, and by the row's *linkage* rather than by whose it is. A
+    // linked profile — theirs or a colleague's — can only be unlinked. The old
+    // behaviour offered *Link user* on a colleague's linked row, which linked
+    // the pressing head and took that colleague's participation away
+    // (remediation `W1.4`).
     expect(
       repartoRowActionsFor(html, "data-teacher-profile-id", ownProfileId)
     ).toEqual(["edit", "unlink-user", "delete"]);
     expect(
       repartoRowActionsFor(html, "data-teacher-profile-id", otherProfileId)
-    ).toEqual(["edit", "link-user", "delete"]);
+    ).toEqual(["edit", "unlink-user", "delete"]);
+  });
+
+  it("offers a claim code, not a link, on a row that belongs to nobody yet", async () => {
+    // The row the whole flow exists for. *Issue claim code* is what the head
+    // hands the teacher; *Link to me* survives beside it under the name of the
+    // only thing it ever did — link the head pressing it.
+    signIn("admin");
+    queryState.teacherProfiles = [
+      teacherProfile(ownProfileId, "Ada Lovelace", null),
+      teacherProfile(otherProfileId, "Grace Hopper", otherUserId)
+    ];
+    const html = await render("teacherRoster");
+
+    expect(
+      repartoRowActionsFor(html, "data-teacher-profile-id", ownProfileId)
+    ).toEqual(["edit", "issue-claim-code", "link-user", "delete"]);
+    expect(html).toContain("Issue claim code");
+    expect(html).toContain("Link to me");
   });
 });
 

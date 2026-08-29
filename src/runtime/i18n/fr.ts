@@ -32,6 +32,7 @@ export const fr: RepartoDictionary = {
     notes: "Notes",
     displayName: "Nom affiché",
     linkedUser: "Compte lié",
+    claimCode: "Code de rattachement",
     active: "Actif",
     startDate: "Date de début",
     endDate: "Date de fin",
@@ -76,6 +77,14 @@ export const fr: RepartoDictionary = {
   },
   view: {
     teacherTitle: "Vue enseignant",
+    claim: {
+      title: "Rattachez votre profil enseignant",
+      intro: "Aucune participation à ce reparto n'est liée à votre compte : il n'y a donc rien à afficher ici. Si le chef de département a préparé un profil enseignant pour vous, demandez-lui un code de rattachement et saisissez-le ci-dessous — il lie ce profil au compte avec lequel vous êtes connecté. Si votre profil est déjà lié, demandez-lui plutôt de vous ajouter à ce reparto.",
+      codeLabel: "Code de rattachement",
+      codePlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX",
+      hint: "La casse et les tirets n'ont pas d'importance.",
+      linked: "{name} est désormais lié à votre compte."
+    },
     lan: {
       title: "Vos heures",
       metric: {
@@ -770,7 +779,10 @@ export const fr: RepartoDictionary = {
     search: "Rechercher",
     filter: "Filtrer",
     refresh: "Actualiser",
-    linkUser: "Lier un compte",
+    linkUser: "Lier à mon compte",
+    issueClaimCode: "Émettre un code de rattachement",
+    claimProfile: "Rattacher mon profil",
+    copyCode: "Copier le code",
     unlinkUser: "Délier le compte",
     export: "Exporter",
     restore: "Restaurer le brouillon",
@@ -821,6 +833,12 @@ export const fr: RepartoDictionary = {
     }
   },
   flow: {
+    claimCode: {
+      title: "Code de rattachement pour {name}",
+      body: "Remettez ce code à {name}. Il ne fonctionne qu'une fois, expire {expires}, et n'est affiché que maintenant — s'il est perdu, émettez-en un autre.",
+      copied: "Copié",
+      dismiss: "Terminé"
+    },
     bootstrap: {
       title: "Configurer votre répartition",
       subtitle: "Les trois étapes, du premier enregistrement à la séance.",

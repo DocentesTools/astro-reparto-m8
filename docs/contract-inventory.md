@@ -86,6 +86,8 @@ the runtime `DepartmentCreateSchema` should treat `slug` as optional.
 | Get | `GET /{profile_id}` → `TeacherProfilePublic` | get | ✓ |
 | Patch | `PATCH /{profile_id}` → `TeacherProfilePublic` (writer role) | patch | ✓ |
 | Link user | `POST /{profile_id}/link-user` body `{user_id: uuid}` → `TeacherProfilePublic` | `POST {id}/link-user` | ✓ |
+| Issue claim code | `POST /{profile_id}/claim-code` → `201` `TeacherProfileClaimCode` (admin) | (remediation `W1.4`) | ✓ |
+| Claim | `POST /claim` body `{claim_code: str[1..64]}` → `TeacherProfilePublic` (reader floor; binds the caller's own account) | (remediation `W1.4`) | ✓ |
 | Delete | `DELETE /{profile_id}` → `TeacherProfilePublic` (writer role) | delete | ✓ |
 | Create required | `display_name: str[1..150]` | `display_name*` | ✓ |
 | Public shape | `id, display_name, user_id, active, notes, created_at, updated_at` | (n/a) | ✓ |
@@ -879,6 +881,9 @@ Special operations:
 
 - `POST /academic-years/{id}/archive` — no body
 - `POST /teacher-profiles/{id}/link-user` — body `{user_id}`
+- `POST /teacher-profiles/{id}/claim-code` — no body; returns the code **once**
+- `POST /teacher-profiles/claim` — body `{claim_code}`; deliberately carries no
+  `user_id`, because the account it binds is the caller's own, read from the token
 - `POST /assignment-processes/{id}/transition` — body `{target_status}`
 - `POST /…/teachers/{process_teacher_id}/extra-hours` — body
   `{extra_weekly_hours, reason}`; the only path that changes authorized overload
@@ -906,7 +911,7 @@ Special operations:
 | `School /schools list, create, get, patch / name* / no delete — edit only` | ✓ | matches |
 | `Academic year /academic-years list, create, get, patch, POST {id}/archive / label*, start_date*, end_date* / archive, not delete` | ✓ | matches; dates are date-only strings |
 | `Department /departments?school_id= list, create, get, patch / school_id*, name* (slug auto) / no delete — edit only` | ✓ | matches; slug is auto-derived |
-| `Teacher profile (roster) /teacher-profiles?active= list, create, get, patch, POST {id}/link-user, delete / display_name* / hard delete (confirm)` | ✓ | matches; hard delete confirmed |
+| `Teacher profile (roster) /teacher-profiles?active= list, create, get, patch, POST {id}/link-user, delete / display_name* / hard delete (confirm)` | ✓ + `claim-code`/`claim` | matches; hard delete confirmed. The claim-code pair (`W1.4`) is not in plan §2: it exists because the accounts directory belongs to `fa-auth-m8` and is superuser-only, so a head cannot look a colleague's id up to link them |
 | `Assignment process /assignment-processes list, create, get, patch, transition, reopen, summary, dashboard, lan/me, events / academic_year_id*, school_id*, department_id* / patch/transition/reopen (no delete)` | ✓ + `copy-from` | extra `POST /copy-from/{src}` not in plan §2 — see §3.1 |
 | `Subject /…/subjects list, create, get, patch, delete / name* / hard delete (confirm)` | ✓ | matches |
 | `Teaching group /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |

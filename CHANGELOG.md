@@ -6,6 +6,24 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Added
 
+- **A teacher claims their own profile with a code** (remediation `W1.4`).
+  The roster's *Link user* linked `currentUserId`, so a head pressing it on a
+  colleague's row linked **themselves**, and *My view* answered a teacher with
+  no linkage by rendering the service's 404 string and stopping there. Neither
+  could be fixed by looking a user id up: `fa-auth-m8` owns the accounts
+  directory and restricts it to superusers by its own design. So the direction
+  is reversed. The roster row of an unlinked profile now offers **Issue claim
+  code**, which mints a single-use, expiring code and shows it once in a
+  copyable dialog — the service stores only its hash, so a lost code is
+  reissued, never read back. *My view* offers **Claim my profile** in place of
+  the dead end: a form carrying the code and nothing else, because the account
+  it binds is the signed-in one, read from the token by the service. New
+  `teacherProfiles.issueClaimCode` / `teacherProfiles.claim` wrappers,
+  `useIssueRepartoTeacherProfileClaimCode` / `useClaimRepartoTeacherProfile`
+  hooks (the claim invalidates the whole reparto prefix, since it is the moment
+  every process-scoped teacher projection starts resolving), and
+  `TeacherProfileClaimSchema` / `TeacherProfileClaimCodeSchema`.
+
 - **The turn controls are now gated on an open meeting session**
   (remediation `W1.3`). `buildMeetingControlState` derived every control's
   `disabled` state from `plan_status`, `readiness` and `current_turn` only, so
@@ -46,6 +64,13 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Changed
 
+- **A linked roster row offers *Unlink*, never a link** (remediation `W1.4`).
+  *Link user* used to appear on any row not linked to the caller — including a
+  colleague's linked row, where pressing it took that colleague's participation
+  away. Which control a row offers now follows the row's linkage rather than
+  whose it is: linked rows unlink, unlinked rows issue a claim code. *Link to
+  me* survives beside the latter, renamed from *Link user* to the only thing it
+  has ever done.
 - **`is_superuser` no longer grants anything on its own** (remediation `W6.1`).
   `authAdapter.ts` used to read `is_superuser: true` as `superadmin` whatever
   the role said, which gave the department-head surface to a session the service

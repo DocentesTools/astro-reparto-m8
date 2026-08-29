@@ -841,7 +841,8 @@ export const fr: RepartoDictionary = {
     blocked: {
       no_process_data: "Aucune donnée de processus n'a encore été chargée.",
       plan_not_ready: "Le plan n'est pas encore prêt pour les choix.",
-      reconciliation_required: "Un changement d'allocation doit être réconcilié avant la poursuite des choix."
+      reconciliation_required: "Un changement d'allocation doit être réconcilié avant la poursuite des choix.",
+      no_meeting_session: "Aucune session de réunion n'est ouverte."
     },
     lifecycleTitle: "Cycle de vie du plan",
     lifecycle: {
@@ -860,6 +861,7 @@ export const fr: RepartoDictionary = {
       no_process_data: "Aucune donnée de processus n'a encore été chargée.",
       plan_not_ready: "Le plan n'est pas encore prêt pour la sélection.",
       reconciliation_required: "Un changement de dotation doit être réconcilié avant que la sélection continue.",
+      no_meeting_session: "Aucune session de réunion n'est ouverte. Ouvrez-en une pour gérer les tours.",
       turn_active: "Un tour est déjà en cours.",
       no_active_turn: "Aucun tour n'est en cours.",
       reason_required: "Indiquez d'abord un motif."

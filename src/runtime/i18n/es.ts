@@ -840,7 +840,8 @@ export const es: RepartoDictionary = {
     blocked: {
       no_process_data: "Todavía no se han cargado datos del proceso.",
       plan_not_ready: "El plan todavía no está listo para la elección.",
-      reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la elección."
+      reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la elección.",
+      no_meeting_session: "No hay ninguna sesión de reunión abierta."
     },
     lifecycleTitle: "Ciclo de vida del plan",
     lifecycle: {
@@ -859,6 +860,7 @@ export const es: RepartoDictionary = {
       no_process_data: "Todavía no se han cargado datos del proceso.",
       plan_not_ready: "El plan aún no está listo para la selección.",
       reconciliation_required: "Un cambio de asignación debe reconciliarse antes de continuar la selección.",
+      no_meeting_session: "No hay ninguna sesión de reunión abierta. Abra una para gestionar turnos.",
       turn_active: "Ya hay un turno en curso.",
       no_active_turn: "No hay ningún turno en curso.",
       reason_required: "Indique primero un motivo."

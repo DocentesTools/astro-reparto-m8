@@ -843,7 +843,8 @@ export const en = {
     blocked: {
       no_process_data: "No process data has been loaded yet.",
       plan_not_ready: "The plan is not ready for selection yet.",
-      reconciliation_required: "An allocation change must be reconciled before selection continues."
+      reconciliation_required: "An allocation change must be reconciled before selection continues.",
+      no_meeting_session: "No meeting session is open."
     },
     lifecycleTitle: "Plan lifecycle",
     lifecycle: {
@@ -866,6 +867,7 @@ export const en = {
       no_process_data: "No process data has been loaded yet.",
       plan_not_ready: "The plan is not ready for selection yet.",
       reconciliation_required: "An allocation change must be reconciled before selection continues.",
+      no_meeting_session: "No meeting session is open. Open one to run turns.",
       turn_active: "A turn is already running.",
       no_active_turn: "No turn is running.",
       reason_required: "Give a reason first."

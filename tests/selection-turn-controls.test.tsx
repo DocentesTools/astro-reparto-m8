@@ -158,6 +158,7 @@ describe("meeting turn controls", () => {
     const { container } = render(
       <MeetingControlWorkspace
         processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: meetingSession }}
         summary={summary}
         turnControls={{ onAction }}
       />
@@ -177,6 +178,7 @@ describe("meeting turn controls", () => {
     const { container } = render(
       <MeetingControlWorkspace
         processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: meetingSession }}
         summary={summary}
         turnControls={{ onAction }}
       />

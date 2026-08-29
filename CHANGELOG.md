@@ -6,6 +6,16 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Added
 
+- **The turn controls are now gated on an open meeting session**
+  (remediation `W1.3`). `buildMeetingControlState` derived every control's
+  `disabled` state from `plan_status`, `readiness` and `current_turn` only, so
+  with no meeting session open `initialize-turns` rendered enabled — the
+  "offered and then refused" behaviour its own docstring exists to prevent. It
+  now takes a `sessionOpen` flag and gains a `no_meeting_session` blocked
+  reason that closes all five actions when none is open;
+  `MeetingControlWorkspace` derives the flag from its `sessionControls`
+  session, the same "latest known session" reading the turn hook already uses,
+  so the session panel from `W1.2` and the turn row it gates never disagree.
 - **The five meeting turn controls are wired to the selection-turn API**
   (remediation `W1.1`). The buttons in `MeetingControlWorkspace` rendered with a
   label, a `data-reparto-action` and a `disabled` flag but **no `onClick`**,

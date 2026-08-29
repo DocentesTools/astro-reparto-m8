@@ -9,7 +9,11 @@ import {
 import { buildMeetingControlState } from "../src/runtime/ui/index.js";
 import { MeetingControlWorkspace } from "../src/runtime/react/MeetingWorkspace.js";
 import { SharedScreenWorkspace } from "../src/runtime/react/LanWorkspace.js";
-import type { ProcessDashboard, ProcessSummary } from "../src/runtime/schemas.js";
+import type {
+  MeetingSessionPublic,
+  ProcessDashboard,
+  ProcessSummary
+} from "../src/runtime/schemas.js";
 
 // The control room's turn controls are department-head affordances (§8.1 route
 // map, `meeting` → `act: admin`), so these renders sign an `ADMIN` in; the
@@ -63,6 +67,22 @@ const summary: ProcessSummary = {
     started_at: now
   },
   blocking_validation_count: 0
+};
+
+const openSession: MeetingSessionPublic = {
+  id: "44444444-4444-4444-8444-444444444444",
+  assignment_process_id: processId,
+  status: "open",
+  lan_access_enabled: false,
+  direct_teacher_selection_enabled: false,
+  selection_mode: "strict",
+  notes: null,
+  started_at: now,
+  started_by_user_id: null,
+  paused_at: null,
+  closed_at: null,
+  created_at: now,
+  updated_at: now
 };
 
 const dashboard: ProcessDashboard = {
@@ -200,12 +220,40 @@ describe("meeting control state", () => {
     expect(notReady.blockedReason).toBe("plan_not_ready");
     expect(notReady.actions.every((action) => action.disabled)).toBe(true);
   });
+
+  it("closes every turn control when no meeting session is open", () => {
+    const noSession = buildMeetingControlState(summary, false);
+    expect(noSession.selectionBlocked).toBe(true);
+    expect(noSession.blockedReason).toBe("no_meeting_session");
+    expect(
+      noSession.actions.every(
+        (action) => action.disabled && action.reason === "no_meeting_session"
+      )
+    ).toBe(true);
+
+    // Not asking (the default) reads exactly as before: a caller with no
+    // session concept of its own is unaffected.
+    const noArgument = buildMeetingControlState(summary);
+    expect(noArgument.blockedReason).toBeNull();
+
+    // A plan-state reason still wins over the session question when both are
+    // wrong at once — the caller sees one reason, not a list.
+    const bothWrong = buildMeetingControlState(
+      { ...summary, readiness: "not_ready" },
+      false
+    );
+    expect(bothWrong.blockedReason).toBe("plan_not_ready");
+  });
 });
 
 describe("meeting control view", () => {
   it("shows both balances, pending slots and the authorized overloads", () => {
     const html = renderToStaticMarkup(
-      <MeetingControlWorkspace dashboard={dashboard} processId={processId} />
+      <MeetingControlWorkspace
+        dashboard={dashboard}
+        processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: openSession }}
+      />
     );
     expect(html).toContain('data-reparto-route="meeting"');
     expect(html).toContain('data-reparto-panel="meeting-turn-control"');
@@ -231,6 +279,7 @@ describe("meeting control view", () => {
         dashboard={dashboard}
         feasibility="infeasible"
         processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: openSession }}
       />
     );
     // A `ready` process whose partition is INFEASIBLE is exactly the case the
@@ -268,6 +317,7 @@ describe("meeting control view", () => {
           planning: { ...dashboard.planning, status: "stale" }
         }}
         processId={processId}
+        sessionControls={{ onClose: () => {}, onOpen: () => {}, session: openSession }}
       />
     );
     expect(html).toContain('data-reparto-lifecycle-state="stale"');
@@ -282,6 +332,18 @@ describe("meeting control view", () => {
     expect(html).toContain('data-disabled-reason="no_process_data"');
     expect(html).toContain('data-reparto-slot="no-authorized-overloads"');
     expect(html).toContain('data-reparto-slot="planning-empty"');
+  });
+
+  it("closes every turn control when a ready plan has no meeting session open", () => {
+    // Plan-state alone would open every control (see the first case in this
+    // block, same dashboard); with no session it must not — an offered
+    // control the service would refuse for want of a session is exactly the
+    // "offered and then refused" failure this gate exists to prevent.
+    const html = renderToStaticMarkup(
+      <MeetingControlWorkspace dashboard={dashboard} processId={processId} />
+    );
+    expect(html).toContain('data-reparto-selection-blocked="true"');
+    expect(html).toContain('data-disabled-reason="no_meeting_session"');
   });
 });
 

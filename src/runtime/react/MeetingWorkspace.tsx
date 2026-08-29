@@ -405,7 +405,9 @@ export function MeetingControlWorkspace({
   const canAct = useRepartoCanAct("meeting");
   const activeSummary =
     summary ?? (dashboard ? summarizeProcessDashboard(dashboard) : null);
-  const control = buildMeetingControlState(activeSummary);
+  const session = sessionControls?.session ?? null;
+  const sessionOpen = session !== null && session.status !== "closed";
+  const control = buildMeetingControlState(activeSummary, sessionOpen);
   const participants = dashboard?.assignment.summary.participants ?? [];
   const lifecycleState = control.reconciliationRequired
     ? "reconciliation_required"

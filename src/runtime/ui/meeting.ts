@@ -12,7 +12,8 @@ import type { ProcessSummary } from "../schemas.js";
 export type MeetingControlBlockedReason =
   | "no_process_data"
   | "plan_not_ready"
-  | "reconciliation_required";
+  | "reconciliation_required"
+  | "no_meeting_session";
 
 /**
  * The five turn controls, as the stable keys the buttons carry in
@@ -65,9 +66,18 @@ export type MeetingControlState = {
  * the backend's lifecycle gate and it stays there. This decides only what the
  * control room is offered, so a head is not handed a button whose refusal is
  * already known.
+ *
+ * `sessionOpen` answers the one question `readiness`/`plan_status` cannot: a
+ * meeting session is a separate lifecycle object (`meetingSessions.ts`), and
+ * initializing turns against a process with none fails on the service before
+ * any of the plan-state reasons above would ever apply. Defaulting it to
+ * `true` keeps every existing caller that has no session concept of its own
+ * (the projected shared screen, the plan-state unit tests) reading exactly as
+ * before; only a caller that actually tracks session lifecycle passes `false`.
  */
 export function buildMeetingControlState(
-  summary: ProcessSummary | null | undefined
+  summary: ProcessSummary | null | undefined,
+  sessionOpen = true
 ): MeetingControlState {
   const planStale = summary?.plan_status === "stale";
   const reconciliationRequired =
@@ -79,7 +89,9 @@ export function buildMeetingControlState(
       ? "reconciliation_required"
       : summary.readiness === "not_ready"
         ? "plan_not_ready"
-        : null;
+        : !sessionOpen
+          ? "no_meeting_session"
+          : null;
   const turnActive = Boolean(summary?.current_turn);
   const actions: readonly MeetingTurnAction[] = [
     {

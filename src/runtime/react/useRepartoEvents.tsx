@@ -22,6 +22,22 @@ import {
 const RECONNECT_DELAY_MS = 1_000;
 const DEFAULT_STALE_AFTER_MS = 20_000;
 
+/**
+ * The process id is interpolated into the stream URL's path, and `queryKeys.ts`
+ * only trims it. Constrain it to the UUID form the service issues before it can
+ * reach a request: a value carrying `/`, `?`, `#` or `..` would otherwise add
+ * path segments or a query to the URL the bearer token is sent with.
+ */
+const PROCESS_ID =
+  /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/** The audiences the service serves; anything else never reaches the query. */
+const STREAM_AUDIENCES: readonly SseAudience[] = [
+  "department_head",
+  "teacher",
+  "shared_screen"
+];
+
 export type RepartoEventStreamState = {
   connectionState: LanConnectionState;
   error: unknown;
@@ -52,6 +68,16 @@ export async function consumeRepartoEventStream(
   signal: AbortSignal,
   callbacks: FrameCallbacks
 ): Promise<void> {
+  if (!PROCESS_ID.test(processId)) {
+    throw new Error("Reparto event stream needs a process id in UUID form.");
+  }
+  if (!STREAM_AUDIENCES.includes(audience)) {
+    throw new Error("Reparto event stream needs a known audience.");
+  }
+  // Built only after both inputs are constrained above, so nothing user-shaped
+  // reaches the URL unvalidated.
+  const target = assignmentProcesses.eventsUrl(processId, audience);
+
   const adapter = getRepartoAuthAdapter();
   const config = getRepartoConfig();
   let token = await adapter.getAccessToken();
@@ -73,12 +99,8 @@ export async function consumeRepartoEventStream(
     [config.csrfHeader]: "XMLHttpRequest",
     Authorization: `Bearer ${token}`
   });
-  // Constructed the same way `client.ts` builds a request URL: the wrapper's
-  // string goes through `URL` before it reaches `fetch`, so the stream cannot
-  // be pointed anywhere `repartoUrl`'s protocol check would not allow.
-  const url = new URL(assignmentProcesses.eventsUrl(processId, audience));
   const execute = () =>
-    fetch(url.toString(), {
+    fetch(target, {
       method: "GET",
       headers,
       credentials: "include",

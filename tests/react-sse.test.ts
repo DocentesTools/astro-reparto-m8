@@ -12,6 +12,7 @@ import { RepartoUnauthenticatedError } from "../src/runtime/errors.js";
 import {
   consumeRepartoEventStream
 } from "../src/runtime/react/useRepartoEvents.js";
+import type { SseAudience } from "../src/runtime/schemas.js";
 import type { RepartoSseEvent } from "../src/runtime/sse.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
@@ -128,6 +129,39 @@ describe("authenticated React SSE transport", () => {
         "Authorization"
       )
     ).toBe("Bearer fresh");
+  });
+
+  it("refuses a process id or audience that is not the shape the service issues", async () => {
+    setRepartoAuthAdapter({ getAccessToken: () => "token" });
+
+    for (const bad of [
+      `${processId}/../../admin`,
+      `${processId}?audience=department_head`,
+      `${processId}#x`,
+      "not-a-uuid",
+      ""
+    ]) {
+      await expect(
+        consumeRepartoEventStream(
+          bad,
+          "teacher",
+          new AbortController().signal,
+          callbacks().callbacks
+        )
+      ).rejects.toThrow(/process id in UUID form/);
+    }
+
+    await expect(
+      consumeRepartoEventStream(
+        processId,
+        "administrator" as SseAudience,
+        new AbortController().signal,
+        callbacks().callbacks
+      )
+    ).rejects.toThrow(/known audience/);
+
+    // The point of the guard: nothing reached the network.
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("fails closed for authentication, HTTP, content, body and frame errors", async () => {

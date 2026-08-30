@@ -76,13 +76,21 @@ service's administrator read floors.
   Exported types, props, hook names and translation keys that spoke of a
   classroom now speak of a teaching group. A host that imported the old names
   will not compile until it renames them.
-- **The required auth peer is `@mano8/astro-auth-m8` `^2.3.0`.** The previous
-  `^2.0.0`/`^2.1.0`/`^2.2.0` ranges are no longer accepted, in both
-  `peerDependencies` and `devDependencies`. `2.3.0` is the release that
-  coordinates the two token-refresh paths behind one single-flight guard; below
-  it, a page mounting both paths against one expired token can issue two
-  rotations, which `fa-auth-m8` reads as reuse and answers by revoking every
-  session for the account.
+- **The required auth peer is `@mano8/astro-auth-m8` `^2.4.0`.** The previous
+  `^2.0.0`/`^2.1.0`/`^2.2.0`/`^2.3.0` ranges are no longer accepted, in both
+  `peerDependencies` and `devDependencies`. Two reasons stack and the floor is
+  the higher. `2.3.0` is the release that coordinates the two token-refresh
+  paths behind one single-flight guard; below it, a page mounting both paths
+  against one expired token can issue two rotations, which `fa-auth-m8` reads as
+  reuse and answers by revoking every session for the account. `2.4.0` is the
+  release in which `@mano8/astro-auth-m8/authorization` becomes a **supported**
+  import surface rather than an internal module this package happens to be able
+  to reach. That one is load-bearing here and not merely prudent: `authAdapter.ts`
+  re-exports `ORDERED_ROLES`, `hasMinimumRole`, `privilegeClaimsAreConsistent`
+  and `hasSuperuserPrivileges` from that specifier, and
+  `tests/authorization-mirror.test.ts` asserts they are the peer's own bindings
+  by identity — so below `2.4.0` this package would be depending on a promise
+  the peer had not yet made.
 - **Obsolete assignment inputs were removed from the registry** (`§13.2`), and
   the reparto auth runtime imports were dropped in favour of the auth peer's
   adapter. Skins installed from the `1.0.0` registry must be reinstalled.

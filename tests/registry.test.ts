@@ -31,7 +31,10 @@ describe("reparto shadcn registry", () => {
       scripts?: Record<string, string>;
     }>("package.json");
 
-    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toBe("^1.5.0");
+    // A normal (not peer) dependency, so registry consumers get astro-ui-m8
+    // installed automatically; the exact pin is expected to move as the
+    // fleet's shared UI package releases and isn't this test's concern.
+    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toMatch(/^\^\d+\.\d+\.\d+$/);
     expect(pkg.files).toEqual(expect.arrayContaining(["registry.json", "registry/r"]));
     expect(pkg.scripts?.["build:registry"]).toBe("node scripts/build-registry.mjs");
     expect(pkg.scripts?.build).toContain("npm run build:registry");

@@ -1,6 +1,8 @@
 # @mano8/astro-reparto-m8
 
 ![CI/CD](https://github.com/DocentesTools/astro-reparto-m8/actions/workflows/CI.yaml/badge.svg?branch=main)
+[![codecov](https://codecov.io/github/DocentesTools/astro-reparto-m8/graph/badge.svg?token=SBGMA4GGEQ)](https://codecov.io/github/DocentesTools/astro-reparto-m8)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1291042f5be0449595ff42c5929fb5a1)](https://app.codacy.com/gh/DocentesTools/astro-reparto-m8/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 
 Astro integration and headless client for `reparto-docente-m8`.
 

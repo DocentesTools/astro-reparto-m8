@@ -250,6 +250,13 @@ describe("reparto schemas", () => {
       selection_order_mode: "strict"
     });
 
+    expect(
+      AssignmentProcessPublicSchema.parse({
+        ...processBody,
+        default_teacher_hours_reference: "21.00"
+      }).default_teacher_hours_reference
+    ).toBe(21);
+
     expect(() =>
       AssignmentProcessPublicSchema.parse({ ...processBody, unexpected: true })
     ).toThrow();

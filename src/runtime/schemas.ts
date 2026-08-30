@@ -273,7 +273,7 @@ export const AssignmentProcessPublicSchema = z
     school_id: uuidSchema,
     department_id: uuidSchema,
     status: AssignmentProcessStatusSchema,
-    default_teacher_hours_reference: z.number().nonnegative().nullable(),
+    default_teacher_hours_reference: HoursSchema.transform(Number).nullable(),
     selection_order_enabled: z.boolean(),
     selection_order_mode: SelectionOrderModeSchema,
     direct_teacher_selection_enabled: z.boolean(),

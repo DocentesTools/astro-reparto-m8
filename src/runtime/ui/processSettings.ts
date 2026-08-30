@@ -90,8 +90,8 @@ export type ProcessSettingsRequestResult =
  * false` rather than an empty request: a no-op round trip still writes an
  * audit event (`process.updated`) claiming a change that did not happen.
  *
- * `default_teacher_hours_reference` is the one hour value the backend types as
- * a float rather than a canonical decimal string, so it is validated through
+ * `default_teacher_hours_reference` is normalized to a number by the public
+ * response schema even when the backend emits a canonical decimal string. It is validated through
  * `parseHoursField` (never a bare `Number()` of user text) and converted at
  * this single boundary. A blank field is an explicit `null` — "no reference" —
  * and is not the same as a typed `0`.

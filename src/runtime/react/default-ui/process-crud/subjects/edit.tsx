@@ -5,12 +5,22 @@ import {
   FormGrid,
   FormPanelShell,
   SaveCancelRow,
+  SelectField,
   TextField,
   useMappedError,
   type Dict
 } from "../shared.js";
 import { useUpdateRepartoSubject } from "../../../hooks.js";
-import type { SubjectPublic, SubjectUpdate } from "../../../../schemas.js";
+import type {
+  ActivityType,
+  SubjectAllocationCategory,
+  SubjectPublic,
+  SubjectUpdateInput
+} from "../../../../schemas.js";
+import {
+  activityTypeOptions,
+  allocationCategoryOptions
+} from "./classification.js";
 
 export type SubjectEditProps = {
   dict: Dict;
@@ -23,12 +33,17 @@ export function SubjectEdit({ dict, processId, subject, onDone }: SubjectEditPro
   const updateMutation = useUpdateRepartoSubject();
   const [mapped, setError, clearError] = useMappedError();
   const [name, setName] = useState(subject.name);
-  const [stage, setStage] = useState(subject.stage ?? "");
+  const [allocationCategory, setAllocationCategory] =
+    useState<SubjectAllocationCategory>(subject.allocation_category);
+  const [activityType, setActivityType] = useState<ActivityType>(
+    subject.activity_type
+  );
   const [notes, setNotes] = useState(subject.notes ?? "");
 
   const dirty =
     name !== subject.name ||
-    stage !== (subject.stage ?? "") ||
+    allocationCategory !== subject.allocation_category ||
+    activityType !== subject.activity_type ||
     notes !== (subject.notes ?? "");
   const canSave = name.trim().length > 0 && dirty && !updateMutation.isPending;
 
@@ -36,9 +51,12 @@ export function SubjectEdit({ dict, processId, subject, onDone }: SubjectEditPro
     event.preventDefault();
     if (!canSave) return;
     clearError();
-    const body: SubjectUpdate = {
+    // The planning defaults are deliberately absent: the backend applies only
+    // the fields present, so leaving them out preserves whatever is stored.
+    const body: SubjectUpdateInput = {
       name: name.trim(),
-      stage: stage.trim() || null,
+      allocation_category: allocationCategory,
+      activity_type: activityType,
       notes: notes.trim() || null
     };
     updateMutation.mutate(
@@ -66,13 +84,25 @@ export function SubjectEdit({ dict, processId, subject, onDone }: SubjectEditPro
           mapped={mapped}
           fieldErrorKey="name"
         />
-        <TextField
-          field="stage"
-          id="subject-edit-stage"
-          label={dict.field.stage}
-          maxLength={50}
-          value={stage}
-          onChange={setStage}
+        <SelectField
+          field="allocation-category"
+          label={dict.field.allocationCategory}
+          onChange={(value) =>
+            setAllocationCategory(value as SubjectAllocationCategory)
+          }
+          options={allocationCategoryOptions(dict)}
+          value={allocationCategory}
+          mapped={mapped}
+          fieldErrorKey="allocationCategory"
+        />
+        <SelectField
+          field="activity-type"
+          label={dict.field.activityType}
+          onChange={(value) => setActivityType(value as ActivityType)}
+          options={activityTypeOptions(dict)}
+          value={activityType}
+          mapped={mapped}
+          fieldErrorKey="activityType"
         />
         <TextField
           field="notes"

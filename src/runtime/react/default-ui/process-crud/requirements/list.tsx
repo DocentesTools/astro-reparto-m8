@@ -1,127 +1,254 @@
-import { ActionButton, mapRepartoError, QueryState, RowActions } from "../shared.js";
-import type { Dict } from "../shared.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type {
   HourRequirementPublic,
   SubjectPublic,
-  TeachingGroupPublic
+  TeachingActivityPublic,
+  TeachingPlanPublic
 } from "../../../../schemas.js";
-import { DataTable, type DataTableColumn } from "../../data-table.js";
-import { repartoBulkDeleteButtonClass } from "../../../styles.js";
+
+import { QueryState, type Dict } from "../shared.js";
+
+export type RequirementActivityGroup = {
+  activity: TeachingActivityPublic | null;
+  activityId: string;
+  label: string;
+  slots: HourRequirementPublic[];
+};
+
+export function groupRequirementsByActivity(
+  rows: readonly HourRequirementPublic[],
+  activities: readonly TeachingActivityPublic[],
+  subjects: readonly SubjectPublic[],
+  dict: Dict
+): RequirementActivityGroup[] {
+  const activityById = new Map(activities.map((activity) => [activity.id, activity]));
+  const subjectById = new Map(subjects.map((subject) => [subject.id, subject]));
+  const groups = new Map<string, RequirementActivityGroup>();
+
+  for (const slot of rows) {
+    const activity = activityById.get(slot.teaching_activity_id) ?? null;
+    const subject = activity ? subjectById.get(activity.subject_id) : undefined;
+    const label = activity
+      ? formatRepartoMessage(dict.requirements.activityLabel, {
+          subject: subject?.name ?? dict.requirements.unknownSubject,
+          type: dict.option.activityType[activity.activity_type]
+        })
+      : dict.requirements.unknownActivity;
+    const existing = groups.get(slot.teaching_activity_id);
+
+    if (existing) {
+      existing.slots.push(slot);
+    } else {
+      groups.set(slot.teaching_activity_id, {
+        activity,
+        activityId: slot.teaching_activity_id,
+        label,
+        slots: [slot]
+      });
+    }
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      slots: [...group.slots].sort(
+        (left, right) => left.position_index - right.position_index
+      )
+    }))
+    .sort(
+      (left, right) =>
+        left.label.localeCompare(right.label) ||
+        left.activityId.localeCompare(right.activityId)
+    );
+}
+
+function requirementGenerationState(
+  plan: TeachingPlanPublic | undefined,
+  dict: Dict
+) {
+  if (!plan) return dict.requirements.generationState.unavailable;
+  if (plan.status === "reconciliation_required") {
+    return dict.requirements.generationState.reconciliationRequired;
+  }
+  if (plan.status === "stale") return dict.requirements.generationState.stale;
+  if (plan.status === "requirements_generated") {
+    return dict.requirements.generationState.current;
+  }
+  if (plan.status === "locked") return dict.requirements.generationState.ready;
+  return dict.requirements.generationState.notGenerated;
+}
 
 export type RequirementsListProps = {
+  activities: TeachingActivityPublic[];
   dict: Dict;
-  rows: HourRequirementPublic[];
   error: unknown;
   isError: boolean;
   isLoading: boolean;
-  hasActiveForm: boolean;
-  classroomLabel: (id: string) => string;
-  subjectName: (id: string) => string;
-  onDeleteSelected: () => void;
-  onSelectedIdsChange: (selectedIds: Set<string>) => void;
-  onEdit: (requirement: HourRequirementPublic) => void;
-  onDelete: (requirement: HourRequirementPublic) => void;
-  selectedIds: ReadonlySet<string>;
+  plan?: TeachingPlanPublic;
+  rows: HourRequirementPublic[];
+  subjects: SubjectPublic[];
 };
 
 export function RequirementsList({
-  dict, rows, error, isError, isLoading, hasActiveForm,
-  classroomLabel, subjectName, onDeleteSelected, onSelectedIdsChange,
-  onEdit, onDelete, selectedIds
+  activities,
+  dict,
+  error,
+  isError,
+  isLoading,
+  plan,
+  rows,
+  subjects
 }: RequirementsListProps) {
   if (isLoading || isError) {
-    return <QueryState dict={dict} error={error} isError={isError} isLoading={isLoading} label={dict.entity.hourRequirement.plural} />;
+    return (
+      <QueryState
+        dict={dict}
+        error={error}
+        isError={isError}
+        isLoading={isLoading}
+        label={dict.entity.hourRequirement.plural}
+      />
+    );
   }
-  const typeLabel = (requirement: HourRequirementPublic) =>
-    dict.option.requirementType[requirement.requirement_type];
-  const columns: DataTableColumn<HourRequirementPublic>[] = [
-    { id: "classroom", label: dict.field.classroom, value: (requirement) => classroomLabel(requirement.teaching_group_id) },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (requirement) => `${classroomLabel(requirement.teaching_group_id)} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (requirement) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={hasActiveForm} label={dict.action.edit} onClick={() => onEdit(requirement)} row />
-          <ActionButton action="delete" disabled={hasActiveForm} label={dict.action.delete} onClick={() => onDelete(requirement)} row />
-        </RowActions>
-      )
-    },
-    { id: "subject", label: dict.field.subject, value: (requirement) => subjectName(requirement.subject_id) },
-    { id: "required_hours", label: dict.field.requiredHours, value: (requirement) => requirement.required_hours },
-    { id: "requirement_type", label: dict.field.requirementType, value: typeLabel }
-  ];
-  const types = [...new Set(rows.map(typeLabel))].sort((a, b) => a.localeCompare(b));
-  const selectedCount = selectedIds.size;
-  const deleteSelectedAction = selectedCount > 0 ? (
-    <button
-      className={repartoBulkDeleteButtonClass}
-      data-reparto-action="delete-selected"
-      disabled={hasActiveForm}
-      onClick={onDeleteSelected}
-      type="button"
-    >
-      {formatRepartoMessage(dict.requirementSelection.deleteSelected, { count: selectedCount })}
-    </button>
-  ) : undefined;
+
+  const groups = groupRequirementsByActivity(rows, activities, subjects, dict);
+  const statusCounts = {
+    assigned: rows.filter((slot) => slot.status === "assigned").length,
+    available: rows.filter((slot) => slot.status === "available").length,
+    attention: rows.filter(
+      (slot) => slot.status === "stale" || slot.status === "reconciliation_required"
+    ).length
+  };
+  const planStatus = plan
+    ? dict.requirements.planStatus[plan.status]
+    : dict.requirements.planUnavailable;
 
   return (
     <>
-      <h2 className="sr-only">{dict.entity.hourRequirement.plural}</h2>
-      <DataTable
-        columns={columns}
-        data={rows}
-        emptyLabel={dict.table.noResults}
-        filter={{ label: dict.field.requirementType, options: types, value: typeLabel }}
-        labels={{
-          columns: dict.table.columns,
-          filter: dict.table.all,
-          firstPage: dict.table.firstPage,
-          lastPage: dict.table.lastPage,
-          nextPage: dict.table.nextPage,
-          page: (current, total) => `${dict.table.page} ${current} / ${total}`,
-          previousPage: dict.table.previousPage,
-          rowsPerPage: dict.table.rowsPerPage,
-          search: dict.table.searchRequirements
-        }}
-        rowAttributes={(requirement) => ({
-          "data-requirement-id": requirement.id,
-          "data-requirement-type": requirement.requirement_type,
-          "data-requirement-hours": String(requirement.required_hours)
-        })}
-        rowKey={(requirement) => requirement.id}
-        rowName="requirement"
-        searchFields={[
-          (requirement) => classroomLabel(requirement.teaching_group_id),
-          (requirement) => subjectName(requirement.subject_id)
-        ]}
-        selection={{
-          actions: deleteSelectedAction,
-          onSelectedKeysChange: onSelectedIdsChange,
-          selectedKeys: selectedIds,
-          selectAllVisibleLabel: dict.requirementSelection.selectAllVisible,
-          selectRowLabel: (requirement) => formatRepartoMessage(dict.requirementSelection.selectRow, {
-            name: `${classroomLabel(requirement.teaching_group_id)} · ${subjectName(requirement.subject_id)}`
-          })
-        }}
-        tableName="requirements"
-      />
-      {isLoading ? (
-        <section data-reparto-state="loading">{dict.table.loading}</section>
-      ) : null}
-      {isError ? (
-        <section data-reparto-state="error">
-          {mapRepartoError(error).formError?.message ?? dict.table.noResults}
-        </section>
-      ) : null}
+      <section
+        className="grid gap-4 rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
+        data-reparto-slot="requirements-generation-status"
+        data-teaching-plan-status={plan?.status ?? "unavailable"}
+      >
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">{dict.requirements.statusTitle}</h2>
+          <p className="text-sm text-muted-foreground">
+            {requirementGenerationState(plan, dict)}
+          </p>
+          <p className="text-sm" data-current-generation={plan?.current_generation_number ?? 0}>
+            {formatRepartoMessage(dict.requirements.planStatusSummary, {
+              generation: plan?.current_generation_number ?? 0,
+              status: planStatus
+            })}
+          </p>
+        </div>
+        <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ["activities", dict.requirements.metric.activities, groups.length],
+            ["slots", dict.requirements.metric.slots, rows.length],
+            ["available", dict.requirements.metric.available, statusCounts.available],
+            ["assigned", dict.requirements.metric.assigned, statusCounts.assigned],
+            ["attention", dict.requirements.metric.attention, statusCounts.attention]
+          ].map(([key, label, value]) => (
+            <div
+              className="rounded-md border bg-muted/30 p-3"
+              data-requirement-metric={key}
+              key={key}
+            >
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
+      <section className="grid gap-4" data-reparto-list="requirements-by-activity">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold">{dict.requirements.slotsTitle}</h2>
+          <p className="text-sm text-muted-foreground">{dict.requirements.slotsDescription}</p>
+        </div>
+        {groups.length === 0 ? (
+          <div
+            className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground"
+            data-reparto-state="no-generated-requirements"
+          >
+            {dict.requirements.empty}
+          </div>
+        ) : (
+          groups.map((group) => (
+            <article
+              className="overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm"
+              data-reparto-requirement-activity=""
+              data-teaching-activity-id={group.activityId}
+              key={group.activityId}
+            >
+              <header className="flex flex-wrap items-start justify-between gap-3 border-b bg-muted/30 px-5 py-4">
+                <div className="space-y-1">
+                  <h3 className="font-semibold">{group.label}</h3>
+                  {group.activity?.notes ? (
+                    <p className="text-sm text-muted-foreground">{group.activity.notes}</p>
+                  ) : null}
+                </div>
+                <span className="rounded-full border bg-background px-3 py-1 text-xs font-medium">
+                  {formatRepartoMessage(dict.requirements.positionCount, {
+                    count: group.slots.length
+                  })}
+                </span>
+              </header>
+              <ol className="divide-y">
+                {group.slots.map((slot) => (
+                  <li
+                    className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center"
+                    data-requirement-position={slot.position_index}
+                    data-requirement-status={slot.status}
+                    key={slot.id}
+                  >
+                    <div>
+                      <p className="font-medium">
+                        {formatRepartoMessage(dict.requirements.position, {
+                          position: slot.position_index + 1
+                        })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatRepartoMessage(dict.requirements.generationLineage, {
+                          created: slot.created_generation,
+                          validated: slot.last_validated_generation
+                        })}
+                      </p>
+                      {slot.retired_generation !== null ? (
+                        <p
+                          className="text-xs text-muted-foreground"
+                          data-retired-generation={slot.retired_generation}
+                        >
+                          {formatRepartoMessage(dict.requirements.retiredLineage, {
+                            generation: slot.retired_generation
+                          })}
+                          {slot.superseded_by_requirement_id
+                            ? ` ${dict.requirements.superseded}`
+                            : ""}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="text-sm font-medium tabular-nums">
+                      {formatRepartoMessage(dict.requirements.teacherHours, {
+                        hours: slot.required_teacher_hours
+                      })}
+                    </span>
+                    <span
+                      className="w-fit rounded-full border px-2.5 py-1 text-xs font-medium"
+                      data-reparto-slot-status={slot.status}
+                    >
+                      {dict.entity.hourRequirement.status[slot.status]}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))
+        )}
+      </section>
     </>
   );
 }
-
-export type RequirementsFkData = {
-  classrooms: TeachingGroupPublic[];
-  subjects: SubjectPublic[];
-};

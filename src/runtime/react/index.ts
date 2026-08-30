@@ -1,16 +1,38 @@
 export {
   DepartmentHeadWorkspace,
   ExportCenterView,
+  PlanningBalancePanel,
+  ProcessInvariantRow,
   ProcessListView,
-  VersionsView
+  ProcessValidationList,
+  VersionsView,
+  type VersionComparisonSource
 } from "./DepartmentHeadWorkspace.js";
-export { SharedScreenWorkspace, TeacherLanWorkspace } from "./LanWorkspace.js";
+export {
+  SetupChecklistProgress,
+  SetupChecklistSteps
+} from "./SetupChecklist.js";
+export {
+  MeetingControlWorkspace,
+  type MeetingTurnControls
+} from "./MeetingWorkspace.js";
+export {
+  SharedScreenWorkspace,
+  TeacherLanWorkspace,
+  type TeacherChoiceControls
+} from "./LanWorkspace.js";
 export {
   useArchiveRepartoAcademicYear,
+  useCreateRepartoAllocationRevision,
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
+  useCreateRepartoExportArtifact,
+  useCreateRepartoPlanningExport,
+  useImportRepartoPlanning,
+  useRestoreRepartoDraft,
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
+  useCreateRepartoVersion,
   useDeleteRepartoTeacherProfile,
   useLinkRepartoTeacherProfileUser,
   useRepartoAcademicYears,
@@ -18,11 +40,17 @@ export {
   useRepartoDepartments,
   useRepartoExports,
   useRepartoMeetingSessions,
+  useRepartoPreviousYearComparison,
+  useRepartoProcess,
   useRepartoProcesses,
+  useReopenRepartoProcess,
+  useUpdateRepartoProcess,
   useRepartoSchools,
+  useRepartoSetupObservations,
   useRepartoSummary,
   useRepartoTeacherLan,
   useRepartoTeacherProfiles,
+  useRepartoVersionComparison,
   useRepartoVersions,
   useUpdateRepartoAcademicYear,
   useUpdateRepartoDepartment,
@@ -32,6 +60,31 @@ export {
   useCreateRepartoSubject,
   useUpdateRepartoSubject,
   useDeleteRepartoSubject,
+  useRepartoGroupSubjects,
+  useCreateRepartoGroupSubject,
+  useUpdateRepartoGroupSubject,
+  useRepartoTeachingActivities,
+  useCreateRepartoTeachingActivity,
+  useUpdateRepartoTeachingActivity,
+  useRetireRepartoTeachingActivity,
+  useGenerateRepartoRequirements,
+  useCreateRepartoTeachingPlan,
+  useLockRepartoTeachingPlan,
+  useUnlockRepartoTeachingPlan,
+  usePreviewRepartoRequirementGeneration,
+  usePreviewRepartoRequirementReconciliation,
+  useReconcileRepartoRequirements,
+  useRepartoAllocationRevisions,
+  useRepartoCurrentAllocationRevision,
+  useRepartoTeachingPlan,
+  useRepartoTeachingPlanSummary,
+  useRepartoTeachingPlanValidations,
+  useRepartoFeasibilityWitness,
+  useMaterializeRepartoMainActivities,
+  usePreviewRepartoGroupSubjects,
+  useApplyRepartoGroupSubjects,
+  usePreviewRepartoActivitySync,
+  useApplyRepartoActivitySync,
   useRepartoTeachingGroups,
   useRepartoClassroomStages,
   useCreateRepartoClassroomStage,
@@ -42,22 +95,49 @@ export {
   useUpdateRepartoTeachingGroup,
   useDeleteRepartoTeachingGroup,
   useRepartoHourRequirements,
-  useCreateRepartoHourRequirement,
-  useUpdateRepartoHourRequirement,
-  useDeleteRepartoHourRequirement,
   useRepartoProcessTeachers,
   useCreateRepartoProcessTeacher,
   useUpdateRepartoProcessTeacher,
+  useUpdateRepartoProcessTeacherExtraHours,
   useDeleteRepartoProcessTeacher,
   useRepartoAssignments,
+  useRepartoAssignmentValidations,
   useCreateRepartoAssignment,
   useUpdateRepartoAssignment,
-  useDeleteRepartoAssignment,
+  useUndoRepartoAssignment,
+  useReassignRepartoAssignment,
   useRepartoDirectChoiceAssignment,
-  useRepartoAuditEvents
+  useRepartoAuditEvents,
+  useRepartoSelectionTurns,
+  useInitializeRepartoTurns,
+  useStartRepartoTurn,
+  useCompleteRepartoTurn,
+  useSkipRepartoTurn,
+  useOverrideRepartoTurn,
+  useSelectionTurns,
+  type RepartoSelectionTurnControls
 } from "./hooks.js";
 export { RepartoProvider, useRepartoContext } from "./RepartoProvider.js";
 export { RepartoQueryProvider } from "./RepartoQueryProvider.js";
+export {
+  RepartoErrorBoundary,
+  type RepartoErrorBoundaryFallbackProps,
+  type RepartoErrorBoundaryLabels,
+  type RepartoErrorBoundaryProps
+} from "./RepartoErrorBoundary.js";
+export {
+  useRepartoEventStream,
+  type RepartoEventStreamState
+} from "./useRepartoEvents.js";
+export {
+  useRepartoCanAct,
+  useRepartoCurrentUser,
+  useRepartoMinimumRole,
+  useRepartoRouteAccess,
+  useRepartoViewMode,
+  type RepartoRoleState,
+  type RepartoRouteAccessState
+} from "./useRepartoRole.js";
 export {
   repartoRouteContainerClasses,
   repartoRouteLoaderClass,

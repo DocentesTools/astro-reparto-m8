@@ -1,20 +1,26 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   academicYears,
+  allocationRevisions,
   assignments,
   assignmentProcesses,
   auditEvents,
   classroomStages,
   departments,
+  groupSubjects,
   history,
   hourRequirements,
   meetingSessions,
+  planningExchange,
+  planningExportRequest,
   processTeachers,
   schools,
   selectionTurns,
   subjects,
   teacherProfiles,
-  teachingGroups
+  teachingActivities,
+  teachingGroups,
+  teachingPlans
 } from "../src/runtime/api/index.js";
 import { setRepartoAuthAdapter } from "../src/runtime/authAdapter.js";
 import { resetRepartoConfig } from "../src/runtime/config.js";
@@ -25,6 +31,7 @@ const userId = "33333333-3333-4333-8333-333333333333";
 const turnId = "77777777-7777-4777-8777-777777777777";
 const teacherId = "88888888-8888-4888-8888-888888888888";
 const requirementId = "99999999-9999-4999-8999-999999999999";
+const teachingActivityId = "96969696-9696-4696-8696-969696969696";
 const versionId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const nextVersionId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const artifactId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
@@ -93,91 +100,125 @@ const turnBody = {
   updated_at: now
 };
 
-const globalBalanceBody = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 4,
-  pending_required_hours: 0,
-  availability_difference: 0,
-  uncovered_requirements: 0,
-  overloaded_teachers: 0,
-  state: "balanced"
-};
-
-const teacherBalanceBody = {
-  process_teacher_id: teacherId,
-  teacher_profile_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-  display_name: "Linked Teacher",
-  available_hours: 4,
-  assigned_hours: 4,
-  remaining_hours: 0,
-  excess_hours: 0,
-  assignment_count: 1,
-  has_override: false,
-  state: "balanced"
+const planBalanceBody = {
+  teaching_plan_id: "b1b1b1b1-b1b1-4b1b-8b1b-b1b1b1b1b1b1",
+  assignment_process_id: processId,
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "124.00",
+    teacher_load_difference: "0.00",
+    is_balanced: true
+  },
+  is_exact: true
 };
 
 const summaryBody = {
   process_id: processId,
-  global_balance: globalBalanceBody,
-  validations: [
-    {
-      severity: "info",
-      code: "process.balanced",
-      message: "Process hours are balanced.",
-      entity_type: "process",
-      entity_id: processId
-    }
-  ],
+  generated_at: now,
+  readiness: "ready",
+  plan_status: "requirements_generated",
+  plan_balance: planBalanceBody,
+  total_slots: 6,
+  assigned_slots: 4,
+  available_slots: 2,
+  balanced_participant_count: 3,
+  pending_participant_count: 1,
+  overloaded_participant_count: 0,
   current_turn: null,
   blocking_validation_count: 0
 };
 
+const participantBalanceBody = {
+  process_teacher_id: teacherId,
+  teacher_profile_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+  display_name: "Linked Teacher",
+  base_weekly_hours: "18.00",
+  extra_weekly_hours: "0.00",
+  target_weekly_hours: "18.00",
+  assigned_weekly_hours: "4.00",
+  remaining_weekly_hours: "14.00",
+  is_overloaded: false,
+  assignment_count: 1,
+  state: "pending"
+};
+
 const dashboardBody = {
-  ...summaryBody,
+  process_id: processId,
   generated_at: now,
-  teacher_balances: [teacherBalanceBody],
-  requirement_balances: [
-    {
-      hour_requirement_id: requirementId,
-      teaching_group_id: "12121212-1212-4121-8121-121212121212",
-      teaching_group_label: "1 ESO A",
-      subject_id: "34343434-3434-4343-8343-343434343434",
-      subject_name: "Mathematics",
-      required_hours: 4,
-      assigned_hours: 1,
-      pending_hours: 3,
-      assignment_count: 1,
-      has_override: false,
-      state: "partial"
+  readiness: "ready",
+  planning: {
+    teaching_plan_id: planBalanceBody.teaching_plan_id,
+    status: "requirements_generated",
+    balance: planBalanceBody,
+    validations: {
+      teaching_plan_id: planBalanceBody.teaching_plan_id,
+      assignment_process_id: processId,
+      is_assignment_ready: true,
+      blocking_count: 0,
+      warning_count: 0,
+      messages: []
     }
-  ]
+  },
+  assignment: {
+    summary: {
+      assignment_process_id: processId,
+      total_target_hours: "18.00",
+      total_assigned_hours: "4.00",
+      total_remaining_hours: "14.00",
+      total_slots: 6,
+      assigned_slots: 4,
+      available_slots: 2,
+      participants: [participantBalanceBody]
+    },
+    validations: {
+      assignment_process_id: processId,
+      is_final_ready: false,
+      blocking_count: 0,
+      warning_count: 1,
+      messages: [
+        {
+          severity: "warning",
+          code: "requirement.unassigned",
+          message: "Two positions are still unassigned.",
+          entity_type: "assignment_process",
+          entity_id: processId
+        }
+      ]
+    }
+  },
+  current_turn: null,
+  blocking_validation_count: 0
 };
 
 const teacherLanSummaryBody = {
   process_id: processId,
-  global_balance: globalBalanceBody,
   current_turn: null,
-  blocking_validation_count: 0,
-  teacher_profile_id: teacherBalanceBody.teacher_profile_id,
+  readiness: "ready",
+  selection_blocked: false,
+  plan_balance: null,
+  available_slots: 2,
+  teacher_profile_id: participantBalanceBody.teacher_profile_id,
   process_teacher_id: teacherId,
   generated_at: now,
-  teacher_balance: teacherBalanceBody
+  participant: participantBalanceBody
 };
 
 const assignmentBody = {
   id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
   assignment_process_id: processId,
   hour_requirement_id: requirementId,
+  teaching_activity_id: teachingActivityId,
   process_teacher_id: teacherId,
-  assigned_hours: 4,
-  assignment_type: "main",
   source: "teacher_direct",
-  status: "confirmed",
+  status: "active",
   chosen_by_user_id: userId,
   confirmed_by_user_id: userId,
-  override_reason: null,
-  overridden_by_user_id: null,
   notes: null,
   created_at: now,
   updated_at: now
@@ -198,12 +239,24 @@ const versionBody = {
 const comparisonBody = {
   left_version_id: versionId,
   right_version_id: nextVersionId,
-  changed_sections: ["assignments"],
-  required_hours_delta: 0,
-  assigned_hours_delta: 4,
+  changed_sections: ["teaching_activities", "requirements"],
+  allocation_changed: false,
+  group_hours_changed: true,
+  teacher_load_changed: true,
+  subject_category_changed: false,
+  activity_added_or_removed: true,
+  group_link_added_or_removed: false,
+  teacher_position_count_changed: true,
+  participant_target_changed: false,
+  requirement_generation_changed: true,
+  allocation_delta: null,
+  group_load_delta: "4.00",
+  teacher_load_delta: "-2.50",
+  participant_target_total_delta: "0.00",
+  generation_number_delta: 1,
   teacher_count_delta: 0,
-  requirement_count_delta: 0,
-  assignment_count_delta: 1
+  activity_count_delta: 1,
+  requirement_count_delta: 2
 };
 
 const artifactBody = {
@@ -284,15 +337,24 @@ describe("assignment process API", () => {
     });
     fetchMock.mockResolvedValueOnce(response(dashboardBody));
     await expect(assignmentProcesses.dashboard(processId)).resolves.toMatchObject({
-      teacher_balances: [{ display_name: "Linked Teacher" }],
-      requirement_balances: [{ subject_name: "Mathematics" }]
+      assignment: {
+        summary: { participants: [{ display_name: "Linked Teacher" }] }
+      },
+      planning: { status: "requirements_generated" },
+      readiness: "ready"
     });
     fetchMock.mockResolvedValueOnce(response(teacherLanSummaryBody));
     await expect(assignmentProcesses.myLanSummary(processId)).resolves.toMatchObject({
-      teacher_balance: { display_name: "Linked Teacher" }
+      available_slots: 2,
+      participant: { display_name: "Linked Teacher", target_weekly_hours: "18.00" },
+      readiness: "ready",
+      selection_blocked: false
     });
     expect(assignmentProcesses.eventsUrl(processId)).toBe(
       `http://localhost/reparto/assignment-processes/${processId}/events`
+    );
+    expect(assignmentProcesses.eventsUrl(processId, "teacher")).toBe(
+      `http://localhost/reparto/assignment-processes/${processId}/events?audience=teacher`
     );
   });
 });
@@ -355,10 +417,8 @@ describe("selection turn API", () => {
     await expect(
       selectionTurns.complete(processId, sessionId, turnId, {
         assignment: {
-          assignment_process_id: processId,
           hour_requirement_id: requirementId,
-          process_teacher_id: teacherId,
-          assigned_hours: 4
+          process_teacher_id: teacherId
         }
       })
     ).resolves.toMatchObject({ status: "completed" });
@@ -385,12 +445,11 @@ describe("selection turn API", () => {
     expect(() =>
       selectionTurns.complete(processId, sessionId, turnId, {
         assignment: {
-          assignment_process_id: processId,
           hour_requirement_id: requirementId,
           process_teacher_id: teacherId,
-          assigned_hours: 0
+          assigned_hours: 4
         }
-      })
+      } as never)
     ).toThrow();
   });
 });
@@ -401,8 +460,7 @@ describe("assignment direct choice API", () => {
     await expect(
       assignments.directChoice(processId, {
         meeting_session_id: sessionId,
-        hour_requirement_id: requirementId,
-        assigned_hours: 4
+        hour_requirement_id: requirementId
       })
     ).resolves.toMatchObject({ source: "teacher_direct" });
     expect(fetchMock.mock.calls[0][0]).toContain(
@@ -415,8 +473,8 @@ describe("assignment direct choice API", () => {
       assignments.directChoice(processId, {
         meeting_session_id: sessionId,
         hour_requirement_id: requirementId,
-        assigned_hours: 0
-      })
+        assigned_hours: 4
+      } as never)
     ).toThrow();
   });
 });
@@ -434,10 +492,17 @@ describe("history API", () => {
     fetchMock.mockResolvedValueOnce(response(comparisonBody));
     await expect(
       history.compareVersions(processId, versionId, nextVersionId)
-    ).resolves.toMatchObject({ assignment_count_delta: 1 });
+    ).resolves.toMatchObject({
+      requirement_count_delta: 2,
+      requirement_generation_changed: true,
+      // A hour delta stays the service's canonical signed string; the retired
+      // float `assigned_hours_delta` pair is not on this contract any more.
+      teacher_load_delta: "-2.50",
+      allocation_delta: null
+    });
     fetchMock.mockResolvedValueOnce(response(comparisonBody));
     await expect(history.comparePreviousYear(processId)).resolves.toMatchObject({
-      changed_sections: ["assignments"]
+      changed_sections: ["teaching_activities", "requirements"]
     });
     fetchMock.mockResolvedValueOnce(response({ data: [artifactBody], count: 1 }));
     await expect(history.listExports(processId)).resolves.toMatchObject({
@@ -455,6 +520,155 @@ describe("history API", () => {
     await expect(
       history.restoreDraft(processId, { content: artifactBody.content })
     ).resolves.toMatchObject({ id: processId });
+  });
+
+  it("produces a planning artifact in each of the three modes", async () => {
+    const activityId = "18181818-1818-4181-8181-181818181818";
+    const subjectId = "19191919-1919-4191-8191-191919191919";
+    const groupSubjectId = "20202020-2020-4020-8020-202020202020";
+    const artifactBody = (mode: string) => ({
+      mode,
+      generated_at: now,
+      assignment_process_id: processId,
+      teaching_plan_id: planBalanceBody.teaching_plan_id,
+      plan_status: "unbalanced",
+      is_exact: false,
+      is_final_exportable: false,
+      balance: planBalanceBody,
+      validations: {
+        teaching_plan_id: planBalanceBody.teaching_plan_id,
+        assignment_process_id: processId,
+        is_assignment_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: []
+      },
+      activities: [
+        {
+          id: activityId,
+          subject_id: subjectId,
+          source: "secondary_manual",
+          allocation_category: "secondary",
+          activity_type: "tutoring",
+          group_weekly_hours_per_group: "2.00",
+          teacher_weekly_hours_per_position: "2.00",
+          required_teacher_count: 1,
+          linked_group_count: 1,
+          group_subject_ids: [groupSubjectId],
+          group_load: "2.00",
+          teacher_load: "2.00"
+        }
+      ]
+    });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("draft")));
+    await expect(planningExchange.exportDraft(processId)).resolves.toMatchObject({
+      mode: "draft",
+      is_exact: false
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain("/exports/planning-draft");
+    fetchMock.mockResolvedValueOnce(response(artifactBody("provisional")));
+    await expect(
+      planningExchange.exportProvisional(processId)
+    ).resolves.toMatchObject({ mode: "provisional" });
+    expect(fetchMock.mock.calls[1][0]).toContain("/exports/planning-provisional");
+    fetchMock.mockResolvedValueOnce(response(artifactBody("final")));
+    await expect(planningExchange.exportFinal(processId)).resolves.toMatchObject({
+      mode: "final"
+    });
+    expect(fetchMock.mock.calls[2][0]).toContain("/exports/planning-final");
+    // A draft artifact is produced for an unbalanced plan and carries the
+    // imbalance in both balances plus the finding count (plan §3.10, §7.8).
+    fetchMock.mockResolvedValueOnce(response(artifactBody("draft")));
+    await expect(
+      planningExportRequest("draft")(processId)
+    ).resolves.toMatchObject({ mode: "draft" });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("provisional")));
+    await expect(
+      planningExportRequest("provisional")(processId)
+    ).resolves.toMatchObject({ mode: "provisional" });
+    fetchMock.mockResolvedValueOnce(response(artifactBody("final")));
+    await expect(
+      planningExportRequest("final")(processId)
+    ).resolves.toMatchObject({ mode: "final" });
+    // Every hour in a planning artifact reaches the UI as a canonical
+    // two-place string, whatever the wire carried (plan §3.9).
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...artifactBody("draft"),
+        activities: [
+          { ...artifactBody("draft").activities[0], group_load: 2 }
+        ]
+      })
+    );
+    await expect(planningExchange.exportDraft(processId)).resolves.toMatchObject(
+      { activities: [{ group_load: "2.00" }] }
+    );
+    // An activity with no teacher position is not a position to fill.
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...artifactBody("draft"),
+        activities: [
+          { ...artifactBody("draft").activities[0], required_teacher_count: 0 }
+        ]
+      })
+    );
+    await expect(planningExchange.exportDraft(processId)).rejects.toThrow();
+  });
+
+  it("imports planning activities and returns an unblocked inexact result", async () => {
+    const subjectId = "19191919-1919-4191-8191-191919191919";
+    const request = {
+      activities: [
+        {
+          subject_id: subjectId,
+          group_weekly_hours_per_group: "2.50",
+          teacher_weekly_hours_per_position: "3.00"
+        }
+      ]
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        imported_count: 1,
+        imported_activity_ids: [teachingActivityId],
+        balance: { ...planBalanceBody, is_exact: false },
+        validations: {
+          teaching_plan_id: planBalanceBody.teaching_plan_id,
+          assignment_process_id: processId,
+          is_assignment_ready: false,
+          blocking_count: 1,
+          warning_count: 0,
+          messages: [
+            {
+              severity: "blocking",
+              code: "plan.reconciliation_required",
+              message: "Reconciliation is required.",
+              entity_type: "teaching_plan",
+              entity_id: planBalanceBody.teaching_plan_id
+            }
+          ]
+        }
+      })
+    );
+    await expect(
+      planningExchange.importPlanning(processId, request)
+    ).resolves.toMatchObject({
+      imported_count: 1,
+      balance: { is_exact: false },
+      validations: { blocking_count: 1 }
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain("/imports/planning");
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual({
+      activities: [
+        {
+          ...request.activities[0],
+          allocation_category: "secondary",
+          activity_type: "ordinary",
+          required_teacher_count: 1,
+          group_subject_ids: []
+        }
+      ]
+    });
   });
 
   it("validates export calls", () => {
@@ -643,6 +857,36 @@ describe("global entity API (Phase 1)", () => {
     const removeCall = fetchMock.mock.calls.at(-1)?.[1] as RequestInit;
     expect(removeCall?.method).toBe("DELETE");
   });
+
+  it("mints a claim code and redeems one (`W1.4`)", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teacher_profile_id: profileId,
+        display_name: "Ana García",
+        claim_code: "ABCDE-FGHJK-MNPQR-STVWX",
+        expires_at: "2026-09-01T10:00:00Z"
+      })
+    );
+    await expect(
+      teacherProfiles.issueClaimCode(profileId)
+    ).resolves.toMatchObject({ claim_code: "ABCDE-FGHJK-MNPQR-STVWX" });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/teacher-profiles/${profileId}/claim-code`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit)?.method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(response({ ...profileBody, user_id: userId }));
+    await expect(
+      teacherProfiles.claim({ claim_code: "ABCDE-FGHJK-MNPQR-STVWX" })
+    ).resolves.toMatchObject({ user_id: userId });
+    const claimCall = fetchMock.mock.calls.at(-1);
+    expect(claimCall?.[0]).toContain("/teacher-profiles/claim");
+    // The account is the token's, never the payload's: a body carrying a
+    // `user_id` would be a reader-floor account-linking primitive.
+    expect(JSON.parse(String((claimCall?.[1] as RequestInit)?.body))).toEqual({
+      claim_code: "ABCDE-FGHJK-MNPQR-STVWX"
+    });
+  });
 });
 
 describe("classroom stage API", () => {
@@ -677,7 +921,27 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: subjectId,
     assignment_process_id: processId,
     name: "Mathematics",
-    stage: "ESO",
+    allocation_category: "main",
+    activity_type: "ordinary",
+    default_group_weekly_hours: 4,
+    default_teacher_weekly_hours_per_position: 4,
+    default_required_teacher_count: 1,
+    allows_multiple_groups: false,
+    allows_zero_groups: false,
+    notes: null,
+    created_at: now,
+    updated_at: now
+  };
+  const groupSubjectId = "12121212-1212-4121-8121-121212121212";
+  const groupSubjectBody = {
+    id: groupSubjectId,
+    assignment_process_id: processId,
+    teaching_group_id: groupId,
+    subject_id: subjectId,
+    group_weekly_hours: 4,
+    teacher_weekly_hours_per_position: null,
+    required_teacher_count: 1,
+    active: true,
     notes: null,
     created_at: now,
     updated_at: now
@@ -697,12 +961,14 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
   const requirementBody = {
     id: requirementId,
     assignment_process_id: processId,
-    teaching_group_id: groupId,
-    subject_id: subjectId,
-    required_hours: 4,
-    requirement_type: "ordinary",
-    flags: null,
-    notes: null,
+    teaching_activity_id: teachingActivityId,
+    position_index: 0,
+    required_teacher_hours: "4.00",
+    status: "available",
+    created_generation: 1,
+    last_validated_generation: 1,
+    retired_generation: null,
+    superseded_by_requirement_id: null,
     created_at: now,
     updated_at: now
   };
@@ -710,7 +976,13 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: processTeacherId,
     assignment_process_id: processId,
     teacher_profile_id: teacherProfileId,
-    available_hours: 18,
+    base_weekly_hours: 18,
+    extra_weekly_hours: 0,
+    target_weekly_hours: 18,
+    is_overloaded: false,
+    extra_hours_reason: null,
+    extra_hours_updated_by_user_id: null,
+    extra_hours_updated_at: null,
     participates_in_selection: true,
     selection_position: 1,
     selection_points: 10,
@@ -725,15 +997,12 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     id: assignmentId,
     assignment_process_id: processId,
     hour_requirement_id: requirementId,
+    teaching_activity_id: teachingActivityId,
     process_teacher_id: processTeacherId,
-    assigned_hours: 4,
-    assignment_type: "main",
     source: "department_head",
-    status: "confirmed",
+    status: "active",
     chosen_by_user_id: userId,
     confirmed_by_user_id: userId,
-    override_reason: null,
-    overridden_by_user_id: null,
     notes: null,
     created_at: now,
     updated_at: now
@@ -796,6 +1065,267 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     ).toThrow();
   });
 
+  it("group subjects list/get/create/update/remove", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({ data: [groupSubjectBody], count: 1 })
+    );
+    await expect(groupSubjects.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.get(processId, groupSubjectId)
+    ).resolves.toMatchObject({ group_weekly_hours: "4.00" });
+
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        group_weekly_hours: 4
+      })
+    ).resolves.toMatchObject({ id: groupSubjectId });
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+    ).toEqual({
+      assignment_process_id: processId,
+      teaching_group_id: groupId,
+      subject_id: subjectId,
+      group_weekly_hours: "4.00"
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...groupSubjectBody, required_teacher_count: 2 })
+    );
+    await expect(
+      groupSubjects.update(processId, groupSubjectId, {
+        required_teacher_count: 2,
+        group_weekly_hours: null
+      })
+    ).resolves.toMatchObject({ required_teacher_count: 2 });
+    const patched = fetchMock.mock.calls.at(-1);
+    expect((patched?.[1] as RequestInit).method).toBe("PATCH");
+    // An explicit null clears the override back to "inherit the subject
+    // default"; an omitted field is left untouched entirely.
+    expect(JSON.parse((patched?.[1] as RequestInit).body as string)).toEqual({
+      required_teacher_count: 2,
+      group_weekly_hours: null
+    });
+
+    // §20.12: the cell leaves the plan through the guarded retire action. The
+    // served backend answers 405 on DELETE for this path, so the method and
+    // the `/retire` suffix are both part of the assertion.
+    fetchMock.mockResolvedValueOnce(response(groupSubjectBody));
+    await expect(
+      groupSubjects.retire(processId, groupSubjectId)
+    ).resolves.toMatchObject({ id: groupSubjectId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/${groupSubjectId}/retire`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "POST"
+    );
+
+    expect(() =>
+      groupSubjects.create(processId, {
+        teaching_group_id: groupId,
+        subject_id: subjectId,
+        required_teacher_count: 0
+      })
+    ).toThrow();
+    expect(() =>
+      groupSubjects.update(processId, groupSubjectId, {
+        teaching_group_id: groupId
+      } as never)
+    ).toThrow();
+  });
+
+  it("group-subject bulk preview and apply are a confirmed pair", async () => {
+    const change = {
+      teaching_group_id: groupId,
+      group_subject_id: null,
+      group_weekly_hours: 4,
+      teacher_weekly_hours_per_position: null,
+      required_teacher_count: 1
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        mode: "create_missing",
+        subject_id: subjectId,
+        matched_group_ids: [groupId],
+        to_create: [change],
+        to_update: [],
+        unchanged: [],
+        conflicts: [],
+        validation_errors: [],
+        expected_affected_count: 1
+      })
+    );
+    await expect(
+      groupSubjects.bulkPreview(processId, {
+        subject_id: subjectId,
+        mode: "create_missing",
+        stage: "ESO",
+        group_weekly_hours: 4
+      })
+    ).resolves.toMatchObject({ expected_affected_count: 1 });
+    const previewed = fetchMock.mock.calls.at(-1);
+    expect(previewed?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/bulk-preview`
+    );
+    expect((previewed?.[1] as RequestInit).method).toBe("POST");
+    expect(JSON.parse((previewed?.[1] as RequestInit).body as string)).toEqual({
+      subject_id: subjectId,
+      mode: "create_missing",
+      stage: "ESO",
+      group_weekly_hours: "4.00"
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        created_count: 1,
+        updated_count: 0,
+        data: [groupSubjectBody],
+        count: 1
+      })
+    );
+    await expect(
+      groupSubjects.bulkApply(processId, {
+        subject_id: subjectId,
+        mode: "create_missing",
+        stage: "ESO",
+        group_weekly_hours: 4,
+        expected_affected_count: 1
+      })
+    ).resolves.toMatchObject({ created_count: 1 });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/group-subjects/bulk-apply`
+    );
+    expect(
+      JSON.parse(
+        (fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string
+      ).expected_affected_count
+    ).toBe(1);
+
+    // Apply without the previewed count is not a request worth sending: the
+    // backend's 409 staleness guard has nothing to compare against.
+    expect(() =>
+      groupSubjects.bulkApply(processId, {
+        subject_id: subjectId,
+        mode: "create_missing"
+      } as never)
+    ).toThrow();
+  });
+
+  it("group-subject sync preview/apply", async () => {
+    const activityId = "21212121-2121-4121-8121-212121212121";
+    const planId = "22222222-2222-4222-8222-222222222299";
+    const fingerprint = "c".repeat(64);
+    const syncActivityBody = {
+      id: activityId,
+      teaching_plan_id: planId,
+      subject_id: subjectId,
+      allocation_category: "main",
+      activity_type: "ordinary",
+      group_weekly_hours_per_group: 4,
+      teacher_weekly_hours_per_position: 4,
+      required_teacher_count: 2,
+      notes: null,
+      source: "main_generated",
+      source_group_subject_id: groupSubjectId,
+      sync_state: "in_sync",
+      retired_at: null,
+      group_subject_ids: [groupSubjectId],
+      linked_group_count: 1,
+      created_at: now,
+      updated_at: now
+    };
+    const impact = {
+      active_assignment_count: 0,
+      affected_assignment_count: 0,
+      affected_requirement_ids: [],
+      requires_reconciliation: false
+    };
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        group_subject_id: groupSubjectId,
+        teaching_activity_id: activityId,
+        sync_state: "out_of_sync",
+        source_active: true,
+        source_values: {
+          group_weekly_hours_per_group: 4,
+          teacher_weekly_hours_per_position: 4,
+          required_teacher_count: 2
+        },
+        current_values: {
+          group_weekly_hours_per_group: 3,
+          teacher_weekly_hours_per_position: 3,
+          required_teacher_count: 1
+        },
+        differences: [
+          {
+            field: "required_teacher_count",
+            current_value: 1,
+            source_value: 2
+          }
+        ],
+        assignment_impact: impact,
+        retirement_required: false,
+        is_noop: false,
+        preview_fingerprint: fingerprint
+      })
+    );
+    await expect(
+      groupSubjects.syncPreview(processId, groupSubjectId)
+    ).resolves.toMatchObject({ preview_fingerprint: fingerprint });
+    const previewCall = fetchMock.mock.calls.at(-1);
+    expect(previewCall?.[0]).toContain(
+      `/group-subjects/${groupSubjectId}/sync-preview`
+    );
+    expect((previewCall?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        activity: syncActivityBody,
+        applied_differences: [
+          {
+            field: "required_teacher_count",
+            current_value: 1,
+            source_value: 2
+          }
+        ],
+        assignment_impact: impact,
+        teaching_plan_status: "draft",
+        was_noop: false
+      })
+    );
+    await expect(
+      groupSubjects.syncApply(processId, groupSubjectId, {
+        expected_preview_fingerprint: fingerprint
+      })
+    ).resolves.toMatchObject({ was_noop: false });
+    const applyCall = fetchMock.mock.calls.at(-1);
+    expect(applyCall?.[0]).toContain(
+      `/group-subjects/${groupSubjectId}/sync-apply`
+    );
+    expect(
+      JSON.parse((applyCall?.[1] as RequestInit).body as string)
+    ).toEqual({ expected_preview_fingerprint: fingerprint });
+
+    // An apply that does not carry the service's own staleness token is never
+    // sent: the whole point of the pair is that the backend can refuse it.
+    expect(() =>
+      groupSubjects.syncApply(processId, groupSubjectId, {
+        expected_preview_fingerprint: "stale"
+      })
+    ).toThrow();
+  });
+
   it("teaching groups list/get/create/update/remove", async () => {
     fetchMock.mockResolvedValueOnce(response({ data: [groupBody], count: 1 }));
     await expect(teachingGroups.list(processId)).resolves.toMatchObject({
@@ -855,7 +1385,7 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     ).toThrow();
   });
 
-  it("hour requirements list/get/create/update/remove", async () => {
+  it("reads generated hour-requirement slots without mutation methods", async () => {
     fetchMock.mockResolvedValueOnce(
       response({ data: [requirementBody], count: 1 })
     );
@@ -869,50 +1399,10 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     fetchMock.mockResolvedValueOnce(response(requirementBody));
     await expect(
       hourRequirements.get(processId, requirementId)
-    ).resolves.toMatchObject({ required_hours: 4 });
-
-    fetchMock.mockResolvedValueOnce(response(requirementBody));
-    await expect(
-      hourRequirements.create(processId, {
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 4
-      })
-    ).resolves.toMatchObject({ requirement_type: "ordinary" });
-    expect(
-      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
-        .assignment_process_id
-    ).toBe(processId);
-
-    fetchMock.mockResolvedValueOnce(
-      response({ ...requirementBody, required_hours: 6 })
-    );
-    await expect(
-      hourRequirements.update(processId, requirementId, {
-        required_hours: 6
-      })
-    ).resolves.toMatchObject({ required_hours: 6 });
-
-    fetchMock.mockResolvedValueOnce(response(requirementBody));
-    await expect(
-      hourRequirements.remove(processId, requirementId)
-    ).resolves.toMatchObject({ id: requirementId });
-    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
-    );
-
-    expect(() =>
-      hourRequirements.create(processId, {
-        teaching_group_id: groupId,
-        subject_id: subjectId,
-        required_hours: 0
-      } as never)
-    ).toThrow();
-    expect(() =>
-      hourRequirements.update(processId, requirementId, {
-        requirement_type: "unknown"
-      } as never)
-    ).toThrow();
+    ).resolves.toMatchObject({ required_teacher_hours: "4.00" });
+    expect(hourRequirements).not.toHaveProperty("create");
+    expect(hourRequirements).not.toHaveProperty("update");
+    expect(hourRequirements).not.toHaveProperty("remove");
   });
 
   it("process teachers list/get/create/update/remove", async () => {
@@ -935,9 +1425,12 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     await expect(
       processTeachers.create(processId, {
         teacher_profile_id: teacherProfileId,
-        available_hours: 18
+        base_weekly_hours: 18
       })
-    ).resolves.toMatchObject({ available_hours: 18 });
+    ).resolves.toMatchObject({
+      base_weekly_hours: "18.00",
+      target_weekly_hours: "18.00"
+    });
     expect(
       JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
         .assignment_process_id
@@ -960,10 +1453,35 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       "DELETE"
     );
 
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...processTeacherBody,
+        extra_weekly_hours: 2,
+        target_weekly_hours: 20,
+        is_overloaded: true,
+        extra_hours_reason: "Covering a vacancy"
+      })
+    );
+    await expect(
+      processTeachers.extraHours(processId, processTeacherId, {
+        extra_weekly_hours: "2",
+        reason: "Covering a vacancy"
+      })
+    ).resolves.toMatchObject({
+      is_overloaded: true,
+      target_weekly_hours: "20.00"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teachers/${processTeacherId}/extra-hours`
+    );
+    expect(
+      JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string)
+    ).toEqual({ extra_weekly_hours: "2.00", reason: "Covering a vacancy" });
+
     expect(() =>
       processTeachers.create(processId, {
         teacher_profile_id: teacherProfileId,
-        available_hours: -1
+        base_weekly_hours: -1
       } as never)
     ).toThrow();
     expect(() =>
@@ -971,9 +1489,21 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
         status: "removed"
       } as never)
     ).toThrow();
+    // Authorized overload cannot ride in on the generic PATCH.
+    expect(() =>
+      processTeachers.update(processId, processTeacherId, {
+        extra_weekly_hours: 2
+      } as never)
+    ).toThrow();
+    expect(() =>
+      processTeachers.extraHours(processId, processTeacherId, {
+        extra_weekly_hours: 2,
+        reason: ""
+      })
+    ).toThrow();
   });
 
-  it("assignments list/get/create/update/remove + direct-choice", async () => {
+  it("assignments list/get/validations/create/update + undo/reassign", async () => {
     fetchMock.mockResolvedValueOnce(response({ data: [assignmentBody], count: 1 }));
     await expect(assignments.list(processId)).resolves.toMatchObject({
       count: 1
@@ -985,24 +1515,49 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     fetchMock.mockResolvedValueOnce(response(assignmentBody));
     await expect(
       assignments.get(processId, assignmentId)
-    ).resolves.toMatchObject({ id: assignmentId });
+    ).resolves.toMatchObject({ id: assignmentId, status: "active" });
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        assignment_process_id: processId,
+        is_final_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: [
+          {
+            severity: "blocking",
+            code: "ASSIGNMENT_SLOT_UNASSIGNED",
+            message: "One live slot has no teacher.",
+            entity_type: "hour_requirement",
+            entity_id: requirementId
+          }
+        ]
+      })
+    );
+    await expect(assignments.validations(processId)).resolves.toMatchObject({
+      blocking_count: 1,
+      is_final_ready: false
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/assignments/validations`
+    );
 
     fetchMock.mockResolvedValueOnce(response(assignmentBody));
     await expect(
       assignments.create(processId, {
-        assignment_process_id: processId,
         hour_requirement_id: requirementId,
-        process_teacher_id: processTeacherId,
-        assigned_hours: 4
+        process_teacher_id: processTeacherId
       })
-    ).resolves.toMatchObject({ assignment_type: "main" });
+    ).resolves.toMatchObject({ teaching_activity_id: teachingActivityId });
 
     fetchMock.mockResolvedValueOnce(
-      response({ ...assignmentBody, assigned_hours: 5 })
+      response({ ...assignmentBody, notes: "Swapped at the meeting" })
     );
     await expect(
-      assignments.update(processId, assignmentId, { assigned_hours: 5 })
-    ).resolves.toMatchObject({ assigned_hours: 5 });
+      assignments.update(processId, assignmentId, {
+        notes: "Swapped at the meeting"
+      })
+    ).resolves.toMatchObject({ notes: "Swapped at the meeting" });
     expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
       `/assignment-processes/${processId}/assignments/${assignmentId}`
     );
@@ -1010,25 +1565,129 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
       "PATCH"
     );
 
-    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    fetchMock.mockResolvedValueOnce(
+      response({ ...assignmentBody, status: "cancelled" })
+    );
     await expect(
-      assignments.remove(processId, assignmentId)
-    ).resolves.toMatchObject({ id: assignmentId });
+      assignments.undo(processId, assignmentId, { reason: "Wrong teacher" })
+    ).resolves.toMatchObject({ status: "cancelled" });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignments/${assignmentId}/undo`
+    );
     expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
-      "DELETE"
+      "POST"
     );
 
-    expect(() =>
-      assignments.update(processId, assignmentId, { assigned_hours: 0 } as never)
-    ).toThrow();
+    fetchMock.mockResolvedValueOnce(response(assignmentBody));
+    await expect(
+      assignments.reassign(processId, assignmentId, {
+        process_teacher_id: processTeacherId,
+        reason: "Teacher unavailable"
+      })
+    ).resolves.toMatchObject({ id: assignmentId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignments/${assignmentId}/reassign`
+    );
+
+    // The hour, share and override inputs are gone from the contract: a slot is
+    // indivisible, so a client can no longer even build those payloads.
     expect(() =>
       assignments.create(processId, {
-        assignment_process_id: processId,
         hour_requirement_id: requirementId,
         process_teacher_id: processTeacherId,
-        assigned_hours: 0
+        assigned_hours: 4
       } as never)
     ).toThrow();
+    expect(() =>
+      assignments.update(processId, assignmentId, {
+        assignment_type: "shared"
+      } as never)
+    ).toThrow();
+    expect(() =>
+      assignments.directChoice(processId, {
+        meeting_session_id: meetingSessionId,
+        hour_requirement_id: requirementId,
+        assigned_hours: 4
+      } as never)
+    ).toThrow();
+    // Undo and reassignment are reason-required actions, never reasonless
+    // deletes — there is no `remove` wrapper to reach the compatibility alias.
+    expect(assignments).not.toHaveProperty("remove");
+    expect(() =>
+      assignments.undo(processId, assignmentId, { reason: "" })
+    ).toThrow();
+    expect(() =>
+      assignments.reassign(processId, assignmentId, {
+        process_teacher_id: processTeacherId,
+        reason: ""
+      })
+    ).toThrow();
+  });
+
+  it("allocation revisions list/current/create only", async () => {
+    const revisionBody = {
+      id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      assignment_process_id: processId,
+      revision_number: 1,
+      allocated_group_weekly_hours: 120,
+      reason: "Initial allocation",
+      source: "manual_transcription",
+      source_reference: null,
+      received_at: null,
+      created_by_user_id: userId,
+      superseded_at: null,
+      created_at: now,
+      updated_at: now
+    };
+
+    fetchMock.mockResolvedValueOnce(response({ data: [revisionBody], count: 1 }));
+    await expect(allocationRevisions.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls[0][0]).toContain(
+      `/assignment-processes/${processId}/allocation-revisions/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(revisionBody));
+    await expect(allocationRevisions.current(processId)).resolves.toMatchObject({
+      allocated_group_weekly_hours: "120.00"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/allocation-revisions/current`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(revisionBody));
+    await expect(
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 120,
+        reason: "Initial allocation"
+      })
+    ).resolves.toMatchObject({ revision_number: 1 });
+    const sent = JSON.parse(
+      (fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string
+    );
+    expect(sent).toEqual({
+      allocated_group_weekly_hours: "120.00",
+      reason: "Initial allocation"
+    });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    expect(() =>
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 0,
+        reason: "Zero allocation"
+      })
+    ).toThrow();
+    expect(() =>
+      allocationRevisions.create(processId, {
+        allocated_group_weekly_hours: 120,
+        reason: ""
+      })
+    ).toThrow();
+
+    // Revisions are immutable by contract: no update, no delete.
+    expect(allocationRevisions).not.toHaveProperty("update");
+    expect(allocationRevisions).not.toHaveProperty("remove");
   });
 
   it("audit events list only", async () => {
@@ -1042,5 +1701,493 @@ describe("process-scoped entity API (Phase 3 step 1)", () => {
     expect(auditEvents).not.toHaveProperty("create");
     expect(auditEvents).not.toHaveProperty("update");
     expect(auditEvents).not.toHaveProperty("remove");
+  });
+});
+
+describe("teaching-plan and activity API wrappers", () => {
+  const planId = "17171717-1717-4171-8171-171717171717";
+  const activityId = "18181818-1818-4181-8181-181818181818";
+  const subjectId = "19191919-1919-4191-8191-191919191919";
+  const groupSubjectId = "20202020-2020-4020-8020-202020202020";
+
+  const planBody = {
+    id: planId,
+    assignment_process_id: processId,
+    allocation_revision_id: null,
+    status: "draft",
+    current_generation_number: 0,
+    locked_at: null,
+    locked_by_user_id: null,
+    requirements_generated_at: null,
+    stale_reason: null,
+    feasibility_status: "not_evaluated",
+    feasibility_generation: null,
+    feasibility_checked_at: null,
+    feasibility_input_fingerprint: null,
+    feasibility_solver_version: null,
+    feasibility_diagnostics_ref: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const activityBody = {
+    id: activityId,
+    teaching_plan_id: planId,
+    subject_id: subjectId,
+    allocation_category: "secondary",
+    activity_type: "co_teaching",
+    group_weekly_hours_per_group: 2,
+    teacher_weekly_hours_per_position: 2.5,
+    required_teacher_count: 2,
+    notes: null,
+    source: "secondary_manual",
+    source_group_subject_id: null,
+    sync_state: "in_sync",
+    retired_at: null,
+    group_subject_ids: [groupSubjectId],
+    linked_group_count: 1,
+    created_at: now,
+    updated_at: now
+  };
+
+  it("wraps the complete teaching-plan read and action surface", async () => {
+    fetchMock.mockResolvedValueOnce(response(planBody));
+    await expect(teachingPlans.get(processId)).resolves.toMatchObject({
+      id: planId,
+      status: "draft"
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(planBody));
+    await expect(teachingPlans.create(processId)).resolves.toMatchObject({
+      id: planId
+    });
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        group: {
+          total_group_load: "120.00",
+          allocated_group_weekly_hours: "124.00",
+          allocation_difference: "-4.00",
+          is_balanced: false
+        },
+        teacher: {
+          total_teacher_load: "124.00",
+          participant_target_total: "124.00",
+          teacher_load_difference: "0.00",
+          is_balanced: true
+        },
+        is_exact: false
+      })
+    );
+    await expect(teachingPlans.summary(processId)).resolves.toMatchObject({
+      group: { allocation_difference: "-4.00" },
+      teacher: { teacher_load_difference: "0.00" }
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/summary`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        is_assignment_ready: false,
+        blocking_count: 1,
+        warning_count: 0,
+        messages: [
+          {
+            severity: "blocking",
+            code: "plan.missing_allocation",
+            message: "No allocation has been recorded.",
+            entity_type: "plan",
+            entity_id: planId
+          }
+        ]
+      })
+    );
+    await expect(teachingPlans.validations(processId)).resolves.toMatchObject({
+      blocking_count: 1
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/validations`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        ...planBody,
+        status: "locked",
+        locked_at: now,
+        locked_by_user_id: userId,
+        feasibility_status: "feasible",
+        feasibility_generation: 0,
+        feasibility_checked_at: now,
+        feasibility_input_fingerprint: "fingerprint",
+        feasibility_solver_version: "solver-v1"
+      })
+    );
+    await expect(teachingPlans.lock(processId)).resolves.toMatchObject({
+      status: "locked",
+      locked_by_user_id: userId
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/lock`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    // §20.14/§20.15: the way back out. Without it locking is a one-way door,
+    // so both the method and the `/unlock` suffix are part of the assertion.
+    fetchMock.mockResolvedValueOnce(
+      response({ ...planBody, status: "balanced", locked_at: null })
+    );
+    await expect(teachingPlans.unlock(processId)).resolves.toMatchObject({
+      status: "balanced",
+      locked_at: null
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/unlock`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        status: "infeasible",
+        input_fingerprint: "fingerprint",
+        solver_version: "bounded-dfs-v1",
+        checked_at: now,
+        cache_reused: false,
+        witness_available: false,
+        states_explored: 12,
+        memoization_hits: 3
+      })
+    );
+    await expect(
+      teachingPlans.evaluateFeasibility(processId)
+    ).resolves.toMatchObject({ status: "infeasible", cache_reused: false });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/evaluate`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        status: "infeasible",
+        checked_at: now,
+        diagnostics: [
+          {
+            code: "slot_exceeds_every_target",
+            message:
+              "A remaining slot exceeds every participant's remaining target.",
+            related_ids: [requirementId]
+          }
+        ]
+      })
+    );
+    await expect(
+      teachingPlans.feasibilityDiagnostics(processId)
+    ).resolves.toMatchObject({
+      status: "infeasible",
+      diagnostics: [{ code: "slot_exceeds_every_target" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/diagnostics`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        teaching_plan_id: planId,
+        assignment_process_id: processId,
+        input_fingerprint: "fingerprint",
+        solver_version: "bounded-dfs-v1",
+        checked_at: now,
+        witness: [
+          {
+            slot_id: requirementId,
+            process_teacher_id: userId
+          }
+        ]
+      })
+    );
+    await expect(
+      teachingPlans.feasibilityWitness(processId)
+    ).resolves.toMatchObject({
+      witness: [{ slot_id: requirementId, process_teacher_id: userId }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/feasibility/witness`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("GET");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        created: [activityBody],
+        created_count: 1,
+        skipped_source_ids: [],
+        skipped_count: 0
+      })
+    );
+    await expect(teachingPlans.materializeMain(processId)).resolves.toMatchObject(
+      { created_count: 1 }
+    );
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-plan/materialize-main`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    const reconciliationAssignmentId =
+      "24242424-2424-4424-8424-242424242424";
+    const reconciliationTeacherId =
+      "25252525-2525-4525-8525-252525252525";
+    const reconciliationSlot = {
+      id: requirementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: 3,
+      status: "available",
+      created_generation: 2,
+      last_validated_generation: 2,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+    const conflict = {
+      requirement_id: requirementId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      resolution: "value_changed",
+      current_required_teacher_hours: 2.9000000000000004,
+      new_required_teacher_hours: 3,
+      assignment_id: reconciliationAssignmentId,
+      process_teacher_id: reconciliationTeacherId,
+      superseded_by_requirement_id: null
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        next_generation_number: 2,
+        conflicts: [conflict],
+        conflict_count: 1,
+        create_count: 0,
+        preserve_count: 2,
+        retire_count: 0,
+        requires_reconciliation: true,
+        is_noop: false
+      })
+    );
+    await expect(
+      hourRequirements.reconciliationPreview(processId)
+    ).resolves.toMatchObject({
+      conflict_count: 1,
+      conflicts: [
+        {
+          current_required_teacher_hours: "2.90",
+          new_required_teacher_hours: "3.00"
+        }
+      ]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/reconciliation-preview`
+    );
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        generation_number: 2,
+        resolved: [conflict],
+        resolved_count: 1,
+        released_assignment_ids: [reconciliationAssignmentId],
+        created: [reconciliationSlot],
+        created_count: 1,
+        preserved_count: 2,
+        retired_count: 0,
+        data: [reconciliationSlot],
+        count: 3
+      })
+    );
+    await expect(
+      hourRequirements.reconcile(processId, {
+        reason: "  Allocation changed.  ",
+        expected_conflict_count: 1
+      })
+    ).resolves.toMatchObject({ resolved_count: 1, count: 3 });
+    const reconcileCall = fetchMock.mock.calls.at(-1);
+    expect(reconcileCall?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/reconcile`
+    );
+    expect(JSON.parse((reconcileCall?.[1] as RequestInit).body as string)).toEqual(
+      {
+        reason: "Allocation changed.",
+        expected_conflict_count: 1
+      }
+    );
+  });
+
+  it("previews and applies deterministic requirement generation", async () => {
+    const generatedSlot = {
+      id: requirementId,
+      assignment_process_id: processId,
+      teaching_activity_id: activityId,
+      position_index: 0,
+      required_teacher_hours: 2.9000000000000004,
+      status: "available",
+      created_generation: 1,
+      last_validated_generation: 1,
+      retired_generation: null,
+      superseded_by_requirement_id: null,
+      created_at: now,
+      updated_at: now
+    };
+    fetchMock.mockResolvedValueOnce(
+      response({
+        next_generation_number: 1,
+        to_create: [
+          {
+            teaching_activity_id: activityId,
+            position_index: 0,
+            required_teacher_hours: 2.5
+          }
+        ],
+        create_count: 1,
+        preserve_ids: [],
+        preserve_count: 0,
+        retire_ids: [],
+        retire_count: 0,
+        conflict_ids: [],
+        conflict_count: 0,
+        requires_reconciliation: false,
+        is_noop: false
+      })
+    );
+    await expect(
+      hourRequirements.generationPreview(processId)
+    ).resolves.toMatchObject({
+      next_generation_number: 1,
+      to_create: [{ required_teacher_hours: "2.50" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/generation-preview`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+
+    fetchMock.mockResolvedValueOnce(
+      response({
+        generation_number: 1,
+        created: [generatedSlot],
+        created_count: 1,
+        preserved_count: 0,
+        retired_count: 0,
+        data: [generatedSlot],
+        count: 1
+      })
+    );
+    await expect(hourRequirements.generate(processId)).resolves.toMatchObject({
+      generation_number: 1,
+      count: 1,
+      data: [{ required_teacher_hours: "2.90" }]
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/requirements/generate`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe("POST");
+  });
+
+  it("wraps activity CRUD and canonicalizes outgoing hours", async () => {
+    fetchMock.mockResolvedValueOnce(
+      response({ data: [activityBody], count: 1 })
+    );
+    await expect(teachingActivities.list(processId)).resolves.toMatchObject({
+      count: 1
+    });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-activities/`
+    );
+
+    fetchMock.mockResolvedValueOnce(response(activityBody));
+    await expect(
+      teachingActivities.get(processId, activityId)
+    ).resolves.toMatchObject({ id: activityId });
+
+    fetchMock.mockResolvedValueOnce(response(activityBody));
+    await expect(
+      teachingActivities.create(processId, {
+        subject_id: subjectId,
+        activity_type: "co_teaching",
+        group_weekly_hours_per_group: 2,
+        teacher_weekly_hours_per_position: "2.5",
+        required_teacher_count: 2,
+        group_subject_ids: [groupSubjectId]
+      })
+    ).resolves.toMatchObject({ id: activityId });
+    const created = fetchMock.mock.calls.at(-1);
+    expect((created?.[1] as RequestInit).method).toBe("POST");
+    expect(JSON.parse((created?.[1] as RequestInit).body as string)).toEqual({
+      subject_id: subjectId,
+      activity_type: "co_teaching",
+      group_weekly_hours_per_group: "2.00",
+      teacher_weekly_hours_per_position: "2.50",
+      required_teacher_count: 2,
+      group_subject_ids: [groupSubjectId]
+    });
+
+    fetchMock.mockResolvedValueOnce(
+      response({ ...activityBody, required_teacher_count: 1 })
+    );
+    await expect(
+      teachingActivities.update(processId, activityId, {
+        teacher_weekly_hours_per_position: 3,
+        required_teacher_count: 1
+      })
+    ).resolves.toMatchObject({ required_teacher_count: 1 });
+    const patched = fetchMock.mock.calls.at(-1);
+    expect((patched?.[1] as RequestInit).method).toBe("PATCH");
+    expect(JSON.parse((patched?.[1] as RequestInit).body as string)).toEqual({
+      teacher_weekly_hours_per_position: "3.00",
+      required_teacher_count: 1
+    });
+
+    // §20.12: guarded retirement, not deletion — the served backend supports
+    // GET and PATCH only on the activity path and answers 405 on DELETE.
+    fetchMock.mockResolvedValueOnce(response(activityBody));
+    await expect(
+      teachingActivities.retire(processId, activityId)
+    ).resolves.toMatchObject({ id: activityId });
+    expect(fetchMock.mock.calls.at(-1)?.[0]).toContain(
+      `/assignment-processes/${processId}/teaching-activities/${activityId}/retire`
+    );
+    expect((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).method).toBe(
+      "POST"
+    );
+  });
+
+  it("rejects invalid activity payloads before fetch", () => {
+    expect(() =>
+      teachingActivities.create(processId, {
+        subject_id: subjectId,
+        group_weekly_hours_per_group: "1.001",
+        teacher_weekly_hours_per_position: 1
+      })
+    ).toThrow();
+    expect(() =>
+      teachingActivities.create(processId, {
+        subject_id: subjectId,
+        group_weekly_hours_per_group: 1,
+        teacher_weekly_hours_per_position: 1,
+        source: "main_generated"
+      } as never)
+    ).toThrow();
+    expect(() =>
+      teachingActivities.update(processId, activityId, {
+        subject_id: subjectId
+      } as never)
+    ).toThrow();
   });
 });

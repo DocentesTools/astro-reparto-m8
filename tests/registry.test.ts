@@ -31,7 +31,10 @@ describe("reparto shadcn registry", () => {
       scripts?: Record<string, string>;
     }>("package.json");
 
-    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toBe("^1.3.0");
+    // A normal (not peer) dependency, so registry consumers get astro-ui-m8
+    // installed automatically; the exact pin is expected to move as the
+    // fleet's shared UI package releases and isn't this test's concern.
+    expect(pkg.dependencies?.["@mano8/astro-ui-m8"]).toMatch(/^\^\d+\.\d+\.\d+$/);
     expect(pkg.files).toEqual(expect.arrayContaining(["registry.json", "registry/r"]));
     expect(pkg.scripts?.["build:registry"]).toBe("node scripts/build-registry.mjs");
     expect(pkg.scripts?.build).toContain("npm run build:registry");
@@ -96,6 +99,28 @@ describe("reparto shadcn registry", () => {
         expect.stringContaining("@mano8/astro-reparto-m8/default-ui")
       ])
     );
+  });
+
+  it("keeps obsolete partial and shared assignment inputs out of starter skins", () => {
+    const source = readFileSync(
+      join(root, "registry/blocks/views/reparto-starter-views.tsx"),
+      "utf8"
+    );
+    const generated = readJson<RegistryItem>(
+      "registry/r/reparto-starter-views.json"
+    ).files.map((file) => file.content).join("\n");
+    const obsoleteInputs = [
+      "requirementAssignedHours",
+      "requirementRequiredHours",
+      "assigned_hours",
+      "assignment_type",
+      "override_reason"
+    ];
+
+    for (const input of obsoleteInputs) {
+      expect(source).not.toContain(input);
+      expect(generated).not.toContain(input);
+    }
   });
 
   it("ships Phase 1 admin CRUD skins that compose reparto hooks + i18n", () => {

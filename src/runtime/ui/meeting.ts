@@ -1,0 +1,134 @@
+import type { ProcessSummary } from "../schemas.js";
+
+/**
+ * Why the meeting control cannot act, as a stable code.
+ *
+ * Codes, not sentences: the dictionary translates them and nothing branches on
+ * display text. They are the department-head twin of the teacher panel's
+ * `TeacherChoiceDisabledReason`, and they answer the same question from the
+ * other side of the room — the head must not be offered a turn control the
+ * service would refuse.
+ */
+export type MeetingControlBlockedReason =
+  | "no_process_data"
+  | "plan_not_ready"
+  | "reconciliation_required"
+  | "no_meeting_session";
+
+/**
+ * The five turn controls, as the stable keys the buttons carry in
+ * `data-reparto-action` and the meeting screen dispatches on. Named so a caller
+ * wiring the controls to the service can speak the same five words the state
+ * helper does, instead of restating the union.
+ */
+export type MeetingTurnActionKey =
+  | "initialize-turns"
+  | "start-turn"
+  | "complete-turn"
+  | "skip-turn"
+  | "override-turn";
+
+/** One turn control and whether it can be pressed. */
+export type MeetingTurnAction = {
+  key: MeetingTurnActionKey;
+  disabled: boolean;
+  /** Stable reason code, or `null` when the action is available. */
+  reason: MeetingControlBlockedReason | "turn_active" | "no_active_turn" | null;
+};
+
+export type MeetingControlState = {
+  selectionBlocked: boolean;
+  blockedReason: MeetingControlBlockedReason | null;
+  /** The plan changed after generation and the service has said so. */
+  planStale: boolean;
+  /** An allocation change must be reconciled before selection continues. */
+  reconciliationRequired: boolean;
+  totalSlots: number;
+  assignedSlots: number;
+  /** Live slots still unassigned — what is left for the meeting to hand out. */
+  pendingSlots: number;
+  turnActive: boolean;
+  actions: readonly MeetingTurnAction[];
+};
+
+/**
+ * What the meeting control may do, derived from the service's own gate state.
+ *
+ * Fail closed twice over. With no summary at all every control is disabled and
+ * the reason is `no_process_data`: a control room must never imply the meeting
+ * can proceed because a request has not answered yet. And the blocked reason is
+ * taken from `readiness` **and** `plan_status` together — `readiness` is the
+ * coarse projection the service publishes for the LAN and shared tiers, while a
+ * `stale` or `reconciliation_required` plan is the head's own detail. Either one
+ * blocks; neither is inferred from the other.
+ *
+ * Nothing here decides *whether the service will accept* a turn action — that is
+ * the backend's lifecycle gate and it stays there. This decides only what the
+ * control room is offered, so a head is not handed a button whose refusal is
+ * already known.
+ *
+ * `sessionOpen` answers the one question `readiness`/`plan_status` cannot: a
+ * meeting session is a separate lifecycle object (`meetingSessions.ts`), and
+ * initializing turns against a process with none fails on the service before
+ * any of the plan-state reasons above would ever apply. Defaulting it to
+ * `true` keeps every existing caller that has no session concept of its own
+ * (the projected shared screen, the plan-state unit tests) reading exactly as
+ * before; only a caller that actually tracks session lifecycle passes `false`.
+ */
+export function buildMeetingControlState(
+  summary: ProcessSummary | null | undefined,
+  sessionOpen = true
+): MeetingControlState {
+  const planStale = summary?.plan_status === "stale";
+  const reconciliationRequired =
+    summary?.readiness === "recalculation_required" ||
+    summary?.plan_status === "reconciliation_required";
+  const blockedReason: MeetingControlBlockedReason | null = !summary
+    ? "no_process_data"
+    : reconciliationRequired
+      ? "reconciliation_required"
+      : summary.readiness === "not_ready"
+        ? "plan_not_ready"
+        : !sessionOpen
+          ? "no_meeting_session"
+          : null;
+  const turnActive = Boolean(summary?.current_turn);
+  const actions: readonly MeetingTurnAction[] = [
+    {
+      key: "initialize-turns",
+      disabled: blockedReason !== null || turnActive,
+      reason: blockedReason ?? (turnActive ? "turn_active" : null)
+    },
+    {
+      key: "start-turn",
+      disabled: blockedReason !== null,
+      reason: blockedReason
+    },
+    {
+      key: "complete-turn",
+      disabled: blockedReason !== null || !turnActive,
+      reason: blockedReason ?? (turnActive ? null : "no_active_turn")
+    },
+    {
+      key: "skip-turn",
+      disabled: blockedReason !== null || !turnActive,
+      reason: blockedReason ?? (turnActive ? null : "no_active_turn")
+    },
+    {
+      key: "override-turn",
+      disabled: blockedReason !== null || !turnActive,
+      reason: blockedReason ?? (turnActive ? null : "no_active_turn")
+    }
+  ];
+  return {
+    selectionBlocked: blockedReason !== null,
+    blockedReason,
+    planStale,
+    reconciliationRequired,
+    totalSlots: summary?.total_slots ?? 0,
+    assignedSlots: summary?.assigned_slots ?? 0,
+    pendingSlots: summary?.available_slots ?? 0,
+    turnActive,
+    actions
+  };
+}

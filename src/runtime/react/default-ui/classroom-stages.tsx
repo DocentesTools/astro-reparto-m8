@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import {
   formatRepartoMessage,
@@ -6,10 +6,7 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
-import {
-  canManageClassroomStages,
-  getRepartoAuthAdapter
-} from "../../authAdapter.js";
+import { useRepartoCanAct } from "../useRepartoRole.js";
 import type { ClassroomStagePublic } from "../../schemas.js";
 import {
   useCreateRepartoClassroomStage,
@@ -34,6 +31,7 @@ import {
   type Dict
 } from "./process-crud/shared.js";
 import { Shell, type ViewConfig } from "./process-context.js";
+import { RepartoRouteGuard } from "./route-guard.js";
 
 function StageForm({
   dict,
@@ -156,18 +154,17 @@ function ClassroomStagesContent({
   locale: RepartoLocale;
 }) {
   const query = useRepartoClassroomStages();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+  // Two floors, not one (§8.1 route map): the service lists stages for any
+  // `READER`, and only `ADMIN` may create, edit or delete one. This view used to
+  // refuse the whole page below `ADMIN`, which withheld data a `READER` is
+  // entitled to (§21.4); the refusal now belongs to the route guard, and what is
+  // left here is the action floor.
+  const allowed = useRepartoCanAct("classroomStages");
   const [editing, setEditing] = useState<ClassroomStagePublic | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<ClassroomStagePublic | null>(null);
   const remove = useDeleteRepartoClassroomStage();
   const [mapped, setError, clear] = useMappedError();
-
-  useEffect(() => {
-    void Promise.resolve(
-      getRepartoAuthAdapter().getCurrentUser?.() ?? null
-    ).then((user) => setAllowed(canManageClassroomStages(user)));
-  }, []);
 
   const rows = query.data?.data ?? [];
   const columns: DataTableColumn<ClassroomStagePublic>[] = [
@@ -226,14 +223,6 @@ function ClassroomStagesContent({
         ) : null
     }
   ];
-
-  if (allowed === false) {
-    return (
-      <section data-reparto-state="forbidden">
-        {dict.classroomStages.state.unauthorized}
-      </section>
-    );
-  }
 
   return (
     <main
@@ -328,7 +317,9 @@ export function RepartoClassroomStagesView({
   const dict = getRepartoDictionary(resolvedLocale);
   return (
     <Shell config={config}>
-      <ClassroomStagesContent dict={dict} locale={resolvedLocale} />
+      <RepartoRouteGuard locale={resolvedLocale} route="classroomStages">
+        <ClassroomStagesContent dict={dict} locale={resolvedLocale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }

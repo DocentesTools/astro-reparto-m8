@@ -4,6 +4,8 @@ type FormSubmitEvent = { preventDefault: () => void };
 type InputChangeEvent = { target: { value: string } };
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
+import { RepartoErrorBoundary } from "../RepartoErrorBoundary.js";
+import { useRepartoCanAct, useRepartoViewMode } from "../useRepartoRole.js";
 import {
   useCreateRepartoAcademicYear,
   useCreateRepartoDepartment,
@@ -14,9 +16,17 @@ import {
   useRepartoProcesses,
   useRepartoSchools
 } from "../hooks.js";
+import {
+  useRepartoEventStream,
+  type RepartoEventStreamState
+} from "../useRepartoEvents.js";
+import {
+  SetupChecklistProgress,
+  SetupChecklistSteps
+} from "../SetupChecklist.js";
+import { buildSetupChecklist, type SetupChecklistStepKey } from "../../ui/index.js";
 import { resolveProcessId } from "../../queryKeys.js";
 import {
-  formatRepartoMessage,
   getRepartoDictionary,
   normalizeRepartoLocale,
   type RepartoLocale
@@ -34,11 +44,16 @@ import {
   repartoShellClass
 } from "../styles.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
+import type { SseAudience } from "../../schemas.js";
 
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
 const LAST_PROCESS_STORAGE_KEY = "reparto.lastProcessId";
 
+// The boundary is the outermost wrapper on purpose (`A-C3`). Inside the
+// providers it would be unmounted by a throw in a provider's own render, which
+// is exactly the case that leaves an island blank — and with `client:only`
+// there is no server-rendered markup underneath to fall back to.
 export function Shell({
   children,
   config
@@ -47,9 +62,11 @@ export function Shell({
   config?: ViewConfig;
 }) {
   return (
-    <RepartoQueryProvider>
-      <RepartoProvider config={config}>{children}</RepartoProvider>
-    </RepartoQueryProvider>
+    <RepartoErrorBoundary>
+      <RepartoQueryProvider>
+        <RepartoProvider config={config}>{children}</RepartoProvider>
+      </RepartoQueryProvider>
+    </RepartoErrorBoundary>
   );
 }
 
@@ -61,6 +78,12 @@ export function ProcessPicker({
   onSelect: (processId: string) => void;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // The picker is two things at once: a list to choose from, which any `READER`
+  // may use, and a bootstrap that creates a process plus its school, year and
+  // department inline — all department-head or platform-setup writes (§21.3).
+  // Only the second half is withheld, so a `READER` with no process selected
+  // still gets somewhere rather than an empty page.
+  const canAct = useRepartoCanAct("processList");
   const processesQuery = useRepartoProcesses();
   const createProcess = useCreateRepartoProcess();
   const processes = processesQuery.data?.data ?? [];
@@ -166,62 +189,28 @@ export function ProcessPicker({
     value: department.id,
     label: department.name
   }));
-  const checklistSteps: Array<{
-    key: keyof typeof dict.flow.bootstrap.step;
-    done: boolean;
-    disabledReason?: string;
-    onOpen?: () => void;
-  }> = [
-    {
-      key: "school",
-      done: schoolOptions.length > 0,
-      onOpen: () => setInlineCreate("school")
-    },
-    {
-      key: "academicYear",
-      done: yearOptions.length > 0,
-      onOpen: () => setInlineCreate("academicYear")
-    },
-    {
-      key: "department",
-      done: departmentOptions.length > 0,
-      onOpen: () => setInlineCreate("department")
-    },
-    {
-      key: "process",
-      done: processes.length > 0,
-      onOpen: () => undefined
-    },
-    {
-      key: "subjects",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "classrooms",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "teacherRoster",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "requirements",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    },
-    {
-      key: "participants",
-      done: false,
-      disabledReason: dict.disabled.noProcess
-    }
-  ];
-  const checklistDoneCount = checklistSteps.filter((step) => step.done).length;
+  // The same derivation the dashboard uses (`S2-07`). The picker's copy used to
+  // be a second list whose last five steps were hard-coded "not done"; they are
+  // now genuinely untested here — no process is selected by construction — and
+  // the checklist says so instead of asserting an operator has not done work
+  // this screen never looked at.
+  const checklist = buildSetupChecklist({
+    academicYearCount: yearOptions.length,
+    departmentCount: departmentOptions.length,
+    processCount: processes.length,
+    schoolCount: schoolOptions.length
+  });
+  const inlineCreateHandlers: Partial<
+    Record<SetupChecklistStepKey, () => void>
+  > = {
+    school: () => setInlineCreate("school"),
+    academicYear: () => setInlineCreate("academicYear"),
+    department: () => setInlineCreate("department")
+  };
 
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
+      {canAct ? (
       <section
         className={repartoPanelClass}
         data-reparto-panel="setup-checklist"
@@ -234,57 +223,15 @@ export function ProcessPicker({
               {dict.flow.bootstrap.subtitle}
             </p>
           </div>
-          <span
-            className="text-sm text-muted-foreground"
-            data-reparto-slot="setup-progress"
-          >
-            {formatRepartoMessage("{done}/9", { done: checklistDoneCount })}
-          </span>
+          <SetupChecklistProgress checklist={checklist} />
         </div>
-        <ol className="mt-3 grid gap-2" data-reparto-checklist="">
-          {checklistSteps.map((step) => (
-            <li
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
-              data-reparto-checklist-step={step.key}
-              data-reparto-checklist-state={step.done ? "done" : "pending"}
-              key={step.key}
-            >
-              <div className="min-w-0">
-                <strong className="block text-foreground">
-                  {dict.flow.bootstrap.step[step.key]}
-                </strong>
-                {step.disabledReason ? (
-                  <span
-                    className="text-xs text-muted-foreground"
-                    data-reparto-disabled-reason=""
-                  >
-                    {step.disabledReason}
-                  </span>
-                ) : null}
-              </div>
-              {step.done ? (
-                <span
-                  className="text-xs font-medium text-primary"
-                  data-reparto-step-status="done"
-                >
-                  {dict.flow.bootstrap.done}
-                </span>
-              ) : (
-                <button
-                  className={repartoButtonClass}
-                  data-reparto-action={`open-${step.key}`}
-                  data-disabled-reason={step.disabledReason ?? undefined}
-                  disabled={Boolean(step.disabledReason)}
-                  onClick={step.onOpen ?? (() => undefined)}
-                  type="button"
-                >
-                  {dict.flow.bootstrap.open}
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
+        <SetupChecklistSteps
+          checklist={checklist}
+          locale={locale}
+          onOpenStep={(key) => inlineCreateHandlers[key] ?? null}
+        />
       </section>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="process-picker">
         <div className={repartoPanelHeaderClass}>
           <h2>{dict.picker.selectProcess}</h2>
@@ -324,6 +271,7 @@ export function ProcessPicker({
             </p>
           )}
         </div>
+        {canAct ? (
         <form
           className={repartoFieldGridClass}
           data-reparto-form="create-process"
@@ -445,30 +393,44 @@ export function ProcessPicker({
             </p>
           ) : null}
         </form>
+        ) : null}
       </section>
     </main>
   );
 }
 
+/**
+ * The process toolbar's mode badge reports the *session*, not the page.
+ *
+ * It used to be whatever literal the route passed in, so every caller declared
+ * its own answer to a question only the signed-in user can settle (`RBAC-05`).
+ * The prop is gone rather than defaulted: while a caller can still hand a mode
+ * in, the badge is a convention rather than a statement about the session.
+ */
 export function WithSelectedProcess({
   bypass = false,
   children,
   locale,
-  mode = "admin",
-  processId
+  processId,
+  streamAudience = "department_head"
 }: {
   bypass?: boolean;
-  children: (processId: string | undefined) => ReactNode;
+  children: (
+    processId: string | undefined,
+    eventState: RepartoEventStreamState
+  ) => ReactNode;
   locale?: RepartoLocale;
-  mode?: "admin" | "readonly";
   processId?: string;
+  streamAudience?: SseAudience;
 }) {
+  const mode = useRepartoViewMode();
   const routeProcessId = resolveProcessId(processId);
   const [selected, setSelected] = useState<string | undefined>(() => {
     if (routeProcessId || typeof window === "undefined") return undefined;
     return window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim() || undefined;
   });
   const effective = selected ?? resolveProcessId(processId);
+  const eventState = useRepartoEventStream(effective, streamAudience);
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses();
   const processes = processesQuery.data?.data ?? [];
@@ -487,6 +449,25 @@ export function WithSelectedProcess({
       window.localStorage.setItem(LAST_PROCESS_STORAGE_KEY, effective);
     }
   }, [effective]);
+
+  // A restored id outlives the process it names. A reset database or a deleted
+  // process leaves `reparto.lastProcessId` pointing at a row the service 404s
+  // on, and because a non-empty `effective` suppresses the picker, the view has
+  // no affordance left to choose another one — every child request just fails.
+  // Forget the id once the list proves it is gone. The `count` guard keeps a
+  // still-valid id sitting on a later page from being mistaken for a deleted
+  // one, and only the *restored* id is dropped: an id pinned by the route is
+  // the caller's statement, not ours to overrule.
+  useEffect(() => {
+    if (!selected || routeProcessId) return;
+    const list = processesQuery.data;
+    if (!list || list.count > list.data.length) return;
+    if (list.data.some((process) => process.id === selected)) return;
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(LAST_PROCESS_STORAGE_KEY);
+    }
+    setSelected(undefined);
+  }, [processesQuery.data, routeProcessId, selected]);
 
   if (!bypass && !effective) {
     return <ProcessPicker locale={locale} onSelect={setSelected} />;
@@ -534,7 +515,7 @@ export function WithSelectedProcess({
           </div>
         </section>
       ) : null}
-      {children(effective ?? processId)}
+      {children(effective ?? processId, eventState)}
     </>
   );
 }

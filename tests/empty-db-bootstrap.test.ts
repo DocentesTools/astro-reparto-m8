@@ -250,7 +250,7 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       "entity.teacherRoster",
       "entity.assignmentProcess",
       "entity.subject",
-      "entity.classroom",
+      "entity.teachingGroup",
       "entity.hourRequirement",
       "entity.processParticipant",
       "entity.assignment",
@@ -273,8 +273,8 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       { en: "Teacher roster", fr: "Liste du personnel enseignant", es: "Listado del profesorado" },
       { en: "Assignment process", fr: "Processus d'affectation", es: "Proceso de reparto" },
       { en: "Subject", fr: "Matière", es: "Materia" },
-      { en: "Classroom", fr: "Classe", es: "Grupo" },
-      { en: "Hour requirement", fr: "Besoin horaire", es: "Horas necesarias" },
+      { en: "Teaching group", fr: "Classe", es: "Grupo" },
+      { en: "Requirement slot", fr: "Créneau de besoin", es: "Puesto horario" },
       { en: "Process participant", fr: "Participant au processus", es: "Participantes en el proceso" },
       { en: "Assignment", fr: "Affectation", es: "Reparto" },
       { en: "Meeting session", fr: "Séance", es: "Sesión de reparto" },
@@ -334,20 +334,33 @@ describe("UI naming freeze — companion document (Phase 0.5, step 2)", () => {
       "flow.bootstrap.step.academicYear",
       "flow.bootstrap.step.department",
       "flow.bootstrap.step.process",
+      "flow.bootstrap.step.allocation",
+      "flow.bootstrap.step.participants",
       "flow.bootstrap.step.subjects",
-      "flow.bootstrap.step.classrooms",
-      "flow.bootstrap.step.teacherRoster",
+      "flow.bootstrap.step.teachingGroups",
+      "flow.bootstrap.step.groupSubjects",
+      "flow.bootstrap.step.configurationReview",
+      "flow.bootstrap.step.teachingPlan",
+      "flow.bootstrap.step.planBalance",
+      "flow.bootstrap.step.planLock",
       "flow.bootstrap.step.requirements",
-      "flow.bootstrap.step.participants"
+      "flow.bootstrap.step.meeting"
     ];
     for (const key of required) {
       expect(checklist, `missing bootstrap key: ${key}`).toContain(key);
     }
+    // `teacherRoster` tested the same condition as `participants` and was
+    // retired by audit finding `S2-07`; §12 records what happened to it, so the
+    // §8 table must not still carry it (freeze §12 rule 1).
+    expect(checklist).not.toContain("flow.bootstrap.step.teacherRoster");
+    expect(section(freeze, "Three-stage adaptation amendments")).toContain(
+      "flow.bootstrap.step.teacherRoster"
+    );
   });
 
   it("forbids en/fr/es drift in singular vs plural roots", () => {
     const table = section(freeze, "Pluralization roots");
-    for (const word of ["School", "Department", "Subject", "Classroom", "Assignment", "Version"]) {
+    for (const word of ["School", "Department", "Subject", "Teaching group", "Assignment", "Version"]) {
       expect(table).toMatch(new RegExp(`${word}\\s*\\|\\s*${word}s`));
     }
   });
@@ -365,7 +378,7 @@ describe("contract inventory — still the source of truth (Phase 0.5, step 1)",
     expect(inventory).toMatch(/###\s+2\.1\s+Assignment\s+process/);
     expect(inventory).toMatch(/###\s+2\.2\s+Subject/);
     expect(inventory).toMatch(/###\s+2\.3\s+Teaching\s+group/);
-    expect(inventory).toMatch(/###\s+2\.4\s+Hour\s+requirement/);
+    expect(inventory).toMatch(/###\s+2\.4\s+Requirement\s+slot/);
     expect(inventory).toMatch(/###\s+2\.5\s+Process\s+teacher/);
     expect(inventory).toMatch(/###\s+2\.6\s+Assignment/);
     expect(inventory).toMatch(/###\s+2\.7\s+Meeting\s+session/);

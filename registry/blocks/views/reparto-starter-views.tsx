@@ -96,13 +96,9 @@ export function RepartoMyView({
   config,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
   summary
 }: RepartoStarterViewProps & {
   meetingSession?: MeetingSessionPublic | null;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
   summary?: TeacherLanSummary | null;
 }) {
   return (
@@ -110,8 +106,6 @@ export function RepartoMyView({
       config={config}
       meetingSession={meetingSession}
       processId={processId}
-      requirementAssignedHours={requirementAssignedHours}
-      requirementRequiredHours={requirementRequiredHours}
       summary={summary}
     />
   );
@@ -151,18 +145,18 @@ export function RepartoVersionsView({
 export function RepartoExportsView({
   config,
   exports,
-  processId,
-  summary
+  processId
 }: RepartoStarterViewProps & {
   exports?: ExportArtifactPublic[];
-  summary?: ProcessSummary;
 }) {
+  // The package view names this prop `artifacts`; the skin keeps `exports` as
+  // its own public name and maps it here. It takes no `summary` — the prop was
+  // being forwarded into a view that has never accepted one.
   return (
     <PackageExportsView
+      artifacts={exports}
       config={config}
-      exports={exports}
       processId={processId}
-      summary={summary}
     />
   );
 }

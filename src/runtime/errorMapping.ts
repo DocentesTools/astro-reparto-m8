@@ -20,24 +20,29 @@ export type RepartoFieldKey =
   | "grade"
   | "groupCode"
   | "subject"
-  | "classroom"
+  | "teachingGroup"
   | "teacher"
   | "hourRequirement"
   | "processParticipant"
-  | "requirementType"
-  | "assignmentType"
   | "source"
-  | "requiredHours"
-  | "assignedHours"
-  | "availableHours"
+  | "reason"
+  | "baseWeeklyHours"
+  | "extraWeeklyHours"
   | "participatesInSelection"
   | "selectionPosition"
   | "selectionPoints"
   | "selectionCriteria"
   | "selectionNotes"
   | "orderLocked"
-  | "overrideReason"
-  | "flags"
+  | "allocationCategory"
+  | "activityType"
+  | "mode"
+  | "minimumGrade"
+  | "maximumGrade"
+  | "groupWeeklyHours"
+  | "teacherWeeklyHoursPerPosition"
+  | "requiredTeacherCount"
+  | "groupSubjects"
   | "previousAcademicYear";
 
 export type RepartoErrorKey =
@@ -95,24 +100,32 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   grade: "grade",
   group_code: "groupCode",
   subject_id: "subject",
-  teaching_group_id: "classroom",
+  teaching_group_id: "teachingGroup",
   hour_requirement_id: "hourRequirement",
   process_teacher_id: "processParticipant",
   teacher_profile_id: "teacher",
-  requirement_type: "requirementType",
-  assignment_type: "assignmentType",
   source: "source",
-  required_hours: "requiredHours",
-  assigned_hours: "assignedHours",
-  available_hours: "availableHours",
+  // Undo and reassignment are reason-required actions (backend plan §20.13),
+  // so a rejected reason must land on its own field rather than the form.
+  reason: "reason",
+  base_weekly_hours: "baseWeeklyHours",
+  extra_weekly_hours: "extraWeeklyHours",
   participates_in_selection: "participatesInSelection",
   selection_position: "selectionPosition",
   selection_points: "selectionPoints",
   selection_criteria_label: "selectionCriteria",
   selection_notes: "selectionNotes",
   order_locked: "orderLocked",
-  override_reason: "overrideReason",
-  flags: "flags",
+  allocation_category: "allocationCategory",
+  activity_type: "activityType",
+  mode: "mode",
+  minimum_grade: "minimumGrade",
+  maximum_grade: "maximumGrade",
+  group_weekly_hours: "groupWeeklyHours",
+  group_weekly_hours_per_group: "groupWeeklyHours",
+  teacher_weekly_hours_per_position: "teacherWeeklyHoursPerPosition",
+  required_teacher_count: "requiredTeacherCount",
+  group_subject_ids: "groupSubjects",
   previous_academic_year_id: "previousAcademicYear"
 };
 

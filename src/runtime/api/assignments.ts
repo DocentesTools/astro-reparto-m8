@@ -3,15 +3,30 @@ import {
   AssignmentCreateSchema,
   AssignmentDirectChoiceSchema,
   AssignmentPublicSchema,
+  AssignmentReassignSchema,
+  AssignmentUndoSchema,
   AssignmentsPublicSchema,
   AssignmentUpdateSchema,
+  AssignmentValidationReportSchema,
   type AssignmentCreate,
   type AssignmentDirectChoice,
   type AssignmentPublic,
+  type AssignmentReassign,
+  type AssignmentUndo,
   type AssignmentUpdate,
-  type AssignmentsPublic
+  type AssignmentsPublic,
+  type AssignmentValidationReport
 } from "../schemas.js";
 
+/**
+ * Assignment operations for one process.
+ *
+ * Cancelling an assignment is `undo`, not `remove`: the backend keeps a
+ * `DELETE` route only as a hidden, reason-required compatibility alias, so a
+ * wrapper named after it would suggest a reasonless cancellation path that does
+ * not exist. Moving a slot to another participant is `reassign` — an atomic
+ * release-and-occupy, never a delete followed by a create.
+ */
 export const assignments = {
   list: (processId: string) =>
     request<AssignmentsPublic>({
@@ -25,6 +40,13 @@ export const assignments = {
       method: "GET",
       path: `/assignment-processes/${processId}/assignments/${assignmentId}`,
       schema: AssignmentPublicSchema,
+      auth: true
+    }),
+  validations: (processId: string) =>
+    request<AssignmentValidationReport>({
+      method: "GET",
+      path: `/assignment-processes/${processId}/assignments/validations`,
+      schema: AssignmentValidationReportSchema,
       auth: true
     }),
   create: (processId: string, body: AssignmentCreate) =>
@@ -43,10 +65,23 @@ export const assignments = {
       schema: AssignmentPublicSchema,
       auth: true
     }),
-  remove: (processId: string, assignmentId: string) =>
+  undo: (processId: string, assignmentId: string, body: AssignmentUndo) =>
     request<AssignmentPublic>({
-      method: "DELETE",
-      path: `/assignment-processes/${processId}/assignments/${assignmentId}`,
+      method: "POST",
+      path: `/assignment-processes/${processId}/assignments/${assignmentId}/undo`,
+      body: AssignmentUndoSchema.parse(body),
+      schema: AssignmentPublicSchema,
+      auth: true
+    }),
+  reassign: (
+    processId: string,
+    assignmentId: string,
+    body: AssignmentReassign
+  ) =>
+    request<AssignmentPublic>({
+      method: "POST",
+      path: `/assignment-processes/${processId}/assignments/${assignmentId}/reassign`,
+      body: AssignmentReassignSchema.parse(body),
       schema: AssignmentPublicSchema,
       auth: true
     }),

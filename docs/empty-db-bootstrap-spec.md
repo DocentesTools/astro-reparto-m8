@@ -83,14 +83,14 @@ process and the dashboard renders".
 
 | # | User action | Visible UI | API call(s) issued | Success signal |
 | --- | --- | --- | --- | --- |
-| 1 | Open `/reparto`. | Setup checklist card with all 9 steps greyed out / "not started". Empty process picker: "No processes yet". | `GET /assignment-processes/` (returns `{ data: [], count: 0 }`) | Checklist card is visible; "No processes yet" empty state is shown. |
+| 1 | Open `/reparto`. | Setup checklist card. The four reference-data steps read "not started"; every process-scoped step reads *not checked here* with the reason (§8 of the freeze). Empty process picker: "No processes yet". | `GET /assignment-processes/` (returns `{ data: [], count: 0 }`) | Checklist card is visible; "No processes yet" empty state is shown. |
 | 2 | Click **Open** next to **Create a school**. | School dialog opens, focused on the `name` field. | — | Dialog is open, `name` field is focused, the **Save changes** button is disabled. |
 | 3 | Fill `name = "IES Almería Centro"`, optional fields, click **Save changes**. | Dialog closes, toast "School created". The school appears in the schools table; the checklist step 1 turns green. | `POST /schools/` | The school row is visible; checklist step 1 shows ✓. |
 | 4 | Click **Open** next to **Create an academic year**. | Academic year dialog. `start_date` and `end_date` use date inputs (no timezone round-trip — see contract-inventory §1.2). | — | Dialog is open, `label` is focused. |
 | 5 | Fill `label = "2025-2026"`, `start_date = "2025-09-01"`, `end_date = "2026-06-30"`, click **Save changes**. | Dialog closes, toast "Academic year created". Checklist step 2 turns green. | `POST /academic-years/` | Academic year is listed with `status = active`. |
 | 6 | Click **Open** next to **Create a department**. | Department dialog. The **School** field is a `<Select>` populated from `GET /schools/`. The currently-empty list shows the school from step 3 because it was just created. | `GET /schools/` (background, may have been fetched earlier) | School appears in the `<Select>`; selecting it sets `school_id`. |
 | 7 | Fill `name = "Matemáticas"`. The `slug` is auto-derived and shown read-only. Click **Save changes**. | Dialog closes, toast "Department created". Checklist step 3 turns green. | `POST /departments/` | Department row is visible; `slug` is `matematicas`. |
-| 8 | Click **Open** next to **Create a process**. | Process dialog. Three selects: **Academic year**, **School**, **Department**. Each is populated from its own list hook. | `GET /academic-years/`, `GET /schools/`, `GET /departments/` | The three selects show the records created in steps 3, 5, 7. |
+| 8 | Click **Open** next to **Create an assignment process**. | Process dialog. Three selects: **Academic year**, **School**, **Department**. Each is populated from its own list hook. | `GET /academic-years/`, `GET /schools/`, `GET /departments/` | The three selects show the records created in steps 3, 5, 7. |
 | 9 | Select the academic year, the school, the department, click **Create process**. | Dialog closes, toast "Process created". The process picker is replaced by a `<Select>` showing the new process. The dashboard island loads. | `POST /assignment-processes/` | The dashboard renders. The process picker is no longer visible. |
 | 10 | Reload the page. | The last-selected process is rehydrated from `localStorage` and the dashboard renders without the setup checklist. | `GET /assignment-processes/{id}/summary`, `GET /assignment-processes/{id}/dashboard` | Dashboard renders for the same process; no setup checklist. |
 
@@ -185,14 +185,24 @@ green:
 
 - [ ] **AC-1** Setup checklist card is visible on `/reparto` when
       `GET /assignment-processes/` returns an empty list.
-- [ ] **AC-2** The checklist lists all 9 steps in the order School →
-      Academic year → Department → Process → Subjects → Classrooms
-      → Teacher roster → Requirements → Process participants
-      (Subjects+ etc. are reachable but not exercised in this gate).
-- [ ] **AC-3** Each step links to its create flow. The link is
-      enabled even if the previous steps are incomplete (the user
-      can start in any order; the cascade only kicks in at the
-      Process dialog).
+- [ ] **AC-2** The checklist lists the §8.2 setup workflow grouped by
+      the three stages, in the order frozen in `ui-naming-freeze.md`
+      §8, and it is the **same derivation** the dashboard renders
+      (`buildSetupChecklist`). *Amended 2026-08-11 by audit finding
+      `S2-07`:* this criterion used to name nine steps ending
+      "Teacher roster → Requirements → Process participants", which
+      was the pre-three-stage workflow — no allocation, no matrix,
+      no plan, no lock, requirement generation misfiled as setup,
+      and two labels over one condition. Only the four steps this
+      gate exercises (School → Academic year → Department →
+      Process) are exercised here; the rest are reachable.
+- [ ] **AC-3** Each step this screen can open links to its create
+      flow, and the link is enabled even if the previous steps are
+      incomplete (the user can start in any order; the cascade only
+      kicks in at the Process dialog). A step whose condition this
+      screen cannot test — every process-scoped step, before a
+      process is selected — states that reason instead of offering
+      a dead control.
 - [ ] **AC-4** The Process dialog shows three cascading selects
       (academic year, school, department) populated from
       `useRepartoSchools`, `useRepartoAcademicYears`,

@@ -9,10 +9,10 @@ export const en = {
     teacherRoster: { singular: "Teacher roster entry", plural: "Teacher roster entries", status: {} },
     assignmentProcess: { singular: "Assignment process", plural: "Assignment processes", status: { draft: "Draft", ready_for_meeting: "Ready for meeting", meeting_open: "Meeting open", assigning: "Assigning", department_proposal: "Department proposal", sent_to_school_leadership: "Sent to school leadership", returned_by_school_leadership: "Returned by school leadership", internal_revision: "Internal revision", final: "Final", reopened: "Reopened", archived: "Archived" } },
     subject: { singular: "Subject", plural: "Subjects", status: {} },
-    classroom: { singular: "Classroom", plural: "Classrooms", status: {} },
-    hourRequirement: { singular: "Hour requirement", plural: "Hour requirements", status: {} },
+    teachingGroup: { singular: "Teaching group", plural: "Teaching groups", status: {} },
+    hourRequirement: { singular: "Requirement slot", plural: "Requirement slots", status: { available: "Available", assigned: "Assigned", stale: "Stale", reconciliation_required: "Reconciliation required" } },
     processParticipant: { singular: "Process participant", plural: "Process participants", status: { active: "Active", inactive: "Inactive" } },
-    assignment: { singular: "Assignment", plural: "Assignments", status: { draft: "Draft", confirmed: "Confirmed", overridden: "Overridden", cancelled: "Cancelled" } },
+    assignment: { singular: "Assignment", plural: "Assignments", status: { active: "Active", cancelled: "Cancelled" } },
     meetingSession: { singular: "Meeting session", plural: "Meeting sessions", status: { prepared: "Prepared", open: "Open", selecting: "Selecting", paused: "Paused", closed: "Closed", reopened: "Reopened" } },
     selectionTurn: { singular: "Selection turn", plural: "Selection turns", status: { pending: "Pending", active: "Active", completed: "Completed", skipped: "Skipped", overridden: "Overridden" } },
     auditEvent: { singular: "Audit event", plural: "Audit events", status: {} },
@@ -33,6 +33,7 @@ export const en = {
     notes: "Notes",
     displayName: "Display name",
     linkedUser: "Linked user",
+    claimCode: "Claim code",
     active: "Active",
     startDate: "Start date",
     endDate: "End date",
@@ -42,65 +43,731 @@ export const en = {
     academicYear: "Academic year",
     department: "Department",
     departmentHead: "Department head",
-    requiredHours: "Required hours",
-    availableHours: "Available hours",
-    assignedHours: "Assigned hours",
+    baseWeeklyHours: "Base hours",
+    extraWeeklyHours: "Authorized extra hours",
+    targetWeeklyHours: "Target hours",
+    overloaded: "Authorized overload",
     defaultTeacherHoursReference: "Default hours reference",
     selectionOrderEnabled: "Selection order enabled",
     selectionOrderMode: "Selection order mode",
     directTeacherSelectionEnabled: "Direct teacher selection",
     lanAccessEnabled: "LAN access",
     subject: "Subject",
-    classroom: "Classroom",
+    teachingGroup: "Teaching group",
     teacher: "Teacher",
-    hourRequirement: "Hour requirement",
+    hourRequirement: "Requirement slot",
     processParticipant: "Process participant",
-    requirementType: "Type",
-    assignmentType: "Type",
     source: "Source",
-    flags: "Flags",
+    reason: "Reason",
     participatesInSelection: "Participates in selection",
     selectionPosition: "Selection position",
     selectionPoints: "Selection points",
     selectionCriteria: "Selection criteria",
     selectionNotes: "Selection notes",
     orderLocked: "Order locked",
-    overrideReason: "Override reason"
+    allocationCategory: "Allocation category",
+    activityType: "Activity type",
+    groupWeeklyHours: "Group hours",
+    teacherWeeklyHoursPerPosition: "Teacher hours per position",
+    requiredTeacherCount: "Teacher positions"
   },
   option: {
-    requirementType: { ordinary: "Ordinary", optional: "Optional", reinforcement: "Reinforcement", split_group: "Split group", bilingual: "Bilingual", other: "Other" },
-    assignmentType: { main: "Main", shared: "Shared", reinforcement: "Reinforcement", split_group: "Split group", other: "Other" },
+    allocationCategory: { main: "Main", secondary: "Secondary" },
+    activityType: { ordinary: "Ordinary", tutoring: "Tutoring", co_teaching: "Co-teaching", support: "Support", department_level: "Department level", other: "Other" },
     boolean: { yes: "Yes", no: "No" }
   },
   view: {
     teacherTitle: "Teacher view",
+    claim: {
+      title: "Claim your teacher profile",
+      intro: "No participation in this process is linked to your account, so there is nothing here to show you. If your department head has prepared a teacher profile for you, ask them for a claim code and enter it below — it binds that profile to the account you are signed in with. If your profile is already linked, ask them to add you to this process instead.",
+      codeLabel: "Claim code",
+      codePlaceholder: "XXXXX-XXXXX-XXXXX-XXXXX",
+      hint: "Case and dashes do not matter.",
+      linked: "{name} is now linked to your account."
+    },
+    lan: {
+      title: "Your hours",
+      metric: {
+        base: "Base",
+        extra: "Authorized extra",
+        target: "Target",
+        assigned: "Assigned",
+        remaining: "Remaining"
+      },
+      overloaded: "{hours} extra hours have been authorized for you.",
+      notOverloaded: "No extra hours are authorized for you.",
+      connection: {
+        disconnected: "Live updates disconnected",
+        live: "Live updates connected",
+        stale: "Live updates delayed"
+      },
+      state: {
+        pending: "You have not reached your target yet.",
+        balanced: "Your assigned hours match your target.",
+        overloaded_authorized: "Your target includes authorized extra hours.",
+        inactive: "You are not active in this process.",
+        not_participating: "You are not part of the selection order."
+      },
+      availableSlots: "{count} complete position(s) are still free in this process.",
+      planBalance: "Group hours {group} against an allocation of {allocation}; teacher load {teacher} against a participant target of {target}.",
+      noAllocation: "no allocation yet",
+      noPlanBalance: "This process has no teaching plan yet, so there is no balance to show."
+    },
     loading: "{entity} loading",
     pageLoading: {
       title: "Loading reparto page",
       description: "Preparing the latest page content."
     },
     unavailable: "{entity} unavailable",
+    access: {
+      checking: "Checking your access…",
+      forbidden: "You do not have access to this page.",
+      forbiddenDetail: "This page requires the {role} role or above.",
+      role: {
+        user: "user",
+        reader: "reader",
+        writer: "writer",
+        admin: "administrator",
+        superadmin: "super administrator"
+      }
+    },
     currentTurn: { status: "Status", turn: "Turn", teacher: "Teacher", started: "Started", waiting: "Waiting", noPosition: "No position", noActiveTurn: "No active turn", notStarted: "Not started", position: "Turn {position}", teacherValue: "Teacher {teacher}" },
-    versions: { title: "Versions", item: "Version {number}", comparison: "Comparison", noChanges: "No changes", requiredDelta: "Required delta", assignedDelta: "Assigned delta", teacherDelta: "Teachers", create: "Create version", compare: "Compare versions" },
-    exports: { title: "Export center", finalBlocked: "Final blocked", finalReady: "Final ready", closeout: "Closeout", finalExport: "Final export", leadershipWorkflow: "Leadership workflow", markReturned: "Mark returned", startRevision: "Start revision", reopenFinal: "Reopen final", type: { internal_draft: "Internal draft", school_leadership: "School leadership", final: "Final", teacher_summary: "Teacher summary", backup: "Backup" } },
-    choice: { title: "Choose group", confirmation: "Confirmation", choose: "Choose", pass: "Pass", ready: "Ready to choose.", impact: "{hours} hours will be assigned to you.", meetingClosed: "The meeting is not open.", directDisabled: "Direct selection is disabled.", otherTurn: "It is another teacher's turn.", covered: "The requirement is already covered.", alreadyCovered: "This requirement was already covered.", turnChanged: "The active turn changed. Refresh the meeting state." }
-  },
-  validation: {
-    title: { requirement: "Requirement warning", teacher: "Teacher warning", process: "Process warning" },
-    requirement: { overAssigned: "Requirement {subject} for {group} is over-assigned ({assigned} h assigned for {required} h required).", overAssignedOverridden: "Requirement {subject} for {group} is over-assigned, but an override has been recorded.", uncovered: "Requirement {subject} for {group} has no assignment yet.", partial: "Requirement {subject} for {group} is partially covered ({pending} h still pending).", covered: "Requirement {subject} for {group} is fully covered." },
-    teacher: { overloaded: "{teacher} is overloaded ({assigned} h assigned for {available} h available).", overloadedOverridden: "{teacher} is overloaded, but an override has been recorded.", balanced: "{teacher} has a balanced workload." },
-    process: { balanced: "Process hours are balanced.", pending: "{count} requirement(s) still need hours.", overage: "The process has unresolved over-assignments." }
+    versions: {
+      title: "Versions",
+      item: "Version {number}",
+      itemDetail: "{status} · {created}",
+      noReason: "No reason recorded",
+      empty: "No version has been captured yet.",
+      create: "Create version",
+      createReason: "Why this version is being captured (optional)",
+      createPending: "Capturing the version…",
+      createError: "The version could not be captured.",
+      compare: "Compare versions",
+      left: "Baseline version",
+      right: "Compared version",
+      comparison: "Comparison",
+      comparisonPending: "Comparing the two versions…",
+      comparisonError: "The comparison could not be loaded.",
+      noComparison: "No comparison has been run yet.",
+      previousYear: "Compare with the previous year",
+      noPreviousYear: "This process was not copied from a previous year, so there is nothing to compare it with.",
+      source: { versions: "Two captured versions", previous_year: "Previous academic year" },
+      blocked: {
+        not_enough_versions: "Capture a second version before comparing.",
+        same_version: "Choose two different versions."
+      },
+      noChanges: "No changes",
+      changedSummary: "{changed} of {total} comparison dimensions changed.",
+      otherChanges: "No comparison dimension changed, but {count} snapshot sections still differ.",
+      state: { changed: "Changed", unchanged: "Unchanged" },
+      notComparable: "Not comparable",
+      notComparableDetail: "One of the two versions has no leadership allocation, so there is no difference to state.",
+      sectionsTitle: "Changed snapshot sections",
+      dimension: {
+        allocation: "Leadership allocation",
+        group_hours: "Group teaching hours",
+        teacher_load: "Teacher workload",
+        subject_category: "Subject category",
+        activity: "Teaching activities",
+        group_link: "Activity group links",
+        teacher_position_count: "Teacher positions",
+        participant_target: "Participant targets",
+        requirement_generation: "Requirement generation"
+      },
+      delta: {
+        allocation_delta: "Allocation difference",
+        group_load_delta: "Group hour difference",
+        teacher_load_delta: "Teacher hour difference",
+        participant_target_total_delta: "Target hour difference",
+        generation_number_delta: "Generation difference",
+        teacher_count_delta: "Participant difference",
+        activity_count_delta: "Activity difference",
+        requirement_count_delta: "Slot difference"
+      },
+      section: {
+        allocationRevisions: "Allocation revisions",
+        teachingPlan: "Teaching plan",
+        subjects: "Subjects",
+        groupSubjects: "Group subjects",
+        teachingActivities: "Teaching activities",
+        requirements: "Requirement slots",
+        processParticipants: "Process participants"
+      }
+    },
+    exports: {
+      title: "Export center",
+      closeout: "Closeout",
+      leadershipWorkflow: "Leadership workflow",
+      markReturned: "Mark returned",
+      startRevision: "Start revision",
+      reopenFinal: "Reopen final",
+      type: {
+        internal_draft: "Internal draft",
+        school_leadership: "School leadership",
+        final: "Final",
+        teacher_summary: "Teacher summary",
+        backup: "Backup"
+      },
+      documents: {
+        title: "Process documents",
+        description: "Stored copies of the current process state.",
+        action: "Export {document}",
+        empty: "No document has been exported yet.",
+        item: "{document} · {format}",
+        success: "{document} exported.",
+        error: "The export failed."
+      },
+      planning: {
+        title: "Planning exports",
+        description:
+          "The teaching plan as a document. A draft or provisional copy is never withheld because the plan is inexact.",
+        mode: {
+          draft: "Planning draft",
+          provisional: "Provisional plan",
+          final: "Final plan"
+        },
+        modeDescription: {
+          draft: "Working copy for the department.",
+          provisional: "Shareable copy that says it is not validated.",
+          final: "Strict copy, refused while a blocking finding stands."
+        },
+        action: "Export",
+        neverBlocked: "Available whatever the balances say.",
+        blocked: {
+          plan_missing: "Planning has not started for this process.",
+          blocking_validations:
+            "Resolve every blocking finding before exporting the final plan."
+        },
+        feasibilityLabel: "Assignment feasibility: {status}",
+        feasibility: {
+          not_evaluated: "NOT EVALUATED",
+          feasible: "FEASIBLE",
+          infeasible: "INFEASIBLE",
+          unknown: "UNKNOWN"
+        },
+        feasibilityMissing: "Assignment feasibility: no plan",
+        notValidated: "A provisional document is not a validated plan.",
+        resultTitle: "Planning artifact",
+        resultSummary: "{mode} artifact generated on {generated}.",
+        activities: "{count} activities",
+        exact: "Both balances are exact.",
+        inexact:
+          "The plan is not exact. The artifact carries both balances and every finding.",
+        findings: "{blocking} blocking · {warning} warning",
+        error: "The planning export failed."
+      },
+      importPlanning: {
+        title: "Planning import",
+        description: "Import activities into the current plan. An inexact result is accepted and shown with its follow-up findings.",
+        content: "Import JSON",
+        placeholder: '{"activities": []}',
+        action: "Import planning",
+        neverBlocked: "Import is not blocked by an unbalanced result.",
+        error: { empty: "Paste a planning import body.", invalid_json: "The content is not valid JSON.", invalid_contract: "The JSON does not match the planning import contract." },
+        resultTitle: "Imported plan state",
+        resultSummary: "{count} activities imported.",
+        reconciliationTitle: "Reconciliation requirements",
+        findings: "{blocking} blocking · {warning} warning",
+        success: "Planning imported.",
+        requestError: "The planning import failed."
+      },
+      restore: {
+        confirmTitle: "Restore this backup into the draft?",
+        confirmBody: "The target must be an empty draft. The service validates generation and reconciliation consistency before writing anything.",
+        restoreAssignments: "Restore generated positions and assignments",
+        confirmAction: "Restore backup",
+        blocked: { no_backup: "Create a JSON backup before restoring.", process_not_draft: "Only a draft process can receive a backup." },
+        success: "Backup restored.",
+        error: "The backup could not be restored."
+      },
+      final: {
+        title: "Final assignment export",
+        description:
+          "Needs a complete reparto and confirmed feasibility, and archives the process.",
+        action: "Export final",
+        ready: "Ready to export.",
+        blocked: {
+          plan_missing: "Planning has not started for this process.",
+          requirements_not_generated:
+            "No requirement slot has been generated yet.",
+          findings_unavailable: "The assignment findings could not be read.",
+          assignment_blocking:
+            "The reparto is incomplete: {count} blocking finding(s) remain.",
+          feasibility_not_confirmed:
+            "Assignment feasibility is not confirmed on the current state."
+        },
+        confirmTitle: "Export and archive?",
+        confirmBody:
+          "The final export archives the process. Reopening it is the only way back.",
+        confirmAction: "Export and archive",
+        success: "Final export created.",
+        error: "The final export failed."
+      }
+    },
+    choice: {
+      title: "Choose a position",
+      confirmation: "Confirmation",
+      choose: "Take this position",
+      pass: "Pass",
+      ready: "Ready to take the selected position.",
+      noSlots: "No live position is available.",
+      position: "Position {position}",
+      hours: "{hours} teacher hours",
+      impact: "Taking this position assigns {hours} teacher hours to you in full.",
+      remainingTarget: "{hours} hours remain before your target.",
+      select: "Select",
+      selected: "Selected",
+      passReasonLabel: "Reason",
+      passReasonPlaceholder: "Why you are passing your turn",
+      passReasonDefault: "Turn passed by the teacher.",
+      passReasonHint: "Passing a turn is audited. Leave this blank to record the default reason.",
+      pending: "Working…",
+      disabled: {
+        meeting_not_open: "The meeting is not open.",
+        direct_selection_disabled: "Direct selection is disabled.",
+        plan_not_ready: "The plan is not ready for selection yet.",
+        reconciliation_required: "An allocation change must be reconciled before selection continues.",
+        selection_blocked: "The service is blocking selections right now.",
+        not_your_turn: "It is another teacher's turn.",
+        no_slot_chosen: "Choose a position first.",
+        slot_occupied: "This position is already taken.",
+        slot_not_available: "This position is not available for selection.",
+        duplicate_activity_position: "You already hold a position of this activity.",
+        exceeds_remaining_target: "The whole position does not fit your remaining target hours."
+      },
+      conflict: {
+        state_changed: "The reparto changed. Refresh the meeting state and choose again.",
+        refused: "The service refused this choice.",
+        not_found: "This position no longer exists.",
+        not_allowed: "You are not allowed to make this choice.",
+        signed_out: "Your session has expired. Please sign in again.",
+        network: "The server is unreachable. Please retry.",
+        server: "Something went wrong on our side. Please retry."
+      }
+    }
   },
   audit: {
     pageTitle: "Reparto audit", description: "Review reparto audit events for the active process.",
-    action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden" },
-    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Hour requirement", selection_turn: "Selection turn", teaching_group: "Classroom", process_teacher: "Process participant" },
+    action: { created: "Created", updated: "Updated", deleted: "Deleted", transitioned: "Status changed", reopened: "Reopened", copied_from_previous_year: "Copied from the previous year", direct_choice: "Direct choice recorded", started: "Started", completed: "Completed", skipped: "Skipped", overridden: "Overridden", undone: "Undone", reassigned: "Reassigned", reentered: "Re-entered", recomputed: "Recomputed" },
+    entity: { process: "Assignment process", assignment_process: "Assignment process", assignment: "Assignment", subject: "Subject", hour_requirement: "Requirement slot", selection_turn: "Selection turn", teaching_group: "Teaching group", process_teacher: "Process participant" },
     role: { superadmin: "Super administrator", department_head: "Department head", teacher: "Teacher", school_leadership: "School leadership" }, event: "{entity}: {action}"
+  },
+  requirements: {
+    pageTitle: "Generated requirement slots",
+    description: "Review the indivisible teacher positions generated from the teaching plan. Generation and reconciliation remain service-owned.",
+    statusTitle: "Generation and reconciliation status",
+    planUnavailable: "Plan unavailable",
+    planStatusSummary: "Plan status: {status}. Current generation: {generation}.",
+    planStatus: {
+      draft: "Draft",
+      unbalanced: "Unbalanced",
+      balanced: "Balanced",
+      locked: "Locked",
+      requirements_generated: "Requirements generated",
+      stale: "Stale",
+      reconciliation_required: "Reconciliation required"
+    },
+    generationState: {
+      unavailable: "The teaching-plan state is unavailable; generated slots remain read-only.",
+      notGenerated: "The plan has not reached requirement generation yet.",
+      ready: "The plan is locked and ready for requirement generation.",
+      current: "Generated slots are current for the service generation shown below.",
+      stale: "The plan changed after generation. Existing slots stay visible while the service prepares reconciliation.",
+      reconciliationRequired: "Assigned slots need explicit reconciliation before generation can become current again."
+    },
+    metric: { activities: "Activities", slots: "Generated slots", available: "Available", assigned: "Assigned", attention: "Needs attention" },
+    slotsTitle: "Slots by activity and position",
+    slotsDescription: "Each position is complete and indivisible; hours are never edited from this view.",
+    empty: "No requirement slots have been generated for this plan yet.",
+    unknownActivity: "Unknown teaching activity",
+    unknownSubject: "Unknown subject",
+    activityLabel: "{subject} · {type}",
+    positionCount: "{count} teacher position(s)",
+    position: "Position {position}",
+    teacherHours: "{hours} teacher hours",
+    generationLineage: "Created in generation {created}; validated in generation {validated}.",
+    retiredLineage: "Retired in generation {generation}.",
+    superseded: "A replacement slot was recorded."
+  },
+  assignments: {
+    pageTitle: "Assignment board",
+    description: "Give each complete teacher position to one eligible participant. Slot hours come from generation and are never edited here.",
+    metric: { slots: "Live slots", assigned: "Assigned", available: "Available" },
+    hoursColumn: "Slot hours",
+    teacherHours: "{hours} teacher hours",
+    unknownSlotHours: "Slot hours unavailable",
+    source: {
+      department_head: "Department head",
+      teacher_direct: "Teacher direct choice",
+      imported_from_previous_year: "Imported from the previous year",
+      system_copy: "System copy"
+    },
+    empty: "No slot has been assigned yet.",
+    historyRow: "Cancelled; kept for audit.",
+    assignAction: "Assign slot",
+    assignTitle: "Assign a requirement slot",
+    assignDescription: "Choose one free slot and one eligible participant. The slot is always taken in full.",
+    selectSlotFirst: "Choose a slot to see the participants eligible for it.",
+    noAssignableSlots: "Every live slot is already assigned.",
+    noEligibleTeachers: "No participant is eligible for this slot.",
+    safeChoice: {
+      loading: "Checking the current deterministic safe-choice plan.",
+      current: "Choices are filtered against the current deterministic witness.",
+      unavailable: "Safe-choice filtering is unavailable; refresh the administrative feasibility evaluation.",
+      not_required: "The plan has no current feasible witness; ordinary server-side assignment rules apply."
+    },
+    teacherDisabled: {
+      participant_inactive: "Not an active participant.",
+      duplicate_activity_position: "Already holds a position of this activity.",
+      exceeds_remaining_target: "The whole slot does not fit the remaining target hours.",
+      strands_remaining_participants: "This choice would leave the remaining reparto without a valid witness.",
+      witness_unavailable: "Safe-choice status is unavailable until feasibility is evaluated again."
+    },
+    notesAction: "Notes",
+    notesTitle: "Edit assignment notes",
+    undoAction: "Undo",
+    undoTitle: "Undo this assignment?",
+    undoBody: "{slot} returns to the available slots and {teacher} re-enters the selection queue. The reason is recorded in the audit trail.",
+    undoConfirm: "Undo assignment",
+    undone: "The assignment was undone and the slot released.",
+    undoError: "The assignment could not be undone.",
+    selectAllVisible: "Select all visible assignments",
+    selectRow: "Select {name}",
+    undoSelected: "Undo selected ({count})",
+    bulkUndoTitle: "Undo the selected assignments?",
+    bulkUndoBody: "One reason is recorded on each of the {count} selected assignments. Their slots return to the available pool and the released teachers re-enter the selection queue. They are undone one at a time and the run stops at the first refusal.",
+    bulkUndoConfirm: "Undo {count} assignments",
+    bulkUndone: "Assignments undone: {count}.",
+    bulkUndoError: "Stopped after undoing {done} of {total} assignments. The ones already undone stay undone.",
+    reassignAction: "Reassign",
+    reassignTitle: "Reassign this slot",
+    reassignBody: "{slot} moves from {teacher} to the replacement you choose, in one operation. The reason is recorded in the audit trail.",
+    reassignConfirm: "Reassign slot",
+    replacement: "Replacement participant",
+    reassigned: "The slot was reassigned.",
+    reassignError: "The slot could not be reassigned.",
+    validationsTitle: "Assignment validations",
+    validationsSummary: "{blocking} blocking and {warnings} warning finding(s).",
+    validationsLoading: "Loading assignment validations.",
+    validationsUnavailable: "Assignment validations are unavailable.",
+    noValidations: "No assignment validation findings."
+  },
+  planning: {
+    pageTitle: "Reparto planning",
+    description: "Build and review the teaching plan for the active process.",
+    balanceTitle: "Planning balance",
+    group: "Group hours",
+    teacher: "Teacher hours",
+    target: "Target",
+    planned: "Planned",
+    difference: "Difference",
+    loading: "Loading planning balance.",
+    unavailable: "Planning balance is unavailable.",
+    noPlanYet: "No teaching plan has been created for this process yet, so there is no balance to show.",
+    creation: {
+      title: "Teaching plan",
+      description: "Planning works on a single teaching plan owned by this process.",
+      absent: "This process has no teaching plan yet. Create it to start planning; nothing has failed.",
+      unavailable: "The teaching plan could not be read.",
+      readOnly: "An administrator has to create the teaching plan before planning can start.",
+      action: "Create teaching plan",
+      pending: "Creating the teaching plan.",
+      success: "The teaching plan was created.",
+      error: "The teaching plan could not be created.",
+      duplicateError: "This process already has a teaching plan."
+    },
+    materialization: {
+      title: "Main-subject activities",
+      description: "Review every active main-subject matrix row before creating only the activities that are still missing.",
+      missing: "Missing",
+      materialized: "Materialized",
+      empty: "No active main-subject matrix rows are available.",
+      loading: "Loading main-subject materialization state.",
+      unavailable: "Main-subject materialization state is unavailable.",
+      inherited: "Inherited",
+      complete: "All main activities are materialized",
+      reviewAction: "Review {count} missing activities",
+      confirmTitle: "Materialize missing main activities?",
+      confirmBody: "Create {missing} missing activities. The {materialized} activities already materialized are shown for review and will not be duplicated.",
+      confirmAction: "Materialize missing activities",
+      success: "Created {created} main activities; {skipped} already-materialized rows were skipped.",
+      error: "Main activities could not be materialized.",
+      state: {
+        missing: "Missing",
+        materialized: "Materialized",
+        out_of_sync: "Out of sync"
+      },
+      column: {
+        subject: "Subject",
+        teachingGroup: "Teaching group",
+        groupHours: "Group hours",
+        teacherHours: "Teacher hours per position",
+        teacherCount: "Teacher positions",
+        state: "State"
+      }
+    },
+    sync: {
+      title: "Out-of-sync main activities",
+      description: "Editing a group-subject cell never rewrites the activity it created. Review each difference and apply it explicitly.",
+      empty: "Every materialized main activity matches its source cell.",
+      loading: "Loading main-activity sync state.",
+      unavailable: "Main-activity sync state is unavailable.",
+      unknownTeachingGroup: "Unknown teaching group",
+      activityLabel: "{subject} — {teachingGroup}",
+      reviewAction: "Review differences",
+      previewTitle: "Sync {subject} — {teachingGroup}?",
+      previewError: "The sync preview could not be loaded.",
+      noValueDifferences: "The planning values already match; applying only clears the out-of-sync mark.",
+      reconciliationRequired: "Applying changes {count} assigned positions. They are routed through the reconciliation workflow.",
+      noAssignmentImpact: "No assigned position is affected.",
+      applyAction: "Apply source values",
+      applySuccess: "{count} planning values were applied from the source cell.",
+      applyError: "The source values could not be applied.",
+      staleError: "The planning inputs changed since this preview. Review the differences again.",
+      state: {
+        in_sync: "In sync",
+        out_of_sync: "Out of sync"
+      },
+      blocked: {
+        retirement_required: "The source cell is retired. Use the guarded activity-retirement flow instead of a sync.",
+        no_changes: "This activity is already in sync with its source cell."
+      },
+      column: {
+        field: "Planning value",
+        current: "Current activity",
+        source: "Source cell"
+      },
+      field: {
+        group_weekly_hours_per_group: "Group hours",
+        teacher_weekly_hours_per_position: "Teacher hours per position",
+        required_teacher_count: "Teacher positions"
+      }
+    },
+    secondary: {
+      title: "Secondary activities",
+      description: "Add optional tutoring, co-teaching and other activities while keeping group hours and teacher workload independent.",
+      createAction: "Add secondary activity",
+      createTitle: "Add secondary activity",
+      editTitle: "Edit secondary activity",
+      formDescription: "Choose one secondary subject, its linked groups, and the actual values used by both planning balances.",
+      subject: "Secondary subject",
+      activityType: "Activity type",
+      groupHours: "Group hours per group",
+      teacherHours: "Teacher hours per position",
+      teacherCount: "Teacher positions",
+      groups: "Linked groups",
+      notes: "Notes",
+      balanceHint: "Group impact is group hours × linked groups. Teacher impact is teacher hours × teacher positions.",
+      multipleGroupsHint: "Select one or more groups. Every selected group receives the same group-hour value.",
+      singleGroupHint: "This subject requires exactly one linked group.",
+      optionalGroupHint: "This subject permits zero or one linked group.",
+      noGroups: "No active group-subject cells are available for this subject.",
+      noLinkedGroups: "Department-level activity",
+      noSubjects: "Create a secondary subject and its group-subject cells before adding an activity.",
+      empty: "No live secondary activities have been added.",
+      loading: "Loading secondary activities.",
+      unavailable: "Secondary activities are unavailable.",
+      created: "Secondary activity created",
+      updated: "Secondary activity updated",
+      retired: "Secondary activity retired",
+      saveError: "The secondary activity could not be saved.",
+      retireError: "The secondary activity could not be retired.",
+      retireTitle: "Retire secondary activity?",
+      retireBody: "Retire the secondary activity for {subject}? It stops counting towards the plan and leaves this list.",
+      retireConsequence: "Nothing is deleted: the activity keeps its history and is stamped as retired. Any slot already generated from it needs regeneration, and any slot already assigned needs reconciliation.",
+      groupRequiredError: "Select a group for this subject.",
+      multipleGroupsError: "This subject does not allow multiple linked groups.",
+      duplicateGroupsError: "A group cannot be linked more than once.",
+      invalidGroupsError: "Every linked group must be an active cell for the selected subject.",
+      teacherCountError: "Teacher positions must be a positive whole number.",
+      notesError: "Notes cannot exceed 2000 characters.",
+      hoursError: {
+        not_a_number: "Enter a decimal hour value.",
+        too_many_decimals: "Use at most two decimal places.",
+        negative: "Hours cannot be negative.",
+        out_of_range: "Hours exceed the supported range."
+      },
+      type: {
+        ordinary: "Ordinary",
+        tutoring: "Tutoring",
+        co_teaching: "Co-teaching",
+        support: "Support",
+        department_level: "Department level",
+        other: "Other"
+      }
+    },
+    generation: {
+      title: "Plan lock and requirement generation",
+      description: "Review the authoritative validations and lock state before previewing and generating indivisible teacher-position slots.",
+      planLoading: "Loading the teaching plan.",
+      planUnavailable: "The teaching plan is unavailable.",
+      validationsTitle: "Plan validations",
+      validationsDescription: "Blocking and warning findings are read directly from the service and are never inferred from display text.",
+      validationsLoading: "Loading plan validations.",
+      validationsUnavailable: "Plan validations are unavailable.",
+      blocking: "Blocking",
+      warnings: "Warnings",
+      noValidations: "No plan validation findings.",
+      lockTitle: "Lock confirmation",
+      lockConfirmed: "The service confirms that this plan passed through the locked lifecycle state.",
+      lockReady: "This balanced plan can be locked after you confirm the service validations and current feasibility result.",
+      lockUnavailable: "The plan must be balanced and feasible before it can be locked.",
+      lockAction: "Review and lock plan",
+      lockDisabledValidations: "Wait for the authoritative plan validations before locking.",
+      lockDisabledBlocking: "Resolve every blocking plan validation before locking.",
+      lockDisabledFeasibility: "Run feasibility successfully for the current plan before locking.",
+      lockDisabledStatus: "The plan must be balanced before locking.",
+      lockConfirmationTitle: "Confirm plan lock",
+      lockConfirmationDescription: "Locking freezes this feasible planning input for requirement generation. Confirm only after reviewing the validation findings above.",
+      lockConfirmAction: "Lock plan",
+      lockSuccess: "The teaching plan was locked by the service.",
+      lockError: "The teaching plan could not be locked.",
+      unlockTitle: "Unlock",
+      unlockRequired: "Planning changes are refused while the plan is in this state; it has to be unlocked first.",
+      unlockConsequence: "Unlocking clears the lock stamp and returns the plan to balanced editing. Requirement generation stays unavailable until it is locked again, and the service re-checks feasibility at that point.",
+      unlockAction: "Unlock plan",
+      unlockBlockedGeneration: "The service unlocks a locked pre-generation plan only. This plan already has a requirement generation, so use regeneration or the reconciliation workflow instead.",
+      unlockReadOnly: "Unlocking a teaching plan is an administrator action.",
+      unlockPending: "Unlocking the teaching plan.",
+      unlockSuccess: "The teaching plan was unlocked by the service.",
+      unlockError: "The teaching plan could not be unlocked.",
+      planStatus: "Plan status: {status}. Current generation: {generation}.",
+      previewAction: "Preview requirement generation",
+      previewDisabled: "Requirement generation is available only for a service-locked or stale plan.",
+      previewTitle: "Confirm requirement generation",
+      previewSummary: "Generation {generation}: create {create}, preserve {preserve}, retire {retire}, conflicts {conflicts}.",
+      previewMetric: {
+        create: "Create",
+        preserve: "Preserve",
+        retire: "Retire",
+        conflict: "Conflicts"
+      },
+      reconciliationRequired: "Assigned slots would change. Use the reconciliation workflow instead; generation cannot be applied.",
+      noChanges: "The preview is a no-op. Applying it still records the next deterministic validation generation.",
+      confirmAction: "Generate requirement slots",
+      previewError: "The requirement-generation preview could not be created.",
+      generateError: "Requirement slots could not be generated.",
+      success: "Requirement generation applied. {count} live slots are available.",
+      resultTitle: "Generation applied",
+      resultSummary: "Generation {generation} created {created}, preserved {preserved}, retired {retired}, and now has {count} live slots.",
+      totalSlots: "Generated live-slot count"
+    },
+    feasibility: {
+      title: "Feasibility diagnostics",
+      description: "Department-head view of the latest bounded evaluation: its status, its findings and the suggested remediation. Findings never leave this tier.",
+      planLoading: "Loading the teaching plan.",
+      planUnavailable: "The teaching plan is unavailable.",
+      noPlan: "Planning has not started for this process, so there is nothing to evaluate.",
+      statusTitle: "Latest evaluation",
+      evaluatedAt: "Last evaluated: {timestamp}",
+      solverVersion: "Solver version: {version}",
+      notEvaluated: "No current evaluation exists. Run one after planning edits; every relevant change resets the stored result.",
+      evaluatedNone: "The current evaluation reports no findings.",
+      diagnosticsLoading: "Loading the evaluation findings.",
+      diagnosticsUnavailable: "The evaluation findings are unavailable; a fresh evaluation is required.",
+      findingsTitle: "Findings",
+      affectedTitle: "Affected",
+      affectedSlot: "{activity} · {position}",
+      unresolvedReferences: "{count} affected reference(s) cannot be resolved to a current activity or slot.",
+      suggestionTitle: "Suggested remediation",
+      suggestion: {
+        incompatible_residual_totals: "Adjust participant targets or activity hours so the remaining totals match exactly.",
+        slot_exceeds_every_target: "Lower the affected activity's hours per position, or raise a participant's target through authorized extra hours.",
+        distinct_teacher_shortfall: "Add active participants or lower the affected activity's teacher-position count so every position can have a distinct teacher.",
+        unsatisfiable_targets: "Review participant targets and activity hours together: no exact assignment can fill every participant to their target.",
+        instance_size_limit: "The instance exceeds the configured solver limits. Reduce participants or slots, or ask the platform administrator to review the limits.",
+        step_limit: "Re-run the evaluation. If it stays undetermined, simplify the instance or ask the platform administrator to review the solver budget.",
+        time_limit: "Re-run the evaluation. If it stays undetermined, simplify the instance or ask the platform administrator to review the solver budget."
+      },
+      evaluateAction: "Run feasibility evaluation",
+      evaluateDisabledNoPlan: "Create the teaching plan before running an evaluation.",
+      evaluateSuccess: "Feasibility evaluation finished: {status}.",
+      evaluateError: "The feasibility evaluation could not be run."
+    },
+    reconciliation: {
+      title: "Allocation changes and reconciliation",
+      description: "Record immutable allocation revisions, review the stale plan and explicitly resolve every affected assigned slot.",
+      allocationFormTitle: "Record a new allocation revision",
+      allocationFormDescription: "The previous revision remains in history. The service marks the plan stale and preserves activities, requirements and assignments.",
+      allocatedHours: "Allocated group hours",
+      source: "Source",
+      sourceOption: {
+        manual_transcription: "Manual transcription",
+        file_import: "File import",
+        copied_draft: "Copied draft",
+        other: "Other"
+      },
+      sourceReference: "Source reference",
+      allocationReason: "Change reason",
+      positiveHoursError: "Allocated hours must be greater than zero.",
+      allocationReasonError: "The allocation reason cannot exceed 500 characters.",
+      sourceReferenceError: "The source reference cannot exceed 500 characters.",
+      recordAllocationAction: "Record allocation revision",
+      allocationRecorded: "The allocation revision was recorded. Existing work remains preserved.",
+      allocationError: "The allocation revision could not be recorded.",
+      allocationHistoryTitle: "Allocation revision history",
+      allocationLoading: "Loading allocation revisions.",
+      allocationUnavailable: "Allocation revisions are unavailable.",
+      noAllocation: "No allocation has been communicated yet.",
+      currentAllocation: "Current revision {revision}: {hours} allocated group hours.",
+      revision: "Revision",
+      state: "State",
+      current: "Current",
+      superseded: "Superseded",
+      historyPreserved: "Every previous allocation revision remains visible and immutable.",
+      statusTitle: "Reconciliation status",
+      staleState: "The service reports a stale plan. New assignments stay blocked until reconciliation completes.",
+      currentState: "The plan does not currently require allocation reconciliation.",
+      planStatus: "Plan status: {status}. Current generation: {generation}.",
+      assignmentsPreserved: "Existing assignments remain visible and unchanged until you confirm their manual resolution.",
+      previewAction: "Preview requirement reconciliation",
+      previewDisabled: "Reconciliation is available only when the service reports a stale or reconciliation-required plan.",
+      previewTitle: "Confirm manual reconciliation",
+      previewSummary: "Generation {generation}: create {create}, preserve {preserve}, retire {retire}, assigned conflicts {conflicts}.",
+      previewMetric: {
+        create: "Create",
+        preserve: "Preserve",
+        retire: "Retire",
+        conflict: "Assigned conflicts"
+      },
+      preservedRequirements: "{count} unchanged requirements and their assignments remain preserved.",
+      activity: "Activity",
+      position: "Position",
+      hoursChange: "Hours change",
+      manualAction: "Manual resolution",
+      unknownActivity: "Unknown activity",
+      hoursRemoved: "{current} hours → position removed",
+      hoursChanged: "{current} hours → {next} hours",
+      resolution: {
+        value_changed: "Release the assignment and create the replacement slot",
+        removed: "Release the assignment and retire the removed position"
+      },
+      noConflicts: "No assigned slots require release. Review the unassigned changes before applying.",
+      noChanges: "The reconciliation preview contains no changes.",
+      reconciliationReason: "Reconciliation reason",
+      confirmationWarning: "Confirming records the reason, releases only the listed assignments and keeps their audit history. A changed preview is rejected.",
+      confirmAction: "Apply manual reconciliation",
+      previewError: "The reconciliation preview could not be created.",
+      stalePreviewError: "The reconciliation changed. Preview it again before confirming.",
+      reconcileError: "Requirements could not be reconciled.",
+      success: "Reconciliation applied. {count} assigned conflicts were explicitly resolved.",
+      resultTitle: "Reconciliation applied",
+      resultSummary: "Generation {generation} resolved {resolved} conflicts, released {released} assignments, created {created}, preserved {preserved}, retired {retired}, and now has {count} live slots.",
+      liveSlots: "Live slots after reconciliation",
+      hoursError: {
+        not_a_number: "Enter a decimal hour value.",
+        too_many_decimals: "Use at most two decimal places.",
+        negative: "Hours cannot be negative.",
+        out_of_range: "Hours exceed the supported range."
+      }
+    }
   },
   action: {
     create: "Add",
     edit: "Edit",
     delete: "Delete",
+    retire: "Retire",
     archive: "Archive",
     unarchive: "Unarchive",
     close: "Close",
@@ -112,7 +779,10 @@ export const en = {
     search: "Search",
     filter: "Filter",
     refresh: "Refresh",
-    linkUser: "Link user",
+    linkUser: "Link to me",
+    issueClaimCode: "Issue claim code",
+    claimProfile: "Claim my profile",
+    copyCode: "Copy code",
     unlinkUser: "Unlink user",
     export: "Export",
     restore: "Restore draft",
@@ -121,7 +791,9 @@ export const en = {
     completeTurn: "Complete turn",
     skipTurn: "Skip turn",
     overrideTurn: "Override turn",
-    initializeTurns: "Initialize turns"
+    initializeTurns: "Initialize turns",
+    openSession: "Open session",
+    closeSession: "Close session"
   },
   confirm: {
     delete: { title: "Delete {entity}?", body: "This will permanently delete **{name}**. This action cannot be undone.", proceed: "Delete permanently" },
@@ -129,7 +801,11 @@ export const en = {
     cancel: "Cancel"
   },
   nav: {
-    group: { setup: "Setup", process: "Process" },
+    group: {
+      configuration: "Stage 1 · Configuration",
+      planning: "Stage 2 · Planning",
+      assignment: "Stage 3 · Assignment"
+    },
     item: {
       schools: "Schools",
       academicYears: "Academic years",
@@ -137,9 +813,14 @@ export const en = {
       teacherRoster: "Teacher roster",
       dashboard: "Dashboard",
       processes: "Processes",
-      classrooms: "Classrooms",
+      teachingGroups: "Teaching groups",
       classroomStages: "Classroom stages",
+      groupSubjects: "Group-subject matrix",
+      processSettings: "Process settings",
+      allocation: "Leadership allocation",
+      planningExports: "Planning exports",
       subjects: "Subjects",
+      planning: "Planning",
       requirements: "Requirements",
       processParticipants: "Process participants",
       assignments: "Assignments",
@@ -152,51 +833,143 @@ export const en = {
     }
   },
   flow: {
+    claimCode: {
+      title: "Claim code for {name}",
+      body: "Give this code to {name}. It works once, expires {expires}, and is shown only now — if it is lost, issue another.",
+      copied: "Copied",
+      dismiss: "Done"
+    },
     bootstrap: {
       title: "Set up your reparto",
-      subtitle: "A few steps before you can run the meeting.",
-      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create a process", subjects: "Add subjects", classrooms: "Add classrooms", teacherRoster: "Add teachers", requirements: "Add hour requirements", participants: "Add process participants" },
+      subtitle: "The three stages, from the first record to the meeting.",
+      // Every label states the condition `buildSetupChecklist` tests for it —
+      // the pair is frozen side by side in `docs/ui-naming-freeze.md` §8.
+      step: { school: "Create a school", academicYear: "Create an academic year", department: "Create a department", process: "Create an assignment process", allocation: "Record the leadership hour allocation", participants: "Add process participants and their target hours", subjects: "Add the subjects taught", teachingGroups: "Add the teaching groups", groupSubjects: "Fill the group-subject matrix", configurationReview: "Review the configuration and the selection settings", teachingPlan: "Create the teaching plan", planBalance: "Balance the group hours and the teacher load", planLock: "Lock the teaching plan", requirements: "Generate the requirement slots", meeting: "Hand out the positions in the meeting" },
       done: "Done",
-      open: "Open"
+      open: "Open",
+      unknown: "Not checked here",
+      reason: {
+        "no-process": "Select a process first.",
+        "not-observed": "This screen does not read that."
+      }
+    }
+  },
+  meeting: {
+    title: "Meeting control",
+    open: "Selection is open.",
+    openDetail: "The plan is current; positions can be handed out.",
+    blocked: {
+      no_process_data: "No process data has been loaded yet.",
+      plan_not_ready: "The plan is not ready for selection yet.",
+      reconciliation_required: "An allocation change must be reconciled before selection continues.",
+      no_meeting_session: "No meeting session is open."
+    },
+    lifecycleTitle: "Plan lifecycle",
+    lifecycle: {
+      open: "Current",
+      stale: "Stale",
+      reconciliation_required: "Reconciliation required",
+      blocked: "Blocked"
+    },
+    staleDetail: "The plan changed after generation. The service decides what happens to the existing positions.",
+    reconciliationDetail: "An allocation change invalidated the plan. Reconcile it before the meeting continues.",
+    pendingTitle: "Positions",
+    overloadTitle: "Authorized extra hours",
+    overloadDetail: "{base} h base + {extra} h authorized = {target} h target",
+    noOverloads: "No participant is carrying authorized extra hours.",
+    // Why one turn control is closed, as the reason code the button already
+    // carried in `data-disabled-reason`. The attribute alone told a test what
+    // was wrong and told the head nothing; these are the same codes said out
+    // loud next to the button that is refusing.
+    actionDisabled: {
+      no_process_data: "No process data has been loaded yet.",
+      plan_not_ready: "The plan is not ready for selection yet.",
+      reconciliation_required: "An allocation change must be reconciled before selection continues.",
+      no_meeting_session: "No meeting session is open. Open one to run turns.",
+      turn_active: "A turn is already running.",
+      no_active_turn: "No turn is running.",
+      reason_required: "Give a reason first."
+    },
+    reasonLabel: "Reason",
+    reasonPlaceholder: "Why this turn is skipped or overridden",
+    reasonHint: "Skipping or overriding a turn is audited, so it needs a reason.",
+    actionPending: "Working…",
+    actionFailed: "The turn action failed.",
+    session: {
+      title: "Meeting session",
+      none: "No session open.",
+      closeConfirmTitle: "Close the meeting session?",
+      closeConfirmBody: "Teachers lose LAN access to this meeting once the session closes.",
+      closeConfirmAction: "Close session",
+      actionFailed: "The meeting session action failed."
     }
   },
   dashboard: {
-    balanceState: { balanced: "Balanced", pending: "Pending", exceeded: "Exceeded", warning: "Warning" },
+    balanceState: { balanced: "Balanced", unbalanced: "Not balanced", unknown: "Unknown" },
+    readiness: {
+      ready: "Ready",
+      not_ready: "Not ready",
+      recalculation_required: "Recalculation required"
+    },
+    feasibility: {
+      not_evaluated: "Not evaluated",
+      feasible: "Feasible",
+      infeasible: "Infeasible",
+      unknown: "Undetermined"
+    },
+    invariant: {
+      group: "Group hours",
+      teacher: "Teacher load",
+      feasibility: "Assignment feasibility",
+      readiness: "Readiness"
+    },
     title: "Reparto dashboard",
-    subtitleAdmin: "Follow balance, coverage, and meeting readiness before the live session.",
+    subtitleAdmin: "Follow both balances, assignment progress, and meeting readiness before the live session.",
     subtitleReadonly: "Project a calm read-only view for the live meeting.",
     pickerLabel: "Current process",
     pickerHint: "Switch process when the route is not locked to a specific id.",
     mode: { admin: "Admin mode", readonly: "Read-only mode" },
     section: {
-      overview: "Overview",
-      teacherLoad: "Teacher load",
-      classroomCoverage: "Classroom coverage",
+      planning: "Planning",
+      assignment: "Assignment",
+      participants: "Participants",
       validations: "Validations",
       checklist: "Setup checklist",
       meetingReadiness: "Meeting readiness"
     },
     metric: {
-      required: "Required",
-      assigned: "Assigned",
-      available: "Available",
-      pending: "Pending",
+      totalSlots: "Positions",
+      assignedSlots: "Taken",
+      availableSlots: "Free",
+      targetHours: "Target",
+      assignedHours: "Assigned",
+      remainingHours: "Remaining",
       blocking: "Blocking",
-      participants: "Participants",
-      requirements: "Requirements"
+      balancedParticipants: "Balanced",
+      pendingParticipants: "Pending",
+      overloadedParticipants: "Overloaded"
+    },
+    participantState: {
+      pending: "Has not reached the target yet.",
+      balanced: "Assigned hours match the target.",
+      overloaded_authorized: "The target includes authorized extra hours.",
+      inactive: "Not active in this process.",
+      not_participating: "Not part of the selection order."
     },
     state: {
       noDashboard: "Dashboard data will appear once the process is ready.",
-      noTeachers: "Add process participants to see teacher balance.",
-      noRequirements: "Add requirements to see classroom coverage.",
-      noValidations: "No blocking validations.",
+      noPlan: "This process has no teaching plan yet.",
+      noTeachers: "Add process participants to see their assignment progress.",
+      noValidations: "No findings.",
+      summaryOnly: "This view reads the aggregate summary, which carries no per-teacher findings.",
       lockedToRoute: "This route is pinned to the current URL process."
     },
     summary: {
-      balance: "{assigned} of {required} hours assigned. {pending} hours still pending.",
-      teacherLoad: "{count} participant(s) tracked; {overloaded} overloaded.",
-      classroomCoverage: "{count} requirement(s), {uncovered} uncovered.",
-      validations: "{blocking} blocking validation(s) and {total} total message(s).",
+      slotProgress: "{assigned} of {total} positions taken.",
+      participantHours: "{assigned} of {target} h, {remaining} h remaining",
+      authorizedExtra: "{hours} extra hours authorized.",
+      participants: "{count} participant(s) tracked; {overloaded} with authorized extra hours.",
+      validations: "{total} blocking finding(s): {planning} in planning, {assignment} in assignment.",
       checklist: "{done} of {total} setup steps complete."
     }
   },
@@ -208,7 +981,6 @@ export const en = {
     fkMissing: "The selected {field} no longer exists. Please pick another.",
     fkViolation: "Cannot delete: {count} item(s) still depend on this entry.",
     hoursInvalid: "Hours must be a positive number.",
-    hoursExceed: "Total assigned hours ({assigned}) exceed required hours ({required}). Provide an override reason.",
     processState: "The process is in {status}; this action is not allowed in that state.",
     permission: "You do not have permission to perform this action.",
     unauthorized: "Your session has expired. Please sign in again.",
@@ -225,35 +997,152 @@ export const en = {
     noData: "No data available yet.",
     noPermission: "You do not have permission."
   },
-  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchClassrooms: "Search stage, group code, or label...", searchSubjects: "Search name or stage...", searchRequirements: "Search classroom or subject...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
-  classroomBulk: {
+  table: { noResults: "No results.", searchPlaceholder: "Search...", loading: "Loading...", actions: "Actions", columns: "Columns", all: "All", firstPage: "First page", previousPage: "Previous page", nextPage: "Next page", lastPage: "Last page", page: "Page", rowsPerPage: "Rows per page", searchTeachingGroups: "Search stage, group code, or label...", searchSubjects: "Search name...", searchParticipants: "Search teacher...", searchAssignments: "Search requirement or participant...", searchSchools: "Search name, locality, or province...", searchAcademicYears: "Search label or school...", searchDepartments: "Search name or school...", searchTeacherRoster: "Search teacher..." },
+  teachingGroupBulk: {
     action: "Create groups",
-    title: "Bulk create classrooms",
-    description: "Create an inclusive classroom range.",
+    title: "Bulk create teaching groups",
+    description: "Create an inclusive teaching group range.",
     groupStart: "Group start",
     groupEnd: "Group end",
-    created: "{count} classrooms created",
-    createError: "Classrooms could not be created"
+    created: "{count} teaching groups created",
+    createError: "Teaching groups could not be created"
   },
-  requirementBulk: {
-    action: "Bulk add hours",
-    title: "Bulk add hour requirements",
-    description: "Create the same hour requirement for every classroom in a stage and grade range.",
-    gradeStart: "Grade start",
-    gradeEnd: "Grade end",
-    noMatches: "No classrooms match the selected stage and grade range.",
-    created: "{count} hour requirements created",
-    createError: "Some hour requirements could not be created",
-    createErrorCount: "{count} failed"
+  groupSubjectBulk: {
+    title: "Group-subject bulk editor",
+    description: "Preview and confirm one subject across the teaching groups matched by stage and grade.",
+    modeLabel: "Operation mode",
+    mode: {
+      create_missing: "Create missing",
+      update_existing: "Update existing",
+      upsert: "Create or update"
+    },
+    allStages: "All stages",
+    minimumGrade: "Minimum grade",
+    maximumGrade: "Maximum grade",
+    groupHours: "Group hours",
+    teacherHours: "Teacher hours per position",
+    teacherCount: "Teacher positions",
+    inheritHint: "Leave an hours field empty to inherit the subject default. Enter 0 for a real zero.",
+    previewAction: "Preview changes",
+    confirmAction: "Confirm and apply",
+    confirmTitle: "Apply group-subject changes?",
+    confirmBody: "Apply {count} change(s) from this preview. The server will reject the apply if the matched selection changed.",
+    previewTitle: "Bulk preview",
+    noMatches: "No teaching groups matched these filters.",
+    noChanges: "The preview contains no changes to apply.",
+    validationTitle: "Preview validation errors",
+    stale: "This preview is stale because the matched teaching groups changed. Preview again before applying.",
+    applied: "Created {created} and updated {updated} group-subject row(s).",
+    previewError: "The group-subject preview could not be generated.",
+    applyError: "The group-subject changes could not be applied.",
+    gradeError: "Grades must be positive whole numbers.",
+    gradeRangeError: "Minimum grade must be less than or equal to maximum grade.",
+    teacherCountError: "Teacher positions must be a positive whole number.",
+    hoursError: {
+      not_a_number: "Enter a decimal hour value.",
+      too_many_decimals: "Use at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "Hours exceed the supported range."
+    },
+    summary: "{create} to create, {update} to update, {unchanged} unchanged, {conflicts} conflict(s).",
+    column: {
+      action: "Result",
+      teachingGroup: "Teaching group",
+      groupHours: "Group hours",
+      teacherHours: "Teacher hours",
+      teacherCount: "Teacher positions",
+      reason: "Details"
+    },
+    rowAction: {
+      create: "Create",
+      update: "Update",
+      unchanged: "Unchanged",
+      conflict: "Conflict"
+    }
   },
-  classroomSelection: {
-    selectAllVisible: "Select all visible classrooms",
+  groupSubjectMatrix: {
+    pageTitle: "Group-subject matrix",
+    description: "One cell per teaching group and subject, carrying the actual planning values the teaching plan materializes from.",
+    addAction: "Add cell",
+    createTitle: "Add matrix cell",
+    editTitle: "Edit matrix cell",
+    empty: "The matrix is empty. Fill it with the bulk editor below, or add a single cell.",
+    emptyHint: "Main-subject materialization has no candidate cell until at least one exists.",
+    inherited: "Inherited",
+    identityHint: "A cell's teaching group and subject are its identity and cannot be changed here.",
+    readOnly: "Editing the matrix is a department-head action.",
+    search: "Search teaching group or subject...",
+    created: "Matrix cell added.",
+    updated: "Matrix cell updated.",
+    createError: "The matrix cell could not be added.",
+    updateError: "The matrix cell could not be updated.",
+    selectTeachingGroup: "Select a teaching group",
+    selectSubject: "Select a subject"
+  },
+  allocation: {
+    pageTitle: "Leadership allocation",
+    description: "The weekly group hours school leadership has communicated to this department. Stage 2 balances the teaching plan against the current revision, so record it before planning starts.",
+    panelTitle: "Allocation revisions",
+    panelDescription: "Each revision is immutable and keeps its place in the history. Recording a new one after planning has started marks the plan stale and sends it through explicit reconciliation.",
+    readOnly: "Recording an allocation revision is a department-head action."
+  },
+  processSettings: {
+    pageTitle: "Process settings",
+    description: "How this process will be run: the hours reference participants are measured against, the selection order used at the meeting, and the two surfaces teachers reach on their own.",
+    formTitle: "Selection and LAN settings",
+    field: {
+      defaultTeacherHoursReference: "Default hours reference",
+      selectionOrderEnabled: "Selection order enabled",
+      selectionOrderMode: "Selection order mode",
+      directTeacherSelectionEnabled: "Direct teacher selection",
+      lanAccessEnabled: "LAN access"
+    },
+    hint: {
+      defaultTeacherHoursReference: "Leave the field blank for no reference. A typed 0 is a real zero and is not the same as blank.",
+      selectionOrderEnabled: "Records a selection order for the meeting; participants then take their positions in that order.",
+      selectionOrderMode: "The mode is stored on its own and applies only while the selection order is enabled.",
+      modeInert: "The selection order is disabled, so this mode is stored but does not apply.",
+      directTeacherSelectionEnabled: "Lets a participant take a position from their own view instead of waiting for their turn to be recorded.",
+      lanAccessEnabled: "Opens the read-only view teachers reach over the local network during the meeting."
+    },
+    mode: { none: "No order", informative: "Informative", strict: "Strict" },
+    statusTitle: "Current status",
+    statusLine: "Status: {status}.",
+    statusOwnedElsewhere: "The status is not a setting: the transition endpoint owns it, and opening a meeting session sets it directly.",
+    unchanged: "Nothing has changed, so there is nothing to save.",
+    loading: "Loading the process.",
+    unavailable: "The process is unavailable.",
+    readOnly: "Changing process settings is a department-head action.",
+    saved: "Process settings saved.",
+    saveError: "The process settings could not be saved.",
+    hoursError: {
+      not_a_number: "Enter an hour value such as 18 or 18.50.",
+      too_many_decimals: "Hours take at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "This hour value is too large."
+    },
+    reopen: {
+      title: "Reopen the process",
+      frozen: "This process is closed. Configuration, planning and assignment changes are all refused until it is reopened.",
+      terminal: "This process is archived. Archiving is terminal, so it cannot be reopened.",
+      readOnly: "Reopening a process is a department-head action.",
+      reasonLabel: "Reopen reason",
+      reasonRequired: "State why the process is being reopened.",
+      reasonTooLong: "The reopen reason cannot exceed 500 characters.",
+      consequence: "Reopening moves the process to reopened, clears its closing stamp and lets configuration, planning and assignment changes through again. Nothing already recorded is removed, and the reason you give is the only trace of why it was reopened.",
+      action: "Reopen process",
+      reopened: "The process was reopened.",
+      error: "The process could not be reopened."
+    }
+  },
+  teachingGroupSelection: {
+    selectAllVisible: "Select all visible teaching groups",
     selectRow: "Select {name}",
     deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected classrooms",
-    deleteBody: "Selected classrooms to delete: {count}. This action cannot be undone.",
-    deleted: "Classrooms deleted: {count}",
-    deleteError: "The selected classrooms could not be deleted"
+    deleteTitle: "Delete selected teaching groups",
+    deleteBody: "Selected teaching groups to delete: {count}. This action cannot be undone.",
+    deleted: "Teaching groups deleted: {count}",
+    deleteError: "The selected teaching groups could not be deleted"
   },
   subjectSelection: {
     selectAllVisible: "Select all visible subjects",
@@ -264,14 +1153,25 @@ export const en = {
     deleted: "Subjects deleted: {count}",
     deleteError: "The selected subjects could not be deleted"
   },
-  requirementSelection: {
-    selectAllVisible: "Select all visible requirements",
-    selectRow: "Select {name}",
-    deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected requirements",
-    deleteBody: "Selected requirements to delete: {count}. This action cannot be undone.",
-    deleted: "Requirements deleted: {count}",
-    deleteError: "The selected requirements could not be deleted"
+  participants: {
+    hoursError: {
+      not_a_number: "Enter an hour value such as 12 or 12.50.",
+      too_many_decimals: "Hours take at most two decimal places.",
+      negative: "Hours cannot be negative.",
+      out_of_range: "This hour value is too large."
+    },
+    extraHoursAction: "Extra hours",
+    extraHoursTitle: "Authorize extra hours",
+    extraHoursBody: "{teacher} has a base of {base} hours and {extra} authorized extra hours, for a target of {target} hours.",
+    extraHoursHint: "Set the value back to 0 to withdraw the authorization. Both directions are recorded with your reason.",
+    extraHoursConfirm: "Authorize",
+    extraHoursSaved: "Authorized extra hours updated.",
+    extraHoursError: "The authorized extra hours could not be changed",
+    lastExtraHoursReason: "Last recorded reason: {reason}",
+    noExtraHoursReason: "No extra-hours change has been recorded yet.",
+    targetHint: "Target hours are base plus authorized extra; they are not edited directly.",
+    overloadedYes: "Yes",
+    overloadedNo: "No"
   },
   participantSelection: {
     selectAllVisible: "Select all visible participants",
@@ -281,15 +1181,6 @@ export const en = {
     deleteBody: "Selected participants to delete: {count}. This action cannot be undone.",
     deleted: "Participants deleted: {count}",
     deleteError: "The selected participants could not be deleted"
-  },
-  assignmentSelection: {
-    selectAllVisible: "Select all visible assignments",
-    selectRow: "Select {name}",
-    deleteSelected: "Delete selected ({count})",
-    deleteTitle: "Delete selected assignments",
-    deleteBody: "Selected assignments to delete: {count}. This action cannot be undone.",
-    deleted: "Assignments deleted: {count}",
-    deleteError: "The selected assignments could not be deleted"
   },
   classroomStages: {
     pageTitle: "Classroom stages",

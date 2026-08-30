@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RepartoProvider } from "../RepartoProvider.js";
 import { RepartoQueryProvider } from "../RepartoQueryProvider.js";
-import { getRepartoAuthAdapter } from "../../authAdapter.js";
+import { REPARTO_ADMIN_MINIMUM_ROLE } from "../../authAdapter.js";
+import {
+  useRepartoCanAct,
+  useRepartoCurrentUser,
+  useRepartoMinimumRole
+} from "../useRepartoRole.js";
 import {
   useArchiveRepartoAcademicYear,
   useCreateRepartoAcademicYear,
@@ -9,6 +14,7 @@ import {
   useCreateRepartoSchool,
   useCreateRepartoTeacherProfile,
   useDeleteRepartoTeacherProfile,
+  useIssueRepartoTeacherProfileClaimCode,
   useLinkRepartoTeacherProfileUser,
   useRepartoAcademicYears,
   useRepartoDepartments,
@@ -41,6 +47,7 @@ import {
   EntityDeleteDialog,
   EntityDialogShell
 } from "./process-crud/shared.js";
+import { RepartoRouteGuard } from "./route-guard.js";
 import { DataTable, type DataTableColumn } from "./data-table.js";
 import {
   repartoActionRowClass,
@@ -55,6 +62,7 @@ import type {
   AcademicYearPublic,
   DepartmentPublic,
   SchoolPublic,
+  TeacherProfileClaimCode,
   TeacherProfilePublic
 } from "../../schemas.js";
 
@@ -134,13 +142,17 @@ export function RepartoSchoolsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoSchoolsContent locale={locale} />
+      <RepartoRouteGuard locale={locale} route="schools">
+        <RepartoSchoolsContent locale={locale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // `School` create/update is platform setup, so `ADMIN` and above (§21.3).
+  const canAct = useRepartoCanAct("schools");
   const query = useRepartoSchools({ limit: 100 });
   const rows = query.data?.data ?? [];
   const createMutation = useCreateRepartoSchool();
@@ -231,18 +243,20 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
 
   const columns: DataTableColumn<SchoolPublic>[] = [
     { id: "name", label: dict.field.name, value: (school) => school.name },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (school) => `${school.name} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (school) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={formOpen} label={dict.action.edit} onClick={() => openEdit(school)} row />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (school: SchoolPublic) => `${school.name} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (school: SchoolPublic) => (
+            <RowActions>
+              <ActionButton action="edit" disabled={formOpen} label={dict.action.edit} onClick={() => openEdit(school)} row />
+            </RowActions>
+          )
+        } satisfies DataTableColumn<SchoolPublic>]
+      : []),
     { id: "locality", label: dict.field.locality, value: (school) => school.locality ?? "" },
     { id: "province", label: dict.field.province, value: (school) => school.province ?? "" }
   ];
@@ -254,9 +268,11 @@ function RepartoSchoolsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="schools"
       data-reparto-group="setup"
     >
-      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="schools">
-        <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
-      </div>
+      {canAct ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="schools">
+          <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
+        </div>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="schools">
         <h2 className="sr-only">{dict.entity.school.plural}</h2>
         <DataTable
@@ -385,13 +401,17 @@ export function RepartoAcademicYearsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoAcademicYearsContent locale={locale} />
+      <RepartoRouteGuard locale={locale} route="academicYears">
+        <RepartoAcademicYearsContent locale={locale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // `AcademicYear` create/update/archive is platform setup (§21.3).
+  const canAct = useRepartoCanAct("academicYears");
   const query = useRepartoAcademicYears({ limit: 100 });
   const schoolsQuery = useRepartoSchools({ limit: 100 });
   const schools = schoolsQuery.data?.data ?? [];
@@ -499,10 +519,10 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
     {
       id: "actions",
       label: dict.table.actions,
-      value: (year) => `${year.label} ${dict.table.actions}`,
+      value: (year: AcademicYearPublic) => `${year.label} ${dict.table.actions}`,
       hideable: false,
       sortable: false,
-      cell: (year) => {
+      cell: (year: AcademicYearPublic) => {
         const isArchived = year.status === "archived";
         const archiveReason = isArchived
           ? dict.entity.academicYear.status.archived
@@ -535,16 +555,18 @@ function RepartoAcademicYearsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="academic-years"
       data-reparto-group="setup"
     >
-      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="academic-years">
-        <ActionButton
-          action="create"
-          disabled={formOpen || Boolean(createDisabledReason)}
-          disabledReason={createDisabledReason}
-          label={dict.action.create}
-          onClick={openCreate}
-        />
-        <RepartoDisabledReason reason={createDisabledReason} />
-      </div>
+      {canAct ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="academic-years">
+          <ActionButton
+            action="create"
+            disabled={formOpen || Boolean(createDisabledReason)}
+            disabledReason={createDisabledReason}
+            label={dict.action.create}
+            onClick={openCreate}
+          />
+          <RepartoDisabledReason reason={createDisabledReason} />
+        </div>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="academic-years">
         <h2 className="sr-only">{dict.entity.academicYear.plural}</h2>
         {archiveMapped.formError ? (
@@ -666,13 +688,18 @@ export function RepartoDepartmentsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoDepartmentsContent locale={locale} />
+      <RepartoRouteGuard locale={locale} route="departments">
+        <RepartoDepartmentsContent locale={locale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  // `Department` create/update — including naming a `department_head_user_id`,
+  // which authorizes nothing either way (§21.2) — is platform setup.
+  const canAct = useRepartoCanAct("departments");
   const schoolsQuery = useRepartoSchools({ limit: 100 });
   const query = useRepartoDepartments({ limit: 100 });
   const rows = query.data?.data ?? [];
@@ -759,18 +786,20 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
 
   const columns: DataTableColumn<DepartmentPublic>[] = [
     { id: "name", label: dict.field.name, value: (department) => department.name },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (department) => `${department.name} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (department) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={formOpen} label={dict.action.edit} onClick={() => openEdit(department)} row />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (department: DepartmentPublic) => `${department.name} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (department: DepartmentPublic) => (
+            <RowActions>
+              <ActionButton action="edit" disabled={formOpen} label={dict.action.edit} onClick={() => openEdit(department)} row />
+            </RowActions>
+          )
+        } satisfies DataTableColumn<DepartmentPublic>]
+      : []),
     { id: "school", label: dict.field.school, value: (department) => schoolName(department.school_id) }
   ];
   const schoolOptions = [...new Set(rows.map((department) => schoolName(department.school_id)))].sort((a, b) => a.localeCompare(b));
@@ -781,16 +810,18 @@ function RepartoDepartmentsContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="departments"
       data-reparto-group="setup"
     >
-      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="departments">
-        <ActionButton
-          action="create"
-          disabled={formOpen || schoolsMissing}
-          disabledReason={createReason}
-          label={dict.action.create}
-          onClick={openCreate}
-        />
-        <RepartoDisabledReason reason={createReason} />
-      </div>
+      {canAct ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="departments">
+          <ActionButton
+            action="create"
+            disabled={formOpen || schoolsMissing}
+            disabledReason={createReason}
+            label={dict.action.create}
+            onClick={openCreate}
+          />
+          <RepartoDisabledReason reason={createReason} />
+        </div>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="departments">
         <h2 className="sr-only">{dict.entity.department.plural}</h2>
         <DataTable
@@ -890,7 +921,9 @@ export function RepartoTeacherRosterView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoTeacherRosterContent locale={locale} />
+      <RepartoRouteGuard locale={locale} route="teacherRoster">
+        <RepartoTeacherRosterContent locale={locale} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -904,11 +937,11 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const deleteMutation = useDeleteRepartoTeacherProfile();
   const linkMutation = useLinkRepartoTeacherProfileUser();
   const unlinkMutation = useUpdateRepartoTeacherProfile();
+  const claimCodeMutation = useIssueRepartoTeacherProfileClaimCode();
 
   const [editing, setEditing] = useState<TeacherProfilePublic | null>(null);
   const [creating, setCreating] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<TeacherProfilePublic | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [active, setActive] = useState(true);
   const [notes, setNotes] = useState("");
@@ -921,12 +954,23 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
   const [deleteMapped, setDeleteMapped] = useState<RepartoMappedError>(
     EMPTY_REPARTO_MAPPED_ERROR
   );
+  // Held in state because the service will not serve it twice: the code is
+  // stored hashed, so this response is the only readable copy that will ever
+  // exist. Losing it costs a reissue, not a lookup.
+  const [issued, setIssued] = useState<TeacherProfileClaimCode | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    void Promise.resolve(getRepartoAuthAdapter().getCurrentUser?.() ?? null).then(
-      (user) => setCurrentUserId(user?.id ?? null)
-    );
-  }, []);
+  // The roster is the one setup route with an own-record action: a `WRITER` may
+  // update the profile whose linked user is them and nothing else (§21.3), while
+  // creating, linking and deleting a profile stay `ADMIN`. Both the identity and
+  // the role come from the one session read (`RBAC-06`), so the ownership test
+  // below is the same `user.id` the link action already used.
+  const { user } = useRepartoCurrentUser();
+  const canAct = useRepartoCanAct("teacherRoster");
+  const isAdmin = useRepartoMinimumRole(REPARTO_ADMIN_MINIMUM_ROLE) === true;
+  const currentUserId = user?.id ?? null;
+  const ownsProfile = (profile: TeacherProfilePublic) =>
+    Boolean(currentUserId) && profile.user_id === currentUserId;
 
   const formOpen = creating || Boolean(editing);
 
@@ -1013,6 +1057,39 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     }
   }
 
+  /**
+   * Mint the code that lets *this teacher* bind the profile to their account.
+   *
+   * The replacement for the old *Link user*, which linked `currentUserId` — so
+   * a head pressing it on a colleague's row linked **themselves**. The backend
+   * was never the problem: `link-user` accepts any `user_id`. What was missing
+   * was a way for the head to learn a colleague's id, and per `C1` that
+   * directory belongs to the identity service and stays superuser-only. The
+   * teacher's own token already carries their id, so nobody needs to look
+   * anyone up — the head hands over a code instead.
+   */
+  function handleIssueClaimCode(profile: TeacherProfilePublic) {
+    setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
+    setCopied(false);
+    claimCodeMutation.mutate(profile.id, {
+      onSuccess: (code) => setIssued(code),
+      onError: (err: unknown) => setLinkMapped(mapRepartoError(err))
+    });
+  }
+
+  function handleCopyCode() {
+    if (!issued) return;
+    // Not every host exposes an async clipboard (an insecure origin, or a
+    // browser that has not granted it). The code is on screen and selectable
+    // either way, so a missing clipboard is a missing convenience, not a dead
+    // end — and never an unhandled rejection.
+    void Promise.resolve(
+      globalThis.navigator?.clipboard?.writeText?.(issued.claim_code)
+    )
+      .then(() => setCopied(true))
+      .catch(() => setCopied(false));
+  }
+
   function handleUnlink(profile: TeacherProfilePublic) {
     setLinkMapped(EMPTY_REPARTO_MAPPED_ERROR);
     unlinkMutation.mutate(
@@ -1021,47 +1098,79 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
     );
   }
 
-  const linking = linkMutation.isPending || unlinkMutation.isPending;
+  const linking =
+    linkMutation.isPending ||
+    unlinkMutation.isPending ||
+    claimCodeMutation.isPending;
   const anyFormOpen = formOpen || Boolean(confirmDelete);
 
   const columns: DataTableColumn<TeacherProfilePublic>[] = [
     { id: "display_name", label: dict.field.displayName, value: (profile) => profile.display_name },
-    {
-      id: "actions",
-      label: dict.table.actions,
-      value: (profile) => `${profile.display_name} ${dict.table.actions}`,
-      hideable: false,
-      sortable: false,
-      cell: (profile) => (
-        <RowActions>
-          <ActionButton action="edit" disabled={anyFormOpen} label={dict.action.edit} onClick={() => openEdit(profile)} row />
-          {currentUserId && profile.user_id === currentUserId ? (
-            <ActionButton
-              action="unlink-user"
-              disabled={anyFormOpen || linking}
-              label={dict.action.unlinkUser}
-              onClick={() => handleUnlink(profile)}
-              row
-            />
-          ) : (
-            <ActionButton
-              action="link-user"
-              disabled={anyFormOpen || linking || !currentUserId}
-              label={dict.action.linkUser}
-              onClick={() => handleLinkToMe(profile)}
-              row
-            />
-          )}
-          <ActionButton
-            action="delete"
-            disabled={anyFormOpen || deleteMutation.isPending}
-            label={dict.action.delete}
-            onClick={() => setConfirmDelete(profile)}
-            row
-          />
-        </RowActions>
-      )
-    },
+    ...(canAct
+      ? [{
+          id: "actions",
+          label: dict.table.actions,
+          value: (profile: TeacherProfilePublic) =>
+            `${profile.display_name} ${dict.table.actions}`,
+          hideable: false,
+          sortable: false,
+          cell: (profile: TeacherProfilePublic) => (
+            <RowActions>
+              {isAdmin || ownsProfile(profile) ? (
+                <ActionButton action="edit" disabled={anyFormOpen} label={dict.action.edit} onClick={() => openEdit(profile)} row />
+              ) : null}
+              {/*
+                Three row actions, and which one is offered follows the
+                linkage rather than who is looking. A linked profile offers
+                *Unlink* — including one linked to somebody else, because the
+                service refuses to mint a code over a live linkage and a head
+                who cannot unlink could never recover a mis-claim. An unlinked
+                profile offers *Issue claim code*, the action the teacher
+                needs, and keeps *Link to me* beside it under its true name:
+                it links the pressing head, which is the only thing it ever
+                did.
+              */}
+              {isAdmin ? (
+                profile.user_id ? (
+                  <ActionButton
+                    action="unlink-user"
+                    disabled={anyFormOpen || linking}
+                    label={dict.action.unlinkUser}
+                    onClick={() => handleUnlink(profile)}
+                    row
+                  />
+                ) : (
+                  <>
+                    <ActionButton
+                      action="issue-claim-code"
+                      disabled={anyFormOpen || linking}
+                      label={dict.action.issueClaimCode}
+                      onClick={() => handleIssueClaimCode(profile)}
+                      row
+                    />
+                    <ActionButton
+                      action="link-user"
+                      disabled={anyFormOpen || linking || !currentUserId}
+                      label={dict.action.linkUser}
+                      onClick={() => handleLinkToMe(profile)}
+                      row
+                    />
+                  </>
+                )
+              ) : null}
+              {isAdmin ? (
+                <ActionButton
+                  action="delete"
+                  disabled={anyFormOpen || deleteMutation.isPending}
+                  label={dict.action.delete}
+                  onClick={() => setConfirmDelete(profile)}
+                  row
+                />
+              ) : null}
+            </RowActions>
+          )
+        } satisfies DataTableColumn<TeacherProfilePublic>]
+      : []),
     { id: "active", label: dict.field.active, value: (profile) => (profile.active ? dict.field.active : "—") }
   ];
   const activeOptions = [...new Set(rows.map((profile) => (profile.active ? dict.field.active : "—")))].sort((a, b) => a.localeCompare(b));
@@ -1072,9 +1181,11 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
       data-reparto-route="teacher-roster"
       data-reparto-group="setup"
     >
-      <div className="flex justify-end gap-2 pb-4" data-reparto-actions="teacher-roster">
-        <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
-      </div>
+      {isAdmin ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="teacher-roster">
+          <ActionButton action="create" disabled={formOpen} label={dict.action.create} onClick={openCreate} />
+        </div>
+      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="teacher-roster">
         <h2 className="sr-only">{dict.entity.teacherRoster.plural}</h2>
         <DataTable
@@ -1100,6 +1211,50 @@ function RepartoTeacherRosterContent({ locale }: { locale?: RepartoLocale }) {
           label={dict.entity.teacherRoster.plural}
         />
         <RepartoFormError mapped={linkMapped} />
+        {issued ? (
+          <EntityDialogShell
+            description={dict.entity.teacherRoster.singular}
+            dialogId="teacher-roster-claim-code"
+            onClose={() => setIssued(null)}
+            title={formatRepartoMessage(dict.flow.claimCode.title, {
+              name: issued.display_name
+            })}
+          >
+            <div className={repartoFieldGridClass} data-reparto-panel="claim-code">
+              <p className="text-sm">
+                {formatRepartoMessage(dict.flow.claimCode.body, {
+                  name: issued.display_name,
+                  expires: new Date(issued.expires_at).toLocaleString(
+                    locale ?? normalizeRepartoLocale()
+                  )
+                })}
+              </p>
+              <output
+                className="font-mono text-lg tracking-widest"
+                data-reparto-slot="claim-code"
+              >
+                {issued.claim_code}
+              </output>
+              {copied ? (
+                <p className="text-sm" data-reparto-slot="claim-code-copied">
+                  {dict.flow.claimCode.copied}
+                </p>
+              ) : null}
+              <RowActions>
+                <ActionButton
+                  action="copy-claim-code"
+                  label={dict.action.copyCode}
+                  onClick={handleCopyCode}
+                />
+                <ActionButton
+                  action="dismiss-claim-code"
+                  label={dict.flow.claimCode.dismiss}
+                  onClick={() => setIssued(null)}
+                />
+              </RowActions>
+            </div>
+          </EntityDialogShell>
+        ) : null}
         {formOpen ? (
           <EntityDialogShell
             description={dict.entity.teacherRoster.plural}

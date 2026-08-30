@@ -1,13 +1,18 @@
+export { allocationRevisions } from "./allocationRevisions.js";
 export { assignmentProcesses } from "./assignmentProcesses.js";
 export { assignments } from "./assignments.js";
 export { history } from "./history.js";
 export { meetingSessions } from "./meetingSessions.js";
+export { planningExchange, planningExportRequest } from "./planningExchange.js";
 export { selectionTurns } from "./selectionTurns.js";
 export { schools } from "./schools.js";
 export { academicYears } from "./academicYears.js";
 export { departments } from "./departments.js";
 export { teacherProfiles } from "./teacherProfiles.js";
 export { subjects } from "./subjects.js";
+export { groupSubjects } from "./groupSubjects.js";
+export { teachingPlans } from "./teachingPlans.js";
+export { teachingActivities } from "./teachingActivities.js";
 export { teachingGroups } from "./teachingGroups.js";
 export { classroomStages } from "./classroomStages.js";
 export { hourRequirements } from "./hourRequirements.js";

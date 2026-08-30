@@ -17,6 +17,7 @@ import {
   type ProcessDashboard,
   type ProcessTransition,
   type ProcessReopen,
+  type SseAudience,
   type TeacherLanSummary
 } from "../schemas.js";
 import { repartoUrl } from "../client.js";
@@ -90,6 +91,11 @@ export const assignmentProcesses = {
       schema: TeacherLanSummarySchema,
       auth: true
     }),
-  eventsUrl: (processId: string) =>
-    repartoUrl("api", `/assignment-processes/${processId}/events`)
+  eventsUrl: (processId: string, audience?: SseAudience) => {
+    const url = new URL(
+      repartoUrl("api", `/assignment-processes/${processId}/events`)
+    );
+    if (audience) url.searchParams.set("audience", audience);
+    return url.toString();
+  }
 } as const;

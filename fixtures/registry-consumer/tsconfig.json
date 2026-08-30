@@ -1,0 +1,38 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "lucide-react": ["./types/lucide-react.tsx"],
+      "react-hook-form": ["./types/react-hook-form.tsx"],
+      "@hookform/resolvers/zod": ["./types/hookform-resolvers-zod.ts"],
+      "sonner": ["./types/sonner.tsx"],
+      "@mano8/astro-reparto-m8": ["../../dist/src/integration.d.ts"],
+      "@mano8/astro-reparto-m8/react": ["../../dist/src/runtime/react/index.d.ts"],
+      "@mano8/astro-reparto-m8/default-ui": ["../../dist/src/runtime/react/default-ui/index.d.ts"],
+      "@mano8/astro-reparto-m8/schemas": ["../../dist/src/runtime/schemas.d.ts"],
+      "@mano8/astro-reparto-m8/routes": ["../../dist/src/runtime/routes.d.ts"],
+      "@mano8/astro-reparto-m8/route-access": ["../../dist/src/runtime/routeAccess.d.ts"],
+      "@mano8/astro-reparto-m8/decimals": ["../../dist/src/runtime/decimals.d.ts"],
+      "@mano8/astro-reparto-m8/i18n": ["../../dist/src/runtime/i18n/index.d.ts"],
+      "@mano8/astro-reparto-m8/ui": ["../../dist/src/runtime/ui/index.d.ts"],
+      "@mano8/astro-reparto-m8/error-mapping": ["../../dist/src/runtime/errorMapping.d.ts"],
+      "@mano8/astro-reparto-m8/client": ["../../dist/src/runtime/client.d.ts"],
+      "@mano8/astro-reparto-m8/api": ["../../dist/src/runtime/api/index.d.ts"]
+    }
+  },
+  "include": [
+    "app.tsx",
+    "components/**/*.tsx",
+    "lib/**/*.ts",
+    "types/**/*.ts",
+    "types/**/*.tsx"
+  ]
+}

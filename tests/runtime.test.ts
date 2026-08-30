@@ -5,8 +5,14 @@ import {
   createFaAuthAdapter,
   createInMemoryAuthAdapter,
   getRepartoAuthAdapter,
+  ORDERED_ROLES,
+  REPARTO_ADMIN_MINIMUM_ROLE,
   resetRepartoAuthAdapter,
-  setRepartoAuthAdapter
+  resolveRepartoViewMode,
+  sessionHasMinimumRole,
+  setRepartoAuthAdapter,
+  type RepartoCurrentUser,
+  type RepartoRole
 } from "../src/runtime/authAdapter.js";
 import { repartoUrl, request } from "../src/runtime/client.js";
 import {
@@ -117,8 +123,80 @@ describe("auth adapter", () => {
     expect(canManageClassroomStages(null)).toBe(false);
     expect(canManageClassroomStages({ id: "user-1", role: "writer", is_superuser: false })).toBe(false);
     expect(canManageClassroomStages({ id: "user-1", role: "admin", is_superuser: false })).toBe(true);
-    expect(canManageClassroomStages({ id: "user-1", role: "superadmin", is_superuser: false })).toBe(true);
-    expect(canManageClassroomStages({ id: "user-1", role: "user", is_superuser: true })).toBe(true);
+    expect(canManageClassroomStages({ id: "user-1", role: "superadmin", is_superuser: true })).toBe(true);
+    // Neither claim decides alone: a disagreeing pair is a token the service
+    // refuses to validate, so it manages nothing.
+    expect(canManageClassroomStages({ id: "user-1", role: "user", is_superuser: true })).toBe(false);
+    expect(canManageClassroomStages({ id: "user-1", role: "superadmin", is_superuser: false })).toBe(false);
+  });
+
+  /**
+   * The one role comparison in the package (`RBAC-06`), and the session-shaped
+   * seam over it. The hierarchy itself mirrors `auth_sdk_m8` through the auth
+   * peer; `authorization-mirror.test.ts` proves that agreement exhaustively, so
+   * a drift here is a drift from the service, not a UI preference.
+   */
+  describe("sessionHasMinimumRole", () => {
+    const as = (role: RepartoRole, is_superuser = role === "superadmin"): RepartoCurrentUser => ({
+      id: "user-1",
+      role,
+      is_superuser
+    });
+
+    it("orders the five roles exactly as the service does", () => {
+      // Highest privilege first, matching `RoleType.get_ordered_roles()`.
+      expect([...ORDERED_ROLES]).toEqual([
+        "superadmin",
+        "admin",
+        "writer",
+        "reader",
+        "user"
+      ]);
+      for (const [index, held] of ORDERED_ROLES.entries()) {
+        for (const [required, minimum] of ORDERED_ROLES.entries()) {
+          expect(sessionHasMinimumRole(as(held), minimum)).toBe(index <= required);
+        }
+      }
+    });
+
+    it("fails closed on every unknown session", () => {
+      expect(sessionHasMinimumRole(null, "user")).toBe(false);
+      expect(sessionHasMinimumRole(undefined, "user")).toBe(false);
+      // A role this client does not know is not a role it can rank, and an
+      // unrankable role never clears a floor — not even the lowest one.
+      expect(sessionHasMinimumRole(as("ghost" as RepartoRole, false), "user")).toBe(false);
+    });
+
+    it("refuses a session whose role and is_superuser disagree", () => {
+      // The service decides from the role alone (`AUTH-INV-01`) and will not
+      // validate a disagreeing pair at all, so neither claim is read on its own
+      // here either. Both mismatched directions are refused.
+      expect(sessionHasMinimumRole(as("user", true), "superadmin")).toBe(false);
+      expect(sessionHasMinimumRole(as("user", true), "user")).toBe(false);
+      expect(sessionHasMinimumRole(as("superadmin", false), "admin")).toBe(false);
+      expect(sessionHasMinimumRole(as("ghost" as RepartoRole, true), "admin")).toBe(false);
+    });
+  });
+
+  describe("resolveRepartoViewMode", () => {
+    it("gives the admin surface to ADMIN and above, and to nobody else", () => {
+      expect(REPARTO_ADMIN_MINIMUM_ROLE).toBe("admin");
+      const mode = (role: RepartoRole) =>
+        resolveRepartoViewMode({
+          id: "user-1",
+          role,
+          is_superuser: role === "superadmin"
+        });
+      expect(mode("superadmin")).toBe("admin");
+      expect(mode("admin")).toBe("admin");
+      // §21.2: department-head authority is ADMIN+, and a WRITER's own-data
+      // affordances are not the administrative surface.
+      expect(mode("writer")).toBe("readonly");
+      expect(mode("reader")).toBe("readonly");
+      expect(mode("user")).toBe("readonly");
+      expect(resolveRepartoViewMode(null)).toBe("readonly");
+      expect(resolveRepartoViewMode(undefined)).toBe("readonly");
+    });
   });
 });
 

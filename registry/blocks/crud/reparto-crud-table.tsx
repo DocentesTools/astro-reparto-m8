@@ -40,6 +40,7 @@ export function RepartoCrudTable<T>({
   onCreate,
   onPageSizeChange,
   onPageChange,
+  onRetry,
   page = 1,
   pageSize,
   rowCount,
@@ -48,7 +49,7 @@ export function RepartoCrudTable<T>({
   if (loading && rows.length === 0) {
     return (
       <div data-reparto-state="loading">
-        <StateLoading message={labels.loading} />
+        <StateLoading title={labels.loading} />
       </div>
     );
   }
@@ -56,9 +57,10 @@ export function RepartoCrudTable<T>({
     return (
       <div data-reparto-state="error">
         <StateError
-          message={labels.error}
-          detail={error}
-          action={onRetry ? { label: labels.retry, onClick: onRetry } : undefined}
+          title={labels.error}
+          description={error ?? undefined}
+          retryLabel={labels.retry}
+          onRetry={onRetry}
         />
       </div>
     );
@@ -92,7 +94,7 @@ export function RepartoCrudTable<T>({
       />
       {rows.length === 0 && !loading ? (
         <div data-reparto-state="empty">
-          <StateEmpty message={labels.noResults} />
+          <StateEmpty title={labels.noResults} />
         </div>
       ) : null}
     </div>

@@ -1,4 +1,4 @@
-import { Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { RepartoRouteGuard, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
 import { resolveProcessId } from "../shared.js";
 import { useRepartoAuditEvents } from "../../../hooks.js";
 
@@ -7,11 +7,13 @@ import { AuditList } from "./list.js";
 export function RepartoAuditView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoAuditContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="audit">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoAuditContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }

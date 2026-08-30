@@ -111,6 +111,35 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     }
   });
 
+  // Audit `S2-11`: the en label said *Classroom* while the runtime name, the Zod
+  // schemas and the backend path said *teaching group*, and the split sat one row
+  // away from `nav.item.classroomStages` — a genuinely different entity — so the
+  // two read as one family. `classroom` is now a `ClassroomStage` word only.
+  it("keeps `classroom` for ClassroomStage alone (freeze §1, §12)", () => {
+    for (const locale of REPARTO_LOCALES) {
+      const dict = getRepartoDictionary(locale);
+      for (const key of collectKeys(dict)) {
+        expect(
+          /classroom/i.test(key) && !/classroomStages?\b/i.test(key),
+          `${locale} key ${key} names a teaching group "classroom"`
+        ).toBe(false);
+      }
+    }
+    // English copy: only the ClassroomStage branch may say "classroom".
+    for (const [key, value] of Object.entries(en)) {
+      if (key === "classroomStages") continue;
+      for (const text of collectStrings(value)) {
+        expect(
+          /classroom/i.test(text) && !/classroom stage/i.test(text),
+          `en.${key} says "classroom" for a teaching group: ${text}`
+        ).toBe(false);
+      }
+    }
+    expect(en.entity.teachingGroup.singular).toBe("Teaching group");
+    expect(en.nav.item.teachingGroups).toBe("Teaching groups");
+    expect(en.nav.item.classroomStages).toBe("Classroom stages");
+  });
+
   it("never carries a UUID string in any dictionary value", () => {
     for (const locale of REPARTO_LOCALES) {
       for (const value of collectStrings(getRepartoDictionary(locale))) {
@@ -138,11 +167,15 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.entity.school.singular).toBe("School");
     expect(fr.entity.school.singular).toBe("Établissement");
     expect(es.entity.school.singular).toBe("Centro");
-    expect(en.entity.classroom.singular).toBe("Classroom");
-    expect(fr.entity.classroom.singular).toBe("Classe");
-    expect(es.entity.classroom.singular).toBe("Grupo");
-    expect(en.entity.hourRequirement.singular).toBe("Hour requirement");
-    expect(es.entity.hourRequirement.singular).toBe("Horas necesarias");
+    expect(en.entity.teachingGroup.singular).toBe("Teaching group");
+    expect(fr.entity.teachingGroup.singular).toBe("Classe");
+    expect(es.entity.teachingGroup.singular).toBe("Grupo");
+    expect(en.entity.hourRequirement.singular).toBe("Requirement slot");
+    expect(fr.entity.hourRequirement.singular).toBe("Créneau de besoin");
+    expect(es.entity.hourRequirement.singular).toBe("Puesto horario");
+    expect(en.entity.hourRequirement.status.reconciliation_required).toBe(
+      "Reconciliation required"
+    );
   });
 
   it("exposes every action verb under action.* from the freeze", () => {
@@ -178,7 +211,6 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(en.disabled.missingPrereq).toContain("{prereq}");
     expect(en.error.duplicate).toBeTruthy();
     expect(en.error.fkViolation).toContain("{count}");
-    expect(en.error.hoursExceed).toContain("{assigned}");
     expect(en.error.unauthorized).toBeTruthy();
     expect(en.error.invalidDate).toBeTruthy();
     expect(en.error.conflict).toBeTruthy();
@@ -196,13 +228,180 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     expect(es.flow.bootstrap.step.process).toBeTruthy();
   });
 
-  it("exposes nav group + item keys for both sidebar groups", () => {
-    expect(en.nav.group.setup).toBe("Setup");
-    expect(en.nav.group.process).toBe("Process");
+  it("exposes nav group + item keys for all three stage sidebar groups", () => {
+    expect(en.nav.group.configuration).toBe("Stage 1 · Configuration");
+    expect(en.nav.group.planning).toBe("Stage 2 · Planning");
+    expect(en.nav.group.assignment).toBe("Stage 3 · Assignment");
     expect(en.nav.item.teacherRoster).toBe("Teacher roster");
     expect(en.nav.item.processParticipants).toBe("Process participants");
+    expect(en.nav.item.planning).toBe("Planning");
     expect(fr.nav.item.shared).toBe("Écran partagé");
     expect(es.nav.item.audit).toBe("Auditoría");
+  });
+
+  it("fully localizes the main-subject materialization workflow", () => {
+    expect(collectKeys(fr.planning.materialization).sort()).toEqual(
+      collectKeys(en.planning.materialization).sort()
+    );
+    expect(collectKeys(es.planning.materialization).sort()).toEqual(
+      collectKeys(en.planning.materialization).sort()
+    );
+    expect(fr.planning.materialization.confirmBody).not.toBe(
+      en.planning.materialization.confirmBody
+    );
+    expect(es.planning.materialization.confirmBody).not.toBe(
+      en.planning.materialization.confirmBody
+    );
+    expect(en.planning.materialization.confirmBody).toContain("{missing}");
+    expect(en.planning.materialization.confirmBody).toContain(
+      "{materialized}"
+    );
+    expect(collectKeys(fr.planning.secondary).sort()).toEqual(
+      collectKeys(en.planning.secondary).sort()
+    );
+    expect(collectKeys(es.planning.secondary).sort()).toEqual(
+      collectKeys(en.planning.secondary).sort()
+    );
+    expect(fr.planning.secondary.retireBody).not.toBe(
+      en.planning.secondary.retireBody
+    );
+    expect(es.planning.secondary.retireBody).not.toBe(
+      en.planning.secondary.retireBody
+    );
+    expect(en.planning.secondary.retireBody).toContain("{subject}");
+    // §20.18 vocabulary: the confirmation must not promise a deletion the
+    // backend does not perform, in any of the three locales.
+    for (const dict of [en, fr, es]) {
+      expect(dict.planning.secondary).not.toHaveProperty("deleted");
+      expect(dict.planning.secondary).not.toHaveProperty("deleteBody");
+      expect(dict.planning.secondary.retireConsequence.length).toBeGreaterThan(
+        0
+      );
+      expect(dict.action.retire).not.toBe(dict.action.delete);
+    }
+    expect(collectKeys(fr.planning.generation).sort()).toEqual(
+      collectKeys(en.planning.generation).sort()
+    );
+    expect(collectKeys(es.planning.generation).sort()).toEqual(
+      collectKeys(en.planning.generation).sort()
+    );
+    expect(en.planning.generation.previewSummary).toContain("{generation}");
+    expect(fr.planning.generation.lockUnavailable).not.toBe(
+      en.planning.generation.lockUnavailable
+    );
+    expect(es.planning.generation.lockUnavailable).not.toBe(
+      en.planning.generation.lockUnavailable
+    );
+    expect(collectKeys(fr.planning.reconciliation).sort()).toEqual(
+      collectKeys(en.planning.reconciliation).sort()
+    );
+    expect(collectKeys(es.planning.reconciliation).sort()).toEqual(
+      collectKeys(en.planning.reconciliation).sort()
+    );
+    expect(en.planning.reconciliation.previewSummary).toContain("{conflicts}");
+    expect(fr.planning.reconciliation.confirmationWarning).not.toBe(
+      en.planning.reconciliation.confirmationWarning
+    );
+    expect(es.planning.reconciliation.confirmationWarning).not.toBe(
+      en.planning.reconciliation.confirmationWarning
+    );
+  });
+
+  it("fully localizes the assignment board and retires the two-stage copy", () => {
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(collectKeys(dict.assignments).sort()).toEqual(
+        collectKeys(en.assignments).sort()
+      );
+      expect(collectStrings(dict.assignments)).not.toEqual(
+        collectStrings(en.assignments)
+      );
+    }
+    expect(en.assignments.undoBody).toContain("{slot}");
+    expect(en.assignments.undoBody).toContain("{teacher}");
+    expect(en.assignments.reassignBody).toContain("{teacher}");
+    expect(en.assignments.teacherHours).toContain("{hours}");
+    // The bulk undo records one reason on each selected row, so its copy must
+    // say how many rows that is.
+    expect(en.assignments.bulkUndoBody).toContain("{count}");
+    expect(en.assignments.bulkUndoConfirm).toContain("{count}");
+    expect(en.assignments.bulkUndoError).toContain("{done}");
+    expect(en.assignments.bulkUndoError).toContain("{total}");
+    expect(Object.keys(en.entity.assignment.status).sort()).toEqual([
+      "active",
+      "cancelled"
+    ]);
+    // Retired with the assignment board (freeze §12): a slot is indivisible, so
+    // there is no partial coverage, no share type and no over-assignment
+    // override to name.
+    const allKeys = collectKeys(en);
+    for (const retired of [
+      "field.assignedHours",
+      "field.assignmentType",
+      "field.overrideReason",
+      "error.hoursExceed"
+    ]) {
+      expect(allKeys, `${retired} must stay retired`).not.toContain(retired);
+    }
+    expect(allKeys.some((key) => key.startsWith("option.assignmentType"))).toBe(
+      false
+    );
+    expect(
+      allKeys.some((key) => key.startsWith("assignmentSelection."))
+    ).toBe(false);
+  });
+
+  it("fully localizes the version comparison surface (§10.3)", () => {
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(collectKeys(dict.view.versions).sort()).toEqual(
+        collectKeys(en.view.versions).sort()
+      );
+      expect(collectStrings(dict.view.versions)).not.toEqual(
+        collectStrings(en.view.versions)
+      );
+    }
+    // Every §10.3 dimension and every published delta has a label; a number on
+    // screen with no name is a number a head cannot act on.
+    expect(Object.keys(en.view.versions.dimension).sort()).toEqual([
+      "activity",
+      "allocation",
+      "group_hours",
+      "group_link",
+      "participant_target",
+      "requirement_generation",
+      "subject_category",
+      "teacher_load",
+      "teacher_position_count"
+    ]);
+    expect(Object.keys(en.view.versions.delta).sort()).toEqual([
+      "activity_count_delta",
+      "allocation_delta",
+      "generation_number_delta",
+      "group_load_delta",
+      "participant_target_total_delta",
+      "requirement_count_delta",
+      "teacher_count_delta",
+      "teacher_load_delta"
+    ]);
+    // The snapshot section the service calls `teachers` is process
+    // participants; freeze §5.4 forbids naming anything else "teachers".
+    expect(en.view.versions.section.processParticipants).toBe(
+      en.entity.processParticipant.plural
+    );
+    expect(en.view.versions.changedSummary).toContain("{changed}");
+    expect(en.view.versions.changedSummary).toContain("{total}");
+    expect(en.view.versions.otherChanges).toContain("{count}");
+    expect(en.view.versions.item).toContain("{number}");
+    // The retired float axes lost their labels with their contract.
+    const allKeys = collectKeys(en);
+    for (const retired of [
+      "view.versions.requiredDelta",
+      "view.versions.assignedDelta",
+      "view.versions.teacherDelta"
+    ]) {
+      expect(allKeys, `${retired} must stay retired`).not.toContain(retired);
+    }
   });
 
   it("localizes route-loading copy in every supported locale", () => {
@@ -222,8 +421,8 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     );
   });
 
-  it("fully localizes classroom bulk and stage CRUD surfaces", () => {
-    const roots = ["classroomBulk", "classroomStages"] as const;
+  it("fully localizes teaching group bulk and stage CRUD surfaces", () => {
+    const roots = ["teachingGroupBulk", "classroomStages"] as const;
     for (const root of roots) {
       const english = collectStrings(en[root]);
       expect(collectKeys(fr[root]).sort()).toEqual(collectKeys(en[root]).sort());
@@ -231,14 +430,14 @@ describe("reparto i18n dictionary (Phase 1)", () => {
       expect(collectStrings(fr[root])).not.toEqual(english);
       expect(collectStrings(es[root])).not.toEqual(english);
     }
-    expect(fr.classroomBulk.groupStart).toBe("Premier groupe");
-    expect(es.classroomBulk.groupEnd).toBe("Último grupo");
-    expect(en.classroomBulk.action).toBe("Create groups");
-    expect(es.classroomBulk.action).toBe("Crear grupos");
-    expect(fr.classroomBulk.action).toBe("Créer des groupes");
-    expect(en.classroomSelection.deleteSelected).toBe("Delete selected ({count})");
-    expect(es.classroomSelection.selectAllVisible).toBe("Seleccionar todos los grupos visibles");
-    expect(fr.classroomSelection.deleteTitle).toBe("Supprimer les classes sélectionnées");
+    expect(fr.teachingGroupBulk.groupStart).toBe("Premier groupe");
+    expect(es.teachingGroupBulk.groupEnd).toBe("Último grupo");
+    expect(en.teachingGroupBulk.action).toBe("Create groups");
+    expect(es.teachingGroupBulk.action).toBe("Crear grupos");
+    expect(fr.teachingGroupBulk.action).toBe("Créer des groupes");
+    expect(en.teachingGroupSelection.deleteSelected).toBe("Delete selected ({count})");
+    expect(es.teachingGroupSelection.selectAllVisible).toBe("Seleccionar todos los grupos visibles");
+    expect(fr.teachingGroupSelection.deleteTitle).toBe("Supprimer les classes sélectionnées");
     expect(fr.classroomStages.toast.deleteError).toContain("supprimer");
     expect(es.classroomStages.deleteBody).toContain("{name}");
   });

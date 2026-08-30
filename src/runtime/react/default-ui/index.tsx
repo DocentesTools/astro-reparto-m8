@@ -1,37 +1,96 @@
+import { useState } from "react";
 import {
   DepartmentHeadWorkspace,
   ExportCenterView,
   ProcessListView,
-  VersionsView
+  VersionsView,
+  type VersionComparisonSource
 } from "../DepartmentHeadWorkspace.js";
 import {
   SharedScreenWorkspace,
-  TeacherLanWorkspace
+  TeacherLanWorkspace,
+  type TeacherChoiceControls
 } from "../LanWorkspace.js";
 import {
+  MeetingControlWorkspace,
+  type MeetingSessionControls,
+  type MeetingTurnControls
+} from "../MeetingWorkspace.js";
+import {
+  useCloseRepartoMeetingSession,
+  useCreateRepartoExportArtifact,
+  useCreateRepartoMeetingSession,
+  useCreateRepartoPlanningExport,
+  useImportRepartoPlanning,
+  useRestoreRepartoDraft,
+  useCreateRepartoVersion,
+  useRepartoAssignmentValidations,
+  useRepartoAssignments,
   useRepartoDashboard,
   useRepartoExports,
+  useRepartoHourRequirements,
+  useRepartoDirectChoiceAssignment,
   useRepartoMeetingSessions,
+  useRepartoPreviousYearComparison,
+  useRepartoProcess,
   useRepartoProcesses,
+  useRepartoSetupObservations,
   useRepartoSummary,
   useRepartoTeacherLan,
-  useRepartoVersions
+  useRepartoTeachingPlan,
+  useRepartoTeachingPlanValidations,
+  useRepartoVersionComparison,
+  useRepartoVersions,
+  useClaimRepartoTeacherProfile,
+  useSelectionTurns,
+  useSkipRepartoTurn
 } from "../hooks.js";
 import { resolveProcessId, type RepartoListParams } from "../../queryKeys.js";
-import { repartoPanelClass } from "../styles.js";
 import {
+  buildPlanningImportDraftState,
+  buildVersionSelectionState,
+  summarizeProcessDashboard,
+  type MeetingTurnActionKey
+} from "../../ui/index.js";
+import {
+  repartoFieldGridClass,
+  repartoFieldLabelClass,
+  repartoInputClass,
+  repartoPanelClass
+} from "../styles.js";
+import { RepartoApiError } from "../../errors.js";
+import {
+  EMPTY_REPARTO_MAPPED_ERROR,
+  mapRepartoError,
+  type RepartoMappedError
+} from "../../errorMapping.js";
+import { RepartoFormError } from "./feedback.js";
+import { ActionButton, RowActions } from "./process-crud/shared.js";
+import type { RepartoEventStreamState } from "../useRepartoEvents.js";
+import {
+  ProcessPicker,
   Shell,
   WithSelectedProcess,
   type ViewConfig
 } from "./process-context.js";
 import type {
+  AssignmentProcessPublic,
   AssignmentProcessStatus,
+  AssignmentPublic,
   ExportArtifactPublic,
+  ExportArtifactType,
+  FeasibilityStatus,
+  HourRequirementPublic,
   MeetingSessionPublic,
+  PlanReadiness,
+  PlanningExportArtifact,
+  PlanningExportMode,
+  PlanningImportResult,
   ProcessDashboard,
   ProcessSummary,
   ProcessVersionPublic,
   TeacherLanSummary,
+  TeachingPlanPublic,
   VersionComparison
 } from "../../schemas.js";
 import {
@@ -40,8 +99,56 @@ import {
   normalizeRepartoLocale,
   type RepartoLocale
 } from "../../i18n/index.js";
+import { repartoToast } from "../ui/toast-notification.js";
 import { RepartoLoadingState } from "./loading-state.js";
+import { RepartoRouteGuard } from "./route-guard.js";
 export { RepartoClassroomStagesView } from "./classroom-stages.js";
+export {
+  ActivitySyncDifferences,
+  ActivitySyncView,
+  AllocationChangeReconciliation,
+  LeadershipAllocationPanel,
+  AllocationRevisionHistory,
+  MainActivitySyncPanel,
+  MainSubjectMaterialization,
+  MainSubjectMaterializationConfirmation,
+  MainSubjectMaterializationTable,
+  PlanLockAndRequirementGeneration,
+  PlanLockConfirmation,
+  PlanUnlockControl,
+  PlanValidationSummary,
+  PlanningBalanceHeader,
+  PlanningPanelGate,
+  ReconciliationStatusCard,
+  RepartoPlanningView,
+  RequirementGenerationPreviewCard,
+  RequirementGenerationResultCard,
+  RequirementReconciliationPreviewCard,
+  RequirementReconciliationResultCard,
+  SecondaryActivityEditor,
+  SecondaryActivityForm,
+  SecondaryActivityTable,
+  TeachingPlanCreation,
+  buildActivitySyncRows,
+  buildMainSubjectMaterializationRows,
+  buildAllocationRevisionRequest,
+  buildReconciliationConflictRows,
+  buildSecondaryActivityRequests,
+  buildSecondaryActivityRows,
+  secondaryActivityFormValues,
+  isRequirementGenerationAvailable,
+  isAllocationReconciliationAvailable,
+  isStaleRequirementReconciliationError,
+  type ActivitySyncRow,
+  type AllocationRevisionFormResult,
+  type AllocationRevisionFormValues,
+  type MainSubjectMaterializationRow,
+  type PlanningPanelProps,
+  type ReconciliationConflictRow,
+  type SecondaryActivityFormResult,
+  type SecondaryActivityFormValues,
+  type SecondaryActivityRow
+} from "./planning/index.js";
 
 function QueryState({
   error,
@@ -74,14 +181,7 @@ function QueryState({
 }
 
 function dashboardSummary(dashboard?: ProcessDashboard | null): ProcessSummary | null {
-  if (!dashboard) return null;
-  return {
-    process_id: dashboard.process_id,
-    global_balance: dashboard.global_balance,
-    validations: dashboard.validations,
-    current_turn: dashboard.current_turn,
-    blocking_validation_count: dashboard.blocking_validation_count
-  };
+  return dashboard ? summarizeProcessDashboard(dashboard) : null;
 }
 
 function latestMeetingSession(
@@ -93,49 +193,64 @@ function latestMeetingSession(
 export function RepartoDashboardView({
   config,
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(dashboard || summary)}
-        locale={locale}
-        mode="admin"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoDashboardContent
-            dashboard={dashboard}
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="dashboard">
+        <WithSelectedProcess
+          bypass={Boolean(dashboard || summary)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoDashboardContent
+              dashboard={dashboard}
+              feasibility={feasibility}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoDashboardContent({
   dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dashboardQuery = useRepartoDashboard(processId);
+  // The plan carries the third invariant, and the dashboard payload does not:
+  // `feasibility_status` is department-head-only (§20.20, §21.1), so it travels
+  // on the plan resource this admin view is already entitled to read. The
+  // request is supplementary — a process with no plan 404s here, and the row
+  // then reports the readiness projection rather than blocking the dashboard.
+  const planQuery = useRepartoTeachingPlan(processId);
+  // The Stage 1 counts the dashboard payload does not carry, so the setup
+  // checklist can test its own labels rather than approximate them (`S2-07`).
+  const setup = useRepartoSetupObservations(processId);
   const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
   const activeSummary = summary ?? dashboardSummary(activeDashboard);
   const isLoading =
@@ -158,8 +273,9 @@ function RepartoDashboardContent({
     <>
       <DepartmentHeadWorkspace
         dashboard={activeDashboard}
+        feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
         locale={locale}
-        mode="admin"
+        setup={setup}
         summary={activeSummary}
       />
       <QueryState
@@ -180,53 +296,214 @@ function RepartoDashboardContent({
 
 export function RepartoMeetingView({
   config,
+  dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
+  dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(summary)}
-        locale={locale}
-        mode="admin"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoMeetingContent
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="meeting">
+        <WithSelectedProcess
+          bypass={Boolean(dashboard || summary)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoMeetingContent
+              dashboard={dashboard}
+              feasibility={feasibility}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
+/**
+ * Bind the five turn controls to the selection-turn API.
+ *
+ * Which turn an action targets is not the button's business and never was: the
+ * live one comes from the summary's `current_turn`, which every screen in the
+ * room already agrees on, and `start` falls back to the first turn still
+ * `pending` because starting is precisely the case where no turn is live yet.
+ * The session id comes from the live turn when there is one and from the
+ * session list otherwise, so `initialize` — the one action that runs before any
+ * turn exists — still has somewhere to send it.
+ *
+ * With no session at all every action is a no-op rather than a request with a
+ * missing id. That is not the final answer: gating the controls on an open
+ * session is `W1.3`, and until it lands the room can still be handed a control
+ * the service would refuse.
+ */
+function useMeetingTurnControls(
+  processId: string | undefined,
+  summary: ProcessSummary | null
+): MeetingTurnControls {
+  const sessionsQuery = useRepartoMeetingSessions(processId);
+  const currentTurn = summary?.current_turn ?? null;
+  const sessionId =
+    currentTurn?.meeting_session_id ??
+    latestMeetingSession(sessionsQuery.data)?.id ??
+    null;
+  const turns = useSelectionTurns(processId, sessionId ?? undefined);
+  const resolvedProcessId = resolveProcessId(processId);
+  const order = turns.turns.data?.data ?? [];
+  const activeTurnId =
+    currentTurn?.selection_turn_id ??
+    order.find((turn) => turn.status === "active")?.id ??
+    null;
+  const nextTurnId =
+    activeTurnId ?? order.find((turn) => turn.status === "pending")?.id ?? null;
+  const mutations = [
+    ["initialize-turns", turns.initialize],
+    ["start-turn", turns.start],
+    ["complete-turn", turns.complete],
+    ["skip-turn", turns.skip],
+    ["override-turn", turns.override]
+  ] as const;
+  const pending = mutations.find(([, mutation]) => mutation.isPending);
+  const failed = mutations.find(([, mutation]) => mutation.error);
+  return {
+    error: failed?.[1].error ?? null,
+    pendingAction: (pending?.[0] as MeetingTurnActionKey | undefined) ?? null,
+    onAction: (action, { reason }) => {
+      if (!resolvedProcessId || !sessionId) return;
+      const scope = { processId: resolvedProcessId, meetingSessionId: sessionId };
+      if (action === "initialize-turns") {
+        turns.initialize.mutate(scope);
+        return;
+      }
+      if (action === "start-turn") {
+        if (nextTurnId) turns.start.mutate({ ...scope, turnId: nextTurnId });
+        return;
+      }
+      if (!activeTurnId) return;
+      const target = { ...scope, turnId: activeTurnId };
+      if (action === "complete-turn") {
+        turns.complete.mutate(target);
+        return;
+      }
+      if (action === "skip-turn") {
+        turns.skip.mutate({ ...target, body: { reason } });
+        return;
+      }
+      turns.override.mutate({ ...target, body: { reason } });
+    }
+  };
+}
+
+/**
+ * Bind the meeting-session open/close panel to the create/close API (`W1.2`).
+ *
+ * Opening sends the session straight into `open` — a `prepared` draft would
+ * still need a second start call the panel does not offer — carrying the
+ * process's current LAN/direct-selection/selection-mode settings forward
+ * rather than resetting them, since `_sync_process_flags` adopts whatever the
+ * session declares onto the process the moment it opens. `session` reads the
+ * same "latest known session" fallback `useMeetingTurnControls` already uses,
+ * so the panel and the turn controls beneath it never point at two different
+ * sessions.
+ */
+function useMeetingSessionControls(
+  processId: string | undefined,
+  process: AssignmentProcessPublic | null,
+  sessions?: { data: MeetingSessionPublic[] } | null
+): MeetingSessionControls {
+  const createSession = useCreateRepartoMeetingSession();
+  const closeSession = useCloseRepartoMeetingSession();
+  const resolvedProcessId = resolveProcessId(processId);
+  const session = latestMeetingSession(sessions);
+  const pendingAction = createSession.isPending
+    ? "open"
+    : closeSession.isPending
+      ? "close"
+      : null;
+  return {
+    session,
+    error: createSession.error ?? closeSession.error ?? null,
+    pendingAction,
+    onOpen: () => {
+      if (!resolvedProcessId || pendingAction) return;
+      createSession.mutate({
+        processId: resolvedProcessId,
+        body: {
+          assignment_process_id: resolvedProcessId,
+          status: "open",
+          lan_access_enabled: process?.lan_access_enabled ?? true,
+          direct_teacher_selection_enabled:
+            process?.direct_teacher_selection_enabled ?? false,
+          selection_mode: process?.selection_order_mode ?? "none"
+        }
+      });
+    },
+    onClose: () => {
+      if (!resolvedProcessId || !session || pendingAction) return;
+      closeSession.mutate({
+        processId: resolvedProcessId,
+        meetingSessionId: session.id
+      });
+    }
+  };
+}
+
+/**
+ * The meeting control reads the **dashboard**, not the summary.
+ *
+ * It is the head's own admin surface, and the two things it needs beyond the
+ * aggregate — who is carrying authorized extra hours, and how far each
+ * participant has got — are per-participant rows that only the dashboard
+ * carries. The projected screen makes the opposite call for the opposite
+ * reason.
+ */
 function RepartoMeetingContent({
+  dashboard,
+  feasibility,
   locale,
   processId,
   summary
 }: {
+  dashboard?: ProcessDashboard | null;
+  feasibility?: FeasibilityStatus | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
-  const summaryQuery = useRepartoSummary(processId);
-  const activeSummary = summary ?? summaryQuery.data ?? null;
+  const dashboardQuery = useRepartoDashboard(processId);
+  // Same department-head-only source as the dashboard: the control room shows
+  // the stored feasibility status, the projected screen next door does not.
+  const planQuery = useRepartoTeachingPlan(processId);
+  const processQuery = useRepartoProcess(processId);
+  const sessionsQuery = useRepartoMeetingSessions(processId);
+  const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
+  const turnControls = useMeetingTurnControls(processId, summary ?? dashboardSummary(activeDashboard));
+  const sessionControls = useMeetingSessionControls(
+    processId,
+    processQuery.data ?? null,
+    sessionsQuery.data
+  );
   const isLoading =
-    summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary;
-  if (isLoading || summaryQuery.isError) {
+    dashboardQuery.isLoading &&
+    Boolean(resolveProcessId(processId)) &&
+    !dashboard &&
+    !summary;
+  if (isLoading || dashboardQuery.isError) {
     return (
       <QueryState
-        error={summaryQuery.error}
-        isError={summaryQuery.isError}
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
         isLoading={isLoading}
         label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
         locale={locale}
@@ -235,12 +512,23 @@ function RepartoMeetingContent({
   }
   return (
     <>
-      <DepartmentHeadWorkspace locale={locale} mode="admin" summary={activeSummary} />
+      <MeetingControlWorkspace
+        dashboard={activeDashboard}
+        feasibility={feasibility ?? planQuery.data?.feasibility_status ?? null}
+        locale={locale}
+        processId={processId}
+        sessionControls={sessionControls}
+        summary={summary}
+        turnControls={turnControls}
+      />
       <QueryState
-        error={summaryQuery.error}
-        isError={summaryQuery.isError}
+        error={dashboardQuery.error}
+        isError={dashboardQuery.isError}
         isLoading={
-          summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
+          dashboardQuery.isLoading &&
+          Boolean(resolveProcessId(processId)) &&
+          !dashboard &&
+          !summary
         }
         label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.meeting}
         locale={locale}
@@ -260,7 +548,9 @@ export function RepartoProcessesView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoProcessesContent locale={locale} params={params} />
+      <RepartoRouteGuard locale={locale} route="processList">
+        <RepartoProcessesContent locale={locale} params={params} />
+      </RepartoRouteGuard>
     </Shell>
   );
 }
@@ -269,6 +559,12 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const processesQuery = useRepartoProcesses(params);
   const processes = processesQuery.data?.data ?? [];
+  // Opening a process needs the academic year, school and department behind it,
+  // which only the picker's cascading selects (and their one-level inline
+  // creation) can supply. The list route reaches the same form rather than
+  // growing a second one: the picker replaces the list while it is open, so the
+  // two never nest their `<main>` elements.
+  const [creating, setCreating] = useState(false);
   if (processesQuery.isLoading || processesQuery.isError) {
     return (
       <QueryState
@@ -280,9 +576,20 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
       />
     );
   }
+  if (creating) {
+    // Creating invalidates the process list, so returning to it shows the new
+    // row. Selecting an existing process from the picker closes the form too —
+    // this route's job is the list, not a selection.
+    return <ProcessPicker locale={locale} onSelect={() => setCreating(false)} />;
+  }
   return (
     <>
-      <ProcessListView count={processesQuery.data?.count ?? 0} locale={locale} processes={processes} />
+      <ProcessListView
+        count={processesQuery.data?.count ?? 0}
+        locale={locale}
+        onCreate={() => setCreating(true)}
+        processes={processes}
+      />
       <QueryState
         error={processesQuery.error}
         isError={processesQuery.isError}
@@ -295,69 +602,179 @@ function RepartoProcessesContent({ locale, params }: { locale?: RepartoLocale; p
 }
 
 export function RepartoMyView({
+  assignments,
   config,
   locale,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
+  readiness,
+  remainingTargetHours,
+  requirements,
+  selectedSlotId,
+  selectionBlocked,
   summary
 }: {
+  assignments?: AssignmentPublic[];
   config?: ViewConfig;
   locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
   summary?: TeacherLanSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(summary)}
-        locale={locale}
-        mode="readonly"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoMyContent
-            locale={locale}
-            meetingSession={meetingSession}
-            processId={resolvedProcessId}
-            requirementAssignedHours={requirementAssignedHours}
-            requirementRequiredHours={requirementRequiredHours}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="teacherView">
+        <WithSelectedProcess
+          bypass={Boolean(summary)}
+          locale={locale}
+          processId={processId}
+          streamAudience="teacher"
+        >
+          {(resolvedProcessId, eventState) => (
+            <RepartoMyContent
+              assignments={assignments}
+              locale={locale}
+              meetingSession={meetingSession}
+              processId={resolvedProcessId}
+              readiness={readiness}
+              remainingTargetHours={remainingTargetHours}
+              requirements={requirements}
+              selectedSlotId={selectedSlotId}
+              selectionBlocked={selectionBlocked}
+              summary={summary}
+              eventState={eventState}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
+/**
+ * Bind the teacher's *choose* and *pass turn* controls.
+ *
+ * Both are own-data actions and both were unbound. Choosing is the direct-choice
+ * endpoint, which takes the session and the position and nothing else — the
+ * caller is the token. Passing is a skip on the caller's *own* turn, which is
+ * why the turn id is read from `current_turn` and never from the order: a
+ * teacher may not pass somebody else's turn, and the client should not be able
+ * to name one.
+ *
+ * The refusal is returned rather than swallowed, and the panel classifies it
+ * through `classifyDirectChoiceConflict` — a 409 mid-meeting means the reparto
+ * moved, and a teacher must be told that rather than shown a dead button.
+ */
+function useTeacherChoiceControls(
+  processId: string | undefined,
+  meetingSession: MeetingSessionPublic | null,
+  summary: TeacherLanSummary | null,
+  onSlotChosen: (slotId: string) => void
+): { controls: TeacherChoiceControls; error: unknown } {
+  const directChoice = useRepartoDirectChoiceAssignment();
+  const skipTurn = useSkipRepartoTurn();
+  const resolvedProcessId = resolveProcessId(processId);
+  const currentTurn = summary?.current_turn ?? null;
+  const sessionId = meetingSession?.id ?? currentTurn?.meeting_session_id ?? null;
+  const ownTurn =
+    currentTurn && currentTurn.process_teacher_id === summary?.process_teacher_id
+      ? currentTurn
+      : null;
+  return {
+    error: directChoice.error ?? skipTurn.error ?? null,
+    controls: {
+      pendingAction: directChoice.isPending
+        ? "direct-choice"
+        : skipTurn.isPending
+          ? "pass-turn"
+          : null,
+      onSelectSlot: onSlotChosen,
+      onChoose: ({ slotId }) => {
+        if (!resolvedProcessId || !sessionId) return;
+        directChoice.mutate({
+          processId: resolvedProcessId,
+          body: { meeting_session_id: sessionId, hour_requirement_id: slotId }
+        });
+      },
+      onPassTurn: ({ reason }) => {
+        if (!resolvedProcessId || !ownTurn) return;
+        skipTurn.mutate({
+          processId: resolvedProcessId,
+          meetingSessionId: ownTurn.meeting_session_id,
+          turnId: ownTurn.selection_turn_id,
+          body: { reason }
+        });
+      }
+    }
+  };
+}
+
 function RepartoMyContent({
+  assignments,
   locale,
   meetingSession,
   processId,
-  requirementAssignedHours,
-  requirementRequiredHours,
-  summary
+  readiness,
+  remainingTargetHours,
+  requirements,
+  selectedSlotId,
+  selectionBlocked,
+  summary,
+  eventState
 }: {
+  assignments?: AssignmentPublic[];
   locale?: "en" | "fr" | "es";
   meetingSession?: MeetingSessionPublic | null;
   processId?: string;
-  requirementAssignedHours?: number;
-  requirementRequiredHours?: number;
+  readiness?: PlanReadiness | null;
+  remainingTargetHours?: string | number | null;
+  requirements?: HourRequirementPublic[];
+  selectedSlotId?: string | null;
+  selectionBlocked?: boolean | null;
   summary?: TeacherLanSummary | null;
+  eventState: RepartoEventStreamState;
 }) {
   const summaryQuery = useRepartoTeacherLan(processId);
   const sessionsQuery = useRepartoMeetingSessions(processId);
+  // The positions a teacher may take, and who already holds one. Neither is a
+  // blocking query: without them the panel simply offers nothing and says so,
+  // which is the right answer for a client that cannot see the live slots.
+  const requirementsQuery = useRepartoHourRequirements(processId);
+  const assignmentsQuery = useRepartoAssignments(processId);
   const activeSummary = summary ?? summaryQuery.data ?? null;
   const activeSession = meetingSession ?? latestMeetingSession(sessionsQuery.data);
+  // A position cannot be taken before it is picked, and the list was read-only:
+  // the panel offered a *Take this position* button over a selection nothing
+  // could make. The host may still drive the selection through the prop; this
+  // is the fallback for the starter routes, which have no state of their own.
+  const [chosenSlotId, setChosenSlotId] = useState<string | null>(null);
+  const selectedSlot = selectedSlotId ?? chosenSlotId;
+  const choice = useTeacherChoiceControls(
+    processId,
+    activeSession,
+    activeSummary,
+    setChosenSlotId
+  );
   const hasProcess = Boolean(resolveProcessId(processId));
   const isLoading =
     ((summaryQuery.isLoading && !summary) ||
       (sessionsQuery.isLoading && meetingSession === undefined)) &&
     hasProcess;
+  // A 404 from `/lan/me` is the one error on this page that is not a failure:
+  // the service is telling the caller that no participation in this process is
+  // linked to their account. That used to render as a bare error string and
+  // ended the road — the teacher had no way to link themselves, because the
+  // only linking action lived on the head's roster and the head cannot look a
+  // user id up (`C1`). The recourse is a claim code, so this is where the form
+  // to redeem one belongs.
+  if (!activeSummary && isNotLinked(summaryQuery.error)) {
+    return <TeacherClaimPanel locale={locale} />;
+  }
   if (isLoading || summaryQuery.isError || sessionsQuery.isError) {
     return (
       <QueryState
@@ -372,12 +789,20 @@ function RepartoMyContent({
   return (
     <>
       <TeacherLanWorkspace
+        assignments={assignments ?? assignmentsQuery.data?.data ?? []}
+        choiceControls={choice.controls}
+        conflict={choice.error}
         locale={locale}
         meetingSession={activeSession}
         processId={processId}
-        requirementAssignedHours={requirementAssignedHours}
-        requirementRequiredHours={requirementRequiredHours}
+        readiness={readiness}
+        remainingTargetHours={remainingTargetHours}
+        requirements={requirements ?? requirementsQuery.data?.data ?? []}
+        selectedSlotId={selectedSlot}
+        selectionBlocked={selectionBlocked}
         summary={activeSummary}
+        connectionState={eventState.connectionState}
+        lastEventType={eventState.lastEventType}
       />
       <QueryState
         error={summaryQuery.error ?? sessionsQuery.error}
@@ -394,65 +819,164 @@ function RepartoMyContent({
   );
 }
 
+/**
+ * Does this error mean "nothing here is yours" rather than "something broke"?
+ *
+ * Read from the status and not from the message: the detail is the service's
+ * own English sentence and a client that keys on its wording breaks the day it
+ * is rephrased. A `404` on the teacher's own LAN summary has exactly two
+ * causes — the caller has no linked profile, or has one but is not a
+ * participant here — and the panel below is written to be true of both.
+ */
+function isNotLinked(error: unknown): boolean {
+  return error instanceof RepartoApiError && error.status === 404;
+}
+
+/**
+ * Redeem a claim code from *My view* (remediation `W1.4`).
+ *
+ * The teacher's own token carries their user id, so this form needs nothing
+ * but the code: the account it binds is the one already signed in, and the
+ * service reads it from the token rather than from anything typed here.
+ *
+ * On success nothing is rendered by this component — the claim invalidates the
+ * whole reparto prefix, the LAN summary refetches and resolves, and the caller
+ * lands on their own view.
+ */
+function TeacherClaimPanel({ locale }: { locale?: RepartoLocale }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const claim = useClaimRepartoTeacherProfile();
+  const [code, setCode] = useState("");
+  const [mapped, setMapped] = useState<RepartoMappedError>(
+    EMPTY_REPARTO_MAPPED_ERROR
+  );
+  const [linked, setLinked] = useState<string | null>(null);
+  const trimmed = code.trim();
+
+  function submit(event: { preventDefault: () => void }) {
+    event.preventDefault();
+    if (!trimmed || claim.isPending) return;
+    setMapped(EMPTY_REPARTO_MAPPED_ERROR);
+    claim.mutate(
+      { claim_code: trimmed },
+      {
+        onSuccess: (profile) => {
+          setLinked(profile.display_name);
+          setCode("");
+        },
+        onError: (err: unknown) => setMapped(mapRepartoError(err))
+      }
+    );
+  }
+
+  return (
+    <section
+      className={repartoPanelClass}
+      data-reparto-panel="teacher-claim"
+      data-reparto-route="teacher-view"
+    >
+      <h2>{dict.view.claim.title}</h2>
+      <p className="text-sm">{dict.view.claim.intro}</p>
+      <form className={repartoFieldGridClass} data-reparto-form="teacher-claim" onSubmit={submit}>
+        <label className={repartoFieldLabelClass} htmlFor="reparto-claim-code">
+          {dict.view.claim.codeLabel}
+          <input
+            autoComplete="off"
+            className={repartoInputClass}
+            id="reparto-claim-code"
+            name="claim_code"
+            onChange={(event: { target: { value: string } }) =>
+              setCode(event.target.value)
+            }
+            placeholder={dict.view.claim.codePlaceholder}
+            spellCheck={false}
+            value={code}
+          />
+        </label>
+        <p className="text-xs text-muted-foreground">{dict.view.claim.hint}</p>
+        <RepartoFormError mapped={mapped} />
+        {linked ? (
+          <p data-reparto-slot="claim-linked" role="status">
+            {formatRepartoMessage(dict.view.claim.linked, { name: linked })}
+          </p>
+        ) : null}
+        <RowActions>
+          <ActionButton
+            action="claim-profile"
+            disabled={!trimmed || claim.isPending}
+            label={dict.action.claimProfile}
+            type="submit"
+          />
+        </RowActions>
+      </form>
+    </section>
+  );
+}
+
 export function RepartoSharedView({
   config,
-  dashboard,
   locale,
   processId,
   summary
 }: {
   config?: ViewConfig;
-  dashboard?: ProcessDashboard | null;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(dashboard || summary)}
-        locale={locale}
-        mode="readonly"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoSharedContent
-            dashboard={dashboard}
-            locale={locale}
-            processId={resolvedProcessId}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="sharedScreen">
+        <WithSelectedProcess
+          bypass={Boolean(summary)}
+          locale={locale}
+          processId={processId}
+          streamAudience="shared_screen"
+        >
+          {(resolvedProcessId, eventState) => (
+            <RepartoSharedContent
+              eventState={eventState}
+              locale={locale}
+              processId={resolvedProcessId}
+              summary={summary}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
+/**
+ * The projected screen reads `/summary`, and the `dashboard` prop is gone.
+ *
+ * `RBAC-07`: this view used to call `useRepartoDashboard` — every participant's
+ * name and hours — for a screen pointed at a room. The aggregate endpoint it
+ * should have used already existed and was already wrapped. Removing the prop as
+ * well as the query is deliberate: as long as a caller can hand the identifying
+ * payload in, the redaction is a convention rather than a boundary.
+ */
 function RepartoSharedContent({
-  dashboard,
+  eventState,
   locale,
   processId,
   summary
 }: {
-  dashboard?: ProcessDashboard | null;
+  eventState: RepartoEventStreamState;
   locale?: "en" | "fr" | "es";
   processId?: string;
   summary?: ProcessSummary | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
-  const dashboardQuery = useRepartoDashboard(processId);
-  const activeDashboard = dashboard ?? dashboardQuery.data ?? null;
-  const activeSummary = summary ?? dashboardSummary(activeDashboard);
+  const summaryQuery = useRepartoSummary(processId);
+  const activeSummary = summary ?? summaryQuery.data ?? null;
   const isLoading =
-    dashboardQuery.isLoading &&
-    Boolean(resolveProcessId(processId)) &&
-    !dashboard &&
-    !summary;
-  if (isLoading || dashboardQuery.isError) {
+    summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary;
+  if (isLoading || summaryQuery.isError) {
     return (
       <QueryState
-        error={dashboardQuery.error}
-        isError={dashboardQuery.isError}
+        error={summaryQuery.error}
+        isError={summaryQuery.isError}
         isLoading={isLoading}
         label={dict.nav.item.shared}
         locale={locale}
@@ -462,21 +986,19 @@ function RepartoSharedContent({
   return (
     <>
       <SharedScreenWorkspace
-        dashboard={activeDashboard}
+        connectionState={eventState.connectionState}
+        lastEventType={eventState.lastEventType}
         locale={locale}
         processId={processId}
         summary={activeSummary}
       />
       <QueryState
-        error={dashboardQuery.error}
-        isError={dashboardQuery.isError}
+        error={summaryQuery.error}
+        isError={summaryQuery.isError}
         isLoading={
-          dashboardQuery.isLoading &&
-          Boolean(resolveProcessId(processId)) &&
-          !dashboard &&
-          !summary
+          summaryQuery.isLoading && Boolean(resolveProcessId(processId)) && !summary
         }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.shared}
+        label={dict.nav.item.shared}
         locale={locale}
       />
     </>
@@ -490,7 +1012,7 @@ export function RepartoVersionsView({
   processId,
   versions
 }: {
-  comparison?: VersionComparison;
+  comparison?: VersionComparison | null;
   config?: ViewConfig;
   locale?: "en" | "fr" | "es";
   processId?: string;
@@ -498,38 +1020,86 @@ export function RepartoVersionsView({
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(versions)}
-        locale={locale}
-        mode="admin"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoVersionsContent
-            comparison={comparison}
-            locale={locale}
-            processId={resolvedProcessId}
-            versions={versions}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="versions">
+        <WithSelectedProcess
+          bypass={Boolean(versions)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoVersionsContent
+              comparison={comparison}
+              locale={locale}
+              processId={resolvedProcessId}
+              versions={versions}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
+/**
+ * The versions route: capture a snapshot, pick two, read the difference.
+ *
+ * Two comparison sources share one panel and are kept apart by an explicit
+ * switch rather than by whichever query answered last. Selecting a version
+ * moves the *draft* pair; pressing compare applies it. That is deliberate —
+ * a diff is a request against the service, and firing one on every keystroke
+ * of a select would leave the panel showing an answer to a question the head
+ * has already moved on from.
+ *
+ * The previous-year action is offered only when the process records a source
+ * process: the service answers 400 otherwise, and a button whose refusal is
+ * already known should not be pressable (the same rule the meeting controls
+ * follow).
+ */
 function RepartoVersionsContent({
   comparison,
   locale,
   processId,
   versions
 }: {
-  comparison?: VersionComparison;
+  comparison?: VersionComparison | null;
   locale?: RepartoLocale;
   processId?: string;
   versions?: ProcessVersionPublic[];
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const versionsQuery = useRepartoVersions(processId);
+  const processQuery = useRepartoProcess(processId);
+  const createVersion = useCreateRepartoVersion();
+  const [draft, setDraft] = useState<{ left?: string | null; right?: string | null }>({});
+  const [applied, setApplied] = useState<{ left: string; right: string } | null>(null);
+  const [source, setSource] = useState<VersionComparisonSource>("versions");
+  const [reason, setReason] = useState("");
+
   const activeVersions = versions ?? versionsQuery.data?.data ?? [];
+  const selection = buildVersionSelectionState(activeVersions, draft);
+  const previousYearAvailable = Boolean(
+    processQuery.data?.created_from_process_id
+  );
+  const comparisonQuery = useRepartoVersionComparison(
+    processId,
+    applied?.left,
+    applied?.right
+  );
+  const previousYearQuery = useRepartoPreviousYearComparison(
+    processId,
+    previousYearAvailable && source === "previous_year"
+  );
+  // A comparison is shown only for the pair that was actually asked for: with
+  // no applied selection there is no question on screen, and a cached answer to
+  // an earlier one would be read as an answer to this one.
+  const activeComparison =
+    comparison ??
+    (source === "previous_year"
+      ? (previousYearQuery.data ?? null)
+      : applied
+        ? (comparisonQuery.data ?? null)
+        : null);
+
   const isLoading =
     versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions;
   if (isLoading || versionsQuery.isError) {
@@ -538,21 +1108,67 @@ function RepartoVersionsContent({
         error={versionsQuery.error}
         isError={versionsQuery.isError}
         isLoading={isLoading}
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        label={dict.nav.item.versions}
         locale={locale}
       />
     );
   }
   return (
     <>
-      <VersionsView comparison={comparison} locale={locale} versions={activeVersions} />
-      <QueryState
-        error={versionsQuery.error}
-        isError={versionsQuery.isError}
-        isLoading={
-          versionsQuery.isLoading && Boolean(resolveProcessId(processId)) && !versions
+      <VersionsView
+        comparison={activeComparison}
+        comparisonSource={source}
+        createPending={createVersion.isPending}
+        createReason={reason}
+        locale={locale}
+        onCompare={() => {
+          if (!selection.canCompare) return;
+          setApplied({
+            left: String(selection.leftVersionId),
+            right: String(selection.rightVersionId)
+          });
+          setSource("versions");
+        }}
+        onCreateVersion={() => {
+          const processIdentifier = resolveProcessId(processId);
+          if (!processIdentifier || createVersion.isPending) return;
+          createVersion.mutate(
+            {
+              processId: processIdentifier,
+              body: { reason: reason.trim() === "" ? null : reason.trim() }
+            },
+            { onSuccess: () => setReason("") }
+          );
+        }}
+        onPreviousYear={() => setSource("previous_year")}
+        onReasonChange={setReason}
+        onSelectVersion={(side, versionId) =>
+          setDraft((current) => ({ ...current, [side]: versionId }))
         }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.versions}
+        previousYearAvailable={previousYearAvailable}
+        selection={draft}
+        versions={activeVersions}
+      />
+      <QueryState
+        error={createVersion.error}
+        isError={createVersion.isError}
+        isLoading={false}
+        label={dict.view.versions.createError}
+        locale={locale}
+      />
+      <QueryState
+        error={source === "previous_year" ? previousYearQuery.error : comparisonQuery.error}
+        isError={
+          source === "previous_year"
+            ? previousYearQuery.isError
+            : comparisonQuery.isError
+        }
+        isLoading={
+          source === "previous_year"
+            ? previousYearQuery.isLoading && previousYearAvailable
+            : comparisonQuery.isFetching && applied !== null
+        }
+        label={dict.view.versions.comparison}
         locale={locale}
       />
     </>
@@ -560,91 +1176,232 @@ function RepartoVersionsContent({
 }
 
 export function RepartoExportsView({
+  artifacts,
   config,
-  exports,
   locale,
+  plan,
   processId,
-  processStatus,
-  summary
+  processStatus
 }: {
+  artifacts?: ExportArtifactPublic[];
   config?: ViewConfig;
-  exports?: ExportArtifactPublic[];
   locale?: "en" | "fr" | "es";
+  plan?: TeachingPlanPublic | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
-  summary?: ProcessSummary;
 }) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess
-        bypass={Boolean(exports || summary)}
-        locale={locale}
-        mode="admin"
-        processId={processId}
-      >
-        {(resolvedProcessId) => (
-          <RepartoExportsContent
-            exports={exports}
-            locale={locale}
-            processId={resolvedProcessId}
-            processStatus={processStatus}
-            summary={summary}
-          />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="exports">
+        <WithSelectedProcess
+          bypass={Boolean(artifacts || plan)}
+          locale={locale}
+          processId={processId}
+        >
+          {(resolvedProcessId) => (
+            <RepartoExportsContent
+              artifacts={artifacts}
+              locale={locale}
+              plan={plan}
+              processId={resolvedProcessId}
+              processStatus={processStatus}
+            />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
+/**
+ * Wire the export center to the four reads and two writes it needs.
+ *
+ * The plan and the assignment findings are read here rather than derived from
+ * the dashboard's single blocking count: the two families gate different
+ * exports — planning findings decide the strict *planning* artifact, assignment
+ * findings and feasibility decide the final *assignment* export — and a summed
+ * count cannot tell them apart.
+ */
 function RepartoExportsContent({
-  exports,
+  artifacts,
   locale,
+  plan,
   processId,
-  processStatus,
-  summary
+  processStatus
 }: {
-  exports?: ExportArtifactPublic[];
+  artifacts?: ExportArtifactPublic[];
   locale?: RepartoLocale;
+  plan?: TeachingPlanPublic | null;
   processId?: string;
   processStatus?: AssignmentProcessStatus;
-  summary?: ProcessSummary;
 }) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
   const exportsQuery = useRepartoExports(processId);
-  const summaryQuery = useRepartoSummary(processId);
+  const planQuery = useRepartoTeachingPlan(processId);
+  const planValidationsQuery = useRepartoTeachingPlanValidations(processId);
+  const assignmentValidationsQuery = useRepartoAssignmentValidations(processId);
+  const processQuery = useRepartoProcess(processId);
+  const planningExport = useCreateRepartoPlanningExport();
+  const documentExport = useCreateRepartoExportArtifact();
+  const planningImport = useImportRepartoPlanning();
+  const restoreDraft = useRestoreRepartoDraft();
+  const [planningArtifact, setPlanningArtifact] =
+    useState<PlanningExportArtifact | null>(null);
+  const [pendingPlanningMode, setPendingPlanningMode] =
+    useState<PlanningExportMode | null>(null);
+  const [pendingDocumentType, setPendingDocumentType] =
+    useState<ExportArtifactType | null>(null);
+  const [planningImportContent, setPlanningImportContent] = useState("");
+  const [planningImportResult, setPlanningImportResult] =
+    useState<PlanningImportResult | null>(null);
+  const [finalConfirming, setFinalConfirming] = useState(false);
+  const [restoreConfirming, setRestoreConfirming] = useState(false);
+  const [restoreAssignments, setRestoreAssignments] = useState(true);
   const hasProcess = Boolean(resolveProcessId(processId));
-  const isLoading =
-    ((exportsQuery.isLoading && !exports) ||
-      (summaryQuery.isLoading && !summary)) &&
-    hasProcess;
-  if (isLoading || exportsQuery.isError || summaryQuery.isError) {
+  const isLoading = exportsQuery.isLoading && !artifacts && hasProcess;
+  if (isLoading || exportsQuery.isError) {
     return (
       <QueryState
-        error={exportsQuery.error ?? summaryQuery.error}
-        isError={exportsQuery.isError || summaryQuery.isError}
+        error={exportsQuery.error}
+        isError={exportsQuery.isError}
         isLoading={isLoading}
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        label={dict.nav.item.exports}
         locale={locale}
       />
     );
   }
+
+  function runPlanningExport(mode: PlanningExportMode) {
+    if (!processId || pendingPlanningMode !== null) return;
+    setPendingPlanningMode(mode);
+    planningExport.mutate(
+      { processId, mode },
+      {
+        onSuccess: (artifact) => setPlanningArtifact(artifact),
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.planning.error,
+            error instanceof Error ? error.message : undefined
+          ),
+        onSettled: () => setPendingPlanningMode(null)
+      }
+    );
+  }
+
+  function runDocumentExport(exportType: ExportArtifactType) {
+    if (!processId || pendingDocumentType !== null) return;
+    setPendingDocumentType(exportType);
+    documentExport.mutate(
+      {
+        processId,
+        body: { export_type: exportType, format: exportType === "backup" ? "json" : "pdf" }
+      },
+      {
+        onSuccess: () => {
+          setFinalConfirming(false);
+          repartoToast.success(
+            exportType === "final"
+              ? dict.view.exports.final.success
+              : formatRepartoMessage(dict.view.exports.documents.success, {
+                  document: dict.view.exports.type[exportType]
+                })
+          );
+        },
+        onError: (error) =>
+          repartoToast.error(
+            exportType === "final"
+              ? dict.view.exports.final.error
+              : dict.view.exports.documents.error,
+            error instanceof Error ? error.message : undefined
+          ),
+        onSettled: () => setPendingDocumentType(null)
+      }
+    );
+  }
+
+  function runPlanningImport() {
+    if (!processId || planningImport.isPending) return;
+    const draft = buildPlanningImportDraftState(planningImportContent);
+    if (!draft.request) return;
+    planningImport.mutate(
+      { processId, body: draft.request },
+      {
+        onSuccess: (result) => {
+          setPlanningImportResult(result);
+          repartoToast.success(dict.view.exports.importPlanning.success);
+        },
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.importPlanning.requestError,
+            error instanceof Error ? error.message : undefined
+          )
+      }
+    );
+  }
+
+  function runRestoreDraft() {
+    if (!processId || restoreDraft.isPending) return;
+    const backup = [...(artifacts ?? exportsQuery.data?.data ?? [])]
+      .filter((item) => item.export_type === "backup" && item.format === "json")
+      .sort((left, right) => left.created_at.localeCompare(right.created_at))
+      .at(-1);
+    if (!backup) return;
+    restoreDraft.mutate(
+      {
+        processId,
+        body: { content: backup.content, restore_assignments: restoreAssignments }
+      },
+      {
+        onSuccess: () => {
+          setRestoreConfirming(false);
+          repartoToast.success(dict.view.exports.restore.success);
+        },
+        onError: (error) =>
+          repartoToast.error(
+            dict.view.exports.restore.error,
+            error instanceof Error ? error.message : undefined
+          )
+      }
+    );
+  }
+
   return (
     <>
       <ExportCenterView
-        exports={exports ?? exportsQuery.data?.data ?? []}
+        artifacts={artifacts ?? exportsQuery.data?.data ?? []}
+        assignmentValidations={assignmentValidationsQuery.data ?? null}
+        finalConfirming={finalConfirming}
         locale={locale}
+        onCancelFinalExport={() => setFinalConfirming(false)}
+        onCreateDocumentExport={runDocumentExport}
+        onCreateFinalExport={() => runDocumentExport("final")}
+        onCreatePlanningExport={runPlanningExport}
+        onImportPlanning={runPlanningImport}
+        onPlanningImportContentChange={setPlanningImportContent}
+        onCancelRestore={() => setRestoreConfirming(false)}
+        onConfirmRestore={runRestoreDraft}
+        onRestoreAssignmentsChange={setRestoreAssignments}
+        onReviewRestore={() => setRestoreConfirming(true)}
+        onReviewFinalExport={() => setFinalConfirming(true)}
+        pendingDocumentType={pendingDocumentType}
+        pendingPlanningMode={pendingPlanningMode}
+        pendingPlanningImport={planningImport.isPending}
+        pendingRestore={restoreDraft.isPending}
+        plan={plan ?? planQuery.data ?? null}
+        planValidations={planValidationsQuery.data ?? null}
+        planningArtifact={planningArtifact}
+        planningImportContent={planningImportContent}
+        planningImportResult={planningImportResult}
         processId={processId}
-        processStatus={processStatus}
-        summary={summary ?? summaryQuery.data}
+        processStatus={processStatus ?? processQuery.data?.status}
+        restoreAssignments={restoreAssignments}
+        restoreConfirming={restoreConfirming}
       />
       <QueryState
-        error={exportsQuery.error ?? summaryQuery.error}
-        isError={exportsQuery.isError || summaryQuery.isError}
-        isLoading={
-          ((exportsQuery.isLoading && !exports) ||
-            (summaryQuery.isLoading && !summary)) &&
-          hasProcess
-        }
-        label={getRepartoDictionary(locale ?? normalizeRepartoLocale()).nav.item.exports}
+        error={exportsQuery.error}
+        isError={exportsQuery.isError}
+        isLoading={exportsQuery.isLoading && !artifacts && hasProcess}
+        label={dict.nav.item.exports}
         locale={locale}
       />
     </>
@@ -659,11 +1416,42 @@ export {
 } from "./setup-crud.js";
 
 export {
+  GroupSubjectBulkConfirmation,
+  GroupSubjectBulkEditor,
+  GroupSubjectBulkPreviewTable,
+  buildGroupSubjectBulkRequest,
+  groupSubjectBulkPreviewRows,
+  isStaleGroupSubjectPreviewError,
+  type GroupSubjectBulkEditorProps,
+  type GroupSubjectBulkFormResult
+} from "./process-crud/group-subjects/bulk.js";
+
+export {
+  GroupSubjectCellForm,
+  buildGroupSubjectCellRequest,
+  type GroupSubjectCellErrorKey,
+  type GroupSubjectCellFormProps,
+  type GroupSubjectCellFormResult,
+  type GroupSubjectCellValues
+} from "./process-crud/group-subjects/cell-form.js";
+
+export {
+  GroupSubjectMatrixList,
+  type GroupSubjectMatrixListProps
+} from "./process-crud/group-subjects/list.js";
+
+export { ProcessSettingsForm } from "./process-crud/process-settings/settings-form.js";
+export { ProcessReopenControl } from "./process-crud/process-settings/reopen.js";
+
+export {
+  RepartoAllocationView,
   RepartoAssignmentsView,
   RepartoAuditView,
-  RepartoClassroomsView,
+  RepartoTeachingGroupsView,
+  RepartoGroupSubjectsView,
   RepartoHourRequirementsView,
   RepartoProcessParticipantsView,
+  RepartoProcessSettingsView,
   RepartoSubjectsView
 } from "./process-crud/exports.js";
 
@@ -674,6 +1462,8 @@ export {
 } from "./feedback.js";
 
 export { RepartoLoadingState } from "./loading-state.js";
+
+export { RepartoRouteGuard } from "./route-guard.js";
 
 export {
   ProcessPicker,

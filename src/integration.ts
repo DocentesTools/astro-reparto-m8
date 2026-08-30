@@ -17,8 +17,9 @@ export type FaRepartoNavGroup = {
 };
 
 export type FaRepartoNav = {
-  setup: FaRepartoNavGroup;
-  process: FaRepartoNavGroup;
+  configuration: FaRepartoNavGroup;
+  planning: FaRepartoNavGroup;
+  assignment: FaRepartoNavGroup;
 };
 
 export type FaRepartoAstroOptions = {
@@ -41,26 +42,65 @@ export type FaRepartoAstroOptions = {
   };
 };
 
+// Grouping follows the plan's target workflow (§4): Stage 1 configures the
+// department, Stage 2 turns that configuration into a locked, generated plan,
+// and Stage 3 is the existing assignment process run against the generated
+// slots. `teachingGroups`/`subjects`/`processParticipants` are process-scoped
+// resources but are configured once per process before planning starts, so
+// they sit in Stage 1 alongside the school-wide setup entries.
+//
+// Within Stage 1 the order is §8.2's, once the school-wide entries are out of
+// the way: `processList`/`dashboard` (select or create the process — the
+// prerequisite for everything else), schools/years/departments (step 1), the
+// school-wide reference data, then the process-scoped block in step order —
+// `allocation` (2), `participants` (3), `subjects` (4), `teachingGroups` (5),
+// `groupSubjects` (6), `processSettings` (7).
+//
+// Three placements the audit (`S2-10`, `S2-06`) asked for and why they are
+// where they are:
+//
+// * `processList`/`dashboard` head Stage 1 rather than sitting in Stage 3.
+//   They are domain-correct as assignment surfaces and workflow-backwards
+//   there: nothing in Stage 1 can be opened before a process is selected. They
+//   are **not** a fourth, ungrouped root group — `FaRepartoNav` names exactly
+//   three groups and a host renders them one by one (`fa-ui-m8` does), so a new
+//   group would be a nav entry nothing mounts, which is the shape of `S2-02`.
+// * `allocation` is Stage 1, not Stage 2. Recording the *first* revision is
+//   §8.2 step 2; the reconciliation panel on `/planning` keeps the same form
+//   for the case it was written for — resolving a *change*.
+// * `exports` appears in Stage 2 as well as Stage 3. The planning draft and
+//   provisional exports (§7.8) are Stage 2 artifacts and the export centre
+//   already implements them; the same route serves both readings.
 export const DEFAULT_REPARTO_NAV: FaRepartoNav = {
-  setup: {
-    labelKey: "nav.group.setup",
+  configuration: {
+    labelKey: "nav.group.configuration",
     entries: [
+      { labelKey: "nav.item.processes", route: "processList" },
+      { labelKey: "nav.item.dashboard", route: "dashboard" },
       { labelKey: "nav.item.schools", route: "schools" },
       { labelKey: "nav.item.academicYears", route: "academicYears" },
       { labelKey: "nav.item.departments", route: "departments" },
+      { labelKey: "nav.item.classroomStages", route: "classroomStages" },
       { labelKey: "nav.item.teacherRoster", route: "teacherRoster" },
-      { labelKey: "nav.item.classroomStages", route: "classroomStages" }
+      { labelKey: "nav.item.allocation", route: "allocation" },
+      { labelKey: "nav.item.processParticipants", route: "participants" },
+      { labelKey: "nav.item.subjects", route: "subjects" },
+      { labelKey: "nav.item.teachingGroups", route: "teachingGroups" },
+      { labelKey: "nav.item.groupSubjects", route: "groupSubjects" },
+      { labelKey: "nav.item.processSettings", route: "processSettings" }
     ]
   },
-  process: {
-    labelKey: "nav.group.process",
+  planning: {
+    labelKey: "nav.group.planning",
     entries: [
-      { labelKey: "nav.item.dashboard", route: "dashboard" },
-      { labelKey: "nav.item.processes", route: "processList" },
-      { labelKey: "nav.item.classrooms", route: "classrooms" },
-      { labelKey: "nav.item.subjects", route: "subjects" },
+      { labelKey: "nav.item.planning", route: "planning" },
       { labelKey: "nav.item.requirements", route: "requirements" },
-      { labelKey: "nav.item.processParticipants", route: "participants" },
+      { labelKey: "nav.item.planningExports", route: "exports" }
+    ]
+  },
+  assignment: {
+    labelKey: "nav.group.assignment",
+    entries: [
       { labelKey: "nav.item.assignments", route: "assignments" },
       { labelKey: "nav.item.meeting", route: "meeting" },
       { labelKey: "nav.item.myView", route: "teacherView" },
@@ -90,8 +130,15 @@ export function buildRepartoNav(
     };
   }
   return {
-    setup: { ...nav.setup, entries: nav.setup.entries.map(resolveHref) },
-    process: { ...nav.process, entries: nav.process.entries.map(resolveHref) }
+    configuration: {
+      ...nav.configuration,
+      entries: nav.configuration.entries.map(resolveHref)
+    },
+    planning: { ...nav.planning, entries: nav.planning.entries.map(resolveHref) },
+    assignment: {
+      ...nav.assignment,
+      entries: nav.assignment.entries.map(resolveHref)
+    }
   };
 }
 
@@ -108,8 +155,12 @@ const ROUTE_ENTRYPOINTS = {
   departments: "@mano8/astro-reparto-m8/routes/departments.astro",
   teacherRoster: "@mano8/astro-reparto-m8/routes/teacher-roster.astro",
   subjects: "@mano8/astro-reparto-m8/routes/subjects.astro",
-  classrooms: "@mano8/astro-reparto-m8/routes/classrooms.astro",
+  teachingGroups: "@mano8/astro-reparto-m8/routes/teaching-groups.astro",
   classroomStages: "@mano8/astro-reparto-m8/routes/classroom-stages.astro",
+  groupSubjects: "@mano8/astro-reparto-m8/routes/group-subjects.astro",
+  processSettings: "@mano8/astro-reparto-m8/routes/settings.astro",
+  allocation: "@mano8/astro-reparto-m8/routes/allocation.astro",
+  planning: "@mano8/astro-reparto-m8/routes/planning.astro",
   requirements: "@mano8/astro-reparto-m8/routes/requirements.astro",
   participants: "@mano8/astro-reparto-m8/routes/participants.astro",
   assignments: "@mano8/astro-reparto-m8/routes/assignments.astro",

@@ -1,73 +1,144 @@
 import { useState } from "react";
 
-import { ActionButton, resolveProcessId, Shell, useDict, WithSelectedProcess, type EntityViewProps } from "../shared.js";
+import { formatRepartoMessage } from "../../../../i18n/index.js";
+import {
+  ActionButton,
+  RepartoRouteGuard,
+  resolveProcessId,
+  Shell,
+  useDict,
+  useRepartoCanAct,
+  WithSelectedProcess,
+  type EntityViewProps
+} from "../shared.js";
 import {
   useRepartoAssignments,
+  useRepartoAssignmentValidations,
+  useRepartoFeasibilityWitness,
   useRepartoHourRequirements,
   useRepartoProcessTeachers,
   useRepartoSubjects,
   useRepartoTeacherProfiles,
-  useRepartoTeachingGroups
+  useRepartoTeachingPlan,
+  useRepartoTeachingActivities
 } from "../../../hooks.js";
+import {
+  buildAssignmentSlotOptions,
+  buildAssignmentTeacherOptions,
+  buildReassignmentTeacherOptions
+} from "../../../../ui/assignments.js";
 import type {
   AssignmentPublic,
   HourRequirementPublic,
   ProcessTeacherPublic,
   SubjectPublic,
   TeacherProfilePublic,
-  TeachingGroupPublic
+  TeachingActivityPublic
 } from "../../../../schemas.js";
 
 import { AssignmentsList } from "./list.js";
 import { AssignmentAdd } from "./add.js";
 import { AssignmentEdit } from "./edit.js";
-import { AssignmentDelete } from "./delete.js";
-import { AssignmentBulkDelete } from "./bulk-delete.js";
+import { AssignmentUndoDialog } from "./undo.js";
+import { AssignmentBulkUndo } from "./bulk-undo.js";
+import { AssignmentReassignDialog } from "./reassign.js";
 
 export function RepartoAssignmentsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <WithSelectedProcess locale={locale} processId={processId}>
-        {(resolvedId) => (
-          <RepartoAssignmentsContent locale={locale} processId={resolvedId} />
-        )}
-      </WithSelectedProcess>
+      <RepartoRouteGuard locale={locale} route="assignments">
+        <WithSelectedProcess locale={locale} processId={processId}>
+          {(resolvedId) => (
+            <RepartoAssignmentsContent locale={locale} processId={resolvedId} />
+          )}
+        </WithSelectedProcess>
+      </RepartoRouteGuard>
     </Shell>
   );
 }
 
 function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
   const dict = useDict(locale);
+  const canAct = useRepartoCanAct("assignments");
   const concreteProcessId = resolveProcessId(processId);
   const query = useRepartoAssignments(processId);
   const requirementsQuery = useRepartoHourRequirements(processId);
   const participantsQuery = useRepartoProcessTeachers(processId);
-  const classroomsQuery = useRepartoTeachingGroups(processId);
   const subjectsQuery = useRepartoSubjects(processId);
+  const activitiesQuery = useRepartoTeachingActivities(processId);
+  const validationsQuery = useRepartoAssignmentValidations(processId);
+  const planQuery = useRepartoTeachingPlan(processId);
+  const witnessRequired = planQuery.data?.feasibility_status === "feasible";
+  const witnessQuery = useRepartoFeasibilityWitness(processId, witnessRequired);
   const teacherProfilesQuery = useRepartoTeacherProfiles({ limit: 100 });
 
   const rows = query.data?.data ?? [];
   const requirements = requirementsQuery.data?.data ?? [];
   const participants = participantsQuery.data?.data ?? [];
-  const classrooms = classroomsQuery.data?.data ?? [];
   const subjects = subjectsQuery.data?.data ?? [];
+  const activities = activitiesQuery.data?.data ?? [];
   const teacherProfiles = teacherProfilesQuery.data?.data ?? [];
+  const validations = validationsQuery.data;
+  const witnessData = witnessQuery.data;
+  const witness =
+    witnessRequired &&
+    witnessData !== undefined &&
+    witnessData.input_fingerprint === planQuery.data?.feasibility_input_fingerprint &&
+    witnessData.solver_version === planQuery.data?.feasibility_solver_version
+      ? witnessData
+      : null;
+  const safeChoiceStatus = planQuery.isLoading
+    ? "loading"
+    : !witnessRequired
+      ? "not_required"
+      : witnessQuery.isLoading
+        ? "loading"
+        : witness === null
+          ? "unavailable"
+          : "current";
+  const safeChoiceContext = { required: witnessRequired, witness } as const;
 
-  const classroomLabel = (id: string) =>
-    classrooms.find((c: TeachingGroupPublic) => c.id === id)?.label ?? dict.entity.classroom.singular.toLowerCase();
   const subjectName = (id: string) =>
-    subjects.find((s: SubjectPublic) => s.id === id)?.name ?? dict.entity.subject.singular.toLowerCase();
+    subjects.find((s: SubjectPublic) => s.id === id)?.name ??
+    dict.entity.subject.singular.toLowerCase();
   const requirementLabel = (id: string) => {
-    const req = requirements.find((r: HourRequirementPublic) => r.id === id);
-    if (!req) return dict.entity.hourRequirement.singular.toLowerCase();
-    return `${classroomLabel(req.teaching_group_id)} · ${subjectName(req.subject_id)}`;
+    const slot = requirements.find((r: HourRequirementPublic) => r.id === id);
+    if (!slot) return dict.entity.hourRequirement.singular.toLowerCase();
+    const activity = activities.find(
+      (candidate: TeachingActivityPublic) =>
+        candidate.id === slot.teaching_activity_id
+    );
+    const activityLabel = activity
+      ? formatRepartoMessage(dict.requirements.activityLabel, {
+          subject: subjectName(activity.subject_id),
+          type: dict.option.activityType[activity.activity_type]
+        })
+      : dict.requirements.unknownActivity;
+    return `${activityLabel} · ${formatRepartoMessage(dict.requirements.position, {
+      position: slot.position_index + 1
+    })}`;
   };
+  const slotHours = (id: string) =>
+    requirements.find((r: HourRequirementPublic) => r.id === id)
+      ?.required_teacher_hours ?? null;
   const participantName = (id: string) => {
     const participant = participants.find((p: ProcessTeacherPublic) => p.id === id);
     if (!participant) return dict.entity.processParticipant.singular.toLowerCase();
-    const profile = teacherProfiles.find((t: TeacherProfilePublic) => t.id === participant.teacher_profile_id);
+    const profile = teacherProfiles.find(
+      (t: TeacherProfilePublic) => t.id === participant.teacher_profile_id
+    );
     return profile?.display_name ?? dict.entity.teacherRoster.singular.toLowerCase();
   };
+
+  // The three-part eligibility rule lives in the framework-neutral helper, so
+  // the board, the reassignment dialog and the teacher LAN panel all disable
+  // the same choices for the same stated reason.
+  const slots = buildAssignmentSlotOptions(requirements, rows);
+  const teacherOptionsForSlot = (slotId: string) =>
+    buildAssignmentTeacherOptions(participants, requirements, rows, {
+      slot: slots.find((slot) => slot.slotId === slotId) ?? null,
+      safeChoice: safeChoiceContext
+    });
 
   const requirementsHref = concreteProcessId
     ? `/reparto/processes/${concreteProcessId}/requirements`
@@ -78,24 +149,46 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
 
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<AssignmentPublic | null>(null);
-  const [deleting, setDeleting] = useState<AssignmentPublic | null>(null);
-  const [deletingSelected, setDeletingSelected] = useState(false);
+  const [undoing, setUndoing] = useState<AssignmentPublic | null>(null);
+  const [undoingSelected, setUndoingSelected] = useState(false);
+  const [reassigning, setReassigning] = useState<AssignmentPublic | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 
-  const hasProcess = Boolean(resolveProcessId(processId));
-  const noReqs = requirements.length === 0;
-  const noParticipants = participants.length === 0;
+  // Only live rows can be undone; a cancelled row selected before its status
+  // arrived is dropped here rather than sent to a refusal.
+  const selectedAssignments = rows.filter(
+    (assignment) => selectedIds.has(assignment.id) && assignment.status === "active"
+  );
+  const currentSelectedIds = new Set(
+    selectedAssignments.map((assignment) => assignment.id)
+  );
+
+  const hasProcess = Boolean(concreteProcessId);
+  const assignableSlots = slots.filter((slot) => slot.canAssign);
   const createReason = !hasProcess
     ? dict.disabled.noProcess
-    : noReqs || noParticipants
-      ? dict.disabled.missingPrereq.replace(
-          "{prereq}",
-          `${dict.entity.hourRequirement.singular.toLowerCase()} / ${dict.entity.processParticipant.singular.toLowerCase()}`
-        )
-      : null;
-  const selectedAssignments = rows.filter((assignment) => selectedIds.has(assignment.id));
-  const currentSelectedIds = new Set(selectedAssignments.map((assignment) => assignment.id));
-  const hasActiveForm = adding || deletingSelected || Boolean(editing) || Boolean(deleting);
+    : assignableSlots.length === 0
+      ? dict.assignments.noAssignableSlots
+      : participants.length === 0
+        ? dict.disabled.missingPrereq.replace(
+            "{prereq}",
+            dict.entity.processParticipant.singular.toLowerCase()
+          )
+        : null;
+  const hasActiveForm =
+    adding ||
+    undoingSelected ||
+    Boolean(editing) ||
+    Boolean(undoing) ||
+    Boolean(reassigning);
+
+  function closeDialogs() {
+    setAdding(false);
+    setEditing(null);
+    setUndoing(null);
+    setUndoingSelected(false);
+    setReassigning(null);
+  }
 
   return (
     <main
@@ -103,89 +196,200 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
       data-reparto-route="assignments"
       data-reparto-group="process"
     >
-      <div
-        className="flex justify-end gap-2 pb-4"
-        data-reparto-actions="assignments"
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {dict.assignments.pageTitle}
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          {dict.assignments.description}
+        </p>
+      </header>
+
+      <section
+        className="grid gap-4 rounded-lg border bg-card p-5 text-card-foreground shadow-sm"
+        data-reparto-slot="assignment-occupancy"
       >
-        <ActionButton
-          action="create"
-          disabled={hasActiveForm}
-          disabledReason={createReason ?? undefined}
-          label={dict.action.create}
-          onClick={() => {
-            setEditing(null);
-            setDeleting(null);
-            setAdding(true);
-          }}
-        />
-      </div>
+        <dl className="grid gap-3 sm:grid-cols-3">
+          {[
+            ["slots", dict.assignments.metric.slots, slots.length],
+            [
+              "assigned",
+              dict.assignments.metric.assigned,
+              slots.filter((slot) => slot.disabledReason === "slot_occupied").length
+            ],
+            ["available", dict.assignments.metric.available, assignableSlots.length]
+          ].map(([key, label, value]) => (
+            <div
+              className="rounded-md border bg-muted/30 p-3"
+              data-assignment-metric={key}
+              key={key}
+            >
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {label}
+              </dt>
+              <dd className="mt-1 text-2xl font-semibold tabular-nums">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <div
+          data-assignment-final-ready={validations ? String(validations.is_final_ready) : ""}
+          data-reparto-slot="assignment-validations"
+        >
+          <h2 className="text-sm font-semibold">{dict.assignments.validationsTitle}</h2>
+          {validations ? (
+            <>
+              <p className="text-sm text-muted-foreground">
+                {formatRepartoMessage(dict.assignments.validationsSummary, {
+                  blocking: validations.blocking_count,
+                  warnings: validations.warning_count
+                })}
+              </p>
+              <ul className="mt-2 grid gap-1 text-sm">
+                {validations.messages.map((message) => (
+                  <li
+                    data-validation-code={message.code}
+                    data-validation-severity={message.severity}
+                    key={`${message.code}-${message.entity_id ?? "process"}`}
+                  >
+                    {message.message}
+                  </li>
+                ))}
+              </ul>
+              {validations.messages.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {dict.assignments.noValidations}
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {validationsQuery.isLoading
+                ? dict.assignments.validationsLoading
+                : dict.assignments.validationsUnavailable}
+            </p>
+          )}
+        </div>
+        <p
+          className="text-sm text-muted-foreground"
+          data-reparto-safe-choice-status={safeChoiceStatus}
+          data-reparto-slot="safe-choice-status"
+        >
+          {dict.assignments.safeChoice[safeChoiceStatus]}
+        </p>
+      </section>
+
+      {canAct ? (
+        <div className="flex justify-end gap-2 pb-4" data-reparto-actions="assignments">
+          <ActionButton
+            action="create"
+            disabled={hasActiveForm || createReason !== null}
+            disabledReason={createReason ?? undefined}
+            label={dict.assignments.assignAction}
+            onClick={() => {
+              closeDialogs();
+              setAdding(true);
+            }}
+          />
+        </div>
+      ) : null}
+
       <section
         className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm"
         data-reparto-panel="assignments"
       >
         <AssignmentsList
           dict={dict}
-          rows={rows}
           error={query.error}
+          hasActiveForm={hasActiveForm}
           isError={query.isError}
           isLoading={query.isLoading}
-          hasActiveForm={hasActiveForm}
-          requirementLabel={requirementLabel}
-          participantName={participantName}
-          onDeleteSelected={() => setDeletingSelected(true)}
-          onSelectedIdsChange={setSelectedIds}
-          selectedIds={currentSelectedIds}
-          onEdit={(assignment) => {
-            setAdding(false);
-            setDeleting(null);
+          onEditNotes={(assignment) => {
+            closeDialogs();
             setEditing(assignment);
           }}
-          onDelete={(assignment) => {
-            setAdding(false);
-            setEditing(null);
-            setDeleting(assignment);
+          onReassign={(assignment) => {
+            closeDialogs();
+            setReassigning(assignment);
           }}
+          onSelectedIdsChange={setSelectedIds}
+          onUndo={(assignment) => {
+            closeDialogs();
+            setUndoing(assignment);
+          }}
+          onUndoSelected={() => {
+            closeDialogs();
+            setUndoingSelected(true);
+          }}
+          participantName={participantName}
+          requirementLabel={requirementLabel}
+          rows={rows}
+          selectedIds={currentSelectedIds}
+          slotHours={slotHours}
         />
         {adding ? (
           <AssignmentAdd
             dict={dict}
-            processId={processId ?? ""}
-            requirementsHref={requirementsHref}
-            participantsHref={participantsHref}
-            requirementLabel={requirementLabel}
-            participantName={participantName}
             onDone={() => setAdding(false)}
+            participantName={participantName}
+            participantsHref={participantsHref}
+            processId={processId ?? ""}
+            requirementLabel={requirementLabel}
+            requirementsHref={requirementsHref}
+            slots={slots}
+            teacherOptionsForSlot={teacherOptionsForSlot}
           />
         ) : null}
         {editing ? (
           <AssignmentEdit
-            dict={dict}
-            processId={processId ?? ""}
             assignment={editing}
-            requirementLabel={requirementLabel(editing.hour_requirement_id)}
-            participantName={participantName(editing.process_teacher_id)}
+            dict={dict}
             onDone={() => setEditing(null)}
+            participantName={participantName(editing.process_teacher_id)}
+            processId={processId ?? ""}
+            requirementLabel={requirementLabel(editing.hour_requirement_id)}
           />
         ) : null}
-        {deletingSelected ? (
-          <AssignmentBulkDelete
+        {reassigning ? (
+          <AssignmentReassignDialog
+            assignment={reassigning}
+            candidates={buildReassignmentTeacherOptions(
+              reassigning,
+              participants,
+              requirements,
+              rows,
+              { safeChoice: safeChoiceContext }
+            )}
             dict={dict}
+            onDone={() => setReassigning(null)}
+            participantName={participantName}
+            processId={processId ?? ""}
+            requirementLabel={requirementLabel(reassigning.hour_requirement_id)}
+          />
+        ) : null}
+        {undoingSelected ? (
+          <AssignmentBulkUndo
             assignments={selectedAssignments}
-            processId={processId ?? ""}
-            onDone={() => {
-              setDeletingSelected(false);
-              setSelectedIds(new Set());
+            dict={dict}
+            onDone={(undoneIds) => {
+              setUndoingSelected(false);
+              setSelectedIds(
+                new Set(
+                  [...currentSelectedIds].filter((id) => !undoneIds.includes(id))
+                )
+              );
             }}
+            processId={processId ?? ""}
+            requirementLabel={requirementLabel}
           />
         ) : null}
-        {deleting ? (
-          <AssignmentDelete
+        {undoing ? (
+          <AssignmentUndoDialog
+            assignment={undoing}
             dict={dict}
+            onDone={() => setUndoing(null)}
+            participantName={participantName(undoing.process_teacher_id)}
             processId={processId ?? ""}
-            assignment={deleting}
-            requirementLabel={requirementLabel(deleting.hour_requirement_id)}
-            participantName={participantName(deleting.process_teacher_id)}
-            onDone={() => setDeleting(null)}
+            requirementLabel={requirementLabel(undoing.hour_requirement_id)}
           />
         ) : null}
       </section>

@@ -1,21 +1,65 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
+
+// Every reparto route is gated by the signed-in role (§8.1 route map). These
+// suites assert the administrative surface, so they sign an `ADMIN` in; the
+// per-role sweep lives in `route-gating.test.tsx`.
+beforeEach(() => {
+  signInReparto(repartoUser("admin"));
+});
+
+afterEach(() => {
+  resetRepartoAuthAdapter();
+});
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const teacherId = "22222222-2222-4222-8222-222222222222";
 const sessionId = "33333333-3333-4333-8333-333333333333";
 const now = "2026-07-04T10:00:00Z";
 
-const globalBalance = {
-  total_required_hours: 4,
-  total_available_hours: 4,
-  total_assigned_hours: 1,
-  pending_required_hours: 3,
-  availability_difference: 0,
-  uncovered_requirements: 1,
-  overloaded_teachers: 0,
-  state: "pending"
+const planBalance = {
+  teaching_plan_id: "55555555-5555-4555-8555-555555555555",
+  assignment_process_id: processId,
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "124.00",
+    teacher_load_difference: "0.00",
+    is_balanced: true
+  },
+  is_exact: true
+};
+
+const assignmentSection = {
+  summary: {
+    assignment_process_id: processId,
+    total_target_hours: "124.00",
+    total_assigned_hours: "4.00",
+    total_remaining_hours: "120.00",
+    total_slots: 4,
+    assigned_slots: 1,
+    available_slots: 3,
+    participants: []
+  },
+  validations: {
+    assignment_process_id: processId,
+    is_final_ready: false,
+    blocking_count: 1,
+    warning_count: 0,
+    messages: []
+  }
 };
 
 const currentTurn = {
@@ -37,10 +81,21 @@ function dataForKey(queryKey: readonly unknown[]) {
     return {
       process_id: processId,
       generated_at: now,
-      global_balance: globalBalance,
-      teacher_balances: [],
-      requirement_balances: [],
-      validations: [],
+      readiness: "ready",
+      planning: {
+        teaching_plan_id: planBalance.teaching_plan_id,
+        status: "requirements_generated",
+        balance: planBalance,
+        validations: {
+          teaching_plan_id: planBalance.teaching_plan_id,
+          assignment_process_id: processId,
+          is_assignment_ready: true,
+          blocking_count: 0,
+          warning_count: 0,
+          messages: []
+        }
+      },
+      assignment: assignmentSection,
       current_turn: currentTurn,
       blocking_validation_count: 1
     };
@@ -48,8 +103,16 @@ function dataForKey(queryKey: readonly unknown[]) {
   if (last === "summary") {
     return {
       process_id: processId,
-      global_balance: globalBalance,
-      validations: [],
+      generated_at: now,
+      readiness: "ready",
+      plan_status: "requirements_generated",
+      plan_balance: planBalance,
+      total_slots: 4,
+      assigned_slots: 1,
+      available_slots: 3,
+      balanced_participant_count: 0,
+      pending_participant_count: 1,
+      overloaded_participant_count: 0,
       current_turn: currentTurn,
       blocking_validation_count: 1
     };
@@ -82,21 +145,24 @@ function dataForKey(queryKey: readonly unknown[]) {
       teacher_profile_id: "55555555-5555-4555-8555-555555555555",
       process_teacher_id: teacherId,
       generated_at: now,
-      global_balance: globalBalance,
-      teacher_balance: {
+      readiness: "ready",
+      selection_blocked: false,
+      plan_balance: null,
+      participant: {
         process_teacher_id: teacherId,
         teacher_profile_id: "55555555-5555-4555-8555-555555555555",
         display_name: "Teacher",
-        available_hours: 4,
-        assigned_hours: 1,
-        remaining_hours: 3,
-        excess_hours: 0,
+        base_weekly_hours: "4.00",
+        extra_weekly_hours: "0.00",
+        target_weekly_hours: "4.00",
+        assigned_weekly_hours: "1.00",
+        remaining_weekly_hours: "3.00",
+        is_overloaded: false,
         assignment_count: 1,
-        has_override: false,
         state: "pending"
       },
-      current_turn: currentTurn,
-      blocking_validation_count: 0
+      available_slots: 1,
+      current_turn: currentTurn
     };
   }
   if (last === "versions") {
@@ -135,6 +201,28 @@ function dataForKey(queryKey: readonly unknown[]) {
         }
       ],
       count: 1
+    };
+  }
+  // The process detail: the versions island reads it to decide whether a
+  // previous-year comparison exists at all.
+  if (queryKey[2] === "detail" && queryKey.length === 4) {
+    return {
+      id: processId,
+      academic_year_id: "99999999-9999-4999-8999-999999999999",
+      school_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      department_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      status: "draft",
+      default_teacher_hours_reference: null,
+      selection_order_enabled: false,
+      selection_order_mode: "none",
+      direct_teacher_selection_enabled: true,
+      lan_access_enabled: true,
+      created_from_process_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      closed_at: null,
+      closed_by_user_id: null,
+      created_by_user_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      created_at: now,
+      updated_at: now
     };
   }
   return {
@@ -196,7 +284,14 @@ vi.mock("@tanstack/react-query", () => ({
       isError: true,
       isLoading: false
     };
-  }
+  },
+  useMutation: () => ({
+    mutate: vi.fn(),
+    isPending: false,
+    isError: false,
+    error: null
+  }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() })
 }));
 
 describe("default UI query states", () => {
@@ -228,7 +323,7 @@ describe("default UI query states", () => {
     const {
       RepartoAssignmentsView,
       RepartoAuditView,
-      RepartoClassroomsView,
+      RepartoTeachingGroupsView,
       RepartoDashboardView,
       RepartoExportsView,
       RepartoHourRequirementsView,
@@ -257,7 +352,7 @@ describe("default UI query states", () => {
 
     for (const html of [
       renderToStaticMarkup(<RepartoSubjectsView processId={processId} />),
-      renderToStaticMarkup(<RepartoClassroomsView processId={processId} />),
+      renderToStaticMarkup(<RepartoTeachingGroupsView processId={processId} />),
       renderToStaticMarkup(<RepartoHourRequirementsView processId={processId} />),
       renderToStaticMarkup(<RepartoProcessParticipantsView processId={processId} />),
       renderToStaticMarkup(<RepartoAssignmentsView processId={processId} />),
@@ -290,21 +385,24 @@ describe("default UI query states", () => {
     expect(renderToStaticMarkup(<RepartoMeetingView processId={processId} />)).toContain(
       "Turn 1"
     );
-    expect(
-      renderToStaticMarkup(
-        <RepartoMyView
-          processId={processId}
-          requirementAssignedHours={1}
-          requirementRequiredHours={4}
-        />
-      )
-    ).toContain('data-reparto-choice-state="ready"');
+    // The island renders from its own queries, and the LAN payload — not a
+    // prop — decides both the hours it shows and whether the panel is open.
+    const myView = renderToStaticMarkup(<RepartoMyView processId={processId} />);
+    expect(myView).toContain('data-reparto-slot="teacher-target-hours"');
+    expect(myView).toContain('data-reparto-participant-state="pending"');
+    // Ready, but nothing picked yet: the remaining gate is the teacher's own.
+    expect(myView).toContain('data-reparto-choice-reason="no_slot_chosen"');
     expect(renderToStaticMarkup(<RepartoSharedView processId={processId} />)).toContain(
       'data-reparto-route="shared-screen"'
     );
-    expect(renderToStaticMarkup(<RepartoVersionsView processId={processId} />)).toContain(
-      'data-process-version-status="draft"'
-    );
+    const versions = renderToStaticMarkup(<RepartoVersionsView processId={processId} />);
+    expect(versions).toContain('data-process-version-status="draft"');
+    // Nothing has been asked for yet, so the panel says "not compared" rather
+    // than showing a cached or defaulted diff.
+    expect(versions).toContain('data-reparto-comparison-state="none"');
+    expect(versions).toContain("No comparison has been run yet.");
+    // This process records a source process, so last year can be diffed.
+    expect(versions).not.toContain('data-disabled-reason="no_previous_year"');
     expect(renderToStaticMarkup(<RepartoExportsView processId={processId} />)).toContain(
       'data-export-artifact-type="backup"'
     );

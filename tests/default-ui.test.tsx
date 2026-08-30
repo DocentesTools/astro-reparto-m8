@@ -1,7 +1,28 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import {
+  repartoUser,
+  resetRepartoAuthAdapter,
+  signInReparto
+} from "./support/session.js";
+
+// Every reparto route is gated by the signed-in role (§8.1 route map). These
+// suites assert the administrative surface, so they sign an `ADMIN` in; the
+// per-role sweep lives in `route-gating.test.tsx`.
+beforeEach(() => {
+  signInReparto(repartoUser("admin"));
+});
+
+afterEach(() => {
+  resetRepartoAuthAdapter();
+});
 import { RepartoProvider, useRepartoContext } from "../src/runtime/react/index.js";
-import { ProcessListView } from "../src/runtime/react/DepartmentHeadWorkspace.js";
+import {
+  ExportCenterView,
+  ProcessListView,
+  VersionsView
+} from "../src/runtime/react/DepartmentHeadWorkspace.js";
 import {
   DepartmentHeadView,
   ProcessesView,
@@ -24,6 +45,7 @@ import type {
   ProcessSummary,
   ProcessVersionPublic,
   TeacherLanSummary,
+  TeachingPlanPublic,
   VersionComparison
 } from "../src/runtime/schemas.js";
 
@@ -32,19 +54,36 @@ function ContextReader() {
   return <span data-api-base={context.config?.apiBase} data-has-adapter={Boolean(context.adapter)} />;
 }
 
+const planBalance = {
+  teaching_plan_id: "aaaa1111-aaaa-4aaa-8aaa-aaaaaaaa1111",
+  assignment_process_id: "11111111-1111-4111-8111-111111111111",
+  group: {
+    total_group_load: "120.00",
+    allocated_group_weekly_hours: "120.00",
+    allocation_difference: "0.00",
+    is_balanced: true
+  },
+  teacher: {
+    total_teacher_load: "124.00",
+    participant_target_total: "120.00",
+    teacher_load_difference: "4.00",
+    is_balanced: false
+  },
+  is_exact: false
+};
+
 const processSummary: ProcessSummary = {
   process_id: "11111111-1111-4111-8111-111111111111",
-  global_balance: {
-    total_required_hours: 4,
-    total_available_hours: 4,
-    total_assigned_hours: 0,
-    pending_required_hours: 4,
-    availability_difference: 0,
-    uncovered_requirements: 1,
-    overloaded_teachers: 0,
-    state: "pending"
-  },
-  validations: [],
+  generated_at: "2026-07-04T10:00:00Z",
+  readiness: "ready",
+  plan_status: "requirements_generated",
+  plan_balance: planBalance,
+  total_slots: 4,
+  assigned_slots: 1,
+  available_slots: 3,
+  balanced_participant_count: 0,
+  pending_participant_count: 0,
+  overloaded_participant_count: 1,
   current_turn: {
     meeting_session_id: "22222222-2222-4222-8222-222222222222",
     selection_turn_id: "33333333-3333-4333-8333-333333333333",
@@ -56,13 +95,72 @@ const processSummary: ProcessSummary = {
   blocking_validation_count: 0
 };
 
+const dashboardParticipant = {
+  process_teacher_id: "44444444-4444-4444-8444-444444444444",
+  teacher_profile_id: "55555555-5555-4555-8555-555555555555",
+  display_name: "Ada Lovelace",
+  base_weekly_hours: "18.00",
+  extra_weekly_hours: "2.00",
+  target_weekly_hours: "20.00",
+  assigned_weekly_hours: "6.00",
+  remaining_weekly_hours: "14.00",
+  is_overloaded: true,
+  assignment_count: 1,
+  state: "overloaded_authorized"
+} as const;
+
 const dashboard = {
   process_id: processSummary.process_id,
   generated_at: "2026-07-04T10:00:00Z",
-  global_balance: processSummary.global_balance,
-  teacher_balances: [],
-  requirement_balances: [],
-  validations: [],
+  readiness: "recalculation_required",
+  planning: {
+    teaching_plan_id: planBalance.teaching_plan_id,
+    status: "stale",
+    balance: planBalance,
+    validations: {
+      teaching_plan_id: planBalance.teaching_plan_id,
+      assignment_process_id: processSummary.process_id,
+      is_assignment_ready: false,
+      blocking_count: 1,
+      warning_count: 0,
+      messages: [
+        {
+          severity: "blocking",
+          code: "plan.stale",
+          message: "The plan changed after generation.",
+          entity_type: "plan",
+          entity_id: planBalance.teaching_plan_id
+        }
+      ]
+    }
+  },
+  assignment: {
+    summary: {
+      assignment_process_id: processSummary.process_id,
+      total_target_hours: "20.00",
+      total_assigned_hours: "6.00",
+      total_remaining_hours: "14.00",
+      total_slots: 4,
+      assigned_slots: 1,
+      available_slots: 3,
+      participants: [dashboardParticipant]
+    },
+    validations: {
+      assignment_process_id: processSummary.process_id,
+      is_final_ready: false,
+      blocking_count: 1,
+      warning_count: 0,
+      messages: [
+        {
+          severity: "blocking",
+          code: "requirement.unassigned",
+          message: "Three positions are still unassigned.",
+          entity_type: "assignment_process",
+          entity_id: processSummary.process_id
+        }
+      ]
+    }
+  },
   current_turn: processSummary.current_turn,
   blocking_validation_count: 2
 } satisfies ProcessDashboard;
@@ -91,21 +189,24 @@ const teacherSummary: TeacherLanSummary = {
   teacher_profile_id: "55555555-5555-4555-8555-555555555555",
   process_teacher_id: processSummary.current_turn?.process_teacher_id ?? "",
   generated_at: "2026-07-04T10:00:00Z",
-  global_balance: processSummary.global_balance,
-  teacher_balance: {
+  readiness: "ready",
+  selection_blocked: false,
+  plan_balance: null,
+  participant: {
     process_teacher_id: processSummary.current_turn?.process_teacher_id ?? "",
     teacher_profile_id: "55555555-5555-4555-8555-555555555555",
     display_name: "Teacher",
-    available_hours: 4,
-    assigned_hours: 1,
-    remaining_hours: 3,
-    excess_hours: 0,
+    base_weekly_hours: "4.00",
+    extra_weekly_hours: "0.00",
+    target_weekly_hours: "4.00",
+    assigned_weekly_hours: "1.00",
+    remaining_weekly_hours: "3.00",
+    is_overloaded: false,
     assignment_count: 1,
-    has_override: false,
     state: "pending"
   },
-  current_turn: processSummary.current_turn,
-  blocking_validation_count: 0
+  available_slots: 2,
+  current_turn: processSummary.current_turn
 };
 
 const meetingSession: MeetingSessionPublic = {
@@ -139,12 +240,44 @@ const version = {
 const comparison: VersionComparison = {
   left_version_id: version.id,
   right_version_id: "88888888-8888-4888-8888-888888888888",
-  changed_sections: ["teachers", "assignments"],
-  required_hours_delta: 1,
-  assigned_hours_delta: 2,
-  teacher_count_delta: 0,
-  requirement_count_delta: 1,
-  assignment_count_delta: 2
+  changed_sections: ["teaching_activities", "teachers"],
+  allocation_changed: true,
+  group_hours_changed: true,
+  teacher_load_changed: false,
+  subject_category_changed: false,
+  activity_added_or_removed: true,
+  group_link_added_or_removed: true,
+  teacher_position_count_changed: false,
+  participant_target_changed: true,
+  requirement_generation_changed: true,
+  allocation_delta: "-4.00",
+  group_load_delta: "12.50",
+  teacher_load_delta: "0.00",
+  participant_target_total_delta: "3.00",
+  generation_number_delta: 1,
+  teacher_count_delta: -1,
+  activity_count_delta: 0,
+  requirement_count_delta: 2
+};
+
+const exportPlan: TeachingPlanPublic = {
+  id: "aaaa2222-aaaa-4aaa-8aaa-aaaaaaaa2222",
+  assignment_process_id: processSummary.process_id,
+  allocation_revision_id: null,
+  status: "unbalanced",
+  current_generation_number: 0,
+  locked_at: null,
+  locked_by_user_id: null,
+  requirements_generated_at: null,
+  stale_reason: null,
+  feasibility_status: "not_evaluated",
+  feasibility_generation: null,
+  feasibility_checked_at: null,
+  feasibility_input_fingerprint: null,
+  feasibility_solver_version: null,
+  feasibility_diagnostics_ref: null,
+  created_at: "2026-07-04T10:00:00Z",
+  updated_at: "2026-07-04T10:00:00Z"
 };
 
 const backupExport: ExportArtifactPublic = {
@@ -162,24 +295,86 @@ const backupExport: ExportArtifactPublic = {
 };
 
 describe("default reparto UI", () => {
-  it("renders the phase-4 dashboard panels", () => {
+  it("renders the two-stage dashboard panels", () => {
     const html = renderToStaticMarkup(
       <DepartmentHeadView
         config={{ apiBase: "/api", apiPrefix: "/reparto" }}
-        summary={processSummary}
+        dashboard={dashboard}
       />
     );
 
     expect(html).toContain('data-reparto-panel="current-turn"');
     expect(html).toContain("Turn 2");
+    // The turn controls are department-head affordances, and this suite signs
+    // an `ADMIN` in, so they are present. The mode still comes from the
+    // signed-in role and never from a prop (§21.8): `view-mode-role.test.tsx`
+    // proves the read-only direction, and `route-gating.test.tsx` proves it for
+    // every route in the §8.1 map.
     expect(html).toContain('data-reparto-action="start-turn"');
-    expect(html).toContain('data-reparto-panel="overview-chart"');
-    expect(html).toContain('data-reparto-panel="teacher-load-chart"');
-    expect(html).toContain('data-reparto-panel="classroom-coverage-chart"');
+    expect(html).toContain("Admin mode");
+    expect(html).toContain('data-reparto-panel="planning-balance"');
+    expect(html).toContain('data-reparto-panel="assignment-progress"');
+    expect(html).toContain('data-reparto-panel="participant-balances"');
     expect(html).toContain('data-reparto-panel="validation-summary"');
     expect(html).toContain('data-reparto-panel="setup-checklist"');
-    expect(html).toContain('data-reparto-slot="balance-summary"');
-    expect(html).toContain('data-reparto-chart-bar="required"');
+
+    // The three invariants are three slots, never one "ready" badge (§20.20).
+    expect(html).toContain('data-reparto-invariant="group"');
+    expect(html).toContain('data-reparto-invariant="teacher"');
+    expect(html).toContain('data-reparto-invariant="feasibility"');
+    expect(html).toContain('data-reparto-invariant-state="unbalanced"');
+    // With no plan payload in hand the third slot reports the coarse readiness
+    // projection and says so, rather than claiming a feasibility result.
+    expect(html).toContain('data-reparto-invariant-source="readiness"');
+    expect(html).toContain('data-reparto-invariant-state="recalculation_required"');
+
+    // Both axes are shown and neither is summed into the other: 120 group hours
+    // against 124 teacher-load hours, both correct.
+    expect(html).toContain('data-reparto-balance-axis="group"');
+    expect(html).toContain('data-reparto-balance-axis="teacher"');
+    expect(html).toContain("120.00 h");
+    expect(html).toContain("124.00 h");
+    expect(html).not.toContain("244.00");
+
+    // Findings come from the service, per stage, with the stable code on the DOM.
+    expect(html).toContain('data-reparto-slot="planning-validations"');
+    expect(html).toContain('data-reparto-slot="assignment-validations"');
+    expect(html).toContain('data-reparto-validation-code="plan.stale"');
+    expect(html).toContain('data-reparto-validation-code="requirement.unassigned"');
+    expect(html).toContain("The plan changed after generation.");
+
+    // Authorized overload is a flag decided in advance, not an inference from
+    // assigned hours exceeding the target.
+    expect(html).toContain('data-reparto-participant-state="overloaded_authorized"');
+    expect(html).toContain('data-reparto-overloaded="true"');
+
+    // Nothing from the retired single-balance dashboard survives.
+    expect(html).not.toContain('data-reparto-panel="overview-chart"');
+    expect(html).not.toContain('data-reparto-panel="classroom-coverage-chart"');
+    expect(html).not.toContain('data-reparto-slot="overview-state"');
+    expect(html).not.toContain('data-reparto-slot="pending-required-hours"');
+  });
+
+  it("states that a process without a teaching plan has no balance, rather than zero", () => {
+    const html = renderToStaticMarkup(
+      <DepartmentHeadView
+        config={{ apiBase: "/api", apiPrefix: "/reparto" }}
+        dashboard={{
+          ...dashboard,
+          readiness: "not_ready",
+          planning: {
+            teaching_plan_id: null,
+            status: null,
+            balance: null,
+            validations: null
+          }
+        }}
+      />
+    );
+    expect(html).toContain('data-reparto-slot="planning-empty"');
+    expect(html).toContain('data-reparto-plan-status="none"');
+    expect(html).toContain('data-reparto-invariant-state="unknown"');
+    expect(html).not.toContain('data-reparto-balance-axis="group"');
   });
 
   it("renders Phase 2 LAN teacher and shared-screen views", () => {
@@ -193,6 +388,9 @@ describe("default reparto UI", () => {
     );
     expect(teacherHtml).toContain('data-reparto-route="my-view"');
     expect(teacherHtml).toContain('data-reparto-events-url=');
+    expect(teacherHtml).toContain("audience=teacher");
+    expect(teacherHtml).toContain('data-reparto-connection-state="disconnected"');
+    expect(teacherHtml).toContain("Live updates disconnected");
     expect(teacherHtml).toContain('data-reparto-action="direct-choice"');
     expect(teacherHtml).toContain('data-reparto-action="pass-turn"');
     expect(teacherHtml).toContain('data-reparto-panel="direct-choice-workflow"');
@@ -205,9 +403,10 @@ describe("default reparto UI", () => {
       />
     );
     expect(sharedHtml).toContain('data-reparto-route="shared-screen"');
-    expect(sharedHtml).toContain('data-reparto-panel="global-state"');
+    expect(sharedHtml).toContain("audience=shared_screen");
+    expect(sharedHtml).toContain('data-reparto-connection-state="disconnected"');
+    expect(sharedHtml).toContain('data-reparto-panel="shared-balance"');
     expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
-    expect(sharedHtml).toContain("Teacher 44444444-4444-4444-8444-444444444444");
   });
 
   it("shows the process picker when no process is selected", () => {
@@ -222,21 +421,235 @@ describe("default reparto UI", () => {
     }
   });
 
-  it("renders Phase 4 direct-choice readiness and confirmation UI", () => {
+  it("shows the teacher's own target as base plus authorized extra, with the aggregate balance", async () => {
+    const { TeacherLanWorkspace } = await import(
+      "../src/runtime/react/LanWorkspace.js"
+    );
     const html = renderToStaticMarkup(
-      <TeacherLanView
-        meetingSession={meetingSession}
+      <TeacherLanWorkspace
         processId={processSummary.process_id}
-        requirementAssignedHours={1}
-        requirementRequiredHours={4}
+        summary={{
+          ...teacherSummary,
+          participant: {
+            ...teacherSummary.participant,
+            extra_weekly_hours: "2.00",
+            target_weekly_hours: "6.00",
+            remaining_weekly_hours: "5.00",
+            is_overloaded: true,
+            state: "overloaded_authorized"
+          },
+          plan_balance: {
+            teaching_plan_id: "77777777-7777-4777-8777-777777777777",
+            assignment_process_id: processSummary.process_id,
+            group: {
+              total_group_load: "120.00",
+              allocated_group_weekly_hours: "120.00",
+              allocation_difference: "0.00",
+              is_balanced: true
+            },
+            teacher: {
+              total_teacher_load: "124.00",
+              participant_target_total: "124.00",
+              teacher_load_difference: "0.00",
+              is_balanced: true
+            },
+            is_exact: true
+          }
+        }}
+      />
+    );
+    // Five figures, and the target is shown as the service computed it.
+    expect(html).toContain('data-reparto-slot="teacher-base-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-extra-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-target-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-assigned-hours"');
+    expect(html).toContain('data-reparto-slot="teacher-remaining-hours"');
+    // The retired capacity slot is gone, not renamed onto a new concept.
+    expect(html).not.toContain('data-reparto-slot="teacher-available-hours"');
+    expect(html).toContain('data-reparto-overloaded="true"');
+    expect(html).toContain('data-reparto-participant-state="overloaded_authorized"');
+    expect(html).toContain("2.00 extra hours have been authorized for you.");
+    // Complete selectable positions, and the two aggregate balances that name
+    // nobody — the only process-wide figures a LAN client may see.
+    expect(html).toContain('data-reparto-available-slots="2"');
+    expect(html).toContain('data-reparto-slot="teacher-feasibility-status"');
+    expect(html).toContain('data-feasibility-status="ready"');
+    expect(html).not.toContain("feasibility-witness");
+    expect(html).not.toContain("input_fingerprint");
+    expect(html).toContain("120.00");
+    expect(html).toContain("124.00");
+
+    // Without a plan the balance line says so rather than reading zero.
+    const noPlan = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        processId={processSummary.process_id}
         summary={teacherSummary}
       />
     );
+    expect(noPlan).toContain("no teaching plan yet");
+    expect(noPlan).toContain("No extra hours are authorized for you.");
 
-    expect(html).toContain('data-reparto-choice-state="ready"');
-    expect(html).toContain('data-reparto-impact-hours="3"');
-    expect(html).toContain("3 hours will be assigned to you.");
-    expect(html).toContain('data-reparto-slot="choice-result"');
+    // An allocation the leadership has not communicated is stated, not zeroed.
+    const noAllocation = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        processId={processSummary.process_id}
+        summary={{
+          ...teacherSummary,
+          plan_balance: {
+            teaching_plan_id: "77777777-7777-4777-8777-777777777777",
+            assignment_process_id: processSummary.process_id,
+            group: {
+              total_group_load: "120.00",
+              allocated_group_weekly_hours: null,
+              allocation_difference: null,
+              is_balanced: false
+            },
+            teacher: {
+              total_teacher_load: "124.00",
+              participant_target_total: "120.00",
+              teacher_load_difference: "4.00",
+              is_balanced: false
+            },
+            is_exact: false
+          }
+        }}
+      />
+    );
+    expect(noAllocation).toContain("no allocation yet");
+  });
+
+  it("renders direct-choice state per position and fails closed without plan readiness", async () => {
+    const positions = [
+      {
+        id: "aaaaaaa1-1111-4111-8111-111111111111",
+        assignment_process_id: processSummary.process_id,
+        teaching_activity_id: "aaaaaaa2-2222-4222-8222-222222222222",
+        position_index: 0,
+        required_teacher_hours: "3.00",
+        status: "available" as const,
+        created_generation: 1,
+        last_validated_generation: 1,
+        retired_generation: null,
+        superseded_by_requirement_id: null,
+        created_at: "2026-07-04T10:00:00Z",
+        updated_at: "2026-07-04T10:00:00Z"
+      }
+    ];
+    const ready = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        readiness="ready"
+        remainingTargetHours="3.00"
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        selectionBlocked={false}
+        summary={teacherSummary}
+      />
+    );
+    expect(ready).toContain('data-reparto-choice-state="ready"');
+    expect(ready).toContain('data-reparto-selectable-slots="1"');
+    // The position's own hours, taken whole — never a required-minus-assigned
+    // remainder.
+    expect(ready).toContain("Taking this position assigns 3.00 teacher hours to you in full.");
+    expect(ready).toContain('data-reparto-slot-choice="selectable"');
+    expect(ready).toContain('data-reparto-slot="choice-result"');
+    expect(ready).not.toContain("data-reparto-impact-hours");
+
+    // The LAN payload is the authority on the gates, so the props may be
+    // omitted entirely and the panel still opens for a ready service.
+    const fromPayload = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={teacherSummary}
+      />
+    );
+    expect(fromPayload).toContain('data-reparto-choice-state="ready"');
+
+    // ...and it closes them for the same reason the service would: a payload
+    // that reports a blocked selection blocks, without any prop saying so.
+    const blocked = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={{ ...teacherSummary, selection_blocked: true }}
+      />
+    );
+    expect(blocked).toContain('data-reparto-choice-state="blocked"');
+    expect(blocked).toContain('data-reparto-choice-reason="selection_blocked"');
+
+    const recalculating = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        summary={{ ...teacherSummary, readiness: "recalculation_required" }}
+      />
+    );
+    expect(recalculating).toContain(
+      'data-reparto-choice-reason="reconciliation_required"'
+    );
+
+    // With no payload at all the placeholder is closed, not empty-but-open: a
+    // teacher client never implies the assignment stage is open.
+    const { TeacherLanWorkspace } = await import(
+      "../src/runtime/react/LanWorkspace.js"
+    );
+    const unknown = renderToStaticMarkup(
+      <TeacherLanWorkspace
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+      />
+    );
+    expect(unknown).toContain('data-reparto-choice-state="blocked"');
+    expect(unknown).toContain('data-reparto-choice-reason="plan_not_ready"');
+    expect(unknown).toContain('data-reparto-slot="teacher-target-hours"');
+
+    // A position the viewer's own live assignment already covers for that
+    // activity is offered with the distinct-teacher reason attached.
+    const duplicate = renderToStaticMarkup(
+      <TeacherLanView
+        assignments={[
+          {
+            id: "aaaaaaa3-3333-4333-8333-333333333333",
+            assignment_process_id: processSummary.process_id,
+            hour_requirement_id: "aaaaaaa4-4444-4444-8444-444444444444",
+            teaching_activity_id: positions[0].teaching_activity_id,
+            process_teacher_id: teacherSummary.process_teacher_id,
+            source: "teacher_direct" as const,
+            status: "active" as const,
+            chosen_by_user_id: null,
+            confirmed_by_user_id: null,
+            notes: null,
+            created_at: "2026-07-04T10:00:00Z",
+            updated_at: "2026-07-04T10:00:00Z"
+          }
+        ]}
+        meetingSession={meetingSession}
+        processId={processSummary.process_id}
+        readiness="ready"
+        requirements={positions}
+        selectedSlotId={positions[0].id}
+        selectionBlocked={false}
+        summary={teacherSummary}
+      />
+    );
+    expect(duplicate).toContain(
+      'data-slot-disabled-reason="duplicate_activity_position"'
+    );
+    expect(duplicate).toContain("You already hold a position of this activity.");
   });
 
   it("renders prompt-style starter views for process and version routes", () => {
@@ -250,6 +663,13 @@ describe("default reparto UI", () => {
     expect(versions).toContain('data-reparto-action="create-version"');
     expect(versions).toContain('data-reparto-action="compare-versions"');
     expect(versions).toContain('data-reparto-panel="comparison"');
+    // No capture yet is not "no changes": the panel says nothing was compared
+    // and the compare control says why it cannot be pressed.
+    expect(versions).toContain('data-reparto-comparison-state="none"');
+    expect(versions).toContain('data-disabled-reason="not_enough_versions"');
+    expect(versions).toContain("No version has been captured yet.");
+    // A process with no source process cannot be diffed against last year.
+    expect(versions).toContain('data-disabled-reason="no_previous_year"');
     expect(
       renderToStaticMarkup(<ProcessListView count={1} processes={[process]} />)
     ).toContain('data-process-status="draft"');
@@ -262,38 +682,283 @@ describe("default reparto UI", () => {
         versions={[version, { ...version, version_number: 2 }]}
       />
     );
-    expect(versions).toContain("teachers, assignments");
-    expect(versions).toContain('data-reparto-slot="required-hours-delta"');
+    // All nine §10.3 dimensions are listed, changed or not: "did the
+    // allocation move?" needs an answer of "no", not an absent row.
+    for (const dimension of [
+      "allocation",
+      "group_hours",
+      "teacher_load",
+      "subject_category",
+      "activity",
+      "group_link",
+      "teacher_position_count",
+      "participant_target",
+      "requirement_generation"
+    ]) {
+      expect(versions).toContain(`data-reparto-dimension="${dimension}"`);
+    }
+    expect(versions).toContain('data-reparto-comparison-state="changed"');
+    expect(versions).toContain("6 of 9 comparison dimensions changed.");
+    // The service's own canonical strings, with only the positive sign added.
+    expect(versions).toContain("-4.00 h");
+    expect(versions).toContain("+12.50 h");
+    expect(versions).toContain('data-reparto-delta-sign="negative"');
+    expect(versions).toContain('data-reparto-delta-sign="zero"');
+    // A set change with a zero count is still a change: the flag decides.
+    expect(versions).toContain(
+      '<li class="rounded-md border border-border/70 bg-muted/20 px-3 py-2" data-reparto-dimension="activity" data-reparto-dimension-changed="true"'
+    );
+    // The `teachers` snapshot section is process participants, never the
+    // roster (freeze §5.4), and it is labelled as such.
+    expect(versions).toContain('data-reparto-section="teachers"');
+    expect(versions).toContain("Process participants");
+    // The retired float axes are gone from the panel with their contract.
+    expect(versions).not.toContain('data-reparto-slot="required-hours-delta"');
+    expect(versions).not.toContain('data-reparto-slot="assigned-hours-delta"');
 
+    // No allocation on one side is "not comparable", never a zero.
+    const notComparable = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{ ...comparison, allocation_delta: null }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(notComparable).toContain('data-reparto-delta-sign="none"');
+    expect(notComparable).toContain("Not comparable");
+
+    // Every dimension unchanged while sections still differ is its own state:
+    // saying "No changes" there would be false.
+    const sectionsOnly = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{
+          ...comparison,
+          allocation_changed: false,
+          group_hours_changed: false,
+          activity_added_or_removed: false,
+          group_link_added_or_removed: false,
+          participant_target_changed: false,
+          requirement_generation_changed: false
+        }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(sectionsOnly).toContain('data-reparto-comparison-state="sections_only"');
+    expect(sectionsOnly).toContain('data-reparto-slot="other-changes"');
+    expect(sectionsOnly).not.toContain("No changes");
+
+    const identical = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{
+          ...comparison,
+          changed_sections: [],
+          allocation_changed: false,
+          group_hours_changed: false,
+          activity_added_or_removed: false,
+          group_link_added_or_removed: false,
+          participant_target_changed: false,
+          requirement_generation_changed: false
+        }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(identical).toContain('data-reparto-comparison-state="identical"');
+    expect(identical).toContain("No changes");
+
+    // A section the service adds later is reported as its own code rather
+    // than dropped from the list.
+    const unknownSection = renderToStaticMarkup(
+      <RepartoVersionsView
+        comparison={{ ...comparison, changed_sections: ["something_new"] }}
+        versions={[version, { ...version, version_number: 2 }]}
+      />
+    );
+    expect(unknownSection).toContain('data-reparto-section="something_new"');
+    expect(unknownSection).toContain("something_new");
+
+    // The same panel renders the previous-year diff, and says which it is.
+    // Rendered through the presentational view: the source and the
+    // previous-year availability are the container's state, not props of the
+    // island root.
+    const previousYear = renderToStaticMarkup(
+      <VersionsView
+        comparison={comparison}
+        comparisonSource="previous_year"
+        previousYearAvailable
+        versions={[version]}
+      />
+    );
+    expect(previousYear).toContain('data-reparto-comparison-source="previous_year"');
+    expect(previousYear).toContain("Previous academic year");
+    expect(previousYear).toContain('data-reparto-action="compare-previous-year"');
+
+    // Two versions selected, but the same one twice: refused here rather than
+    // answered with "every flag false".
+    const sameVersion = renderToStaticMarkup(
+      <VersionsView
+        selection={{ left: version.id, right: version.id }}
+        versions={[version, { ...version, id: "12121212-1212-4121-8121-121212121212", version_number: 2 }]}
+      />
+    );
+    expect(sameVersion).toContain('data-disabled-reason="same_version"');
+
+    // The export center is three families, not one menu: planning artifacts,
+    // stored documents, and the strict final export that archives the process.
     const exports = renderToStaticMarkup(
-      <RepartoExportCenterView
-        exports={[backupExport]}
+      <ExportCenterView
+        artifacts={[backupExport]}
+        assignmentValidations={{
+          assignment_process_id: processSummary.process_id,
+          is_final_ready: false,
+          blocking_count: 2,
+          warning_count: 0,
+          messages: []
+        }}
+        plan={exportPlan}
+        planValidations={{
+          teaching_plan_id: exportPlan.id,
+          assignment_process_id: processSummary.process_id,
+          is_assignment_ready: false,
+          blocking_count: 2,
+          warning_count: 0,
+          messages: []
+        }}
         processId={processSummary.process_id}
         processStatus="final"
-        summary={{ ...processSummary, blocking_validation_count: 1 }}
       />
     );
     expect(exports).toContain('data-reparto-route="exports"');
+    expect(exports).toContain('data-reparto-panel="planning-exports"');
     expect(exports).toContain('data-reparto-panel="export-center"');
+    expect(exports).toContain('data-reparto-panel="final-close"');
     expect(exports).toContain('data-reparto-action="create-final-export"');
-    expect(exports).toContain('data-reparto-action="restore-draft"');
     expect(exports).toContain('data-reparto-action="reopen-final"');
     expect(exports).toContain('data-reparto-active="true"');
+    // §3.10: the open modes stay open under a blocking finding; only the final
+    // planning artifact is refused, and with a stable reason.
+    expect(exports).toContain('data-planning-export-mode="draft"');
+    expect(exports).toContain('data-planning-export-blocked="false"');
+    expect(exports).toContain('data-disabled-reason="blocking_validations"');
+    // §20.25: the feasibility status is on the face of the document offer.
+    expect(exports).toContain('data-feasibility-status="not_evaluated"');
+    expect(exports).toContain("NOT EVALUATED");
+    // Every refusal of the final export is listed, not only the first.
+    expect(exports).toContain('data-final-export-allowed="false"');
+    expect(exports).toContain('data-final-blocked-reason="assignment_blocking"');
+    expect(exports).toContain(
+      'data-final-blocked-reason="feasibility_not_confirmed"'
+    );
+    expect(exports).toContain('data-export-artifact-type="backup"');
+    expect(exports).toContain('data-reparto-action="restore-draft"');
+    expect(exports).toContain(
+      'data-reparto-backup-id="99999999-9999-4999-8999-999999999999"'
+    );
+    expect(exports).toContain('data-restore-blocked-reason="process_not_draft"');
 
-    const defaultExports = renderToStaticMarkup(<RepartoExportCenterView exports={[]} />);
+    const importAndRestore = renderToStaticMarkup(
+      <ExportCenterView
+        artifacts={[backupExport]}
+        plan={exportPlan}
+        planningImportContent={JSON.stringify({
+          activities: [
+            {
+              subject_id: "12121212-1212-4121-8121-121212121212",
+              group_weekly_hours_per_group: "2.00",
+              teacher_weekly_hours_per_position: "3.00"
+            }
+          ]
+        })}
+        planningImportResult={{
+          imported_count: 1,
+          imported_activity_ids: ["13131313-1313-4131-8131-131313131313"],
+          balance: planBalance,
+          validations: {
+            teaching_plan_id: planBalance.teaching_plan_id,
+            assignment_process_id: planBalance.assignment_process_id,
+            is_assignment_ready: false,
+            blocking_count: 1,
+            warning_count: 0,
+            messages: [
+              {
+                severity: "blocking",
+                code: "plan.reconciliation_required",
+                message: "Reconciliation is required.",
+                entity_type: "teaching_plan",
+                entity_id: planBalance.teaching_plan_id
+              }
+            ]
+          }
+        }}
+        processStatus="draft"
+        restoreConfirming
+      />
+    );
+    expect(importAndRestore).toContain('data-reparto-panel="planning-import"');
+    expect(importAndRestore).toContain('data-reparto-action="import-planning"');
+    expect(importAndRestore).toContain('data-import-exact="false"');
+    expect(importAndRestore).toContain(
+      'data-reparto-validation-code="plan.reconciliation_required"'
+    );
+    expect(importAndRestore).toContain('data-reparto-dialog="restore-confirmation"');
+    expect(importAndRestore).toContain('data-reparto-action="confirm-restore"');
+    expect(importAndRestore).toContain('data-reparto-field="restore-assignments"');
+
+    const invalidImport = renderToStaticMarkup(
+      <ExportCenterView planningImportContent="{" />
+    );
+    expect(invalidImport).toContain('data-planning-import-error="invalid_json"');
+
+    const defaultExports = renderToStaticMarkup(<ExportCenterView artifacts={[]} />);
     expect(defaultExports).toContain('data-reparto-workflow-action="none"');
-    expect(defaultExports).toContain("Final ready");
+    // No plan at all: reported as itself, never as "not evaluated".
+    expect(defaultExports).toContain('data-feasibility-status="none"');
     expect(defaultExports).toContain('data-reparto-backup-id=""');
+    expect(defaultExports).toContain('data-final-blocked-reason="plan_missing"');
+
+    // The public alias still renders the container form of the same view.
+    expect(
+      renderToStaticMarkup(<RepartoExportCenterView artifacts={[]} plan={exportPlan} />)
+    ).toContain('data-reparto-panel="planning-exports"');
 
     const returned = renderToStaticMarkup(
-      <RepartoExportCenterView exports={[]} processStatus="sent_to_school_leadership" />
+      <ExportCenterView artifacts={[]} processStatus="sent_to_school_leadership" />
     );
     expect(returned).toContain('data-reparto-workflow-action="mark-returned"');
 
     const revision = renderToStaticMarkup(
-      <RepartoExportCenterView exports={[]} processStatus="returned_by_school_leadership" />
+      <ExportCenterView artifacts={[]} processStatus="returned_by_school_leadership" />
     );
     expect(revision).toContain('data-reparto-workflow-action="start-revision"');
+
+    // A produced artifact reports both balances and the finding counts, so a
+    // provisional document shows the imbalance rather than hiding it.
+    const withArtifact = renderToStaticMarkup(
+      <ExportCenterView
+        artifacts={[]}
+        plan={exportPlan}
+        planningArtifact={{
+          mode: "provisional",
+          generated_at: "2026-08-02T10:00:00Z",
+          assignment_process_id: processSummary.process_id,
+          teaching_plan_id: exportPlan.id,
+          plan_status: "unbalanced",
+          is_exact: false,
+          is_final_exportable: false,
+          balance: planBalance,
+          validations: {
+            teaching_plan_id: exportPlan.id,
+            assignment_process_id: processSummary.process_id,
+            is_assignment_ready: false,
+            blocking_count: 1,
+            warning_count: 2,
+            messages: []
+          },
+          activities: []
+        }}
+      />
+    );
+    expect(withArtifact).toContain('data-planning-artifact-mode="provisional"');
+    expect(withArtifact).toContain('data-plan-exact="false"');
+    expect(withArtifact).toContain("1 blocking · 2 warning");
   });
 
   it("exports Phase 3 island-root names for full and headless consumers", () => {
@@ -301,19 +966,19 @@ describe("default reparto UI", () => {
       'data-reparto-route="dashboard"'
     );
     expect(renderToStaticMarkup(<RepartoMeetingView summary={processSummary} />)).toContain(
-      'data-reparto-panel="current-turn"'
+      'data-reparto-panel="meeting-turn-control"'
     );
     expect(
       renderToStaticMarkup(
         <RepartoMyView
           meetingSession={meetingSession}
           processId={processSummary.process_id}
-          requirementAssignedHours={1}
-          requirementRequiredHours={4}
+          readiness="ready"
+          selectionBlocked={false}
           summary={teacherSummary}
         />
       )
-    ).toContain('data-reparto-choice-state="ready"');
+    ).toContain('data-reparto-panel="direct-choice-workflow"');
     expect(
       renderToStaticMarkup(
         <RepartoSharedView processId={processSummary.process_id} summary={processSummary} />
@@ -322,9 +987,9 @@ describe("default reparto UI", () => {
     expect(
       renderToStaticMarkup(
         <RepartoExportsView
-          exports={[backupExport]}
+          artifacts={[backupExport]}
+          plan={exportPlan}
           processId={processSummary.process_id}
-          summary={processSummary}
         />
       )
     ).toContain('data-export-artifact-type="backup"');

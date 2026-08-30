@@ -46,6 +46,40 @@ describe("reparto query keys", () => {
       "p1",
       "exports"
     ]);
+    // A comparison hangs off the version list so one prefix invalidates both,
+    // and it carries the ordered pair: `right − left` is not symmetric, so the
+    // two orderings must not collide in the cache.
+    expect(repartoKeys.versionComparison("p1", "v1", "v2")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "comparison",
+      "v1",
+      "v2"
+    ]);
+    expect(repartoKeys.versionComparison("p1", "v1", "v2")).not.toEqual(
+      repartoKeys.versionComparison("p1", "v2", "v1")
+    );
+    expect(repartoKeys.versionComparison("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "comparison",
+      null,
+      null
+    ]);
+    expect(repartoKeys.previousYearComparison("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "versions",
+      "previous-year"
+    ]);
   });
 
   it("builds stable keys for global entity lists (Phase 1)", () => {
@@ -170,6 +204,95 @@ describe("reparto query keys", () => {
       "p1",
       "requirements"
     ]);
+    expect(repartoKeys.groupSubjects("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "group-subjects"
+    ]);
+    expect(repartoKeys.teachingPlan("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan"
+    ]);
+    expect(repartoKeys.teachingPlanSummary("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "summary"
+    ]);
+    expect(repartoKeys.teachingPlanValidations("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "validations"
+    ]);
+    // Nested under the plan so a plan-changing mutation drops the findings
+    // projection with one prefix — the backend resets feasibility on the same
+    // paths, so a stale diagnostics read must not survive either.
+    expect(repartoKeys.teachingPlanFeasibilityDiagnostics("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-diagnostics"
+    ]);
+    expect(repartoKeys.teachingPlanFeasibilityWitness("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-plan",
+      "feasibility-witness"
+    ]);
+    expect(repartoKeys.teachingActivities("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-activities"
+    ]);
+    expect(repartoKeys.teachingActivity("p1", "a1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "teaching-activities",
+      "detail",
+      "a1"
+    ]);
+    expect(repartoKeys.teachingActivity("current")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      null,
+      "teaching-activities",
+      "detail",
+      null
+    ]);
+    expect(repartoKeys.allocationRevisions("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "allocation-revisions"
+    ]);
+    expect(repartoKeys.currentAllocationRevision("p1")).toEqual([
+      "reparto",
+      "processes",
+      "detail",
+      "p1",
+      "allocation-revisions",
+      "current"
+    ]);
     expect(repartoKeys.processTeachers("p1")).toEqual([
       "reparto",
       "processes",
@@ -183,6 +306,12 @@ describe("reparto query keys", () => {
       "detail",
       "p1",
       "assignments"
+    ]);
+    // Nested under the assignment prefix so one invalidation covers the board
+    // and the findings it reads.
+    expect(repartoKeys.assignmentValidations("p1")).toEqual([
+      ...repartoKeys.assignments("p1"),
+      "validations"
     ]);
     expect(repartoKeys.auditEvents("p1")).toEqual([
       "reparto",

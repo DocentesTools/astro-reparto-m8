@@ -12,6 +12,8 @@ permissions:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
 
 jobs:
   quality:
@@ -23,28 +25,60 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "22.14.0"
+          node-version: "22.18.0"
           cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Type check
         run: npm run typecheck
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
 
+      - name: Fleet alignment gates
+        run: npm run verify:fleet-gates
+
+      # Both directions of the contract table: every operation it declares is
+      # served, and every wrapper under `src/runtime/api/` is declared. Reads
+      # the vendored `contract/served-api-surface.json`, never a sibling
+      # checkout, so it runs from a bare `npm ci` of this repository alone.
+      - name: Contract table against the served surface
+        run: npm run verify:contract-operations
+
+      - name: Registry drift
+        run: npm run verify:registry-drift
+
+      - name: Typecheck the installed registry skins
+        run: npm run verify:registry-consumer
+
+      - name: Standalone minimal-host starter routes
+        run: npm run verify:starter-routes
+
+      # The dev-only gallery renders every island root from source, so it is
+      # the gate that fails when a view's imports stop resolving. `A-C2` added
+      # it after finding the shared package's own gallery had been broken for
+      # months precisely because no job ran it.
+      - name: Build the /_preview gallery
+        run: npm run preview:build
+
       - name: Verify npm package contents
         run: npm pack --dry-run
+
+      - name: Standalone install-from-tarball smoke
+        run: npm run verify:tarball-install
 
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        node-version: ["20.19.0", "22.14.0", "24.x"]
+        node-version: ["22.18.0", "24.x"]
 
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -57,7 +91,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Run tests
         run: npm test
@@ -70,6 +104,21 @@ jobs:
           path: coverage/
           if-no-files-found: ignore
 
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == '22.18.0' && github.actor != 'dependabot[bot]' && env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ env.CODECOV_TOKEN }}
+          files: coverage/lcov.info
+          verbose: true
+
+      - name: Upload coverage to Codacy
+        if: matrix.node-version == '22.18.0' && github.actor != 'dependabot[bot]' && env.CODACY_PROJECT_TOKEN != ''
+        uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699 # v1
+        with:
+          project-token: ${{ env.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage/lcov.info
+
   security:
     runs-on: ubuntu-latest
     steps:
@@ -78,12 +127,12 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: "22.14.0"
+          node-version: "22.18.0"
           cache: "npm"
           cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Run npm audit (HIGH/CRITICAL advisories)
         run: npm audit --audit-level=high

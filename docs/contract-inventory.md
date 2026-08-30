@@ -86,6 +86,8 @@ the runtime `DepartmentCreateSchema` should treat `slug` as optional.
 | Get | `GET /{profile_id}` → `TeacherProfilePublic` | get | ✓ |
 | Patch | `PATCH /{profile_id}` → `TeacherProfilePublic` (writer role) | patch | ✓ |
 | Link user | `POST /{profile_id}/link-user` body `{user_id: uuid}` → `TeacherProfilePublic` | `POST {id}/link-user` | ✓ |
+| Issue claim code | `POST /{profile_id}/claim-code` → `201` `TeacherProfileClaimCode` (admin) | (remediation `W1.4`) | ✓ |
+| Claim | `POST /claim` body `{claim_code: str[1..64]}` → `TeacherProfilePublic` (reader floor; binds the caller's own account) | (remediation `W1.4`) | ✓ |
 | Delete | `DELETE /{profile_id}` → `TeacherProfilePublic` (writer role) | delete | ✓ |
 | Create required | `display_name: str[1..150]` | `display_name*` | ✓ |
 | Public shape | `id, display_name, user_id, active, notes, created_at, updated_at` | (n/a) | ✓ |
@@ -109,13 +111,14 @@ a free-form bool, not a status enum.
 | Transition | `POST /{process_id}/transition` body `{target_status}` | transition | ✓ |
 | Reopen | `POST /{process_id}/reopen` body `{reason: str[1..500]}` | reopen | ✓ |
 | Copy-from | `POST /{process_id}/copy-from/{source_process_id}` body `{copy_assignments: bool=false}` | (not listed) | NEW §3.1 |
-| Summary | `GET /{process_id}/summary` → `ProcessSummary` | summary | ✓ |
-| Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` | dashboard | ✓ |
-| LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (auth required) | lan/me | ✓ |
-| Events (SSE) | `GET /{process_id}/events` → `text/event-stream` `event: process.summary` | events | ✓ |
+| Summary | `GET /{process_id}/summary` → `ProcessSummary` (reader floor) — `readiness`, `plan_status`, aggregate `plan_balance`, the three live-slot counts, the three participant-state counts (`balanced_participant_count`, `pending_participant_count`, `overloaded_participant_count`, remediation `W1.6`) and `blocking_validation_count`; **names no teacher**, which is what makes it the shared-screen source | summary | ✓ |
+| Dashboard | `GET /{process_id}/dashboard` → `ProcessDashboard` — `readiness` plus a `planning` section (`teaching_plan_id`, `status`, `PlanBalance`, `PlanValidationReport`, all nullable together when no plan exists) and an always-present `assignment` section (`AssignmentSummary` + `AssignmentValidationReport`). The two sections are reported side by side and are never summed | dashboard | ✓ |
+| Shared screen source | the projected view calls **`/summary` only** — never `/dashboard` (`RBAC-07`); the aggregate carries no `display_name` and no per-participant hours | (n/a) | ✓ |
+| LAN/me | `GET /{process_id}/lan/me` → `TeacherLanSummary` (reader floor) — `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's **own** `participant` balance and `available_slots` | lan/me | ✓ |
+| Events (SSE) | `GET /{process_id}/events?audience=department_head\|teacher\|shared_screen` → bearer-authenticated `text/event-stream`; strict role projection and registered event names in §3.3 | eventsUrl + `useRepartoEventStream` | ✓ |
 | Create required | `academic_year_id, school_id, department_id` (all `uuid`) | `academic_year_id*`, `school_id*`, `department_id*` | ✓ |
 | Public shape | base + `id, closed_at, closed_by_user_id, created_by_user_id, created_at, updated_at` | (n/a) | ✓ |
-| Patch fields | `status, default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` | (n/a) | ✓ |
+| Patch fields | `default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` — the schema also declares `status` and the served `update_process` **refuses it** with `400 "Process status is owned by the transition endpoint"`, so no settings surface offers it (audit `S2-03`) | (n/a) | ✓ |
 | Delete | **not exposed** | patch/transition/reopen (no delete) | ✓ |
 
 Process status enum (`AssignmentProcessStatus`, plan §8.4):
@@ -128,8 +131,21 @@ final, reopened, archived
 
 Transition validation is owned by the backend
 (`reparto_service.services.process_lifecycle`); runtime MUST NOT re-implement
-the state machine. UI surfaces a `<Select>` of legal transitions + an inline
-reason input for `reopen`.
+the state machine.
+
+The plugin ships the patch and the reopen edge, and deliberately **not** the
+transition control (audit `S2-03` / `S2-05`, landed 2026-08-11):
+
+* `processSettings` (`/reparto/processes/[processId]/settings`) carries the five
+  patch fields above behind the `admin` write floor, sending only the fields
+  that changed. `status` is shown as state and never offered.
+* The reopen control is the `final` → `reopened` edge with its required reason,
+  and appears only while the process is frozen. `ensure_process_mutable` freezes
+  child writes for `final` **and** `archived`, but `reopen_process` accepts
+  `final` alone (`archived` is terminal), so the two are stated separately:
+  an archived process gets the explanation without the control.
+* No `transition` control exists. `create_meeting_session` sets `MEETING_OPEN`
+  itself, so a second mover here would race the meeting path.
 
 ### 2.2 Subject — `prefix=/assignment-processes/{process_id}/subjects`
 
@@ -141,12 +157,28 @@ reason input for `reopen`.
 | Patch | `PATCH /{subject_id}` → `SubjectPublic` (process writer) | patch | ✓ |
 | Delete | `DELETE /{subject_id}` → `SubjectPublic` (process writer) | delete | ✓ |
 | Create required | `name: str[1..150]` (process_id from URL) | `name*` | ✓ |
-| Public shape | `id, assignment_process_id, name, stage, notes, created_at, updated_at` | (n/a) | ✓ |
+| Create optional | `allocation_category` (default `main`), `activity_type` (default `ordinary`), `default_group_weekly_hours: float>=0 \| null`, `default_teacher_weekly_hours_per_position: float>=0 \| null`, `default_required_teacher_count: int>=1` (default 1), `allows_multiple_groups: bool` (default false), `allows_zero_groups: bool` (default false), `notes` | (n/a) | ✓ |
+| Public shape | `id, assignment_process_id, name, allocation_category, activity_type, default_group_weekly_hours, default_teacher_weekly_hours_per_position, default_required_teacher_count, allows_multiple_groups, allows_zero_groups, notes, created_at, updated_at` | (n/a) | ✓ |
 
-Notes: `stage` is a free-form `str[1..50]`, not an enum. Uniqueness
-`(process_id, name)` is DB-enforced.
+> Re-verified **2026-07-30** against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle` (`db_models/subjects.py`,
+> `app/routes/subjects.py`) for the three-stage adaptation (backend plan §5.3,
+> §3.5, §20.17).
 
-### 2.3 Teaching group (classroom) — `prefix=/…/groups`
+Notes: the two-stage `stage` column is **gone** — a runtime that still sends or
+expects it fails the strict parse. `allocation_category` is
+`main`/`secondary` (an extensible enum, never a boolean `is_main`) and
+`activity_type` is `ordinary`/`tutoring`/`co_teaching`/`support`/
+`department_level`/`other`, **descriptive only**: no behaviour may branch on it
+(plan §20.17). The `default_*` fields are *suggestions* that seed new
+`GroupSubject`/`TeachingActivity` rows; editing one never rewrites an
+already-materialized row (plan §20.14). A `null` hour default means "no
+suggestion", not zero. Hour defaults are serialized as JSON numbers today and
+become canonical two-decimal strings after the backend's `NUMERIC(8, 2)` sweep
+(plan §3.9) — the runtime reads both through `HoursSchema` and always **sends**
+the canonical string. Uniqueness `(process_id, name)` is DB-enforced.
+
+### 2.3 Teaching group — `prefix=/…/groups`
 
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
@@ -161,56 +193,95 @@ Notes: `stage` is a free-form `str[1..50]`, not an enum. Uniqueness
 Notes: `label` is the human-readable name (e.g. "1 ESO A") and is unique per
 process. UI auto-suggest label from `stage`/`grade`/`group_code`.
 
-### 2.4 Hour requirement — `prefix=/…/requirements`
+### 2.4 Requirement slot — `prefix=/…/requirements`
 
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `HourRequirementsPublic` | list | ✓ |
-| Create | `POST /` → `201` `HourRequirementPublic` (process writer) | create | ✓ |
 | Get | `GET /{requirement_id}` → `HourRequirementPublic` | get | ✓ |
-| Patch | `PATCH /{requirement_id}` → `HourRequirementPublic` (process writer) | patch | ✓ |
-| Delete | `DELETE /{requirement_id}` → `HourRequirementPublic` (process writer) | delete | ✓ |
-| Create required | `teaching_group_id`, `subject_id`, `required_hours: float>0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Generate preview/apply | `POST /generation-preview`, `POST /generate` | three-stage §7.5 | ✓ |
+| Reconcile preview/apply | `POST /reconciliation-preview`, `POST /reconcile` | three-stage §7.5/§9 | ✓ |
+| Manual create/patch/delete | removed; generated slots are read-only | three-stage §5.9/§20.12 | ✓ |
+| Public shape | `teaching_activity_id`, zero-based `position_index`, canonical `required_teacher_hours`, lifecycle `status`, generation lineage, timestamps | three-stage §5.9/§20.8 | ✓ |
 
-Notes: `requirement_type` enum values: `ordinary, reinforcement, split_group,
-optional, bilingual, other`. `flags` is a free-form comma-separated string.
+Notes: one requirement is one complete, indivisible teacher-position slot.
+`status` is `available`, `assigned`, `stale`, or `reconciliation_required`.
+Identity and hours are changed only through deterministic generation or explicit,
+reasoned reconciliation; the client exposes no manual mutation wrapper or hook.
 
 ### 2.5 Process teacher (participant) — `prefix=/…/teachers`
+
+Re-verified 2026-08-02 against `reparto-docente-m8`
+`reparto_service/app/routes/process_teachers.py` and
+`db_models/process_teachers.py` on branch
+`feat/reparto-three-stage-enums-lifecycle`.
 
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `ProcessTeachersPublic` | list | ✓ |
-| Create | `POST /` → `201` `ProcessTeacherPublic` (process writer) | create | ✓ |
+| Create | `POST /` → `201` `ProcessTeacherPublic` (admin) | create | ✓ |
 | Get | `GET /{process_teacher_id}` → `ProcessTeacherPublic` | get | ✓ |
-| Patch | `PATCH /{process_teacher_id}` → `ProcessTeacherPublic` (process writer) | patch | ✓ |
-| Delete | `DELETE /{process_teacher_id}` → `ProcessTeacherPublic` (process writer) | delete | ✓ |
-| Create required | `teacher_profile_id: uuid`, `available_hours: float≥0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Patch | `PATCH /{process_teacher_id}` → `ProcessTeacherPublic` (admin) — **no `extra_weekly_hours`** | patch | ✓ |
+| Extra hours | `POST /{process_teacher_id}/extra-hours` body `{extra_weekly_hours, reason}` → `ProcessTeacherPublic` (admin) | three-stage §3.8/§7.6 | ✓ |
+| Delete | `DELETE /{process_teacher_id}` → `ProcessTeacherPublic` (admin) | delete | ✓ |
+| Create required | `teacher_profile_id: uuid`, `base_weekly_hours: float≥0` | three-stage §3.8 | ✓ |
+| Public shape | base + `id, target_weekly_hours, is_overloaded, extra_hours_reason, extra_hours_updated_by_user_id, extra_hours_updated_at, created_at, updated_at` | three-stage §5.8 | ✓ |
 
-Notes: `status` enum: `active | inactive`. Uniqueness
+Notes: a participant has an exact **target**, not an available capacity:
+`target_weekly_hours = base_weekly_hours + extra_weekly_hours`, and both
+computed fields are serialized by the service — the client reads them and never
+recomputes the sum. `is_overloaded` is `extra_weekly_hours > 0`; it does **not**
+mean assigned hours exceed the target, which the assignment gates prevent
+outright (there is no override anywhere in the contract).
+
+`extra_weekly_hours` is absent from `ProcessTeacherUpdate` on both sides:
+authorized overload carries a mandatory reason and an audit event, so the
+`/extra-hours` action is the only path, in either direction (withdrawing is the
+same action with `0`). It **is** present on `ProcessTeacherCreate`, because the
+backend's create schema carries the whole base field set; the default UI does
+not offer it there, so a participant is created at their contractual base.
+
+`status` enum: `active | inactive`. Uniqueness
 `(process_id, teacher_profile_id)` is DB-enforced — UI surfaces a clear
 "already a participant" error message on collision.
 
 ### 2.6 Assignment — `prefix=/…/assignments`
 
+Re-verified 2026-08-02 against `reparto-docente-m8`
+`reparto_service/app/routes/assignments.py`,
+`controllers/assignments.py` and `db_models/assignments.py` on branch
+`feat/auth-role-superuser-consistency`.
+
 | Aspect | Verified value | Plan §2 | Match? |
 | --- | --- | --- | --- |
 | List | `GET /` → `AssignmentsPublic` | list | ✓ |
-| Create | `POST /` → `201` `AssignmentPublic` (process writer) | create | ✓ |
-| Direct choice | `POST /direct-choice` body `AssignmentDirectChoice` → `AssignmentPublic` (auth) | direct-choice | ✓ |
+| Create | `POST /` → `201` `AssignmentPublic` (admin) | create | ✓ |
+| Direct choice | `POST /direct-choice` body `AssignmentDirectChoice` → `201` `AssignmentPublic` (writer, own participation) | direct-choice | ✓ |
+| Validations | `GET /validations` → `AssignmentValidationReport` | three-stage §6.3/§6.4 | ✓ |
 | Get | `GET /{assignment_id}` → `AssignmentPublic` | get | ✓ |
-| Patch | `PATCH /{assignment_id}` → `AssignmentPublic` (process writer) | patch | ✓ (Phase 1) |
-| Delete | `DELETE /{assignment_id}` → `AssignmentPublic` (process writer) | delete | ✓ (Phase 1) |
-| Create required | `hour_requirement_id, process_teacher_id, assigned_hours: float>0` | matches plan | ✓ |
-| Public shape | base + `id, created_at, updated_at` | (n/a) | ✓ |
+| Patch | `PATCH /{assignment_id}` → `AssignmentPublic` (admin) — **notes only** | patch | ✓ |
+| Undo | `POST /{assignment_id}/undo` body `{reason}` → `AssignmentPublic` (admin) | three-stage §20.13 | ✓ |
+| Reassign | `POST /{assignment_id}/reassign` body `{process_teacher_id, reason, notes?}` → `201` `AssignmentPublic` (admin) | three-stage §20.13 | ✓ |
+| Delete | hidden, deprecated compatibility alias for `undo` and still reason-required; **no client wrapper** | three-stage §20.13 | ✓ |
+| Create required | `hour_requirement_id, process_teacher_id` | matches plan | ✓ |
+| Public shape | `id, assignment_process_id, hour_requirement_id, teaching_activity_id, process_teacher_id, source, status, chosen_by_user_id, confirmed_by_user_id, notes, created_at, updated_at` | three-stage §5.10/§20.9 | ✓ |
 
-Notes: `assignment_type` enum: `main, shared, reinforcement, split_group,
-other`. `source` enum: `department_head, teacher_direct,
-imported_from_previous_year, system_copy`. `status` enum: `draft, confirmed,
-overridden, cancelled`. `override_reason` is **required** when the sum of
-assignments for a requirement would exceed `required_hours` (backend
-validates).
+Notes: an assignment is one teacher occupying **one complete, indivisible
+requirement slot in full**, so it carries no hours of its own — the hours are
+the slot's `required_teacher_hours`. `source` enum: `department_head,
+teacher_direct, imported_from_previous_year, system_copy`. `status` enum:
+`active | cancelled`. `teaching_activity_id` is denormalised from the
+requirement by the service (composite FK), never accepted from the client.
+
+Service-enforced rules the client mirrors as pre-filters but never replaces:
+one `ACTIVE` assignment per slot; a teacher never holds two `ACTIVE` positions
+of the same activity (plan §3.7); the whole slot must fit the participant's
+`target_weekly_hours` — an overload is authorized in advance through
+`extra_weekly_hours`, never overridden at assignment time (plan §3.8);
+assignment operations are refused while the plan is `STALE` or
+`RECONCILIATION_REQUIRED`. Retired (`assigned_hours`, `assignment_type`,
+`override_reason`, `overridden_by_user_id`, and the `draft`/`confirmed`/
+`overridden` statuses): see the freeze §12 amendment table.
 
 ### 2.7 Meeting session — `prefix=/…/meeting-sessions`
 
@@ -257,6 +328,326 @@ skipped, overridden`.
 Notes: list-only by design (plan §8.14, post-MVP writer). UI must show
 read-only rows with no row actions.
 
+### 2.10 Allocation revision — `prefix=/…/allocation-revisions`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.1,
+> §3.11, §7.1, §20.16). Verified against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`:
+> `app/routes/department_hour_allocation_revisions.py`,
+> `controllers/department_hour_allocation_revisions.py`,
+> `db_models/department_hour_allocation_revisions.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| List | `GET /` → `DepartmentHourAllocationRevisionsPublic` (oldest revision first) |
+| Current | `GET /current` → `DepartmentHourAllocationRevisionPublic`, **404** when the process has no allocation yet |
+| Create | `POST /` → `201` `DepartmentHourAllocationRevisionPublic` (process writer) |
+| Patch / delete | **not exposed** — revisions are immutable |
+| Create required | `allocated_group_weekly_hours: float>0`, `reason: str[1..500]` |
+| Create optional | `source` (default `manual_transcription`), `source_reference: str[..500]`, `received_at: datetime` |
+| Public shape | create fields + `id, assignment_process_id, revision_number, created_by_user_id, superseded_at, created_at, updated_at` |
+
+Notes: `source` enum: `manual_transcription, file_import, copied_draft,
+other`. Exactly one revision per process is current (`superseded_at is
+null`); creating one supersedes the previous revision transactionally,
+increments the per-process `revision_number` and records an
+`allocation.revised` audit event, so the reason is mandatory. A `final` or
+`archived` process must be reopened before its allocation can change
+(`400` otherwise). `allocated_group_weekly_hours` is serialized as a JSON
+number today and becomes a canonical two-decimal string when the backend's
+`NUMERIC(8, 2)` column sweep lands (backend plan §3.9) — the runtime reads
+both through `HoursSchema` and always **sends** the canonical string.
+
+### 2.11 Group subject — `prefix=/…/group-subjects`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.5, §7.2,
+> §20.14). Verified against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`: `app/routes/group_subjects.py`,
+> `controllers/group_subjects.py`, `db_models/group_subjects.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| List | `GET /` → `GroupSubjectsPublic` |
+| Create | `POST /` → `201` `GroupSubjectPublic` (process writer) |
+| Get | `GET /{group_subject_id}` → `GroupSubjectPublic` |
+| Patch | `PATCH /{group_subject_id}` → `GroupSubjectPublic` (process writer) |
+| Retire | `POST /{group_subject_id}/retire` → `GroupSubjectPublic` (admin) — **there is no `DELETE`** |
+| Bulk preview | `POST /bulk-preview` → `GroupSubjectBulkPreview` (process writer, dry run) |
+| Bulk apply | `POST /bulk-apply` → `GroupSubjectBulkResult` (process writer) |
+| Sync preview | `POST /{group_subject_id}/sync-preview` → `MainActivitySyncPreview` (admin) |
+| Sync apply | `POST /{group_subject_id}/sync-apply` → `MainActivitySyncResult` (admin) |
+| Create required | `assignment_process_id` (must equal the URL id), `teaching_group_id`, `subject_id` |
+| Create optional | `group_weekly_hours: float>=0 \| null`, `teacher_weekly_hours_per_position: float>=0 \| null`, `required_teacher_count: int>=1` (default 1), `active: bool` (default true), `notes` |
+| Patch fields | the create-optional set only — `teaching_group_id`/`subject_id` are immutable identity |
+| Public shape | create fields + `id, created_at, updated_at` |
+
+Notes: uniqueness `(assignment_process_id, teaching_group_id, subject_id)` is
+DB-enforced (`400` on violation). A cross-process group or subject reference is
+`404`; a payload `assignment_process_id` that disagrees with the URL is `400`; a
+`final`/`archived` process is `400`. A `null` hour **inherits the subject
+default** — it is not zero, and the two must never be collapsed in a form.
+
+Retirement (corrected **2026-08-11**, audit `S2-09`): the row is never removed;
+`retire` clears `active`, which is also why `PATCH` answers `409` on an
+`active: false` patch — a boolean would be a second, quieter way out of the
+plan. `409` when the process is not `draft`, when the cell is already retired,
+or while a live downstream activity still points at it. The plugin previously
+declared `DELETE /{group_subject_id}` here; the served backend supports
+`GET, PATCH` only on that path and answers `405`.
+
+Bulk request body (shared by both bulk routes): `subject_id`, `mode`
+(`create_missing`/`update_existing`/`upsert`), the optional selection filters
+`stage: str \| null`, `minimum_grade: int>0 \| null`, `maximum_grade: int>0 \|
+null`, and the optional set values `group_weekly_hours`,
+`teacher_weekly_hours_per_position`, `required_teacher_count`. The set values
+follow **`model_fields_set` semantics**: a field that is *absent* is not applied
+(an update leaves it untouched, a create falls back to the default — `NULL`
+hours, count 1), while an explicit `null` hour clears an override. Send
+`required_teacher_count` only as a positive integer: the column is `NOT NULL`
+and an explicit `null` would be applied verbatim.
+
+`bulk-apply` additionally requires `expected_affected_count`, the count the
+matching `bulk-preview` returned. Apply recomputes the plan and answers **409**
+when it no longer matches (a changed selection can never be applied blindly),
+**400** when `validation_errors` is non-empty (`minimum_grade` above
+`maximum_grade` is the current case), and commits everything in one transaction
+with a single `group_subject.bulk_applied` audit event.
+
+Preview shape: `mode`, `subject_id`, `matched_group_ids`, `to_create`,
+`to_update`, `unchanged` (each a change row of `teaching_group_id`,
+`group_subject_id` — `null` for a row that does not exist yet — plus the three
+resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
+`update_existing` cannot satisfy), `validation_errors` and
+`expected_affected_count` (`len(to_create) + len(to_update)`). Result shape:
+`created_count`, `updated_count`, `data` (the affected cells), `count`.
+
+Frontend coverage: `useRepartoGroupSubjects`,
+`useCreateRepartoGroupSubject`, `useUpdateRepartoGroupSubject`,
+`usePreviewRepartoGroupSubjects` and `useApplyRepartoGroupSubjects` isolate the
+HTTP calls and cache invalidation; all four writes invalidate exactly the matrix
+prefix. `RepartoGroupSubjectsView` is the route they are reachable from —
+without it the matrix stays empty and Stage 2 has no input.
+`GroupSubjectBulkEditor` owns the default UI
+surface: it maps blank hour inputs to explicit `null`, canonicalizes typed zero
+to `"0.00"`, renders every preview outcome in a table, disables apply before a
+valid preview, requires a separate confirmation and discards the preview on
+409.
+
+**Main-activity source sync (§20.10).** Editing a cell that a `MAIN_GENERATED`
+activity was materialized from never rewrites that activity: the service marks
+it `sync_state = "out_of_sync"`, blocks plan validation, and waits for an
+explicit apply. `sync-preview` is a `POST` that changes nothing — it resolves
+and fingerprints live state, so it is deliberately not a cacheable `GET` — and
+answers **409** when the cell has no live `main_generated` activity. Its shape
+is `group_subject_id`, `teaching_activity_id`, `sync_state`, `source_active`,
+`source_values`/`current_values` (the three planning values on both sides),
+`differences` (per field, both values), `assignment_impact`
+(`active_assignment_count`, `affected_assignment_count`,
+`affected_requirement_ids`, `requires_reconciliation`), `retirement_required`,
+`is_noop` and the 64-character `preview_fingerprint`.
+
+`sync-apply` echoes that fingerprint as `expected_preview_fingerprint` and
+answers **409** both when the token is stale *and* when the source cell has been
+retired — the latter belongs to the guarded activity-retirement flow, so the UI
+must not offer an apply for it. Its result carries the updated `activity`, the
+`applied_differences`, the same `assignment_impact`, the committed
+`teaching_plan_status` and `was_noop`. Assigned slots that a sync disturbs are
+routed to the reconciliation lifecycle, not rewritten in place.
+
+Frontend coverage: `usePreviewRepartoActivitySync` and
+`useApplyRepartoActivitySync` isolate the pair — preview is a mutation, not a
+query, because a cached fingerprint is a stale one. `runtime/ui/activitySync.ts`
+owns the framework-neutral state (`listOutOfSyncActivities` reads the service's
+own `sync_state` and never compares values in the browser;
+`buildActivitySyncPreviewState` decides applicable/blocked/idle). The default UI
+is `MainActivitySyncPanel` (`data-reparto-component="activity-sync"`,
+department-head tier only), and the materialization table gains `out_of_sync` as
+its own row state.
+
+### 2.12 Teaching plan — `prefix=/…/teaching-plan`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.2,
+> §6.1, §6.3, §7.3, §20.1). Verified against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`: `app/routes/teaching_plans.py`,
+> `controllers/teaching_plans.py`, `db_models/teaching_plans.py`,
+> `schemas/planning.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| Get | `GET ""` → `TeachingPlanPublic`; **404** while the process has no plan |
+| Create | `POST ""` → `201` `TeachingPlanPublic` (process writer); no request body; **409** when a plan already exists |
+| Summary | `GET /summary` → `PlanBalance` |
+| Validations | `GET /validations` → `PlanValidationReport` |
+| Lock | `POST /lock` → `TeachingPlanPublic` (admin); no request body; requires a balanced plan and a matching current feasible witness |
+| Unlock | `POST /unlock` → `TeachingPlanPublic` (admin); no request body; **409 for any status other than `locked`** — a locked pre-generation plan only |
+| Materialize main | `POST /materialize-main` → `MainMaterializationResult` (process writer); no request body; idempotent |
+| Feasibility evaluate | `POST /feasibility/evaluate` → `FeasibilityEvaluationPublic` (admin); no request body; runs the solver on the intended next requirement generation |
+| Feasibility diagnostics | `GET /feasibility/diagnostics` → `FeasibilityDiagnosticsPublic` (admin); **409** when no current fingerprint- and generation-matching evaluation exists |
+| Feasibility witness | `GET /feasibility/witness` → `FeasibilityWitnessPublic` (admin); **409** when the witness is missing, stale, solver-incompatible or generation-mismatched |
+| Patch / delete | **not exposed** |
+| Public shape | `id, assignment_process_id, allocation_revision_id, status, current_generation_number, locked_at, locked_by_user_id, requirements_generated_at, stale_reason, feasibility_status, feasibility_generation, feasibility_checked_at, feasibility_input_fingerprint, feasibility_solver_version, feasibility_diagnostics_ref, created_at, updated_at` |
+
+Plan status values: `draft, unbalanced, balanced, locked,
+requirements_generated, stale, reconciliation_required`. Feasibility is an
+independent axis: `not_evaluated, feasible, infeasible, unknown`. The restricted
+solver witness is absent from every common, teacher, shared-screen, SSE, audit,
+snapshot and export contract. Only the administrator assignment board reads the
+dedicated witness endpoint; it reduces the mapping to safe/unsafe/unavailable
+option verdicts and never renders the provisional reparto.
+
+`FeasibilityEvaluationPublic` carries `feasibility_status`,
+`feasibility_generation`, `feasibility_checked_at`,
+`feasibility_input_fingerprint` and `feasibility_solver_version`.
+
+`FeasibilityDiagnosticsPublic` carries `teaching_plan_id`,
+`assignment_process_id`, `status`, `checked_at` and `diagnostics` — a list of
+`{code, message, related_ids}`. The seven stable codes are
+`incompatible_residual_totals`, `slot_exceeds_every_target`,
+`distinct_teacher_shortfall`, `unsatisfiable_targets`,
+`instance_size_limit`, `step_limit`, `time_limit`. A `FEASIBLE` evaluation
+returns an empty list. `related_ids` may contain deterministic prospective ids
+(uuid5) that are unresolvable client-side — counted, never printed.
+
+This resource is also where the dashboard and meeting-control invariant row
+reads its third invariant (backend plan §20.19 8/8.7, §20.20). `ProcessDashboard`
+and `ProcessSummary` carry `readiness` and no feasibility field — by design,
+since those payloads also feed the LAN and shared-screen tiers, which §20.25
+limits to ready / not ready / recalculation required. So the department-head
+views read `feasibility_status` from this admin-only plan resource and pass it to
+`ProcessInvariantRow`; a caller that passes nothing (the teacher panel, the
+projected screen, or a head whose plan request has not answered — including the
+`404` above) renders the readiness projection instead, marked
+`data-reparto-invariant-source="readiness"`.
+
+`PlanBalance` contains `teaching_plan_id`, `assignment_process_id`, `group`,
+`teacher`, and `is_exact`. The group axis is
+`total_group_load, allocated_group_weekly_hours, allocation_difference,
+is_balanced`; its target and difference are `null` until an allocation exists.
+The teacher axis is `total_teacher_load, participant_target_total,
+teacher_load_difference, is_balanced`. Computed hours are canonical
+two-decimal strings and differences are signed; the two axes must never be
+summed or collapsed.
+
+`PlanValidationReport` contains `is_assignment_ready`, non-negative
+`blocking_count` / `warning_count`, and messages of `severity, code, message,
+entity_type, entity_id`. `code` is the stable machine key. Reading validations
+does not trigger the feasibility solver.
+
+The frontend wraps the feasibility operations: `evaluateFeasibility`
+(`POST /feasibility/evaluate`) and `feasibilityDiagnostics`
+(`GET /feasibility/diagnostics`), plus the administrator-only
+`feasibilityWitness` (`GET /feasibility/witness`) used for bounded safe-choice
+prefiltering, in `src/runtime/api/teachingPlans.ts`. The client disables only
+choices that fail its conservative exact-total/largest-slot guards; non-witness alternatives remain
+subject to the service's authoritative bounded repair.
+The diagnostics panel renders the department-head-only report through
+`FeasibilityDiagnosticsPanel`.
+
+### 2.13 Teaching activity — `prefix=/…/teaching-activities`
+
+> Added **2026-07-30** for the three-stage adaptation (backend plan §5.6,
+> §5.7, §7.4, §20.9–§20.11). Verified against
+> `reparto-docente-m8` branch `feat/reparto-three-stage-enums-lifecycle`:
+> `app/routes/teaching_activities.py`, `controllers/teaching_activities.py`,
+> `db_models/teaching_activities.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| List | `GET /` → `TeachingActivitiesPublic` |
+| Create | `POST /` → `201` `TeachingActivityPublic` (process writer) |
+| Get | `GET /{activity_id}` → `TeachingActivityPublic` |
+| Patch | `PATCH /{activity_id}` → `TeachingActivityPublic` (process writer) |
+| Retire | `POST /{activity_id}/retire` → `TeachingActivityPublic` (admin; retirement/downstream rules remain backend-authoritative) — **there is no `DELETE`** |
+| Create required | `subject_id`, `group_weekly_hours_per_group: float>=0`, `teacher_weekly_hours_per_position: float>=0` |
+| Create optional | `allocation_category` (default `secondary`), `activity_type` (default `ordinary`), `required_teacher_count: int>=1` (default 1), `notes`, `source` (only `secondary_manual` accepted), `group_subject_ids` (default empty) |
+| Patch fields | `allocation_category, activity_type, group_weekly_hours_per_group, teacher_weekly_hours_per_position, required_teacher_count, notes, group_subject_ids` |
+| Immutable identity | `subject_id, source, source_group_subject_id, teaching_plan_id` |
+| Public shape | create values + `id, teaching_plan_id, source_group_subject_id, sync_state, retired_at, linked_group_count, created_at, updated_at` |
+
+Source values: `main_generated, secondary_manual,
+copied_from_previous_year, imported`. Sync values: `in_sync, out_of_sync`.
+Retirement is represented by nullable `retired_at`, not a second generic status
+enum, and is reached only through `POST /{activity_id}/retire` (corrected
+**2026-08-11**, audit `S2-08`): the row survives, live unassigned slots force a
+stale regeneration and live assigned slots force explicit reconciliation.
+`409` when the activity is already retired, or when it has no generated
+requirements and its plan is locked — unlock first. The plugin previously
+declared `DELETE /{activity_id}` here; the served backend supports `GET, PATCH`
+only on that path and answered `405` to the editor's own delete control. A main activity may carry `source_group_subject_id`; manual activities do
+not. `group_subject_ids` is the complete unique link set and
+`linked_group_count` must equal its length. Every link must belong to the
+process and activity subject; subject flags decide whether zero or multiple
+groups are allowed.
+
+Activity entity hours are JSON numbers until the backend decimal-column sweep,
+then canonical strings. `HoursSchema` accepts both on read and always normalizes
+to a canonical string; create/update wrappers always send the exact canonical
+string and reject a third decimal place rather than round user input.
+
+### 2.14 Requirement generation — `prefix=/…/requirements`
+
+> Added **2026-07-30** for the §13.2 plan-lock/generation workflow. Verified
+> against `reparto-docente-m8` branch
+> `feat/reparto-three-stage-enums-lifecycle`:
+> `app/routes/hour_requirements.py`,
+> `controllers/hour_requirements.py`, and
+> `db_models/hour_requirements.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| Preview | `POST /generation-preview` → `RequirementGenerationPreview`; dry-run, no request body |
+| Apply | `POST /generate` → `RequirementGenerationResult`; no request body |
+| Generatable status | `locked` or `stale`; other plan states return 400 |
+| Conflict | Preview sets `requires_reconciliation`; apply refuses an assigned-slot change with 409 |
+| Preview shape | `next_generation_number`, `to_create`, create/preserve/retire/conflict ids and counts, `requires_reconciliation`, `is_noop` |
+| Apply shape | `generation_number`, `created`, created/preserved/retired counts, complete live `data`, authoritative live `count` |
+
+A planned slot is `(teaching_activity_id, position_index,
+required_teacher_hours)`. Applied rows additionally carry stable row identity,
+process/activity ids, status, generation lineage, supersession identity and
+timestamps. Hour fields accept the backend's current JSON numbers and future
+decimal strings, then normalize to canonical two-place strings.
+
+The live contract now exposes `POST /teaching-plan/lock`. The frontend shows
+the service validation report first, requires a focused confirmation, and then
+uses the returned `TeachingPlanPublic` as the authoritative lock result. The
+backend still rejects a stale or non-feasible witness, and generation remains
+disabled until the service reports `locked` or `stale`.
+
+The live contract also exposes `POST /teaching-plan/unlock`, which the plugin
+declared nowhere until 2026-08-11 (audit `S2-04`) — no wrapper, no contract
+entry, no hook and no control, so locking was a one-way door in a package that
+refuses every planning mutation on a non-mutable plan. Its guard is narrower
+than plan §20.14 reads: `unlock_plan` accepts `LOCKED` alone, so a `stale` or
+`reconciliation_required` plan — the very states §20.14 says *require* an
+unlock — answers 409 and leaves through regeneration or reconciliation instead.
+The UI therefore states the requirement for every non-mutable status and offers
+the control only where the service will accept it.
+
+### 2.15 Allocation reconciliation — `prefix=/…/requirements`
+
+> Added **2026-08-02** for the §13.2 allocation-change reconciliation workflow.
+> Verified against `reparto-docente-m8` current branch:
+> `app/routes/hour_requirements.py`, `controllers/hour_requirements.py`, and
+> `db_models/hour_requirements.py`.
+
+| Aspect | Verified value |
+| --- | --- |
+| Preview | `POST /reconciliation-preview` → `RequirementReconciliationPreview`; no request body |
+| Apply | `POST /reconcile` with `reason` (1..1000) and `expected_conflict_count` → `RequirementReconciliationResult` |
+| Reconcilable status | `stale` or `reconciliation_required`; other plan states return 400 |
+| Stale confirmation | apply returns 409 when the conflict count no longer matches; the client must discard and rerun preview |
+| Conflict shape | requirement/activity/position identity, `value_changed` or `removed`, current/new canonical hours, assignment/participant identity, optional replacement identity |
+| Preview shape | next generation, ordered conflicts, create/preserve/retire/conflict counts, `requires_reconciliation`, `is_noop` |
+| Result shape | generation, resolved conflicts, released assignment ids, created/preserved/retired counts, complete live `data`, authoritative live `count` |
+
+Preview never changes a row. Apply is the explicit manual-resolution boundary:
+it records the reason, soft-cancels only the listed assignments, retires the old
+slots, creates replacements for hour changes, preserves audit history and moves
+the plan back to `requirements_generated`. The browser validates every response
+strictly and normalizes all conflict and slot hours to canonical two-place
+strings.
+
 ---
 
 ## 3. Additional surface area not in plan §2
@@ -298,15 +689,111 @@ existing runtime handles them. The plan's §7 information architecture
 lists `Versions` and `Exports` in the Process group; the inventory
 above confirms both are reachable today.
 
-### 3.3 Streaming summary — `GET /assignment-processes/{process_id}/events`
+**`VersionComparison` (three-stage, 2026-08-02).** The comparison payload was
+rewritten with the snapshot it summarises (backend plan §10.2/§10.3). The float
+`required_hours_delta` / `assigned_hours_delta` / `assignment_count_delta`
+family is gone — there is no aggregate "required" axis (§3.1 has two
+independent balances) and an assignment carries no hours of its own (§5.10).
+What the service publishes now, all computed as `right − left`:
 
-- Content-Type: `text/event-stream`
-- Event name: `process.summary`
-- Payload: a `ProcessSummary` object serialised as JSON in the `data:`
-  line of the SSE frame
-- Use case: push live summary updates to a shared dashboard while a
-  meeting is open. Out of scope for Phase 0.5; the runtime may wrap it
-  in Phase 4 (dashboards).
+| Field | Type | Note |
+| --- | --- | --- |
+| `changed_sections` | `string[]` | snapshot section names; `allocation_revisions`, `teaching_plan`, `subjects`, `group_subjects`, `teaching_activities`, `requirements`, `teachers`. Parsed as `string[]`, not an enum, so a section added later still renders |
+| `allocation_changed`, `group_hours_changed`, `teacher_load_changed`, `subject_category_changed`, `activity_added_or_removed`, `group_link_added_or_removed`, `teacher_position_count_changed`, `participant_target_changed`, `requirement_generation_changed` | `bool` | the nine §10.3 dimensions; a *set* comparison, so a flag can be true with a zero delta |
+| `allocation_delta` | canonical signed hours, **nullable** | `null` when either side has no current allocation — "not comparable", never `0.00` |
+| `group_load_delta`, `teacher_load_delta`, `participant_target_total_delta` | canonical signed hours | parsed through `SignedHoursSchema`; no hour value is a JSON number here |
+| `generation_number_delta`, `teacher_count_delta`, `activity_count_delta`, `requirement_count_delta` | `int` | signed counts |
+
+`GET /compare-previous-year` returns the same payload with the two **process**
+ids in the `*_version_id` fields (it diffs live snapshots, not stored
+versions) and answers **400** when the process has no
+`created_from_process_id`. The runtime therefore gates that call on the
+process detail rather than calling it speculatively.
+
+Runtime surface: `src/runtime/api/history.ts` (unchanged paths),
+`repartoKeys.versionComparison(processId, left, right)` /
+`repartoKeys.previousYearComparison(processId)`, hooks
+`useRepartoVersionComparison`, `useRepartoPreviousYearComparison`,
+`useCreateRepartoVersion` and `useRepartoProcess`, and the view-state helpers
+`buildVersionComparisonView` / `buildVersionSelectionState` /
+`versionSectionLabelKey` in `src/runtime/ui/history.ts`.
+
+### 3.2b Planning exchange — `/assignment-processes/{process_id}/exports/planning-*`
+
+Added to the runtime **2026-08-02** with the export-center bullet (backend plan
+§3.10, §7.8, §20.25). Three separate operations, not one with a mode parameter,
+because the three make three different promises:
+
+- `POST /exports/planning-draft` → `PlanningExportArtifact`
+- `POST /exports/planning-provisional` → `PlanningExportArtifact`
+- `POST /exports/planning-final` → `PlanningExportArtifact`
+- `POST /imports/planning` — body `PlanningImportRequest` → `PlanningImportResult`
+  (`planningExchange.importPlanning`, wrapped 2026-08-02)
+
+Draft and provisional artifacts are produced whatever the balances say — an
+inexact, unbalanced or stale plan may not withhold them (§3.10) — while the
+final mode answers **400** while any blocking finding stands (§7.8). The
+artifact is computed on demand and returned in the body; nothing is stored,
+which is what separates it from the checksummed `ExportArtifact` documents of
+§3.2.
+
+| Field | Type | Note |
+| --- | --- | --- |
+| `mode` | `draft\|provisional\|final` | the strictness the artifact was produced under |
+| `plan_status`, `generated_at`, `teaching_plan_id` | — | the plan the artifact describes |
+| `is_exact` | `bool` | both balances equal their targets (§3.10) |
+| `is_final_exportable` | `bool` | the service's own answer to "would the final mode succeed?"; read as reported, never recomputed from the finding list |
+| `balance` | `PlanBalance` | both independent axes, always present whatever the mode |
+| `validations` | `PlanValidationReport` | blocking/warning findings, always present |
+| `activities` | `PlanningExportActivity[]` | per-activity group/teacher loads; every hour a canonical two-place string |
+
+§20.25 additionally requires a provisional document to **print the feasibility
+status**. The artifact does not carry it, so the UI prints it from
+`TeachingPlanPublic.feasibility_status` beside the offer, and a process with no
+plan renders `none` rather than `not_evaluated` — absent is not "evaluated to
+nothing".
+
+Runtime surface: `src/runtime/api/planningExchange.ts`
+(`planningExchange.exportDraft` / `exportProvisional` / `exportFinal` and the
+`planningExportRequest(mode)` selector plus `importPlanning`), hooks
+`useCreateRepartoPlanningExport`, `useImportRepartoPlanning`,
+`useCreateRepartoExportArtifact` and `useRestoreRepartoDraft`, and the view-state
+helpers `buildExportCenterState` / `buildPlanningImportDraftState` in
+`src/runtime/ui/history.ts`.
+A planning export is a mutation with no invalidation: it changes nothing, and
+caching it would show a plan that has since moved.
+
+The import panel accepts only the strict `PlanningImportRequest` JSON contract.
+It never disables import because the current or prospective plan is inexact;
+after success it renders both returned balance axes and every service-owned
+finding (including reconciliation work) with its stable code. Backup restore is
+separate from planning import, uses the latest JSON backup, exposes the service's
+`restore_assignments` mode, and requires a focused confirmation because the
+target must be an empty draft.
+
+### 3.3 Role-projected process events — `GET /assignment-processes/{process_id}/events`
+
+- Content-Type: `text/event-stream`; the client sends the auth adapter's bearer
+  token through Fetch because native `EventSource` cannot set `Authorization`.
+- Audience query: `department_head`, `teacher`, or `shared_screen`. The service
+  may downgrade but never upgrade the caller. Starter admin views request the
+  department-head projection, the teacher LAN view requests `teacher`, and the
+  room-facing view explicitly requests the identifier-free `shared_screen` tier.
+- Control events: `stream.opened` establishes readiness and forces a complete
+  process refetch after every connect; `stream.gap` forces the same refetch
+  because delivery is best effort. The broker sequence is global across process
+  topics, so forward jumps are valid; non-increasing values fail closed.
+- Domain events: `allocation.revised`; `teaching_plan.updated`, `.balanced`,
+  `.locked`, `.stale`; `requirements.generated`, `.reconciled`,
+  `.reconciliation_required`; and `participant.extra_hours_updated`.
+- Every frame is parsed by the strict role-specific Zod schema before it can
+  invalidate cache state. Department heads receive the full payload, teachers
+  receive readiness plus only their own participant payload, and shared screens
+  receive only `{ readiness }`.
+- `useRepartoEventStream` invalidates allocation, plan, generated-slot,
+  assignment, participant, dashboard, summary, teacher-LAN and audit query
+  projections according to the event family. Heartbeats maintain the visible
+  `live` / `stale` / `disconnected` connection state without changing data.
 
 ---
 
@@ -351,7 +838,7 @@ where the backend accepts them**". Verified:
 | Assignment processes | `/assignment-processes/` | `skip, limit` | `academic_year_id: uuid?` | — |
 | Subjects | `/…/subjects/` | — | — | — |
 | Teaching groups | `/…/groups/` | — | — | — |
-| Hour requirements | `/…/requirements/` | — | — | — |
+| Requirement slots | `/…/requirements/` | — | — | — |
 | Process teachers | `/…/teachers/` | — | — | — |
 | Assignments | `/…/assignments/` | — | — | — |
 | Meeting sessions | `/…/meeting-sessions/` | — | — | — |
@@ -380,11 +867,12 @@ omitted; anything listed MUST be `required()`.
 | Department | `school_id, name` (`slug` auto) | `name, slug, department_head_user_id, notes` |
 | Teacher profile | `display_name` | `display_name, user_id, active, notes` |
 | Assignment process | `academic_year_id, school_id, department_id` | `status, default_teacher_hours_reference, selection_order_enabled, selection_order_mode, direct_teacher_selection_enabled, lan_access_enabled` |
-| Subject | `name` | `name, stage, notes` |
+| Subject | `name` | `name, allocation_category, activity_type, default_group_weekly_hours, default_teacher_weekly_hours_per_position, default_required_teacher_count, allows_multiple_groups, allows_zero_groups, notes` |
+| Group subject | `teaching_group_id, subject_id` (`assignment_process_id` from URL) | `group_weekly_hours, teacher_weekly_hours_per_position, required_teacher_count, active, notes` |
 | Teaching group | `stage, grade, group_code, label` | `stage, grade, group_code, label, notes` |
-| Hour requirement | `teaching_group_id, subject_id, required_hours` | `required_hours, requirement_type, flags, notes` |
-| Process teacher | `teacher_profile_id, available_hours` | `available_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` |
-| Assignment | `hour_requirement_id, process_teacher_id, assigned_hours` | `assigned_hours, assignment_type, source, status, confirmed_by_user_id, override_reason, overridden_by_user_id, notes` |
+| Requirement slot | — (generated from the teaching plan) | — (read-only; generation/reconciliation only) |
+| Process teacher | `teacher_profile_id, base_weekly_hours` | `base_weekly_hours, participates_in_selection, selection_position, selection_points, selection_criteria_label, selection_notes, order_locked, status` (**never** `extra_weekly_hours` — see `POST /…/extra-hours`) |
+| Assignment | `hour_requirement_id, process_teacher_id` | `notes` (undo and reassignment are their own reason-required actions) |
 | Meeting session | *(none — `assignment_process_id` from URL)* | `status, lan_access_enabled, direct_teacher_selection_enabled, selection_mode, notes` |
 | Selection turn | `meeting_session_id, process_teacher_id, position` (manual create rare; usually `initialize`) | `status, skip_reason, forced_by_user_id, notes` (mutation is via `start` / `complete` / `skip` / `override` actions) |
 | Audit event | — | — (read-only) |
@@ -393,7 +881,12 @@ Special operations:
 
 - `POST /academic-years/{id}/archive` — no body
 - `POST /teacher-profiles/{id}/link-user` — body `{user_id}`
+- `POST /teacher-profiles/{id}/claim-code` — no body; returns the code **once**
+- `POST /teacher-profiles/claim` — body `{claim_code}`; deliberately carries no
+  `user_id`, because the account it binds is the caller's own, read from the token
 - `POST /assignment-processes/{id}/transition` — body `{target_status}`
+- `POST /…/teachers/{process_teacher_id}/extra-hours` — body
+  `{extra_weekly_hours, reason}`; the only path that changes authorized overload
 - `POST /assignment-processes/{id}/reopen` — body `{reason: str[1..500]}`
 - `POST /assignment-processes/{id}/copy-from/{src}` — body `{copy_assignments: bool=false}`
 - `POST /…/meeting-sessions/{id}/close` — no body
@@ -402,7 +895,12 @@ Special operations:
 - `POST /…/turns/{id}/complete` — body `SelectionTurnComplete { assignment?, notes? }`
 - `POST /…/turns/{id}/skip` — body `SelectionTurnAction { reason, notes? }`
 - `POST /…/turns/{id}/override` — body `SelectionTurnAction { reason, notes? }`
-- `POST /…/assignments/direct-choice` — body `AssignmentDirectChoice { meeting_session_id, hour_requirement_id, assigned_hours, assignment_type?, notes? }`
+- `POST /…/assignments/direct-choice` — body `AssignmentDirectChoice { meeting_session_id, hour_requirement_id, notes? }`
+- `POST /…/assignments/{id}/undo` — body `AssignmentUndo { reason: str[1..500] }`
+- `POST /…/assignments/{id}/reassign` — body `AssignmentReassign { process_teacher_id, reason: str[1..500], notes? }`
+- `POST /…/allocation-revisions/` — body `{allocated_group_weekly_hours, reason, source?, source_reference?, received_at?}`
+- `POST /…/group-subjects/bulk-preview` — body `GroupSubjectBulkRequest { subject_id, mode, stage?, minimum_grade?, maximum_grade?, group_weekly_hours?, teacher_weekly_hours_per_position?, required_teacher_count? }`
+- `POST /…/group-subjects/bulk-apply` — same body plus `expected_affected_count` (409 when stale)
 
 ---
 
@@ -413,12 +911,12 @@ Special operations:
 | `School /schools list, create, get, patch / name* / no delete — edit only` | ✓ | matches |
 | `Academic year /academic-years list, create, get, patch, POST {id}/archive / label*, start_date*, end_date* / archive, not delete` | ✓ | matches; dates are date-only strings |
 | `Department /departments?school_id= list, create, get, patch / school_id*, name* (slug auto) / no delete — edit only` | ✓ | matches; slug is auto-derived |
-| `Teacher profile (roster) /teacher-profiles?active= list, create, get, patch, POST {id}/link-user, delete / display_name* / hard delete (confirm)` | ✓ | matches; hard delete confirmed |
+| `Teacher profile (roster) /teacher-profiles?active= list, create, get, patch, POST {id}/link-user, delete / display_name* / hard delete (confirm)` | ✓ + `claim-code`/`claim` | matches; hard delete confirmed. The claim-code pair (`W1.4`) is not in plan §2: it exists because the accounts directory belongs to `fa-auth-m8` and is superuser-only, so a head cannot look a colleague's id up to link them |
 | `Assignment process /assignment-processes list, create, get, patch, transition, reopen, summary, dashboard, lan/me, events / academic_year_id*, school_id*, department_id* / patch/transition/reopen (no delete)` | ✓ + `copy-from` | extra `POST /copy-from/{src}` not in plan §2 — see §3.1 |
 | `Subject /…/subjects list, create, get, patch, delete / name* / hard delete (confirm)` | ✓ | matches |
-| `Teaching group (classroom) /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
-| `Hour requirement /…/requirements list, create, get, patch, delete / teaching_group_id*, subject_id*, required_hours* / hard delete (confirm)` | ✓ | matches |
-| `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, available_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness |
+| `Teaching group /…/groups list, create, get, patch, delete / stage*, grade*, group_code*, label* / hard delete (confirm)` | ✓ | matches |
+| `Requirement slot /…/requirements list, get, generation-preview/generate, reconciliation-preview/reconcile / teaching_activity_id + position_index + required_teacher_hours / generated, never manually deleted` | ✓ | three-stage contract |
+| `Process teacher (participant) /…/teachers list, create, get, patch, delete / teacher_profile_id*, base_weekly_hours* / hard delete (confirm)` | ✓ | matches; `(process_id, teacher_profile_id)` uniqueness; plus the audited `POST /…/extra-hours` |
 | `Assignment /…/assignments list, create, direct-choice, get, patch, delete / hour_requirement_id*, process_teacher_id*, assigned_hours*, meeting_session_id* / hard delete (confirm)` | ✓ | matches; **note**: `meeting_session_id` is NOT a Create field in the backend — it is set when a teacher uses `direct-choice` and is left null on `POST /`. Plan §2 row should be read as "the direct-choice path carries `meeting_session_id`", not the create path |
 | `Meeting session /…/meeting-sessions list, create, get, patch, close / — / close (no delete)` | ✓ | matches |
 | `Selection turn /…/selection-turns list, initialize, start, complete, skip, override / — / state ops only` | ✓ | matches |
@@ -447,19 +945,19 @@ This inventory is the direct input for Phase 1 of the plan
 ("runtime for global entities"). Concretely, Phase 1 will:
 
 1. Add `src/runtime/schemas.ts` enum + entity families for:
-   `AcademicYearStatus`, `RequirementType`, `AssignmentType`, `AssignmentSource`,
+   `AcademicYearStatus`, `AssignmentType`, `AssignmentSource`,
    `AssignmentStatus`, `ProcessTeacherStatus`, `MeetingSessionStatus`,
    `SelectionTurnStatus`, plus the eight entity families that are
    "missing" per plan §2.
 2. Add `src/runtime/api/{schools,academicYears,departments,teacherProfiles}.ts`
    (one file per entity), all using the existing `request()` client and
    parsing responses with the matching `…PublicSchema`.
-3. Add `src/runtime/api/{subjects,teachingGroups,hourRequirements,processTeachers,assignments,auditEvents}.ts`
-   (Phase 3), with the assignments wrapper gaining `update` and `remove`
-   (Phase 3 work — `assignments.ts` today only has `directChoice`).
-4. Extend `src/runtime/queryKeys.ts` and `src/runtime/react/hooks.tsx`
-   with list + create + update + delete + special-op hooks per entity
-   following `useCreateRepartoProcess`.
+3. Add `src/runtime/api/{subjects,teachingGroups,hourRequirements,processTeachers,assignments,auditEvents}.ts`.
+   The three-stage adaptation later narrowed `hourRequirements` to read plus
+   generation/reconciliation; its former manual CRUD surface is intentionally gone.
+4. Extend `src/runtime/queryKeys.ts` and `src/runtime/react/hooks.tsx` with the
+   operations the live service owns. Generated requirements expose a list query
+   and generation/reconciliation mutations, never row CRUD hooks.
 
 This document is the contract those files must mirror. Any divergence
 between this file and the running backend is a bug; a divergence

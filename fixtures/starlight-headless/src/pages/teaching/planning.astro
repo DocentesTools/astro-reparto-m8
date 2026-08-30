@@ -1,0 +1,29 @@
+---
+// Headless host example: the integration injects no route in `headless` mode,
+// so the host owns this page, its path and its navigation entry, and mounts the
+// package view itself. `config` carries the two values the integration baked in
+// at build time; `processId` is the host's own parameter ("current" means "no
+// concrete process yet", which makes the view render its process picker).
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { RepartoPlanningView } from "@mano8/astro-reparto-m8/default-ui";
+
+const config = {
+  apiBase: import.meta.env.PUBLIC_FA_REPARTO_API_BASE,
+  apiPrefix: import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX
+};
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Planning",
+    description: "Host-owned page mounting the reparto planning view.",
+    tableOfContents: false
+  }}
+>
+  <RepartoPlanningView
+    client:only="react"
+    config={config}
+    locale={Astro.currentLocale}
+    processId="current"
+  />
+</StarlightPage>

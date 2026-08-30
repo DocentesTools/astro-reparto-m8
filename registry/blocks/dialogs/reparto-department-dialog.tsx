@@ -21,7 +21,7 @@ import type {
   DepartmentCreate,
   DepartmentPublic
 } from "@mano8/astro-reparto-m8/schemas";
-import { RepartoFkSelect } from "../fk/reparto-fk-select.js";
+import { RepartoFkSelect } from "@/components/fa-reparto/reparto-fk-select";
 
 export interface RepartoDepartmentDialogLabels {
   title: string;

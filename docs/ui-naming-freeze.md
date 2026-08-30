@@ -23,7 +23,7 @@ registry skins (Phase 1–3) must mirror.
 | **UI labels are title-cased English, then translated** | `Teacher roster`, `Roster de profesorado` (es), `Liste du personnel enseignant` (fr). Title Case en; lower-case, sentence-case or article-led fr/es per locale convention (see §5). | Calm meeting-screen reading. |
 | **i18n keys are flat-with-dots** | `entity.teacherRoster.singular`, `action.archive`, `error.required`. | Friction-free for hand-written dictionaries; no namespace conflict. |
 | **Two "Teacher" concepts must never share a label** | Global = **Teacher roster**; process-scoped = **Process participants**. | Plan §3, frozen. |
-| **"Classrooms" is the user-facing word for `teachingGroups`** | `groups` is internal slang; never appears in a UI string. | Plan §3. |
+| **"Teaching group" is the user-facing word for `teachingGroups`** | Amended **2026-08-11** (audit `S2-11`): the en label was *Classroom*, which read as one family with the separate `ClassroomStage` entity (*Classroom stages*) sitting next to it in the sidebar. The en label now matches the runtime name and the backend path; `fr` (*Classe*) and `es` (*Grupo*) were already distinct from *Niveaux scolaires* / *Etapas educativas* and are unchanged. Bare `groups` remains internal slang and never appears in a UI string. | Plan §3; §12. |
 | **Academic year has an Archive action, not a Delete action** | The button is **Archive**; the verb is `archive`; the route is `POST /academic-years/{id}/archive`. | Plan §2 + backend has no `DELETE /academic-years/{id}`. |
 | **Schools and Departments have only Edit (no Delete)** | The button is **Edit**; no `Delete` button is ever rendered. | Plan §2 + backend has no delete route for either. |
 | **Audit events are read-only** | Tables show rows, no row actions, no Create button. | Plan §2. |
@@ -46,8 +46,8 @@ registry skins (Phase 1–3) must mirror.
 | Teacher roster | Liste du personnel enseignant | Listado del profesorado | `teacherProfiles` | `/teacher-profiles` | `entity.teacherRoster` |
 | Assignment process | Processus d'affectation | Proceso de reparto | `assignmentProcesses` | `/assignment-processes` | `entity.assignmentProcess` |
 | Subject | Matière | Materia / Asignatura | `subjects` | `/…/subjects` | `entity.subject` |
-| Classroom | Classe | Grupo / Aula | `teachingGroups` | `/…/groups` | `entity.classroom` |
-| Hour requirement | Besoin horaire | Horas necesarias | `hourRequirements` | `/…/requirements` | `entity.hourRequirement` |
+| Teaching group | Classe | Grupo | `teachingGroups` | `/…/groups` | `entity.teachingGroup` |
+| Requirement slot | Créneau de besoin | Puesto horario | `hourRequirements` | `/…/requirements` | `entity.hourRequirement` |
 | Process participant | Participant au processus | Participante en el proceso | `processTeachers` | `/…/teachers` | `entity.processParticipant` |
 | Assignment | Affectation | Reparto / Asignación | `assignments` | `/…/assignments` | `entity.assignment` |
 | Meeting session | Séance | Sesión de reparto | `meetingSessions` | `/…/meeting-sessions` | `entity.meetingSession` |
@@ -73,8 +73,8 @@ registry skins (Phase 1–3) must mirror.
 | Teacher roster entry | Teacher roster entries | Enseignant | Enseignants | Docente | Docentes |
 | Process | Processes | Processus | Processus | Proceso | Procesos |
 | Subject | Subjects | Matière | Matières | Materia | Materias |
-| Classroom | Classrooms | Classe | Classes | Grupo | Grupos |
-| Hour requirement | Hour requirements | Besoin horaire | Besoins horaires | Horas necesarias | Horas necesarias |
+| Teaching group | Teaching groups | Classe | Classes | Grupo | Grupos |
+| Requirement slot | Requirement slots | Créneau de besoin | Créneaux de besoin | Puesto horario | Puestos horarios |
 | Process participant | Process participants | Participant | Participants | Participante | Participantes |
 | Assignment | Assignments | Affectation | Affectations | Reparto | Repartos |
 | Meeting session | Meeting sessions | Séance | Séances | Sesión | Sesiones |
@@ -141,6 +141,12 @@ ids, etc.) stay internal — no UI label.
 
 ### 3.5 Assignment process
 
+> Amended **2026-08-11** (audit `S2-03` / `S2-05`). These fields had labels and
+> a schema and no form: a process was create-only. The settings surface that now
+> renders them is §3.23. `status` stays **read-only in the form** — the served
+> `update_process` refuses it outright — and the process-level surface names are
+> frozen in §3.23, not here.
+
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `academic_year_id` | Academic year | Année scolaire | Curso académico | yes (form) | FK select |
@@ -155,13 +161,27 @@ ids, etc.) stay internal — no UI label.
 
 ### 3.6 Subject
 
+> Amended **2026-07-30** by the three-stage adaptation — see §12. `stage` is
+> retired; the classification and planning-default fields below replace it.
+
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `name` | Name | Nom | Nombre | yes | max 150 |
-| `stage` | Stage | Niveau | Etapa | no | free-form str, max 50 |
+| `allocation_category` | Allocation category | Catégorie d'attribution | Categoría de asignación | yes (defaulted) | enum `main`/`secondary`; never a boolean |
+| `activity_type` | Activity type | Type d'activité | Tipo de actividad | yes (defaulted) | enum `ordinary`/`tutoring`/`co_teaching`/`support`/`department_level`/`other`; descriptive only |
+| `default_group_weekly_hours` | Default group hours | Heures groupe par défaut | Horas de grupo por defecto | no | suggestion; empty = no suggestion, not 0 |
+| `default_teacher_weekly_hours_per_position` | Default teacher hours per position | Heures enseignant par poste (défaut) | Horas por puesto por defecto | no | suggestion; empty = no suggestion, not 0 |
+| `default_required_teacher_count` | Default teacher positions | Postes enseignants par défaut | Puestos docentes por defecto | yes (defaulted) | int ≥ 1 |
+| `allows_multiple_groups` | Allows multiple groups | Plusieurs groupes autorisés | Permite varios grupos | no | bool |
+| `allows_zero_groups` | Allows zero groups | Aucun groupe autorisé | Permite cero grupos | no | bool |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
-### 3.7 Classroom (teaching group)
+### 3.7 Teaching group
+
+> Renamed from **Classroom** on **2026-08-11** by audit `S2-11` — see §12. The
+> entity, its fields and its backend path are unchanged; only the en label and
+> the `teachingGroup*` UI names moved. `ClassroomStage` (§7 `nav.item.classroomStages`)
+> is a different entity and keeps its name.
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -171,23 +191,30 @@ ids, etc.) stay internal — no UI label.
 | `label` | Label | Libellé | Etiqueta | yes | max 100; e.g. "1 ESO A" |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
-### 3.8 Hour requirement
+### 3.8 Generated requirement slot
 
-| Field | en | fr | es | Required? | Notes |
+> Replaced **2026-08-02** by the three-stage adaptation. This entity is generated
+> and read-only; no create/edit/delete form exists.
+
+| Field | en | fr | es | Surface | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `teaching_group_id` | Classroom | Classe | Grupo | yes (form) | FK select |
-| `subject_id` | Subject | Matière | Materia | yes (form) | FK select |
-| `required_hours` | Required hours | Heures requises | Horas necesarias | yes | float > 0 |
-| `requirement_type` | Type | Type | Tipo | no | enum `ordinary`/`reinforcement`/`split_group`/`optional`/`bilingual`/`other` |
-| `flags` | Flags | Indicateurs | Indicadores | no | comma-separated |
-| `notes` | Notes | Notes | Notas | no | textarea |
+| `teaching_activity_id` | Teaching activity | Activité d'enseignement | Actividad docente | activity group | resolved to subject + activity type; UUID is never visible copy |
+| `position_index` | Position | Position | Posición | slot row | zero-based contract, displayed one-based |
+| `required_teacher_hours` | Teacher hours | Heures enseignantes | Horas docentes | slot row | canonical two-decimal string; indivisible and read-only |
+| `status` | Status | État | Estado | badge | `available`/`assigned`/`stale`/`reconciliation_required` |
+| `created_generation` | Created generation | Génération de création | Generación de creación | lineage | read-only |
+| `last_validated_generation` | Validated generation | Génération de validation | Generación de validación | lineage | read-only |
 
 ### 3.9 Process participant (process teacher)
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
 | `teacher_profile_id` | Teacher | Enseignant | Docente | yes (form) | FK select from teacher roster |
-| `available_hours` | Available hours | Heures disponibles | Horas disponibles | yes | float ≥ 0 |
+| `base_weekly_hours` | Base hours | Heures de base | Horas base | yes | decimal hours ≥ 0; the only editable hour field |
+| `extra_weekly_hours` | Authorized extra hours | Heures supplémentaires autorisées | Horas extra autorizadas | read-only (form) | changed only by the reasoned `extra-hours` action |
+| `target_weekly_hours` | Target hours | Heures cibles | Horas objetivo | read-only | service-computed `base + extra` |
+| `is_overloaded` | Authorized overload | Surcharge autorisée | Sobrecarga autorizada | read-only | `extra_weekly_hours > 0`; never "over-assigned" |
+| `extra_hours_reason` | Reason | Motif | Motivo | yes (extra-hours action) | 1..500; shown read-only on the edit form |
 | `participates_in_selection` | Participates in selection | Participe à la sélection | Participa en la selección | no | bool |
 | `selection_position` | Selection position | Position | Posición | no | int |
 | `selection_points` | Selection points | Points de sélection | Puntos de selección | no | number |
@@ -196,20 +223,53 @@ ids, etc.) stay internal — no UI label.
 | `order_locked` | Order locked | Ordre verrouillé | Orden bloqueado | no | bool |
 | `status` | Status | État | Estado | read-only (table) | enum `active`/`inactive` |
 
+Row actions: `edit` (base hours, selection flag, status), `extra-hours` (the
+reasoned authorization) and `delete`. DOM slots:
+`data-participant-overloaded`, `data-reparto-slot="participant-target"`,
+`data-reparto-slot="participant-extra-hours"`,
+`data-reparto-slot="participant-target-hours"`,
+`data-reparto-slot="participant-overloaded"`,
+`data-reparto-slot="participant-extra-hours-reason"`,
+`data-reparto-form="participant-extra-hours"`,
+`data-reparto-field="base-weekly-hours"`,
+`data-reparto-field="extra-weekly-hours"`.
+
 ### 3.10 Assignment
+
+One teacher occupying one complete, indivisible requirement slot. It carries no
+hours, no share type and no override — see the §12 amendment table for the
+names this replaced.
 
 | Field | en | fr | es | Required? | Notes |
 | --- | --- | --- | --- | --- | --- |
-| `hour_requirement_id` | Hour requirement | Besoin horaire | Horas necesarias | yes (form) | FK select |
-| `process_teacher_id` | Process participant | Participant | Participante | yes (form) | FK select |
-| `assigned_hours` | Assigned hours | Heures affectées | Horas asignadas | yes | float > 0 |
-| `assignment_type` | Type | Type | Tipo | no | enum `main`/`shared`/`reinforcement`/`split_group`/`other` |
+| `hour_requirement_id` | Requirement slot | Créneau de besoin | Puesto horario | yes (form) | free live-slot select; label carries the slot's own hours |
+| `process_teacher_id` | Process participant | Participant | Participante | yes (form) | eligible-participant select |
+| `teaching_activity_id` | — | — | — | read-only | denormalised by the service; drives the distinct-position rule, never labelled on its own |
 | `source` | Source | Source | Origen | read-only | enum `department_head`/`teacher_direct`/`imported_from_previous_year`/`system_copy` |
-| `status` | Status | État | Estado | read-only (form) | enum `draft`/`confirmed`/`overridden`/`cancelled` |
-| `confirmed_by_user_id` | Confirmed by | Confirmé par | Confirmado por | no | FK user |
-| `override_reason` | Override reason | Motif de dérogation | Motivo de la excepción | conditional | required when sum > required_hours |
-| `overridden_by_user_id` | Overridden by | Dérogation par | Excepción por | read-only | FK user |
-| `notes` | Notes | Notes | Notas | no | textarea |
+| `status` | Status | État | Estado | read-only (table) | enum `active`/`cancelled` |
+| `confirmed_by_user_id` | Confirmed by | Confirmé par | Confirmado por | read-only | FK user |
+| `reason` | Reason | Motif | Motivo | yes (undo / reassign) | 1..500; the action cannot be taken without it |
+| `notes` | Notes | Notes | Notas | no | textarea; the only editable field of a live assignment |
+
+Board actions: `create` (assign), row `edit` (notes), row `reassign`, row
+`undo`, and `undo-selected` over a table selection of **live rows only** — one
+shared reason recorded on each, applied one at a time and stopped at the first
+refusal. There is no row `delete` and no reasonless bulk cancellation. DOM slots: `data-reparto-slot="assignment-occupancy"`,
+`data-reparto-slot="assignment-validations"`, `data-assignment-metric`,
+`data-assignment-source`, `data-participant-disabled-reason`, `data-reparto-action="undo-selected"`,
+`data-reparto-slot="ineligible-participants"`,
+`data-reparto-slot="assignment-history"`.
+
+For a current `FEASIBLE` plan, the board reads the administrator-only witness
+and mirrors a conservative subset of the backend's bounded cheap guards. Options
+that cannot preserve a valid remaining witness stay visible with
+`data-participant-disabled-reason="strands_remaining_participants"`; a stale or
+unavailable witness fails closed as `witness_unavailable`. The board exposes
+only `data-safe-choice-state` verdicts and
+`data-reparto-slot="safe-choice-status"`, never the slot-to-participant mapping.
+Teacher LAN and shared-screen views do not receive this input: the teacher view
+renders only its role-safe readiness status at
+`data-reparto-slot="teacher-feasibility-status"`.
 
 ### 3.11 Meeting session
 
@@ -231,6 +291,322 @@ ids, etc.) stay internal — no UI label.
 | `forced_by_user_id` | Forced by | Forcé par | Forzado por | no | FK user |
 | `notes` | Notes | Notes | Notas | no | textarea |
 
+### 3.13 Group subject
+
+> Added **2026-07-30** by the three-stage adaptation — see §12. One cell of the
+> group-subject matrix (backend plan §5.5).
+
+| Field | en | fr | es | Required? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `teaching_group_id` | Teaching group | Classe | Grupo | yes (form) | FK select |
+| `subject_id` | Subject | Matière | Materia | yes (form) | FK select |
+| `group_weekly_hours` | Group hours | Heures groupe | Horas de grupo | no | empty **inherits the subject default**; `0` is a real zero |
+| `teacher_weekly_hours_per_position` | Teacher hours per position | Heures enseignant par poste | Horas por puesto | no | empty inherits the subject default |
+| `required_teacher_count` | Teacher positions | Postes enseignants | Puestos docentes | yes (defaulted) | int ≥ 1 |
+| `active` | Active | Actif | Activa | no | bool; an inactive cell is not a planning candidate |
+| `notes` | Notes | Notes | Notas | no | textarea |
+
+The bulk editor added on 2026-07-30 freezes these surface slots:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Subject filter | `data-reparto-field="group-subject-subject"` | required FK select |
+| Operation mode | `data-reparto-field="group-subject-mode"` | `create_missing` / `update_existing` / `upsert` |
+| Stage filter | `data-reparto-field="group-subject-stage"` | optional backend stage value |
+| Grade range | `data-reparto-field="group-subject-minimum-grade"` / `group-subject-maximum-grade` | optional positive integers; minimum must not exceed maximum |
+| Actual group hours | `data-reparto-field="group-subject-group-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Actual teacher hours | `data-reparto-field="group-subject-teacher-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Teacher positions | `data-reparto-field="group-subject-teacher-count"` | positive integer, blank defaults to 1 |
+| Preview | `data-reparto-table="group-subject-bulk-preview"` | create/update/unchanged/conflict rows |
+| Apply confirmation | `data-reparto-dialog="group-subject-bulk-confirmation"` | separate confirmation after preview |
+| Stale preview | `data-group-subject-bulk-stale` | 409 clears the preview and requires re-preview |
+
+The route added on 2026-08-10 (§13.2a `S2-02`) freezes these as well. The matrix
+is *Group-subject matrix* in the nav and on the page — never *Group subjects*
+alone, which reads as a list of subjects:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route | `data-reparto-route="group-subjects"` | `reader` to see, `admin` to write |
+| Cell list | `data-reparto-table="group-subjects"` | one row per existing cell; an absent cell is not a zero row |
+| Empty matrix | `data-reparto-state="empty-matrix"` | states that Stage 2 has no candidate yet |
+| Read-only refusal | `data-reparto-state="read-only"` | stated below the write floor instead of a disabled control |
+| Cell form | `data-reparto-form="group-subject-cell"` | `create` / `edit` mode |
+| Cell teaching group / subject | `data-reparto-field="group-subject-cell-teaching-group"` / `-subject"` | create only — the identity is immutable |
+| Cell identity (edit) | `data-reparto-slot="group-subject-identity"` | shown, never offered |
+| Cell hours | `data-reparto-field="group-subject-cell-group-hours"` / `-teacher-hours"` | blank = inherit (`null`), typed `0` = `"0.00"` |
+| Cell positions | `data-reparto-field="group-subject-cell-teacher-count"` | positive integer; blank omits the field |
+
+There is deliberately no *deactivate* control on the cell form: §20.12 retires a
+cell through its own action (`groupSubjects.retire` → `POST
+…/{group_subject_id}/retire`, corrected 2026-08-11 under audit `S2-09`), and a
+boolean toggle would be a second, quieter way to take a cell out of the plan.
+The backend refuses an `active: false` patch for the same reason. The wrapper is
+in place; the matrix route offers **no** retirement affordance yet, so no slot
+is frozen here — the one that lands must be named in this table first.
+
+### 3.14 Secondary teaching activity
+
+> Added **2026-07-30** by the three-stage adaptation. The activity type is
+> descriptive only; behavior comes from the two hour values, teacher-position
+> count, linked groups, and the selected subject's group-link policy.
+
+| Field | en | fr | es | Required? | Notes |
+| --- | --- | --- | --- | --- | --- |
+| `subject_id` | Secondary subject | Matière secondaire | Materia secundaria | yes (create) | immutable on edit; only `SECONDARY` subjects are offered |
+| `activity_type` | Activity type | Type d'activité | Tipo de actividad | yes | descriptive enum; never a behavior switch |
+| `group_weekly_hours_per_group` | Group hours per group | Heures par groupe | Horas por grupo | yes | canonical two-place hours; counted once per linked group |
+| `teacher_weekly_hours_per_position` | Teacher hours per position | Heures enseignant par poste | Horas por puesto docente | yes | canonical two-place hours; independent from group hours |
+| `required_teacher_count` | Teacher positions | Postes enseignants | Puestos docentes | yes | positive integer; co-teaching commonly uses 2+ |
+| `group_subject_ids` | Linked groups | Groupes liés | Grupos vinculados | subject policy | complete replacement set on edit; multi-group only when the subject allows it |
+| `notes` | Notes | Notes | Notas | no | textarea, max 2000 |
+
+The editor freezes these surface slots:
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Editor | `data-reparto-component="secondary-activity-editor"` | package-owned planning panel |
+| Activity list | `data-reparto-table="secondary-activities"` | live, non-retired secondary rows |
+| Subject | `data-reparto-field="secondary-activity-subject"` | secondary-subject FK; disabled on edit |
+| Descriptive type | `data-reparto-field="secondary-activity-type"` | ordinary/tutoring/co-teaching/support/department-level/other |
+| Group hours | `data-reparto-field="secondary-activity-group-hours"` | required, decimal-safe, zero permitted |
+| Teacher hours | `data-reparto-field="secondary-activity-teacher-hours"` | required, decimal-safe, zero permitted |
+| Teacher positions | `data-reparto-field="secondary-activity-teacher-count"` | positive integer |
+| Linked groups | `data-reparto-field="secondary-activity-groups"` | checkboxes over active same-subject `GroupSubject` cells |
+| Notes | `data-reparto-field="secondary-activity-notes"` | optional textarea |
+| Dialog | `data-reparto-dialog="secondary-activity-editor"` | create/edit surface |
+| Retire row action | `data-reparto-row-action="retire"` | guarded §20.12 retirement; styled destructive, but nothing is deleted |
+| Retirement consequence | `data-reparto-slot="secondary-activity-retire-consequence"` | states regeneration/reconciliation before the operator confirms |
+
+The row action is **Retire**, never *Delete*: the backend serves `GET, PATCH`
+only on `/{activity_id}` and stamps `retired_at` through `POST …/retire`
+(§20.12, §20.18). The `delete` row action this table used to freeze is retired
+in §12; see that entry before reusing either name.
+
+### 3.15 Plan lock and requirement generation
+
+> Added **2026-07-30** by the three-stage adaptation and completed
+> **2026-08-02** against the feasibility-gated backend lock endpoint. Lock state
+> remains service-owned; the mutation result or a subsequent plan read is the
+> only source of a confirmed lock. Extended **2026-08-11** (audit `S2-04`) with
+> the unlock surface: the package named a lock and no way out of it, so the
+> `plan-unlock*` names below are frozen with the control that renders them.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Workflow | `data-reparto-component="plan-lock-requirement-generation"` | package-owned planning panel |
+| Validations | `data-reparto-slot="plan-lock-validations"` | service `PlanValidationReport`; stable code remains visible |
+| Validation count | `data-plan-validation-count="blocking\|warning"` | non-negative authoritative counts |
+| Lock status | `data-reparto-slot="plan-lock-confirmation"` | `data-plan-lock-confirmed` reflects server lifecycle state only |
+| Lock review action | `data-reparto-action="review-plan-lock"` | enabled only for a balanced, feasible plan with zero blocking validations |
+| Lock confirmation | `data-reparto-dialog="plan-lock-confirmation"` | focused confirmation after validations and before the backend mutation |
+| Lock action | `data-reparto-action="lock-plan"` | `POST /teaching-plan/lock`; backend remains the final feasibility authority |
+| Unlock | `data-reparto-slot="plan-unlock"` | rendered only while the plan's status refuses planning edits; carries `data-teaching-plan-status` |
+| Unlock requirement | `data-reparto-state="unlock-required"` | plan §20.14 / §20.15 stated as `role="status"`, never an alert |
+| Unlock refusal | `data-reparto-state="generation-owned"` | `requirements_generated` / `stale` / `reconciliation_required`: the service unlocks a locked pre-generation plan only, so the card names regeneration or reconciliation instead |
+| Unlock consequence | `data-reparto-slot="plan-unlock-consequence"` | states what returns to editing and what is withheld until a re-lock; shown only with the action |
+| Unlock action | `data-reparto-action="unlock-plan"` | `POST /teaching-plan/unlock`; `admin` write floor, withheld (not disabled) below it |
+| Plan status | `data-teaching-plan-status` | raw service status; never a client-invented state |
+| Preview action | `data-reparto-action="preview-requirement-generation"` | enabled only for `locked` or `stale` |
+| Preview confirmation | `data-reparto-dialog="requirement-generation-confirmation"` | separate preview/apply boundary |
+| Preview counts | `data-generation-preview-count="create\|preserve\|retire\|conflict"` | deterministic server diff |
+| Apply action | `data-reparto-action="generate-requirements"` | disabled when reconciliation is required |
+| Apply result | `data-reparto-slot="requirement-generation-result"` | server generation number and counts |
+| Live-slot count | `data-generated-slot-count` | authoritative `RequirementGenerationResult.count` |
+
+### 3.16 Allocation changes and reconciliation
+
+> Added **2026-08-02** by the three-stage adaptation. Plan/reconciliation state
+> remains service-owned; the UI never deletes an assignment or retries a stale
+> confirmation silently. Amended **2026-08-11** (audit `S2-06`): the revision
+> history and record form are now `LeadershipAllocationPanel`, mounted by the
+> Stage 1 `allocation` route (§8.2 step 2) **and** embedded here. One
+> implementation, two framings — the slot names below are unchanged, so an
+> older skin still finds every one of them.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Workflow | `data-reparto-component="allocation-change-reconciliation"` | package-owned planning panel |
+| Allocation panel | `data-reparto-component="leadership-allocation"` | the route framing (`/reparto/processes/[processId]/allocation`); the embedded framing renders the same body without this wrapper |
+| Route | `data-reparto-route="allocation"` | Stage 1 nav entry `nav.item.allocation`, floors `reader`/`admin` |
+| Record refusal | `data-reparto-state="read-only"` | the `admin` write floor is read inside the panel (§21.5); the history stays visible to a `READER` |
+| Reconciliation state | `data-reparto-slot="allocation-reconciliation-status"` | service plan status; `stale`/`reconciliation_required` enable preview |
+| Preserved assignment notice | `data-reparto-state="assignments-preserved"` | assignments remain visible until explicit apply |
+| Allocation history | `data-reparto-table="allocation-revisions"` | append-only immutable revisions |
+| Allocation form | `data-reparto-form="allocation-revision"` | positive decimal hours, mandatory reason, source metadata |
+| Record action | `data-reparto-action="create-allocation-revision"` | audited `POST /allocation-revisions/` |
+| Preview action | `data-reparto-action="preview-requirement-reconciliation"` | `POST /requirements/reconciliation-preview` |
+| Preview confirmation | `data-reparto-dialog="requirement-reconciliation-confirmation"` | reasoned manual-resolution boundary |
+| Preview counts | `data-reconciliation-preview-count="create\|preserve\|retire\|conflict"` | deterministic affected-requirement diff |
+| Conflict table | `data-reparto-table="reconciliation-conflicts"` | affected assigned requirements only |
+| Manual action | `data-reparto-manual-action="release-and-replace\|release-and-retire"` | explicit service behavior, never a silent delete |
+| Apply action | `data-reparto-action="reconcile-requirements"` | reason + exact expected conflict count |
+| Apply result | `data-reparto-slot="requirement-reconciliation-result"` | released/resolved/generation counts |
+| Live-slot count | `data-reconciled-live-slot-count` | authoritative result `count` |
+
+### 3.17 Generated requirements view
+
+> Added **2026-08-02** by the three-stage adaptation. The view is read-focused:
+> it groups generated slots by teaching activity and position and exposes only
+> service-owned lifecycle state. It has no row-selection or mutation controls.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="requirements"` | package-owned generated-slot view |
+| Generation/reconciliation status | `data-reparto-slot="requirements-generation-status"` | service `TeachingPlan.status` and `current_generation_number` |
+| Plan status | `data-teaching-plan-status` | raw service state, including `stale` / `reconciliation_required` |
+| Summary metrics | `data-requirement-metric="activities\|slots\|available\|assigned\|attention"` | derived counts over the validated generated-slot response |
+| Activity groups | `data-reparto-list="requirements-by-activity"` | one card per `teaching_activity_id`, labeled by subject + activity type |
+| Position row | `data-requirement-position` | contract index remains zero-based; visible label is one-based |
+| Slot lifecycle | `data-requirement-status` / `data-reparto-slot-status` | authoritative `HourRequirement.status` |
+| Retirement lineage | `data-retired-generation` | service generation that retired the historical slot; replacement UUID is never visible copy |
+| Empty state | `data-reparto-state="no-generated-requirements"` | no generated slot; no create affordance |
+
+---
+
+### 3.18 Versions and comparison
+
+> Added **2026-08-02** by the three-stage adaptation. The comparison renders the
+> plan §10.3 dimensions the service publishes and nothing it derives itself: a
+> `changed` flag is the service's set comparison and a delta is its arithmetic,
+> so the two are shown side by side and never inferred from one another.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="versions"` | package-owned version history |
+| Version row | `data-process-version-id` / `data-process-version-status` | immutable `ProcessVersionPublic`; the id is a DOM attribute, never a label |
+| Version detail | `data-reparto-slot="version-detail"` / `version-reason` | captured status, timestamp and stored reason (`No reason recorded` when absent) |
+| Empty history | `data-reparto-slot="no-versions"` | no capture yet; never rendered as "no changes" |
+| Capture action | `data-reparto-action="create-version"` with `data-reparto-field="version-reason"` | `POST /versions`, optional reason ≤ 500 characters |
+| Selection | `data-reparto-field="compare-left\|compare-right"` | ordered pair; defaults to the last two captures |
+| Compare action | `data-reparto-action="compare-versions"` | `GET /versions/{left}/compare/{right}`; disabled reason on `data-disabled-reason` (`not_enough_versions`, `same_version`) |
+| Previous-year action | `data-reparto-action="compare-previous-year"` | `GET /compare-previous-year`; disabled as `no_previous_year` unless the process records `created_from_process_id` |
+| Comparison panel | `data-reparto-panel="comparison"` with `data-reparto-comparison-source="versions\|previous_year"` | one panel, two sources, always named |
+| Comparison state | `data-reparto-comparison-state="none\|identical\|sections_only\|changed"` | "not compared" is distinct from "no changes"; sections differing with every dimension unchanged is its own state |
+| Dimension row | `data-reparto-dimension` / `data-reparto-dimension-changed` | the nine §10.3 flags: `allocation`, `group_hours`, `teacher_load`, `subject_category`, `activity`, `group_link`, `teacher_position_count`, `participant_target`, `requirement_generation` — all nine always listed |
+| Delta | `data-reparto-delta` / `data-reparto-delta-sign="positive\|negative\|zero\|none"` | the service's own signed value; hour deltas stay canonical two-decimal strings and only a leading `+` is added |
+| Not comparable | `data-reparto-delta-sign="none"` | `allocation_delta: null` — no allocation on one side; never rendered as `0.00` |
+| Changed sections | `data-reparto-slot="changed-sections"` / `data-reparto-section` | snapshot section names; the service's `teachers` section is labelled **Process participants** (§5.4), and an unrecognized section is shown as its own raw code |
+
+### 3.19 Export center
+
+> Added **2026-08-02** by the three-stage adaptation. The centre holds three
+> families that plan §3.10/§20.25 keeps apart and one older workflow, and the
+> separation is the point: a **planning artifact** describes the plan (draft and
+> provisional are never withheld for an inexact plan), a **process document** is
+> a stored checksummed copy, and the **final assignment export** is strict and
+> archives the process. A single "export type" menu with `final` as one entry is
+> retired — see §12.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route view | `data-reparto-route="exports"` | package-owned export centre |
+| Planning exports | `data-reparto-panel="planning-exports"` | the three §7.8 planning modes |
+| Planning mode row | `data-planning-export-mode="draft\|provisional\|final"` with `data-planning-export-blocked` | one row per mode; `draft`/`provisional` are blocked only when there is no plan at all |
+| Planning export action | `data-reparto-action="export-planning"` + `data-reparto-export-mode` | `POST /exports/planning-{mode}`; refusal on `data-disabled-reason` (`plan_missing`, `blocking_validations`) |
+| Feasibility label | `data-reparto-slot="planning-feasibility"` + `data-feasibility-status` | §20.25: a provisional document prints `NOT EVALUATED` / `INFEASIBLE` / `FEASIBLE`; **no plan** is `none`, never `not_evaluated` |
+| Not validated | `data-reparto-slot="not-validated"` | a provisional document must not present itself as validated |
+| Produced artifact | `data-reparto-slot="planning-artifact"` with `data-planning-artifact-mode` / `data-plan-exact` | both balances and the finding counts travel *inside* the artifact |
+| Process documents | `data-reparto-panel="export-center"` with `data-reparto-action="create-export"` + `data-reparto-export-type` | `POST /exports`; `internal_draft`, `school_leadership`, `teacher_summary`, `backup` — never `final` |
+| Document list | `data-reparto-slot="export-list"` / `data-export-artifact-id` / `data-export-artifact-type` | stored artifacts; `data-reparto-slot="backup-count"` counts JSON backups |
+| Planning import | `data-reparto-panel="planning-import"` / `data-reparto-action="import-planning"` | strict JSON request; never balance-gated; result shows both axes and `data-reparto-validation-code` findings |
+| Backup restore | `data-reparto-action="restore-draft"` → `data-reparto-dialog="restore-confirmation"` | latest JSON backup; draft-only known-state gate; optional generated-position/assignment restore |
+| Final assignment export | `data-reparto-panel="final-close"` with `data-final-export-allowed` | §20.25's top tier: complete reparto **and** confirmed feasibility |
+| Final refusals | `data-final-blocked-reason` | every refusal listed, not only the first: `plan_missing`, `requirements_not_generated`, `findings_unavailable`, `assignment_blocking`, `feasibility_not_confirmed` |
+| Final confirmation | `data-reparto-dialog="final-export-confirmation"` with `data-reparto-action="confirm-final-export"` | producing it archives the process |
+| Leadership workflow | `data-reparto-panel="leadership-workflow"` | unchanged: `mark-returned`, `start-revision`, `reopen-final` |
+
+### 3.20 Live process-event state
+
+> Added **2026-08-02** by the three-stage adaptation. Events are cache
+> invalidation signals, never a second state authority: a reconnect,
+> non-increasing sequence, invalid frame or server `stream.gap` causes an
+> authoritative HTTP refetch. A shared screen requests the identifier-free projection at the
+> endpoint rather than redacting a department-head frame after arrival.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Stream URL | `data-reparto-events-url` | audience-scoped process endpoint; never contains the bearer token |
+| Connection state | `data-reparto-slot="connection-state"` + `data-reparto-connection-state="live\|stale\|disconnected"` | localized transport freshness, updated by domain frames and heartbeat comments |
+| Last accepted event | `data-reparto-last-event` | registered event name only; empty before the first validated frame |
+| Teacher audience | `audience=teacher` | readiness, selection blocking and the caller's own participant-hour payload only |
+| Shared-screen audience | `audience=shared_screen` | `{ readiness }` only; no process, participant or hour identifiers arrive |
+| Feasibility transitions | `teaching_plan.feasibility_updated` / `teaching_plan.feasibility_invalidated` | added 2026-08-04 (§20.25); the head payload names status, provenance, duration, diagnostic codes and affected ids, and the lower tiers receive only their derived readiness — a feasibility event names no participant, so the teacher tier's "own payload" exception never applies to it. Both drop the whole `teaching-plan` key prefix, which carries the diagnostics and witness projections with it |
+
+### 3.21 Feasibility diagnostics panel
+
+> Added **2026-08-03** by the three-stage adaptation (§20.20). The panel
+> renders the department-head-only diagnostics report: diagnostic codes with
+> directional suggestions, related activity/slot labels resolved from the
+> process data, and an evaluate action. Unresolved `related_ids` are
+> **counted, never printed** — no UUID reaches a user-visible label.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Panel | `data-reparto-component="feasibility-diagnostics"` | department-head-only diagnostics and remediation |
+| Tier boundary | `data-reparto-tier="department-head"` | admin-only; the panel never renders for other tiers |
+| Status slot | `data-reparto-slot="feasibility-evaluation-status"` + `data-feasibility-status` | `FEASIBLE` / `INFEASIBLE` / `NOT_EVALUATED` / `UNKNOWN`; absent plan renders `no-plan` |
+| Diagnostic list | `data-reparto-list="feasibility-diagnostics"` | one row per diagnostic finding |
+| Diagnostic code | `data-feasibility-diagnostic-code` | one of the seven stable codes; the dictionary provides directional suggestion text |
+| Unresolved count | `data-feasibility-unresolved-count` | count of unresolvable related ids; never prints the ids themselves |
+| Evaluate action | `data-reparto-action="evaluate-feasibility"` | `POST /feasibility/evaluate`; disabled while pending |
+| No-plan state | `data-reparto-state="no-plan"` | process has no plan; evaluate disabled with stable reason |
+| Not-evaluated state | `data-reparto-state="not-evaluated"` | plan exists but no evaluation has run |
+| No-findings state | `data-reparto-state="no-findings"` | evaluation is `FEASIBLE`; the diagnostics list is empty |
+
+### 3.22 Out-of-sync main activities
+
+> Added **2026-08-04** by the three-stage adaptation (§20.10, §20.20). Editing
+> a group-subject cell never rewrites the activity it materialized: the service
+> marks the activity out of sync and waits for an explicit apply. The drift is
+> read from the service's own `sync_state` — the browser never compares values
+> to decide that something changed — and an apply is only ever driven by a
+> preview whose fingerprint it echoes.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Panel | `data-reparto-component="activity-sync"` | department-head-only source-sync review |
+| Tier boundary | `data-reparto-tier="department-head"` | planning values and assigned-slot impact are administration data |
+| Row | `data-activity-sync-row="<group_subject_id>"` | one live out-of-sync `main_generated` activity, keyed by its source cell |
+| Row state | `data-activity-sync-state="out_of_sync"` | the service's own `sync_state`; never inferred from a value comparison |
+| Review action | `data-reparto-action="review-activity-sync"` | `POST /{cell}/sync-preview`; disabled while a preview or apply is in flight |
+| Preview dialog | `data-reparto-dialog="activity-sync-preview"` | absent until a preview resolves; an absent preview is *idle*, never "already in sync" |
+| Difference row | `data-activity-sync-field` | one of `group_weekly_hours_per_group` / `teacher_weekly_hours_per_position` / `required_teacher_count`, with both exact values |
+| Assignment impact | `data-activity-sync-impact="reconciliation-required\|none"` | server-owned; the affected count is printed, the affected slot ids never are |
+| Blocked reason | `data-activity-sync-blocked` | `retirement_required` (guarded retirement owns it) or `no_changes`; no apply action is offered |
+| Apply action | `data-reparto-action="apply-activity-sync"` | `POST /{cell}/sync-apply` echoing `preview_fingerprint`; a 409 discards the preview rather than retrying |
+| Materialization state | `data-main-materialization-state="out_of_sync"` | the third row state alongside `missing` / `materialized` |
+
+### 3.23 Process settings and reopen
+
+> Added **2026-08-11** by audit findings `S2-03` and `S2-05`. Names are frozen
+> here **before** the dictionary grew, per §12 rule 3. Route: `processSettings`
+> → `/reparto/processes/[processId]/settings`; dictionary root
+> `processSettings.*`; read floor `reader`, write floor `admin`.
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Route | `data-reparto-route="process-settings"` | §8.2 step 7, last entry of the Stage 1 nav group |
+| Status panel | `data-reparto-panel="process-status"` | read-only; the status is state, never a control |
+| Status line | `data-reparto-slot="process-status"` | the service's own status through `entity.assignmentProcess.status.*`; visible to a `READER` (§21.4) |
+| Settings form | `data-reparto-component="process-settings-form"` / `data-reparto-form="process-settings"` | withheld (not disabled) below the `admin` floor |
+| Fields | `data-reparto-field="default_teacher_hours_reference\|selection_order_enabled\|selection_order_mode\|direct_teacher_selection_enabled\|lan_access_enabled"` | exactly the five fields `update_process` accepts; the wire name is the slot name |
+| Inert mode | `data-reparto-slot="selection-order-mode-inert"` | a stored mode with the order disabled is inert, not invalid; stated, never forced |
+| Unchanged form | `data-reparto-state="unchanged"` | a no-op `PATCH` still writes a `process.updated` audit event, so the save is withheld |
+| Save action | `data-reparto-action="save-process-settings"` | `PATCH /assignment-processes/{id}`, carrying only changed fields |
+| Reopen panel | `data-reparto-component="process-reopen"` | rendered only while the process is frozen; carries `data-process-reopen-blocked-reason` |
+| Frozen statement | `data-reparto-state="process-frozen"` | `ensure_process_mutable`'s refusal stated as `role="status"`, never an alert |
+| Terminal statement | `data-reparto-state="terminal"` | `archived` is frozen and not reopenable; the explanation without the control |
+| Reopen consequence | `data-reparto-slot="process-reopen-consequence"` | what reopening changes, stated before the press |
+| Reopen reason | `data-reparto-field="reopen_reason"` | required, 1–500 chars; recorded on the `process.reopened` audit event |
+| Reopen action | `data-reparto-action="reopen-process"` | `POST /assignment-processes/{id}/reopen`; offered for `final` alone |
+
+**Deliberately absent:** a `status` field and any `transition` control.
+`update_process` answers `400 "Process status is owned by the transition
+endpoint"`, and `create_meeting_session` sets `MEETING_OPEN` itself, so a
+control here would be both rejected and a second mover racing the meeting path.
+`action.transition` therefore stays in §4 as a reserved verb with no surface.
+
 ---
 
 ## 4. Canonical action verbs (button / link / menu labels)
@@ -242,20 +618,24 @@ the same `Cancel` button in two dialogs renders the same word.
 | --- | --- | --- | --- | --- |
 | `action.create` | Create | Créer | Crear | Create buttons in tables/toolbars |
 | `action.edit` | Edit | Modifier | Editar | Edit row action |
-| `action.delete` | Delete | Supprimer | Eliminar | Destructive row action |
+| `action.delete` | Delete | Supprimer | Eliminar | Destructive row action, where a row really is removed |
+| `action.retire` | Retire | Retirer | Retirar | Guarded §20.12 retirement — the row survives with a retirement marker; never a synonym for `action.delete` |
 | `action.archive` | Archive | Archiver | Archivar | Academic year row action |
 | `action.unarchive` | Unarchive | Désarchiver | Desarchivar | (future) |
 | `action.close` | Close | Clore | Cerrar | Meeting session, process |
 | `action.reopen` | Reopen | Rouvrir | Reabrir | Process |
-| `action.transition` | Transition | Changer d'état | Cambiar de estado | Process status change |
+| `action.transition` | Transition | Changer d'état | Cambiar de estado | Reserved: no surface renders it — see §3.23 for why the process-settings route has no transition control |
 | `action.save` | Save changes | Enregistrer | Guardar cambios | Form submit (idempotent) |
 | `action.cancel` | Cancel | Annuler | Cancelar | Form cancel |
 | `action.confirm` | Confirm | Confirmer | Confirmar | Generic confirm |
 | `action.search` | Search | Rechercher | Buscar | Table search input placeholder |
 | `action.filter` | Filter | Filtrer | Filtrar | Table filter |
 | `action.refresh` | Refresh | Actualiser | Actualizar | Manual cache invalidate |
-| `action.linkUser` | Link user | Lier un compte | Vincular usuario | Teacher roster row action |
-| `action.unlinkUser` | Unlink user | Délier le compte | Desvincular usuario | (future) |
+| `action.linkUser` | Link to me | Lier à mon compte | Vincular a mi cuenta | Teacher roster row action. Renamed from *Link user* (`W1.4`): it has only ever linked the head pressing it, and said otherwise |
+| `action.unlinkUser` | Unlink user | Délier le compte | Desvincular usuario | Teacher roster row action on any linked profile |
+| `action.issueClaimCode` | Issue claim code | Émettre un code de rattachement | Emitir código de vinculación | Teacher roster row action on an unlinked profile (`W1.4`) |
+| `action.claimProfile` | Claim my profile | Rattacher mon profil | Vincular mi perfil | *My view* claim form submit (`W1.4`) |
+| `action.copyCode` | Copy code | Copier le code | Copiar el código | Claim-code dialog |
 | `action.export` | Export | Exporter | Exportar | Versions / exports table |
 | `action.restore` | Restore draft | Restaurer le brouillon | Restaurar borrador | History |
 | `action.copyFrom` | Copy from previous year | Copier depuis l'année précédente | Copiar del curso anterior | Process row action |
@@ -392,19 +772,37 @@ never invent alternate status names.
 
 ## 7. Sidebar / information architecture labels
 
-Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
+Plan §7 IA is the source of truth. The dictionary root is `nav.*`.
+
+**Composition, amended 2026-08-11 (audit `S2-10`).** The three groups stay the
+three stages, and their *contents* follow §8.2's setup workflow rather than
+strict domain ownership:
+
+* `nav.item.processes` and `nav.item.dashboard` head **Stage 1**. Selecting or
+  creating a process is the prerequisite for every Stage 1 entry, so filing them
+  under Stage 3 was domain-correct and workflow-backwards. They are not a fourth
+  ungrouped group: `FaRepartoNav` names exactly three groups and hosts render
+  them one by one, so a new group would be a nav entry nothing mounts.
+* `nav.item.allocation` is **Stage 1** (§8.2 step 2), not Stage 2.
+* `nav.item.planningExports` points the **Stage 2** group at the `exports`
+  route: the planning draft and provisional exports (§7.8) are Stage 2
+  artifacts. `nav.item.exports` keeps the same route under Stage 3 for the final
+  and stored documents.
+
+The table:
 
 | Key | en | fr | es |
 | --- | --- | --- | --- |
-| `nav.group.setup` | Setup | Configuration | Configuración |
-| `nav.group.process` | Process | Processus | Proceso |
+| `nav.group.configuration` | Stage 1 · Configuration | Étape 1 · Configuration | Etapa 1 · Configuración |
+| `nav.group.planning` | Stage 2 · Planning | Étape 2 · Planification | Etapa 2 · Planificación |
+| `nav.group.assignment` | Stage 3 · Assignment | Étape 3 · Affectation | Etapa 3 · Asignación |
 | `nav.item.schools` | Schools | Établissements | Centros |
 | `nav.item.academicYears` | Academic years | Années scolaires | Cursos académicos |
 | `nav.item.departments` | Departments | Départements | Departamentos |
 | `nav.item.teacherRoster` | Teacher roster | Liste du personnel enseignant | Listado del profesorado |
 | `nav.item.dashboard` | Dashboard | Tableau de bord | Panel |
 | `nav.item.processes` | Processes | Processus | Procesos |
-| `nav.item.classrooms` | Classrooms | Classes | Grupos |
+| `nav.item.teachingGroups` | Teaching groups | Classes | Grupos |
 | `nav.item.subjects` | Subjects | Matières | Materias |
 | `nav.item.requirements` | Requirements | Besoins horaires | Horas necesarias |
 | `nav.item.processParticipants` | Process participants | Participants au processus | Participantes en el proceso |
@@ -414,31 +812,80 @@ Plan §7 IA is the source of truth. The dictionary root is `nav.*`:
 | `nav.item.shared` | Shared screen | Écran partagé | Pantalla compartida |
 | `nav.item.versions` | Versions | Versions | Versiones |
 | `nav.item.exports` | Exports | Exports | Exportaciones |
+| `nav.item.allocation` | Leadership allocation | Dotation de la direction | Dotación de dirección |
+| `nav.item.planningExports` | Planning exports | Exports de planification | Exportaciones de planificación |
+| `nav.item.processSettings` | Process settings | Paramètres du processus | Ajustes del proceso |
 | `nav.item.audit` | Audit | Audit | Auditoría |
 
 ---
 
 ## 8. Setup-checklist card (plan §4 requirement)
 
-The setup-checklist card is shown on `/reparto` when no process
-exists. Each step links to its create flow. Dictionary root:
-`flow.bootstrap.*`.
+> **Rewritten 2026-08-11** by audit finding `S2-07`. The nine steps this table
+> used to hold were the pre-three-stage workflow: they named no allocation, no
+> group-subject matrix, no teaching plan and no lock, and they framed requirement
+> generation — a Stage 2 *output* — as a setup step. The dashboard had meanwhile
+> rewired the conditions **under the unchanged labels**, so *Add subjects* tested
+> that a teaching plan existed and *Add classrooms* that a plan balance did, and
+> two labels tested the same participant count. An operator who had added
+> subjects was told to add subjects. The retired step name is in §12.
+
+The setup-checklist card is shown by the process picker (before a process is
+selected) and by the department-head dashboard (after). Both render it from the
+**one** derivation, `buildSetupChecklist` (`src/runtime/ui/setupChecklist.ts`),
+through the one component, `SetupChecklistSteps`. Dictionary root:
+`flow.bootstrap.*`; steps are grouped by the three stages under the existing
+`nav.group.*` labels, so the checklist and the sidebar name the stages
+identically.
+
+**The label states the condition.** The right-hand column below is the condition
+`buildSetupChecklist` actually tests; a change to either column without the
+other is the defect this section was rewritten to prevent.
+
+| Key | en | Condition tested |
+| --- | --- | --- |
+| `flow.bootstrap.step.school` | Create a school | a school exists — or a process does, which requires one |
+| `flow.bootstrap.step.academicYear` | Create an academic year | an academic year exists — or a process does |
+| `flow.bootstrap.step.department` | Create a department | a department exists — or a process does |
+| `flow.bootstrap.step.process` | Create an assignment process | a process exists or is selected |
+| `flow.bootstrap.step.allocation` | Record the leadership hour allocation | an allocation revision exists, or the plan balance carries allocated group hours (§8.2 step 2) |
+| `flow.bootstrap.step.participants` | Add process participants and their target hours | `processTeachers` count > 0 (§8.2 step 3) |
+| `flow.bootstrap.step.subjects` | Add the subjects taught | `subjects` count > 0 (§8.2 step 4) |
+| `flow.bootstrap.step.teachingGroups` | Add the teaching groups | `teachingGroups` count > 0 (§8.2 step 5) |
+| `flow.bootstrap.step.groupSubjects` | Fill the group-subject matrix | `groupSubjects` count > 0 (§8.2 step 6) |
+| `flow.bootstrap.step.configurationReview` | Review the configuration and the selection settings | every configuration step above is done (§8.2 step 8) |
+| `flow.bootstrap.step.teachingPlan` | Create the teaching plan | `plan_status` is not null (§8.2 step 9 — continuing to planning *is* creating the plan) |
+| `flow.bootstrap.step.planBalance` | Balance the group hours and the teacher load | both `plan_balance` axes report `is_balanced` |
+| `flow.bootstrap.step.planLock` | Lock the teaching plan | the plan status is outside the service's mutable set |
+| `flow.bootstrap.step.requirements` | Generate the requirement slots | `total_slots` > 0 |
+| `flow.bootstrap.step.meeting` | Hand out the positions in the meeting | a turn is current, or a slot is assigned |
 
 | Key | en | fr | es |
 | --- | --- | --- | --- |
 | `flow.bootstrap.title` | Set up your reparto | Configurer votre répartition | Configurar el reparto |
-| `flow.bootstrap.subtitle` | A few steps before you can run the meeting. | Quelques étapes avant de pouvoir tenir la séance. | Algunos pasos antes de iniciar la sesión. |
-| `flow.bootstrap.step.school` | Create a school | Créer un établissement | Crear un centro |
-| `flow.bootstrap.step.academicYear` | Create an academic year | Créer une année scolaire | Crear un curso académico |
-| `flow.bootstrap.step.department` | Create a department | Créer un département | Crear un departamento |
-| `flow.bootstrap.step.process` | Create a process | Créer un processus | Crear un proceso |
-| `flow.bootstrap.step.subjects` | Add subjects | Ajouter des matières | Añadir materias |
-| `flow.bootstrap.step.classrooms` | Add classrooms | Ajouter des classes | Añadir grupos |
-| `flow.bootstrap.step.teacherRoster` | Add teachers | Ajouter des enseignants | Añadir docentes |
-| `flow.bootstrap.step.requirements` | Add hour requirements | Ajouter des besoins horaires | Añadir horas necesarias |
-| `flow.bootstrap.step.participants` | Add process participants | Ajouter des participants | Añadir participantes |
+| `flow.bootstrap.subtitle` | The three stages, from the first record to the meeting. | Les trois étapes, du premier enregistrement à la séance. | Las tres fases, del primer registro a la sesión. |
 | `flow.bootstrap.done` | Done | Terminé | Hecho |
 | `flow.bootstrap.open` | Open | Ouvrir | Abrir |
+| `flow.bootstrap.unknown` | Not checked here | Non vérifié ici | No comprobado aquí |
+| `flow.bootstrap.reason.no-process` | Select a process first. | Sélectionnez d'abord un processus. | Seleccione antes un proceso. |
+| `flow.bootstrap.reason.not-observed` | This screen does not read that. | Cet écran ne lit pas cette donnée. | Esta pantalla no lee ese dato. |
+
+| Concept | DOM slot | Contract |
+| --- | --- | --- |
+| Card | `data-reparto-panel="setup-checklist"` | one panel per surface; the list inside it is shared |
+| List | `data-reparto-checklist=""` | wraps the three stage groups |
+| Stage group | `data-reparto-checklist-group="configuration\|planning\|assignment"` | labelled from `nav.group.*`, never a second set of stage names |
+| Step | `data-reparto-checklist-step="<key>"` | the dictionary key is the slot name |
+| Step state | `data-reparto-checklist-state="done\|pending\|unknown"` | `unknown` is new: the condition was **not tested here**, which is not the same statement as "not done" |
+| Blocked reason | `data-reparto-checklist-blocked="no-process\|not-observed"` alongside `data-reparto-disabled-reason=""` | why the condition could not be tested |
+| Status word | `data-reparto-step-status="done\|pending\|unknown"` | shown where the surface offers no way in |
+| Open action | `data-reparto-action="open-<key>"` | offered only for a **pending** step the surface can actually open; an unknown step never gets one |
+| Progress | `data-reparto-slot="setup-progress"` (picker) / `data-reparto-slot="checklist-progress"` (dashboard) | `{done}/{total}`; untested steps are counted separately and never folded into "not done" |
+
+**Deliberately absent:** a step for the selection and LAN settings (§8.2 step 7).
+They ship with defaults, so there is no "not done" state to report and a
+permanently-pending step would be a false demand; `configurationReview` is where
+the operator is told to look at them.
 
 ---
 
@@ -522,3 +969,49 @@ Host overrides remain possible but plugin defaults are complete.
 If a new entity, field, or action appears in a later phase, the
 freeze must be updated **first** (this file is edited, PR'd, and
 merged) and only then can the runtime dictionary grow.
+
+---
+
+## 12. Three-stage adaptation amendments (2026-07-30 →)
+
+The three-stage adaptation deletes concepts this freeze named. **A frozen name
+whose concept no longer exists is retired here explicitly, never silently
+renamed** — a reader of an older skin must be able to find out what happened to
+a name rather than find it quietly reused for something else.
+
+Amendment rules:
+
+1. A retired name is listed in the table below with what replaced it. It is
+   removed from its §3 table in the same change, and that table gains a pointer
+   to this section.
+2. A retired `data-reparto-*` / `data-<entity>-*` DOM slot is **not** reused for
+   a different concept. New concepts get new slot names.
+3. Labels for a new surface land with the UI that renders them, not ahead of it
+   — the i18n suite requires `en`/`fr`/`es` parity, so a key with no view is a
+   translation nobody has reviewed in context.
+
+| Retired | Where it was | Replaced by | Landed |
+| --- | --- | --- | --- |
+| `Subject.stage` (field + label + `data-subject-stage` row slot + list filter) | §3.6 | `allocation_category` (`data-subject-allocation-category`) and `activity_type` (`data-subject-activity-type`); the subject list filters on allocation category | 2026-07-30 |
+| `HourRequirement.teaching_group_id` / `subject_id` / `required_hours` / `requirement_type` / `flags` / `notes`, manual CRUD dialogs, selection and `data-requirement-type` / `data-requirement-hours` | §3.8 | generated `teaching_activity_id` + `position_index` + `required_teacher_hours` + generation lineage; read-only activity/position groups in §3.17 | 2026-08-02 |
+| `Assignment.assigned_hours` / `assignment_type` / `override_reason` / `overridden_by_user_id`, the `draft`/`confirmed`/`overridden` statuses, the assignment row `delete` action, the whole `assignmentSelection.*` bulk-delete surface and `error.hoursExceed` | §3.10 | the slot's own `required_teacher_hours` shown read-only; `status` `active`/`cancelled`; reason-required `undo` and `reassign` actions; an over-target assignment is prevented, not overridden (authorize `extra_weekly_hours` first) | 2026-08-02 |
+| `view.choice.impact` — "{n} hours will be assigned to you", plus `meetingClosed`/`directDisabled`/`otherTurn`/`covered`/`alreadyCovered`/`turnChanged` and the `data-reparto-impact-hours` DOM slot | §3.10 / teacher LAN panel | one position taken whole: `view.choice.disabled.<code>` and `view.choice.conflict.<code>` keyed off stable codes, per-position `data-reparto-slot-choice` / `data-slot-disabled-reason`, panel-level `data-reparto-choice-reason` and `data-reparto-selectable-slots` | 2026-08-02 |
+| `ProcessTeacher.available_hours` (field + `field.availableHours` label + the participants add/edit hour input + the `available_hours` list column + the `availableHours` error-mapping key) | §3.9 | `base_weekly_hours` (editable), `extra_weekly_hours` (audited action only), computed `target_weekly_hours` and `is_overloaded`; error keys `baseWeeklyHours` / `extraWeeklyHours` | 2026-08-02 |
+| `TeacherLanSummary.global_balance` / `teacher_balance` / `blocking_validation_count` and the `data-reparto-slot="teacher-available-hours"` / `teacher-balance` slots | teacher LAN view | `readiness`, `selection_blocked`, aggregate `plan_balance`, the caller's own `participant` (`ParticipantBalance`) and `available_slots`; slots `teacher-base-hours`, `teacher-extra-hours`, `teacher-target-hours`, `teacher-assigned-hours`, `teacher-remaining-hours`, `teacher-overload`, `teacher-state`, `available-slots`, `lan-plan-balance` | 2026-08-02 |
+| `ProcessSummary.global_balance` / `validations` and `ProcessDashboard.global_balance` / `teacher_balances` / `requirement_balances` / `validations` (with `GlobalBalance`, `TeacherBalance`, `RequirementBalance`, `ValidationMessage` and the `GlobalBalanceState` / `TeacherBalanceState` enums), plus the `overview-chart` / `teacher-load-chart` / `classroom-coverage-chart` panels and the `total-required-hours`, `pending-required-hours`, `overview-state`, `balance-summary`, `requirement-count`, `teacher-count`, `teacher-summary`, `coverage-summary`, `validation-count` slots, `data-reparto-chart-value` / `data-reparto-chart-bar`, and the whole `validation.*` dictionary branch | dashboard / shared screen | `ProcessSummary` (`readiness`, `plan_status`, `plan_balance`, `total_slots`/`assigned_slots`/`available_slots`) and `ProcessDashboard` (`readiness` + `planning`/`assignment` sections). Panels `planning-balance`, `assignment-progress`, `participant-balances`; slots `plan-status`, `planning-empty`, `total-slots`, `assigned-slots`, `available-slots`, `slot-progress`, `total-target-hours`, `total-assigned-hours`, `total-remaining-hours`, `participant-balances`, `participant-hours`, `participant-count`, `participant-summary`, `blocking-count`, `planning-validations`, `assignment-validations`, `validation-summary`; the three invariants as `data-reparto-invariant` / `data-reparto-invariant-state` and never one badge; both axes as `data-reparto-balance-axis`; findings printed from the service's own `message` with `data-reparto-validation-code` | 2026-08-02 |
+| `VersionComparison.required_hours_delta` / `assigned_hours_delta` / `assignment_count_delta` and the `required-hours-delta` / `assigned-hours-delta` / `teacher-count-delta` slots, the `comparison-detail` placeholder, and the `view.versions.requiredDelta` / `assignedDelta` / `teacherDelta` / `noChanges`-as-a-section-list labels | versions & comparison | the plan §10.3 contract: nine change flags and eight signed deltas (`allocation_delta` nullable, hour deltas canonical strings), rendered as §3.18's dimension rows with `data-reparto-delta` / `data-reparto-delta-sign`; `changed_sections` becomes a labelled list, never a comma-joined string | 2026-08-02 |
+| `ExportCenterState.finalBlocked` / `availableExportTypes` / `restoreDraftEnabled`, the `view.exports.finalBlocked` / `finalReady` / `finalExport` labels, the `data-reparto-slot="export-state"` slot and `final` as one entry in the export-type button row | export center | §3.19: three families with their own panels — planning artifacts (`planning-exports`, never withheld for an inexact plan), stored documents (`export-center`) and the strict final assignment export (`final-close`) with `data-final-blocked-reason` per refusal and a confirmation, because it archives the process | 2026-08-02 |
+| Shared-screen panels `global-state` / `turn-state` and the `dashboard` prop on `SharedScreenWorkspace` / `RepartoSharedView`; the meeting route rendering the dashboard a second time | shared screen / meeting control | `shared-balance`, `shared-slots` and a `turn-state` panel fed only by `ProcessSummary`, plus the meeting-control panels `meeting-turn-control`, `pending-slots`, `reconciliation-state`, `authorized-overloads`; slots `shared-state`, `shared-plan-balance`, `meeting-state`, `lifecycle-state`, `lifecycle-detail`, `pending-slots`, `overload-count`, `overload-hours`, `authorized-overloads`, `no-authorized-overloads`; attributes `data-reparto-lifecycle-state`, `data-reparto-selection-blocked`, `data-reparto-plan-stale`, `data-reparto-reconciliation-required`; disabled reasons as stable codes on `data-disabled-reason` | 2026-08-02 |
+| `data-reparto-invariant="readiness"` as the third invariant's key, and `dashboard.invariant.readiness` as its only label | dashboard / meeting control / shared screen | the third invariant is `data-reparto-invariant="feasibility"` (plan §20.19 8/8.7 — group balance, teacher-load balance and **feasibility**), carrying `data-reparto-invariant-source` to say which vocabulary its state is in: `plan` for the department-head-only `TeachingPlanPublic.feasibility_status` (`dashboard.feasibility.*`, label `dashboard.invariant.feasibility`) and `readiness` for the coarse §20.25 projection every tier receives (`dashboard.readiness.*`, label `dashboard.invariant.readiness`, unchanged). `buildProcessInvariants` (`runtime/ui/invariants.ts`) owns the three-slot shape | 2026-08-03 |
+| `flow.bootstrap.step.teacherRoster` ("Add teachers") | §8 | nothing — it tested `participants.length > 0`, the identical condition `flow.bootstrap.step.participants` tested one row below it, so the checklist counted one act twice and told an operator who had added teachers to add teachers (audit `S2-07`). The teacher roster keeps its own sidebar entry (`nav.item.teacherRoster`); participants cannot exist without it | 2026-08-11 |
+| The secondary-activity row action `delete` (`data-reparto-row-action="delete"`, `action.delete` as its label) and the `planning.secondary.deleted` / `deleteError` / `deleteTitle` / `deleteBody` copy | §3.14 | guarded §20.12 retirement: `data-reparto-row-action="retire"` labelled `action.retire`, `planning.secondary.retired` / `retireError` / `retireTitle` / `retireBody` plus the new `retireConsequence` shown on `data-reparto-slot="secondary-activity-retire-consequence"`. The wrapper is `POST …/{activity_id}/retire`; the served backend supports `GET, PATCH` only on the plain path and answered **405** to the old control (audit `S2-08`) | 2026-08-11 |
+| The en label **Classroom** / **Classrooms** for `teachingGroups`, the dictionary roots `entity.classroom`, `field.classroom`, `table.searchClassrooms`, `nav.item.classrooms`, `flow.bootstrap.step.classrooms`, `classroomBulk.*`, `classroomSelection.*`, `groupSubjectMatrix.selectClassroom`, `groupSubjectBulk.column.classroom`, `planning.materialization.column.classroom`, `planning.sync.unknownClassroom` and the `{classroom}` message placeholder; the route key `classrooms` and its path `/reparto/processes/[processId]/classrooms`; the entry point `routes/classrooms.astro`; the exported view `RepartoClassroomsView`; the error-mapping field key `classroom`; and the DOM slots `data-classroom-id` / `data-classroom-stage` / `data-classroom-grade`, `data-reparto-route|actions|panel="classrooms"`, `data-reparto-table="classrooms"`, `data-reparto-row="classroom"`, `data-reparto-form="classroom"` / `"classroom-bulk"`, `data-reparto-dialog="classroom-create"` / `"classroom-edit"` / `"classroom-bulk"`, the `classroom-add-*` / `classroom-edit-*` field ids and `data-reparto-field="group-subject-cell-classroom"` | §1 / §2 / §2.1 / §3.7 / §3.13 / §7 / §8 | the same concept under its runtime and backend name: en **Teaching group** / **Teaching groups** (`fr` *Classe*, `es` *Grupo* unchanged), roots `entity.teachingGroup`, `field.teachingGroup`, `table.searchTeachingGroups`, `nav.item.teachingGroups`, `flow.bootstrap.step.teachingGroups`, `teachingGroupBulk.*`, `teachingGroupSelection.*`, `groupSubjectMatrix.selectTeachingGroup`, `groupSubjectBulk.column.teachingGroup`, `planning.materialization.column.teachingGroup`, `planning.sync.unknownTeachingGroup`, `{teachingGroup}`; route key `teachingGroups` at `/reparto/processes/[processId]/teaching-groups`; `routes/teaching-groups.astro`; `RepartoTeachingGroupsView`; field key `teachingGroup`; and the same DOM slots rooted on `teaching-group` / `teaching-groups`. Nothing about the entity, its fields or `/…/groups` changed, and `ClassroomStage` — a genuinely separate entity — keeps *Classroom stages* and every `classroomStages` name. The route and the subpath are a consumer break, carried under §21.6 | 2026-08-11 |
+
+The versions bullet closed the last surface that still parsed a float hour
+delta: every hour figure the package reads is now a canonical decimal string.
+
+Nothing from the single-balance family is left to retire: the dashboard bullet
+took `ProcessSummary` and `ProcessDashboard` with it, and the LAN bullet had
+already taken `TeacherLanSummary`. The shared screen's panel names went with the
+meeting-control bullet, and `RBAC-07` closed with them: the projected view takes
+`ProcessSummary` only, so it holds no name to leak.

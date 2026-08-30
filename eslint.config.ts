@@ -1,7 +1,7 @@
 import js from "@eslint/js";
 import globals from "globals";
 import tseslint from "typescript-eslint";
-import pluginReact from "eslint-plugin-react";
+import pluginReact from "@eslint-react/eslint-plugin";
 import pluginSecurity from "eslint-plugin-security";
 import { defineConfig, globalIgnores } from "eslint/config";
 
@@ -13,7 +13,13 @@ export default defineConfig([
     "**/coverage/**",
     "**/.astro/**",
     "**/pagefind/**",
+    "**/.tmp/**",
     "registry/r/**",
+    // Stand-ins for packages a consumer supplies (shadcn primitives,
+    // react-hook-form, sonner). `verify:registry-consumer` type-checks the
+    // installed skins against them; they are not this package's source, and
+    // unlike `fixtures/**`'s host examples they are never built or shipped.
+    "fixtures/registry-consumer/**",
     ".npm/**",
     ".npm-cache/**",
   ]),
@@ -35,15 +41,15 @@ export default defineConfig([
   pluginSecurity.configs.recommended,
 
   // React rules, scoped to files that actually contain JSX.
+  //
+  // `eslint-plugin-react` has no ESLint 10 compatible release, so the React
+  // surface is linted by `@eslint-react/eslint-plugin` instead. Its
+  // `recommended-typescript` preset drops the rules TypeScript already proves
+  // (prop types) and assumes the modern JSX transform, so the old
+  // `react-in-jsx-scope` / `jsx-uses-react` opt-outs no longer exist.
   {
     files: ["**/*.{jsx,tsx}"],
-    ...pluginReact.configs.flat.recommended,
-    settings: { react: { version: "detect" } },
-    rules: {
-      // New JSX transform (react-jsx) — no React import required in scope.
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-uses-react": "off",
-    },
+    ...pluginReact.configs["recommended-typescript"],
   },
 
   // Type-aware correctness rules — the ones Codacy's default standard flags

@@ -91,24 +91,15 @@ const AUTHORIZATION_PURE_DEPENDENCIES = new Set(["zod"]);
  * A predicate answers from its arguments. A module that touches the DOM, the
  * network, storage or the process is doing something a second plugin cannot
  * safely share, whatever its exports look like.
- */
-const AUTHORIZATION_GLOBALS = [
-  "document",
-  "window",
-  "localStorage",
-  "sessionStorage",
-  "globalThis",
-  "XMLHttpRequest",
-  "fetch",
-  "process",
-];
-/**
+ *
  * Matches a *read of the global*, not a property that happens to share its
  * name: `window.location` is an effect, `{ window: RetentionWindowSchema }` and
- * `client.fetch(...)` are not.
+ * `client.fetch(...)` are not. Written as one literal alternation rather than a
+ * `new RegExp` per name because a constructed pattern is a denial-of-service
+ * finding whatever it is built from — here, from this fixed list.
  */
-const globalRead = (name) => new RegExp(String.raw`(?<![.\w$])${name}(?![\w$]|\s*:)`);
-const AUTHORIZATION_EFFECTS = AUTHORIZATION_GLOBALS.map((name) => [name, globalRead(name)]);
+const AUTHORIZATION_EFFECTS =
+  /(?<![.\w$])(document|window|localStorage|sessionStorage|globalThis|XMLHttpRequest|fetch|process)(?![\w$]|\s*:)/g;
 /** Written as separate anchored patterns rather than one nested alternation. */
 const SERVER_SPECIFIERS = [
   /[.]server$/,
@@ -303,10 +294,9 @@ function gateAuthorizationPurity() {
     }
 
     const code = stripComments(source);
-    for (const [name, effect] of AUTHORIZATION_EFFECTS) {
-      if (effect.test(code)) {
-        fail("authorization-purity", show(file), `the authorization closure reaches the runtime global ${name}`);
-      }
+    const reached = new Set([...code.matchAll(AUTHORIZATION_EFFECTS)].map((match) => match[1]));
+    for (const name of reached) {
+      fail("authorization-purity", show(file), `the authorization closure reaches the runtime global ${name}`);
     }
 
     for (const specifier of importSpecifiers(source)) {

@@ -73,8 +73,12 @@ export async function consumeRepartoEventStream(
     [config.csrfHeader]: "XMLHttpRequest",
     Authorization: `Bearer ${token}`
   });
+  // Constructed the same way `client.ts` builds a request URL: the wrapper's
+  // string goes through `URL` before it reaches `fetch`, so the stream cannot
+  // be pointed anywhere `repartoUrl`'s protocol check would not allow.
+  const url = new URL(assignmentProcesses.eventsUrl(processId, audience));
   const execute = () =>
-    fetch(assignmentProcesses.eventsUrl(processId, audience), {
+    fetch(url.toString(), {
       method: "GET",
       headers,
       credentials: "include",
@@ -114,10 +118,9 @@ export async function consumeRepartoEventStream(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) return;
-    buffer += decoder.decode(value, { stream: true });
+  let chunk = await reader.read();
+  while (!chunk.done) {
+    buffer += decoder.decode(chunk.value, { stream: true });
     const frames = buffer.split("\n\n");
     buffer = frames.pop() ?? "";
     for (const frame of frames) {
@@ -137,6 +140,7 @@ export async function consumeRepartoEventStream(
         )
       );
     }
+    chunk = await reader.read();
   }
 }
 

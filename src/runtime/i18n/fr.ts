@@ -1190,5 +1190,225 @@ export const fr: RepartoDictionary = {
     search: "Rechercher un niveau scolaire",
     toast: { created: "Niveau scolaire créé", updated: "Niveau scolaire modifié", saveError: "Impossible d'enregistrer le niveau scolaire", deleted: "Niveau scolaire supprimé", deleteError: "Impossible de supprimer le niveau scolaire" }
   },
+  help: {
+    open: "Que dois-je faire ici ?",
+    close: "Masquer cette aide",
+    openFor: "Ouvrir l'aide de {step}",
+    what: "Ce qu'est cette page",
+    why: "Pourquoi c'est important",
+    how: "Comment procéder",
+    docs: "Lire le guide complet",
+    step: {
+      processList: {
+        what: "Un processus d'affectation, c'est un département, dans un établissement, pour une année scolaire. Tout le reste de l'application appartient à un processus : une année de travail commence donc ici.",
+        why: "Rien de ce qui suit dans le menu ne peut être ouvert tant qu'aucun processus n'est sélectionné : ces pages n'ont alors rien à vous montrer.",
+        how: [
+          "Choisissez l'année scolaire, puis l'établissement, puis le département. Votre choix est mémorisé dans ce navigateur : vous ne le faites qu'une fois.",
+          "Si ce qu'il vous faut n'existe pas encore, choisissez Créer un nouveau. L'année, l'établissement et le département se créent tous depuis cet écran.",
+          "Un nouveau processus démarre en Brouillon. Vous ne fixez jamais le statut à la main : il évolue tout seul au fil du travail.",
+          "Une fois le processus sélectionné, descendez le menu dans l'ordre : étape 1, puis étape 2, puis étape 3."
+        ]
+      },
+      dashboard: {
+        what: "Une vue unique de l'état du processus : la liste de contrôle de configuration, les deux équilibres horaires et ce qui manque encore.",
+        why: "C'est le moyen le plus rapide de savoir ce qu'il reste à faire, sans parcourir toutes les pages pour le découvrir.",
+        how: [
+          "Lisez d'abord la liste de contrôle : elle nomme chaque point de l'étape 1 encore ouvert.",
+          "Vérifiez les deux équilibres. Les heures de classe et les heures enseignantes sont deux mesures distinctes et ne s'additionnent jamais.",
+          "Suivez le premier point non terminé jusqu'à la page qui permet de le régler."
+        ]
+      },
+      schools: {
+        what: "Les établissements connus de ce site. Un établissement est partagé par tout le site, pas par un seul processus.",
+        why: "Une année scolaire, un département et donc un processus dépendent tous d'un établissement : rien d'autre ne peut être créé avant lui.",
+        how: [
+          "Vérifiez que votre établissement n'existe pas déjà avant de le créer : ces fiches sont partagées par tout le monde.",
+          "Créez-le avec son nom. La localité, la province, la région, l'adresse et les notes sont facultatives.",
+          "Créer et modifier un établissement demande un compte Administrateur ; tout le monde peut lire la liste."
+        ]
+      },
+      academicYears: {
+        what: "Une année scolaire, par exemple 2026/2027, avec une date de début et une date de fin. Une année appartient à un établissement.",
+        why: "Un processus, c'est un département, dans un établissement, pour une année, et le lien vers l'année précédente est ce qui rend possible une comparaison d'une année sur l'autre.",
+        how: [
+          "Choisissez l'établissement, donnez un libellé à l'année et fixez ses dates de début et de fin.",
+          "Reliez-la à l'année précédente lorsqu'il y en a une. Ce lien est utilisé par la copie depuis l'an dernier et par la comparaison avec l'année précédente.",
+          "Une année terminée est archivée, jamais supprimée : sa trace reste intacte."
+        ]
+      },
+      departments: {
+        what: "Un département d'enseignement au sein d'un établissement : le groupe d'enseignants dont l'application répartit les heures hebdomadaires.",
+        why: "Le département est la troisième composante d'un processus, aux côtés de l'établissement et de l'année scolaire.",
+        how: [
+          "Choisissez l'établissement, puis donnez au département un nom et un identifiant court.",
+          "Le champ Chef de département est purement descriptif. Il indique qui dirige le département et n'accorde aucune permission.",
+          "Ce qu'un compte peut faire découle de son rôle, jamais de ce champ."
+        ]
+      },
+      classroomStages: {
+        what: "Les niveaux de scolarité auxquels appartiennent vos classes, par exemple Secundaria avec le libellé court ESO et les niveaux 1 à 4.",
+        why: "Le nom d'une classe est construit à partir de son niveau : bien définir les niveaux une fois garantit ensuite un nommage cohérent de toutes les classes.",
+        how: [
+          "Donnez au niveau un nom, le libellé court utilisé dans le nom des classes, et son niveau minimal et maximal.",
+          "Le libellé d'une classe est alors généré à partir du niveau, du libellé court et du code de groupe, ce qui donne 3e ESO B.",
+          "Tout le monde peut lire les niveaux ; les créer et les modifier demande un compte Administrateur."
+        ]
+      },
+      teacherRoster: {
+        what: "La liste du personnel enseignant connu du site. Elle est volontairement distincte des comptes utilisateurs du site.",
+        why: "Une fiche de cette liste est ce que vous ajoutez ensuite à un processus comme participant, et la relier à un compte est ce qui permet à cet enseignant d'utiliser Mon espace pendant une séance.",
+        how: [
+          "Créez une fiche par enseignant avec un nom affiché. Marquez comme inactive la fiche de quelqu'un qui est parti plutôt que de la supprimer.",
+          "Pour relier un enseignant à son compte, choisissez Émettre un code sur sa ligne. Le code s'affiche une seule fois, ne sert qu'une fois et expire : remettez-le en privé à cet enseignant.",
+          "L'enseignant se connecte avec son propre compte, ouvre Mon espace et saisit le code. Vous ne choisissez jamais de compte à sa place.",
+          "Si un code est perdu, émettez-en un autre. L'ancien code ne peut plus être affiché."
+        ]
+      },
+      allocation: {
+        what: "Les heures de classe hebdomadaires attribuées à votre département par la direction : le chiffre auquel tout le plan doit aboutir. Avant l'enregistrement de la première révision, la page est simplement vide, ce qui est normal pour un nouveau processus et non une erreur.",
+        why: "C'est l'un des deux totaux avec lesquels l'étape 2 s'équilibre : sans lui, il n'y a rien vers quoi planifier.",
+        how: [
+          "Saisissez les heures de classe hebdomadaires attribuées, strictement positives et à deux décimales au plus, avec un motif écrit. Le motif est obligatoire et conservé définitivement.",
+          "Il n'y a ni modification ni suppression. Pour changer le chiffre, vous enregistrez une nouvelle révision, qui remplace la précédente tout en la gardant visible dans l'historique.",
+          "Enregistrer une révision après le début de la planification rend le plan obsolète et impose une réconciliation explicite : faites-le donc en connaissance de cause."
+        ]
+      },
+      participants: {
+        what: "Les enseignants qui prennent part à ce processus précis, chacun avec sa charge hebdomadaire contractuelle.",
+        why: "La somme des objectifs de tous les participants actifs est le total d'heures enseignantes que le plan doit atteindre exactement : pas une heure de plus, pas une heure de moins.",
+        how: [
+          "Ajoutez chaque enseignant depuis la liste du personnel et renseignez ses heures de base, c'est-à-dire sa charge d'enseignement hebdomadaire contractuelle.",
+          "Les heures cibles sont calculées pour vous comme la somme des heures de base et des heures supplémentaires autorisées : elles ne se saisissent pas.",
+          "Les heures supplémentaires autorisées partent de zéro et ne changent que par l'action distincte qui exige un motif écrit, dans les deux sens, y compris pour retirer une autorisation.",
+          "Indiquez si chaque participant prend un tour lors de la séance, et à quelle position."
+        ]
+      },
+      subjects: {
+        what: "Ce qui est enseigné, avec les heures par défaut que chaque matière porte habituellement.",
+        why: "Les matières principales sont l'entrée obligatoire que l'étape 2 transforme en activités ; les matières secondaires sont les ajouts discrétionnaires que vous faites à la main.",
+        how: [
+          "Donnez à chaque matière un nom et une catégorie de dotation, Principale ou Secondaire. Il n'y a pas de case à cocher : la catégorie est la distinction.",
+          "Renseignez les heures de classe par défaut, les heures enseignantes par poste par défaut et le nombre de postes enseignants par défaut.",
+          "Le type d'activité n'est qu'un libellé descriptif. Il ne change jamais le comportement de l'application.",
+          "Les valeurs par défaut n'amorcent que les nouvelles cellules de la matrice. En modifier une plus tard ne réécrit jamais les cellules ni les activités déjà existantes."
+        ]
+      },
+      teachingGroups: {
+        what: "Les classes elles-mêmes, chacune avec son niveau, son année et son code de groupe.",
+        why: "Une classe est la moitié de chaque cellule de la matrice, et la matrice est ce sur quoi tout le plan est construit.",
+        how: [
+          "Créez une classe avec son niveau scolaire, son année et son code de groupe. Le libellé est généré pour vous jusqu'à ce que vous le modifiiez à la main.",
+          "Pour créer tout un niveau d'un coup, utilisez Créer des classes : choisissez un niveau, une année et une plage de codes de groupe, prévisualisez la liste exacte, puis créez-les ensemble en une seule requête.",
+          "Les années que vous pouvez choisir sont limitées à la plage du niveau retenu."
+        ]
+      },
+      groupSubjects: {
+        what: "Une cellule pour chaque couple classe-matière réellement existant, portant les heures réelles que ce couple représente.",
+        why: "C'est le cœur de l'étape 1 : la matrice est exactement ce que l'étape 2 transforme en plan d'enseignement.",
+        how: [
+          "Chaque cellule porte les heures de classe, les heures enseignantes par poste et le nombre de postes. Laissez un champ d'heures vide pour hériter de la valeur par défaut de la matière ; saisissez 0 pour un vrai zéro.",
+          "Remplir trente cellules une par une est fastidieux : utilisez l'éditeur en masse sous la liste. Choisissez une matière, le mode d'opération, puis restreignez les classes par niveau et par plage d'années.",
+          "Appuyez sur Prévisualiser les changements et lisez ce qui sera créé, mis à jour et laissé tel quel. Ce n'est qu'ensuite que Confirmer et appliquer devient disponible.",
+          "Si quoi que ce soit a changé entre la prévisualisation et l'application, l'application est refusée. Prévisualisez de nouveau plutôt que d'appuyer une seconde fois."
+        ]
+      },
+      processSettings: {
+        what: "La manière dont ce processus sera conduit : la charge de référence, l'ordre de sélection, la sélection directe par les enseignants et l'accès en réseau local.",
+        why: "Ces choix déterminent ce que la séance de l'étape 3 pourra faire : réglez-les avant d'ouvrir une session.",
+        how: [
+          "Fixez la charge horaire de référence à laquelle les participants sont comparés. Laissez le champ vide pour n'en avoir aucune : un 0 saisi est un vrai zéro et n'équivaut pas à un champ vide.",
+          "Décidez si un ordre de sélection est enregistré et avec quelle rigueur il s'applique, si les enseignants peuvent prendre un poste depuis leur propre espace, et si la vue en réseau local est ouverte.",
+          "Seuls les champs réellement modifiés sont envoyés. Un processus Final doit d'abord être rouvert ici, avec un motif écrit ; Archivé est terminal et n'offre rien."
+        ]
+      },
+      planning: {
+        what: "L'unique écran où votre configuration devient un plan d'enseignement : ce qui est réellement enseigné, par combien d'enseignants, pour combien d'heures.",
+        why: "L'étape 3 ne peut pas commencer tant que ce plan n'est pas équilibré, prouvé réalisable, verrouillé et transformé en postes.",
+        how: [
+          "Créez le plan d'enseignement s'il n'existe pas encore. Un processus en possède au plus un, et il n'est pas créé avec le processus.",
+          "Matérialisez les activités principales depuis la matrice. Le panneau liste chaque cellule comme manquante ou matérialisée, et ne crée que les manquantes.",
+          "Ajoutez à la main les activités secondaires : tutorat, co-enseignement, soutien, tâches de département. C'est là que se fait le travail de planification.",
+          "Pilotez avec l'en-tête d'équilibre en haut de l'écran. L'objectif est d'amener les deux écarts à 0,00 : les heures de classe face à la dotation, les heures enseignantes face à l'objectif des participants.",
+          "Lisez les validations du plan, puis lancez l'évaluation de faisabilité. Réalisable signifie que l'application détient un agencement concret prouvant que les postes peuvent être distribués exactement.",
+          "Verrouillez le plan, prévisualisez la génération des besoins, puis appliquez-la pour créer les postes."
+        ]
+      },
+      requirements: {
+        what: "Le résultat en lecture seule de la génération : chaque poste enseignant produit par le plan, groupé par activité, avec son propre état de cycle de vie.",
+        why: "Un poste est ce que l'étape 3 remet à un enseignant, entier et indivisible : cette page est donc l'endroit où vous vérifiez que la génération a produit ce que vous attendiez.",
+        how: [
+          "Comparez le nombre et les heures à ce que la prévisualisation de génération avait annoncé.",
+          "Lisez l'état de chaque poste : disponible, affecté, obsolète ou réconciliation requise.",
+          "Il n'y a volontairement aucune création, modification ni suppression ici. Les postes ne changent que par une génération ou une réconciliation explicite depuis la page Planification."
+        ]
+      },
+      assignments: {
+        what: "Le tableau où chaque poste généré est remis en entier à un participant.",
+        why: "C'est la répartition elle-même. Le processus est complet quand chaque poste est pris et que chaque participant a atteint son objectif exactement.",
+        how: [
+          "Appuyez sur Affecter un poste, choisissez un poste libre, puis un participant. Les participants qui ne peuvent pas le prendre sont listés avec le motif plutôt que retirés en silence.",
+          "Un poste ne peut pas être divisé : un enseignant à qui il reste trois heures ne se verra jamais proposer un poste de quatre heures.",
+          "Annuler libère un poste et Réaffecter le transfère à quelqu'un d'autre. Les deux exigent un motif écrit et un compte Administrateur, et les deux restent au tableau comme historique.",
+          "Si tout le tableau refuse les nouvelles affectations, le plan est obsolète ou demande une réconciliation : retournez à la Planification."
+        ]
+      },
+      meeting: {
+        what: "Le poste de pilotage d'une séance de sélection en direct, où les enseignants prennent eux-mêmes leurs postes à tour de rôle.",
+        why: "C'est l'alternative au fait de tout affecter vous-même : les enseignants choisissent, dans un ordre enregistré, avec le calcul vérifié au fur et à mesure.",
+        how: [
+          "Au préalable, reliez chaque enseignant à son compte depuis la Liste du personnel enseignant avec un code, et assurez-vous qu'il participe bien à ce processus.",
+          "Vérifiez que le plan est à jour et que les postes sont générés, puis choisissez Ouvrir la session. La session reprend les paramètres en vigueur.",
+          "Initialisez les tours, puis pilotez-les avec Démarrer, Terminer, Passer et Forcer. Passer et forcer exigent un motif écrit et sont enregistrés.",
+          "Fermez la session à la fin de la séance. La fermeture retire aux enseignants l'accès en réseau local à cette séance."
+        ]
+      },
+      teacherView: {
+        what: "L'écran propre à un enseignant : ses heures de base, ses heures supplémentaires autorisées, son objectif, ses heures affectées et restantes, ainsi que les postes encore libres.",
+        why: "Il montre à un enseignant ses propres chiffres et ceux de personne d'autre, ce qui permet de l'ouvrir sans risque pendant une séance.",
+        how: [
+          "Si aucun profil n'est encore relié à votre compte, saisissez sous Revendiquer mon profil le code que votre chef de département vous a remis.",
+          "Quand c'est votre tour et que la sélection directe est activée, choisissez un poste libre et prenez-le. Le serveur revérifie qu'il correspond exactement à vos heures restantes.",
+          "Vous pouvez aussi passer votre propre tour. Cette page ne montre jamais les heures d'un autre enseignant, ni le motif d'une autorisation d'heures supplémentaires."
+        ]
+      },
+      sharedScreen: {
+        what: "La vue de projection : les équilibres, l'état du plan, les postes pris et libres, le tour en cours, et le nombre de participants équilibrés, en attente ou en surcharge.",
+        why: "Elle permet à toute une salle de suivre la séance sans qu'aucun nom ni aucune heure d'enseignant n'apparaisse au mur.",
+        how: [
+          "Ouvrez-la sur la machine de projection pendant que la session de séance est ouverte.",
+          "Les noms, les heures individuelles et les motifs écrits sont retirés par le serveur lui-même plutôt que masqués par la page : ils ne peuvent donc pas être révélés.",
+          "Il n'existe pas de compte de projection distinct : utilisez la session du chef de département ou celle d'un participant."
+        ]
+      },
+      versions: {
+        what: "Des instantanés immuables de tout le processus, pris à la demande, et la comparaison entre deux d'entre eux.",
+        why: "Un instantané est ce qui permet de revenir plus tard sur une décision, et la comparaison est ce qui rend possible un bilan d'une année sur l'autre.",
+        how: [
+          "Donnez à l'instantané une courte note expliquant pourquoi vous le prenez. Il capture la dotation, le plan, la matrice, les activités, les postes et les heures de chaque participant.",
+          "Comparez deux versions pour obtenir la réponse du serveur lui-même sur neuf dimensions nommées, chacune avec son écart.",
+          "Une dimension peut indiquer non comparable, par exemple quand un côté n'a aucune dotation. C'est une vraie réponse, différente de aucun changement."
+        ]
+      },
+      exports: {
+        what: "Trois familles de documents distinctes : le plan sous forme de document, des copies stockées de tout le processus, et l'export final strict.",
+        why: "C'est ainsi qu'une répartition sort de l'application : sous une forme que vous pouvez envoyer, conserver ou restaurer plus tard.",
+        how: [
+          "Le brouillon de planification et le plan provisoire sont disponibles quel que soit l'état des équilibres. Seul le plan final est refusé tant qu'un constat bloquant subsiste.",
+          "Les documents de processus sont des copies stockées : un brouillon interne, la copie pour la direction, un récapitulatif par enseignant et une sauvegarde complète. La restauration remet une sauvegarde dans un processus brouillon vide.",
+          "L'import de planification réinjecte un document de planification dans le plan courant et n'est volontairement pas bloqué par un résultat déséquilibré : vous récupérez l'équilibre et les constats.",
+          "L'export final des affectations exige une répartition complète et une faisabilité confirmée, et il archive le processus. Archivé est terminal : une confirmation vous est donc demandée."
+        ]
+      },
+      audit: {
+        what: "Le relevé ordonné de ce qui est arrivé à ce processus, et de qui l'a fait.",
+        why: "Chaque motif que l'application vous a demandé de saisir est conservé ici. C'est ce qui rend une décision défendable des mois plus tard.",
+        how: [
+          "Lisez la piste dans l'ordre : création du processus, révisions de dotation, autorisations d'heures supplémentaires, verrouillages du plan, générations, réconciliations, affectations, annulations et réaffectations.",
+          "Chaque entrée porte le compte qui l'a effectuée et l'heure à laquelle elle a eu lieu.",
+          "Les motifs écrits ne sont visibles que du chef de département. Ils ne sont jamais montrés aux enseignants ni sur l'écran partagé."
+        ]
+      }
+    }
+  },
   picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant" }
 };

@@ -1189,5 +1189,225 @@ export const es: RepartoDictionary = {
     search: "Buscar etapas educativas",
     toast: { created: "Etapa educativa creada", updated: "Etapa educativa actualizada", saveError: "No se pudo guardar la etapa educativa", deleted: "Etapa educativa eliminada", deleteError: "No se pudo eliminar la etapa educativa" }
   },
+  help: {
+    open: "¿Qué tengo que hacer aquí?",
+    close: "Ocultar esta ayuda",
+    openFor: "Abrir la ayuda de {step}",
+    what: "Qué es esta página",
+    why: "Por qué importa",
+    how: "Cómo hacerlo",
+    docs: "Leer la guía completa",
+    step: {
+      processList: {
+        what: "Un proceso de reparto es un departamento, en un centro, para un curso académico. Todo lo demás en esta aplicación pertenece a un proceso, así que un curso de trabajo empieza aquí.",
+        why: "Nada de lo que sigue en el menú puede abrirse mientras no haya un proceso seleccionado: esas páginas no tienen nada que mostrarte sin él.",
+        how: [
+          "Elige el curso académico, después el centro y después el departamento. Tu elección se recuerda en este navegador, así que solo la haces una vez.",
+          "Si lo que necesitas todavía no existe, elige Crear nuevo. El curso, el centro y el departamento pueden crearse desde esta misma pantalla.",
+          "Un proceso nuevo empieza en Borrador. Nunca fijas el estado a mano: avanza solo a medida que progresa el trabajo.",
+          "Una vez seleccionado el proceso, baja por el menú en orden: etapa 1, luego etapa 2, luego etapa 3."
+        ]
+      },
+      dashboard: {
+        what: "Una vista única del estado del proceso: la lista de comprobación de configuración, los dos equilibrios horarios y lo que todavía falta.",
+        why: "Es la forma más rápida de saber qué queda por hacer, sin recorrer todas las páginas para averiguarlo.",
+        how: [
+          "Lee primero la lista de comprobación: nombra cada punto de la etapa 1 que sigue abierto.",
+          "Comprueba los dos equilibrios. Las horas de grupo y las horas del profesorado son dos medidas distintas y nunca se suman.",
+          "Sigue el primer punto sin terminar hasta la página que lo resuelve."
+        ]
+      },
+      schools: {
+        what: "Los centros que conoce este sitio. Un centro lo comparte todo el sitio, no un solo proceso.",
+        why: "Un curso académico, un departamento y por tanto un proceso dependen de un centro, así que no puede crearse nada más hasta que exista uno.",
+        how: [
+          "Comprueba si tu centro ya está aquí antes de crearlo: estos registros los comparte todo el mundo.",
+          "Créalo con su nombre. La localidad, la provincia, la región, la dirección y las notas son opcionales.",
+          "Crear y editar un centro requiere una cuenta de Administración; cualquiera puede leer la lista."
+        ]
+      },
+      academicYears: {
+        what: "Un curso escolar, por ejemplo 2026/2027, con una fecha de inicio y una de fin. Un curso pertenece a un centro.",
+        why: "Un proceso es un departamento, en un centro, para un curso, y el enlace al curso anterior es lo que hace posible una comparación de un año a otro.",
+        how: [
+          "Elige el centro, ponle una etiqueta al curso y fija sus fechas de inicio y fin.",
+          "Enlázalo con el curso anterior cuando exista. Ese enlace es lo que usan la copia del curso pasado y la comparación con el curso anterior.",
+          "Un curso terminado se archiva, nunca se borra, de modo que su registro queda intacto."
+        ]
+      },
+      departments: {
+        what: "Un departamento didáctico dentro de un centro: el grupo de docentes cuyas horas semanales reparte esta aplicación.",
+        why: "El departamento es la tercera parte de un proceso, junto al centro y al curso académico.",
+        how: [
+          "Elige el centro y después dale al departamento un nombre y un identificador corto.",
+          "El campo Jefatura de departamento es solo descriptivo. Registra quién dirige el departamento y no concede ningún permiso.",
+          "Lo que una cuenta puede hacer proviene de su rol, nunca de este campo."
+        ]
+      },
+      classroomStages: {
+        what: "Las etapas educativas a las que pertenecen tus grupos, por ejemplo Secundaria con la etiqueta corta ESO y los cursos 1 a 4.",
+        why: "El nombre de un grupo se construye a partir de su etapa, así que definirlas bien una vez mantiene después todos los grupos nombrados de forma coherente.",
+        how: [
+          "Dale a la etapa un nombre, la etiqueta corta que se usa dentro del nombre de los grupos, y su curso mínimo y máximo.",
+          "La etiqueta de un grupo se genera entonces con el curso, la etiqueta corta y el código de grupo, dando 3.º ESO B.",
+          "Cualquiera puede leer las etapas; crearlas y editarlas requiere una cuenta de Administración."
+        ]
+      },
+      teacherRoster: {
+        what: "El listado del personal docente que conoce el sitio. Es deliberadamente distinto de las cuentas de usuario del sitio.",
+        why: "Una ficha del listado es lo que después añades a un proceso como participante, y vincularla a una cuenta es lo que permite a ese docente usar Mi vista durante una sesión.",
+        how: [
+          "Crea una ficha por docente con un nombre visible. A quien se haya marchado márcalo como inactivo en lugar de borrarlo.",
+          "Para vincular a un docente con su cuenta, elige Emitir código en su fila. El código se muestra una vez, sirve una vez y caduca: entrégaselo en privado.",
+          "El docente inicia sesión con su propia cuenta, abre Mi vista e introduce el código. Nunca eliges tú una cuenta en su nombre.",
+          "Si se pierde un código, emite otro. El código anterior ya no puede volver a mostrarse."
+        ]
+      },
+      allocation: {
+        what: "Las horas de grupo semanales que la dirección ha asignado a tu departamento: la cifra a la que debe llegar todo el plan. Antes de registrar la primera revisión la página está simplemente vacía, lo cual es normal en un proceso nuevo y no un error.",
+        why: "Es uno de los dos totales con los que se equilibra la etapa 2, así que sin ella no hay nada hacia lo que planificar.",
+        how: [
+          "Introduce las horas de grupo semanales asignadas, mayores que cero y con dos decimales como máximo, junto con un motivo escrito. El motivo es obligatorio y se conserva de forma permanente.",
+          "No hay edición ni borrado. Para cambiar la cifra registras una revisión nueva, que sustituye a la anterior y la mantiene visible como historial.",
+          "Registrar una revisión después de haber empezado a planificar deja el plan obsoleto y obliga a una reconciliación explícita, así que hazlo de forma deliberada."
+        ]
+      },
+      participants: {
+        what: "El profesorado que participa en este proceso concreto, cada persona con su carga semanal contratada.",
+        why: "La suma de los objetivos de todos los participantes activos es el total de horas del profesorado que el plan debe alcanzar exactamente: ni una hora más, ni una hora menos.",
+        how: [
+          "Añade a cada docente desde el listado y fija sus horas base, es decir, su carga lectiva semanal contratada.",
+          "Las horas objetivo se calculan por ti como la suma de las horas base y las extra autorizadas, y no se pueden escribir.",
+          "Las horas extra autorizadas parten de cero y solo cambian mediante la acción específica que exige un motivo escrito, en ambos sentidos, incluida la retirada de una autorización.",
+          "Indica si cada participante toma turno en la sesión y en qué posición."
+        ]
+      },
+      subjects: {
+        what: "Lo que se imparte, junto con las horas por defecto que cada materia suele llevar.",
+        why: "Las materias principales son la entrada obligatoria que la etapa 2 convierte en actividades; las secundarias son las adiciones discrecionales que haces a mano.",
+        how: [
+          "Dale a cada materia un nombre y una categoría de reparto, Principal o Secundaria. No hay una casilla de principal: la categoría es la distinción.",
+          "Fija las horas de grupo por defecto, las horas de profesorado por puesto por defecto y el número de puestos por defecto.",
+          "El tipo de actividad es solo una etiqueta descriptiva. Nunca cambia el comportamiento de la aplicación.",
+          "Los valores por defecto solo inicializan celdas nuevas de la matriz. Cambiar uno más tarde nunca reescribe celdas ni actividades que ya existen."
+        ]
+      },
+      teachingGroups: {
+        what: "Los grupos en sí, cada uno con su etapa, su curso y su código de grupo.",
+        why: "Un grupo es la mitad de cada celda de la matriz, y la matriz es aquello sobre lo que se construye todo el plan.",
+        how: [
+          "Crea un grupo con su etapa educativa, su curso y su código de grupo. La etiqueta se genera por ti hasta que la cambies a mano.",
+          "Para crear un nivel entero de una vez usa Crear grupos: elige una etapa, un curso y un rango de códigos de grupo, previsualiza la lista exacta y créalos juntos en una sola petición.",
+          "Los cursos que puedes elegir se limitan al rango de la etapa seleccionada."
+        ]
+      },
+      groupSubjects: {
+        what: "Una celda por cada par grupo-materia que existe realmente, con las horas reales que ese par representa.",
+        why: "Es el corazón de la etapa 1: la matriz es exactamente lo que la etapa 2 convierte en el plan docente.",
+        how: [
+          "Cada celda lleva horas de grupo, horas de profesorado por puesto y número de puestos. Deja un campo de horas vacío para heredar el valor por defecto de la materia; escribe 0 para un cero real.",
+          "Rellenar treinta celdas una a una es lento, así que usa el editor masivo bajo la lista: elige una materia, el modo de operación y después acota los grupos por etapa y rango de cursos.",
+          "Pulsa Previsualizar cambios y lee qué se creará, qué se actualizará y qué se dejará igual. Solo entonces se habilita Confirmar y aplicar.",
+          "Si algo ha cambiado entre la previsualización y la aplicación, la aplicación se rechaza. Vuelve a previsualizar en lugar de pulsar aplicar una segunda vez."
+        ]
+      },
+      processSettings: {
+        what: "Cómo se llevará este proceso: la carga de referencia, el orden de selección, la selección directa por el profesorado y el acceso por red local.",
+        why: "Estas decisiones determinan lo que podrá hacer la sesión de la etapa 3, así que resuélvelas antes de abrir una sesión.",
+        how: [
+          "Fija la carga horaria de referencia con la que se compara a los participantes. Déjala en blanco para no tener ninguna: un 0 escrito es un cero real y no equivale a dejarlo en blanco.",
+          "Decide si se registra un orden de selección y con qué rigor se aplica, si el profesorado puede tomar un puesto desde su propia vista, y si la vista por red local está abierta.",
+          "Solo se envían los campos que has cambiado realmente. Un proceso Final debe reabrirse aquí primero, con un motivo escrito; Archivado es terminal y no ofrece nada."
+        ]
+      },
+      planning: {
+        what: "La única pantalla donde tu configuración se convierte en un plan docente: qué se imparte realmente, con cuántos docentes y durante cuántas horas.",
+        why: "La etapa 3 no puede empezar hasta que este plan esté equilibrado, demostrado viable, bloqueado y convertido en puestos.",
+        how: [
+          "Crea el plan docente si todavía no existe. Un proceso tiene como mucho uno, y no se crea junto con el proceso.",
+          "Materializa las actividades principales desde la matriz. El panel lista cada celda como pendiente o materializada, y crea solo las pendientes.",
+          "Añade a mano las actividades secundarias: tutoría, docencia compartida, apoyo, tareas de departamento. Decidir eso es el trabajo de planificación.",
+          "Guíate por la cabecera de equilibrio de la parte superior. El objetivo es dejar ambas diferencias en 0,00: horas de grupo frente a la dotación, horas de profesorado frente al objetivo de los participantes.",
+          "Lee las validaciones del plan y después ejecuta la evaluación de viabilidad. Viable significa que la aplicación tiene una disposición concreta que demuestra que los puestos pueden repartirse exactamente.",
+          "Bloquea el plan, previsualiza la generación de puestos y aplícala para crearlos."
+        ]
+      },
+      requirements: {
+        what: "El resultado de solo lectura de la generación: cada puesto docente que produjo el plan, agrupado por actividad y con su propio estado de ciclo de vida.",
+        why: "Un puesto es lo que la etapa 3 entrega a un docente, entero y sin dividir, así que esta página es donde confirmas que la generación produjo lo que esperabas.",
+        how: [
+          "Compara el número y las horas con lo que prometió la previsualización de la generación.",
+          "Lee el estado de cada puesto: disponible, asignado, obsoleto o con reconciliación requerida.",
+          "Aquí no hay deliberadamente creación, edición ni borrado. Los puestos solo cambian por una generación o una reconciliación explícita desde la página de Planificación."
+        ]
+      },
+      assignments: {
+        what: "El tablero donde cada puesto generado se entrega íntegro a un participante.",
+        why: "Este es el reparto en sí. El proceso está completo cuando cada puesto está tomado y cada participante ha alcanzado su objetivo exactamente.",
+        how: [
+          "Pulsa Asignar puesto, elige un puesto libre y después un participante. Quienes no puedan tomarlo aparecen con el motivo en lugar de desaparecer sin explicación.",
+          "Un puesto no puede dividirse, así que a alguien con tres horas restantes nunca se le ofrecerá un puesto de cuatro horas.",
+          "Deshacer libera un puesto y Reasignar lo pasa a otra persona. Ambas exigen un motivo escrito y una cuenta de Administración, y ambas quedan en el tablero como historial.",
+          "Si el tablero entero rechaza nuevas asignaciones, el plan está obsoleto o necesita reconciliación: vuelve a Planificación."
+        ]
+      },
+      meeting: {
+        what: "La sala de control de una sesión de selección en directo, en la que el profesorado toma sus propios puestos por turnos.",
+        why: "Es la alternativa a asignarlo todo tú: el profesorado elige, en un orden registrado, con la aritmética comprobada sobre la marcha.",
+        how: [
+          "Antes de empezar, vincula a cada docente con su cuenta desde el Listado del profesorado mediante un código, y asegúrate de que participa en este proceso.",
+          "Comprueba que el plan está al día y que los puestos están generados, y después elige Abrir sesión. La sesión arrastra los ajustes vigentes.",
+          "Inicializa los turnos y después gobiérnalos con Iniciar, Completar, Saltar y Forzar. Saltar y forzar exigen un motivo escrito y quedan registrados.",
+          "Cierra la sesión cuando termine la reunión. Al cerrarla se retira al profesorado el acceso por red local a esa sesión."
+        ]
+      },
+      teacherView: {
+        what: "La pantalla propia de un docente: sus horas base, extra autorizadas, objetivo, asignadas y restantes, y los puestos que siguen libres.",
+        why: "Muestra a un docente sus propias cifras y las de nadie más, que es lo que permite abrirla sin riesgo durante una sesión.",
+        how: [
+          "Si todavía no hay ningún perfil vinculado a tu cuenta, introduce en Reclamar mi perfil el código que te dio la jefatura de departamento.",
+          "Cuando sea tu turno y la selección directa esté activada, elige un puesto libre y tómalo. El servidor vuelve a comprobar que encaja exactamente con tus horas restantes.",
+          "También puedes pasar tu propio turno. Esta página nunca muestra las horas de otro docente ni el motivo de una autorización de horas extra."
+        ]
+      },
+      sharedScreen: {
+        what: "La vista de proyección: los equilibrios, el estado del plan, los puestos tomados y libres, el turno actual y cuántos participantes están equilibrados, pendientes o sobrecargados.",
+        why: "Permite que toda una sala siga la sesión sin que aparezca en la pared ningún nombre ni ninguna hora de una persona concreta.",
+        how: [
+          "Ábrela en el equipo de proyección mientras la sesión esté abierta.",
+          "Los nombres, las horas individuales y los motivos escritos los elimina el propio servidor en lugar de ocultarlos la página, así que no pueden revelarse.",
+          "No hay una cuenta de proyección aparte: usa la sesión de la jefatura de departamento o la de un participante."
+        ]
+      },
+      versions: {
+        what: "Instantáneas inmutables de todo el proceso, tomadas cuando las pidas, y la comparación entre dos de ellas.",
+        why: "Una instantánea es lo que te permite volver más tarde sobre una decisión, y la comparación es lo que hace posible una revisión de un curso a otro.",
+        how: [
+          "Ponle a la instantánea una nota breve explicando por qué la tomas. Captura la dotación, el plan, la matriz, las actividades, los puestos y las horas de cada participante.",
+          "Compara dos versiones para obtener la respuesta del propio servidor en nueve dimensiones con nombre, cada una con su diferencia.",
+          "Una dimensión puede indicar no comparable, por ejemplo cuando un lado no tiene ninguna dotación. Es una respuesta real, y no es lo mismo que sin cambios."
+        ]
+      },
+      exports: {
+        what: "Tres familias distintas de documento: el plan como documento, copias almacenadas de todo el proceso, y la exportación final estricta.",
+        why: "Así es como un reparto sale de la aplicación: como algo que puedes enviar, conservar o restaurar más adelante.",
+        how: [
+          "El borrador de planificación y el plan provisional están disponibles digan lo que digan los equilibrios. Solo el plan final se rechaza mientras quede un hallazgo bloqueante.",
+          "Los documentos de proceso son copias almacenadas: un borrador interno, la copia para la dirección, un resumen por docente y una copia de seguridad completa. Restaurar devuelve una copia de seguridad a un proceso borrador vacío.",
+          "La importación de planificación reintroduce un documento de planificación en el plan actual y deliberadamente no se bloquea por un resultado desequilibrado: recuperas el equilibrio y los hallazgos.",
+          "La exportación final de asignaciones exige un reparto completo y viabilidad confirmada, y archiva el proceso. Archivado es terminal, así que se te pide confirmación."
+        ]
+      },
+      audit: {
+        what: "El registro ordenado de lo que le ha ocurrido a este proceso y de quién lo hizo.",
+        why: "Cada motivo que la aplicación te pidió escribir se guarda aquí. Es lo que hace defendible una decisión meses después.",
+        how: [
+          "Lee el rastro en orden: creación del proceso, revisiones de dotación, autorizaciones de horas extra, bloqueos del plan, generaciones, reconciliaciones, asignaciones, anulaciones y reasignaciones.",
+          "Cada entrada lleva la cuenta que la realizó y la hora en que ocurrió.",
+          "Los motivos escritos solo los ve la jefatura de departamento. Nunca se muestran al profesorado ni en la pantalla compartida."
+        ]
+      }
+    }
+  },
   picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
 };

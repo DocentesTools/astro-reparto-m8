@@ -86,6 +86,13 @@ host source edits outside documented registration points.
   the read floor and `useRepartoCanAct` the write floor, both from the signed-in
   user and never from a caller-supplied prop. The guard states what to show; the
   service remains the authorization boundary.
+- `src/runtime/stepHelp.ts` owns the per-step guidance map: which stage each
+  route belongs to, the `nav.item.*` entry it is titled by, and the guide page
+  its help links out to. `RepartoRouteGuard` mounts the `?` panel for every
+  route it admits, so a step cannot exist without its help; the copy itself is
+  `help.step.<route>` in the three dictionaries. The guide is host-mounted, so
+  the package states the page slug and the host states the base (`docs.base`,
+  baked in as `PUBLIC_FA_REPARTO_DOCS_BASE`); an empty base drops the link.
 - `src/runtime/react/**` owns providers and default UI. Its process picker uses
   academic year, school, and department selects with one-level inline creation;
   it never exposes raw UUID inputs. `src/runtime/ui/**` owns framework-neutral

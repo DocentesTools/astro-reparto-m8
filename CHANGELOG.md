@@ -2,6 +2,84 @@
 
 All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
+## [2.1.0] - 2026-09-04
+
+A guidance release. Every step now explains itself, and the auth adapter is
+shared across duplicate module instances so a local dev server stops refusing
+signed-in administrators.
+
+### Added
+
+- **A `?` help panel on every step.** `RepartoRouteGuard` renders a *What do I
+  do here?* button above every route it admits, opening a collapsed panel that
+  answers the three questions a first-time reader actually has, in order: what
+  this page is, why it matters, and how to work it as a numbered list. The copy
+  is written for somebody who has never used the application, and it is the same
+  material as the host-side Reparto Docente guide, which each panel links to at
+  its foot.
+
+  It sits on the guard rather than in twenty-two views because the guard is the
+  one place every route passes through, exactly once, with its own name in hand:
+  a step cannot be added without a guard, so a step cannot be added without its
+  help. It is withheld below the route's `view` floor and while the session is
+  unresolved — a session that may not see a route is not told how to work it —
+  and it fetches nothing, so the words are present at the first paint whatever
+  the network is doing.
+
+  The panel's heading and stage label are read from `nav.item.*` and
+  `nav.group.*` rather than restated, so the help and the menu cannot drift
+  apart. `tests/step-help.test.tsx` asserts all twenty-two steps carry real
+  guidance in all three locales, that the panel renders on every route a viewer
+  may open, and that it is absent on the two cases where it must be.
+
+- **`help.*` in the `en`/`fr`/`es` dictionaries** — the panel's own labels and
+  `help.step.<route>` for each of the twenty-two steps, fully translated rather
+  than an English string in three files. The existing key-parity test covers the
+  new subtree, so a step added in one language and not the others fails the
+  build.
+
+- **`docs.base` integration option**, baked in as
+  `PUBLIC_FA_REPARTO_DOCS_BASE` and carried on the runtime config as `docsBase`
+  (default `/docs/reparto`). It is used only for the *Read the full guide* link;
+  a host that publishes no guide sets it to `""` and the link is dropped rather
+  than pointing at a page that is not there. The locale segment is taken from
+  the path the reader is already on, the same test `faAuthBridge` applies to the
+  login path, so a localized host needs no separate setting.
+
+- **`@mano8/astro-reparto-m8/step-help`** — `repartoStepGuidance(dict, route)`
+  returns one step's resolved title, stage, copy and guide link as plain data,
+  so a headless host composing its own views can render the same guidance
+  without this package's panel.
+
+### Fixed
+
+- **A signed-in administrator was refused every reparto route under
+  `astro dev`,** client-side, before a single request reached the service, and
+  the route painted its read-only reader notice. The production bundle was
+  unaffected, which is why this only ever appeared locally.
+
+  Astro serves a `client:only` island from the package's raw path while a bare
+  specifier — the integration's injected bridge script, or a host importing
+  `@mano8/astro-reparto-m8/react` — is served from Vite's optimized dependency
+  cache. Both graphs load `authAdapter.js`, and they load *different copies of
+  it*, each evaluating its own `let activeAdapter`. So
+  `installRepartoFaAuthBridge` registered the fa-auth session on one copy while
+  `useRepartoCurrentUser` read the other, still the anonymous in-memory adapter,
+  and every role gate failed closed as designed on a session it could not see.
+
+  `src/runtime/moduleState.ts` now holds the package's mutable runtime state in
+  one slot per realm, keyed by `Symbol.for`, so every copy of a module reads and
+  writes the same storage. Four values move into it: the auth adapter and the
+  runtime config, which one module registers and another reads back; the
+  bridge's install guard, so a second copy cannot install an adapter and
+  redirect again; and the role hook's cold-start recovery, whose whole purpose
+  is that concurrent mounts refresh once. The public surface is unchanged.
+
+- **`configureReparto` no longer erases a setting when handed `undefined`.** A
+  starter route passes `import.meta.env.PUBLIC_FA_REPARTO_*` straight through,
+  and a host that has not defined one of those would otherwise spread
+  `undefined` over a working default and take the setting away.
+
 ## [2.0.0] - 2026-08-29
 
 `2.0.0` is a major release. Read the **Breaking changes** section before

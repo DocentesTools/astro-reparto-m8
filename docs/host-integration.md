@@ -64,16 +64,25 @@ faReparto({
   defaultLocale: "en",
   auth: { provider: "fa-auth-astro", loginPath: "/login" },
   routes: { audit: false },   // override a path, or drop a route entirely
-  views: { strategy: "package" } // "none" suppresses route injection in starter mode
+  views: { strategy: "package" }, // "none" suppresses route injection in starter mode
+  docs: { base: "/docs/reparto" } // where this host mounts the end-user guide
 });
 ```
 
-`apiBase` and `apiPrefix` are baked into the build as
-`import.meta.env.PUBLIC_FA_REPARTO_API_BASE` / `PUBLIC_FA_REPARTO_API_PREFIX`;
-the starter routes read them and pass them to the view `config` prop. A headless
-host passes the same two values itself (§5). The runtime config also carries
-`csrfHeader` (default `X-Requested-With`) and `requestTimeoutMs` (default
-30 000), settable through `configureReparto` or any view's `config` prop.
+`apiBase`, `apiPrefix` and `docs.base` are baked into the build as
+`import.meta.env.PUBLIC_FA_REPARTO_API_BASE` / `PUBLIC_FA_REPARTO_API_PREFIX` /
+`PUBLIC_FA_REPARTO_DOCS_BASE`; the starter routes read them and pass them to the
+view `config` prop. A headless host passes the same values itself (§5). The
+runtime config also carries `csrfHeader` (default `X-Requested-With`) and
+`requestTimeoutMs` (default 30 000), settable through `configureReparto` or any
+view's `config` prop.
+
+`docs.base` is only ever used for the *Read the full guide* link at the foot of
+each step's `?` help panel (§3.1). Set it to `""` on a host that publishes no
+guide and the link is dropped rather than pointing at a page that is not there.
+The locale segment is added from the path the reader is already on, so a
+localized host needs no separate setting and a single-locale host gets no prefix
+it does not use.
 
 `mode: "headless"` injects no route at all: the host owns its pages and its
 navigation. `mode: "starter"` injects the whole route map below.
@@ -162,6 +171,26 @@ Navigation is host-owned. `DEFAULT_REPARTO_NAV` and `buildRepartoNav(routes)`
 return the three stage groups with `labelKey`s resolved against the package
 dictionary and `[processId]` rendered as `current`; a host is free to reorder,
 relabel or ignore them.
+
+### 3.1 Step help
+
+`RepartoRouteGuard` renders a `?` button above every route it admits, opening a
+collapsed panel that answers the three questions a first-time reader has, in
+order: **what** this page is, **why** it matters, and **how** to work it, as a
+numbered list. The copy lives in the dictionary (`help.step.<route>`) in all
+three locales, so it is present at the first paint with nothing fetched, and the
+panel's heading and stage label are read from `nav.item.*` / `nav.group.*` so the
+help and the menu cannot drift apart.
+
+Because the guard is the one place every route passes through, a new route
+cannot be added without its help. The panel is withheld below the route's `view`
+floor and while the session is unresolved: a session that may not see a route is
+not told how to work it either.
+
+A host composing its own views can render the same guidance without this
+package's panel: `repartoStepGuidance(dict, route, { docsBase, pathname })` from
+`@mano8/astro-reparto-m8/step-help` returns the resolved title, stage, copy and
+guide link as plain data.
 
 ---
 

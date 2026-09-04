@@ -1196,6 +1196,236 @@ export const en = {
     search: "Search classroom stages",
     toast: { created: "Classroom stage created", updated: "Classroom stage updated", saveError: "Classroom stage could not be saved", deleted: "Classroom stage deleted", deleteError: "Classroom stage could not be deleted" }
   },
+  /**
+   * Per-step guidance for the `?` button every route carries.
+   *
+   * The copy is written for somebody opening the application for the first
+   * time, and it is the same material as the host-side Reparto Docente guide:
+   * `what` names the page, `why` says what depends on it, and `how` is the
+   * ordered list of things to actually do. A step's heading is not repeated
+   * here — it comes from `nav.item.*`, so the help panel and the menu cannot
+   * drift apart.
+   */
+  help: {
+    open: "What do I do here?",
+    close: "Hide this help",
+    openFor: "Open the help for {step}",
+    what: "What this page is",
+    why: "Why it matters",
+    how: "How to do it",
+    docs: "Read the full guide",
+    step: {
+      processList: {
+        what: "An assignment process is one department, in one school, for one academic year. Everything else in this application belongs to a process, so a year of work starts here.",
+        why: "Nothing further down the menu can be opened until a process is selected: those pages have nothing to show you without one.",
+        how: [
+          "Pick the academic year, then the school, then the department. Your choice is remembered in this browser, so you only make it once.",
+          "If what you need does not exist yet, choose Create new. The year, the school and the department can all be created from this one screen.",
+          "A new process starts in Draft. You never set the status by hand; it moves on its own as the work progresses.",
+          "Once a process is selected, work straight down the menu: Stage 1, then Stage 2, then Stage 3."
+        ]
+      },
+      dashboard: {
+        what: "One view of where this process stands: the setup checklist, the two hour balances, and what is still missing.",
+        why: "It is the quickest way to answer what do I still have to do, without walking every page to find out.",
+        how: [
+          "Read the setup checklist first. It names every Stage 1 item that is still open.",
+          "Check both balances. Group hours and teacher hours are two separate measurements and are never added together.",
+          "Follow the first unfinished checklist item through to the page that closes it."
+        ]
+      },
+      schools: {
+        what: "The schools this site knows about. A school is shared by the whole site, not by one process.",
+        why: "An academic year, a department and therefore a process all hang off a school, so nothing else can be created until one exists.",
+        how: [
+          "Check whether your school is already here before creating it. These records are shared by everybody.",
+          "Create it with its name. Locality, province, region, address and notes are optional.",
+          "Creating and editing a school needs an Administrator account; anybody may read the list."
+        ]
+      },
+      academicYears: {
+        what: "A school year, such as 2026/2027, with a start date and an end date. A year belongs to one school.",
+        why: "A process is one department, in one school, for one year, and the link to the previous year is what makes a year-on-year comparison possible.",
+        how: [
+          "Choose the school, give the year a label, and set its start and end dates.",
+          "Point it at the previous year when there is one. That link is what copy from last year and the previous-year comparison use.",
+          "A finished year is archived, never deleted, so its record stays intact."
+        ]
+      },
+      departments: {
+        what: "A teaching department inside a school: the group of teachers whose weekly hours this application shares out.",
+        why: "The department is the third part of a process, alongside the school and the academic year.",
+        how: [
+          "Choose the school, then give the department a name and a short slug.",
+          "The department head field is descriptive only. It records who leads the department and grants no permission whatsoever.",
+          "What an account may do comes from its role, never from this field."
+        ]
+      },
+      classroomStages: {
+        what: "The levels of schooling your classes belong to, for example Secundaria with the short label ESO and grades 1 to 4.",
+        why: "A class name is built from its stage, so getting the stages right once keeps every class named consistently afterwards.",
+        how: [
+          "Give the stage a name, the short label used inside class names, and its lowest and highest grade.",
+          "A class label is then generated from the grade, the short label and the group code together, giving 3rd ESO B.",
+          "Anybody may read the stages; creating and editing them needs an Administrator account."
+        ]
+      },
+      teacherRoster: {
+        what: "The list of teaching staff this site knows about. It is deliberately separate from the site user accounts.",
+        why: "A roster entry is what you later add to a process as a participant, and linking it to an account is what lets that teacher use My view during a meeting.",
+        how: [
+          "Create one entry per teacher with a display name. Mark somebody who has left as inactive rather than deleting them.",
+          "To link a teacher to their account, choose Issue claim code on their row. The code is shown once, works once and expires, so hand it to that teacher privately.",
+          "The teacher signs in with their own account, opens My view and enters the code. You never pick an account on their behalf.",
+          "If a code is lost, issue another one. The old code cannot be displayed again."
+        ]
+      },
+      allocation: {
+        what: "The weekly group hours school leadership has given your department: the figure the whole plan has to add up to. Before the first revision is recorded the page is simply empty, which is normal for a new process rather than an error.",
+        why: "It is one of the two totals Stage 2 balances against, so there is nothing to plan towards until it is recorded.",
+        how: [
+          "Enter the allocated weekly group hours, greater than zero and at most two decimals, together with a written reason. The reason is required and kept permanently.",
+          "There is no edit and no delete. To change the figure you record a new revision, which supersedes the previous one and keeps it visible as history.",
+          "Recording a revision after planning has started makes the plan stale and forces an explicit reconciliation, so do it deliberately."
+        ]
+      },
+      participants: {
+        what: "The teachers taking part in this particular process, each with their contracted weekly load.",
+        why: "The sum of every active participant target is the teacher-hours total the plan has to hit exactly: not one hour more, not one hour less.",
+        how: [
+          "Add each teacher from the roster and set their base hours, meaning their contracted weekly teaching load.",
+          "Target hours are calculated for you as base plus authorized extra, and cannot be typed in.",
+          "Authorized extra hours start at zero and change only through the separate action that requires a written reason, in both directions, including withdrawing one.",
+          "Say whether each participant takes a turn in the meeting, and in what position."
+        ]
+      },
+      subjects: {
+        what: "What is taught, together with the default hours each one usually carries.",
+        why: "Main subjects are the mandatory input Stage 2 turns into activities; secondary ones are the discretionary additions you make by hand.",
+        how: [
+          "Give each subject a name and an allocation category, Main or Secondary. There is no is-main checkbox: the category is the distinction.",
+          "Set the default group hours, the default teacher hours per position, and the default number of teacher positions.",
+          "The activity type is a descriptive label only. It never changes how the application behaves.",
+          "Defaults only seed new matrix cells. Changing one later never rewrites cells or activities that already exist."
+        ]
+      },
+      teachingGroups: {
+        what: "The classes themselves, each with its stage, its grade and its group code.",
+        why: "A class is one half of every matrix cell, and the matrix is what the entire plan is built from.",
+        how: [
+          "Create a class with its classroom stage, its grade and its group code. The label is generated for you until you change it by hand.",
+          "To create a whole level at once use Create groups: pick a stage, a grade and a range of group codes, preview the exact list, then create them together in one request.",
+          "The grades you may choose are limited to the range of the stage you picked."
+        ]
+      },
+      groupSubjects: {
+        what: "One cell for every class-and-subject pair that actually exists, carrying the real hours that pair is worth.",
+        why: "This is the heart of Stage 1: the matrix is precisely what Stage 2 turns into the teaching plan.",
+        how: [
+          "Each cell holds group hours, teacher hours per position and teacher positions. Leave an hours field empty to inherit the subject default; enter 0 for a real zero.",
+          "Filling thirty cells one at a time is slow, so use the bulk editor below the list: pick one subject, choose the operation mode, then narrow the classes by stage and grade range.",
+          "Press Preview changes and read what it will create, update and leave alone. Only then does Confirm and apply become available.",
+          "If anything changed between the preview and the apply, the apply is refused. Preview again rather than pressing apply a second time."
+        ]
+      },
+      processSettings: {
+        what: "How this process will be run: the reference load, the selection order, direct teacher selection, and local-network access.",
+        why: "These choices decide what the Stage 3 meeting is able to do, so settle them before opening a session.",
+        how: [
+          "Set the default hours reference participants are measured against. Leave it blank for none: a typed 0 is a real zero and is not the same as blank.",
+          "Decide whether a selection order is recorded and how strictly it applies, whether teachers may take a position from their own view, and whether the local-network view is open.",
+          "Only the fields you actually changed are sent. A Final process must be reopened here first, with a written reason; Archived is terminal and offers nothing."
+        ]
+      },
+      planning: {
+        what: "The one screen where your configuration becomes a teaching plan: what is actually taught, by how many teachers, for how many hours.",
+        why: "Stage 3 cannot start until this plan is balanced, proven feasible, locked, and turned into positions.",
+        how: [
+          "Create the teaching plan if it does not exist yet. A process owns at most one, and it is not created with the process.",
+          "Materialise the main activities from the matrix. The panel lists every cell as missing or materialized, and creates only the missing ones.",
+          "Add the secondary activities, such as tutoring, co-teaching, support and department duties, by hand. Deciding those is the planning work.",
+          "Steer by the balance header at the top. Your goal is both differences at 0.00: group hours against the allocation, teacher hours against the participant target.",
+          "Read the plan validations, then run the feasibility evaluation. Feasible means the application holds a concrete arrangement proving the positions can be handed out exactly.",
+          "Lock the plan, preview the requirement generation, and apply it to create the positions."
+        ]
+      },
+      requirements: {
+        what: "The read-only result of generation: every teacher position the plan produced, grouped by activity, each with its own lifecycle state.",
+        why: "A position is what Stage 3 hands to one teacher, whole and unsplit, so this page is where you confirm generation produced what you expected.",
+        how: [
+          "Check the count and the hours against what the generation preview promised.",
+          "Read each position state: available, assigned, stale, or reconciliation required.",
+          "There is deliberately no create, edit or delete here. Positions change only through generation or an explicit reconciliation on the Planning page."
+        ]
+      },
+      assignments: {
+        what: "The board where each generated position is handed to one participant, in full.",
+        why: "This is the sharing-out itself. The process is complete when every position is held and every participant has reached their target exactly.",
+        how: [
+          "Press Assign slot, choose a free position, then a participant. Participants who cannot take it are listed with the reason rather than quietly dropped.",
+          "A position cannot be split, so a teacher with three hours left is never offered a four-hour position.",
+          "Undo releases a position and Reassign moves it to somebody else. Both need a written reason and an Administrator account, and both stay on the board as history.",
+          "If the whole board refuses new assignments, the plan is stale or needs reconciliation, so go back to Planning."
+        ]
+      },
+      meeting: {
+        what: "The control room for a live selection meeting, in which teachers take their own positions in turn.",
+        why: "It is the alternative to assigning everything yourself: teachers choose, in a recorded order, with the arithmetic checked as they go.",
+        how: [
+          "Beforehand, link each teacher to their account from the Teacher roster with a claim code, and make sure they are participants in this process.",
+          "Check the plan is current and the positions are generated, then choose Open session. The session carries the current settings forward.",
+          "Initialize the turns, then drive them with Start, Complete, Skip and Override. Skipping and overriding require a written reason and are recorded.",
+          "Close the session when the meeting is over. Closing removes teacher access to it over the local network."
+        ]
+      },
+      teacherView: {
+        what: "A teacher own screen: their base, authorized extra, target, assigned and remaining hours, and the positions still free.",
+        why: "It shows one teacher their own figures and nobody else, which is what makes it safe to open during a meeting.",
+        how: [
+          "If no profile is linked to your account yet, enter the claim code your department head gave you under Claim my profile.",
+          "When it is your turn and direct selection is enabled, choose a free position and take it. The server rechecks that it fits your remaining hours exactly.",
+          "You may also pass your own turn. This page never shows another teacher hours, nor the reason behind an extra-hours authorization."
+        ]
+      },
+      sharedScreen: {
+        what: "The projector view: the balances, plan readiness, positions taken and free, the current turn, and how many participants are balanced, pending or overloaded.",
+        why: "It lets a whole room follow the meeting without any teacher name or hours appearing on the wall.",
+        how: [
+          "Open it on the projected machine while the meeting session is open.",
+          "Names, per-teacher hours and written reasons are removed by the server itself rather than hidden by the page, so they cannot be revealed.",
+          "There is no separate projector account: use the department head session, or a participant one."
+        ]
+      },
+      versions: {
+        what: "Immutable snapshots of the whole process, taken whenever you ask for one, and the comparison between two of them.",
+        why: "A snapshot is how you come back to a decision later, and the comparison is what makes a year-on-year review possible.",
+        how: [
+          "Give the snapshot a short note saying why you are taking it. It captures the allocation, the plan, the matrix, the activities, the positions and each participant hours.",
+          "Compare two versions to get the server own answer across nine named dimensions, each with its difference.",
+          "A dimension may read not comparable, for instance when one side has no allocation at all. That is a real answer, and not the same as no change."
+        ]
+      },
+      exports: {
+        what: "Three different families of document: the plan as a document, stored copies of the whole process, and the strict final export.",
+        why: "This is how a reparto leaves the application, as something you can send, keep, or restore later.",
+        how: [
+          "The planning draft and the provisional plan are available whatever the balances say. Only the final plan is refused while a blocking finding stands.",
+          "Process documents are stored copies: an internal draft, the leadership copy, a per-teacher summary and a full backup. Restore puts a backup back into an empty draft process.",
+          "Planning import takes a planning document back into the current plan and is deliberately not blocked by an unbalanced result, so you get the balance and the findings back.",
+          "The final assignment export needs a complete reparto and confirmed feasibility, and it archives the process. Archived is terminal, so it asks you to confirm."
+        ]
+      },
+      audit: {
+        what: "The ordered record of what happened to this process, and who did it.",
+        why: "Every reason the application asked you to type is stored here. It is what makes a decision defensible months later.",
+        how: [
+          "Read the trail in order: process creation, allocation revisions, extra-hour authorizations, plan locks, generations, reconciliations, assignments, undos and reassignments.",
+          "Each entry carries the account that performed it and the time it happened.",
+          "Written reasons are visible to the department head alone. They are never shown to teachers or on the shared screen."
+        ]
+      }
+    }
+  },
   picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
 };
 

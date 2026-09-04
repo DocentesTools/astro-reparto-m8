@@ -475,11 +475,41 @@ describe("integration", () => {
       vite: {
         define: {
           "import.meta.env.PUBLIC_FA_REPARTO_API_BASE": "\"/reparto\"",
-          "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": "\"\""
+          "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": "\"\"",
+          "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": "\"/docs/reparto\""
         }
       }
     });
     expect(injectRoute).toHaveBeenCalledTimes(22);
+  });
+
+  // The guide the `?` help links out to is host-mounted, so its base is the
+  // host's to state. An empty string is the deliberate "this host publishes no
+  // guide" answer, and it must survive as an empty string rather than falling
+  // back to the default.
+  it("passes the host's documentation base through to the starter routes", () => {
+    for (const [option, expected] of [
+      [undefined, "\"/docs/reparto\""],
+      ["/en/help/reparto", "\"/en/help/reparto\""],
+      ["", "\"\""]
+    ] as const) {
+      const updateConfig = vi.fn();
+      faReparto({
+        mode: "starter",
+        auth: { provider: "custom" },
+        ...(option === undefined ? {} : { docs: { base: option } })
+      }).hooks["astro:config:setup"]?.({
+        injectRoute: vi.fn(),
+        updateConfig,
+        config: { integrations: [] },
+        logger: { warn: vi.fn() }
+      } as never);
+      expect(
+        updateConfig.mock.calls[0]?.[0]?.vite?.define?.[
+          "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE"
+        ]
+      ).toBe(expected);
+    }
   });
 
   it("checks auth order for official starter routes and skips disabled routes", () => {

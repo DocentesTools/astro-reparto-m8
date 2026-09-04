@@ -69,6 +69,18 @@ describe("runtime config", () => {
     resetRepartoConfig();
     expect(getRepartoConfig().apiBase).toBe("/reparto");
   });
+
+  // A starter route hands `import.meta.env.PUBLIC_FA_REPARTO_*` straight
+  // through. A host that has not defined one of those passes `undefined`, and
+  // spreading that over a working default would take the setting away — so an
+  // undefined value is skipped rather than written.
+  it("ignores an undefined value instead of erasing the setting it names", () => {
+    configureReparto({ apiBase: "/r", docsBase: "/help" });
+    const merged = configureReparto({ apiBase: undefined, docsBase: undefined });
+    expect(merged.apiBase).toBe("/r");
+    expect(merged.docsBase).toBe("/help");
+    resetRepartoConfig();
+  });
 });
 
 describe("errors", () => {

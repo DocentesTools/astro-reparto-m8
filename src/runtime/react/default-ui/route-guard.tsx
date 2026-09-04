@@ -9,6 +9,7 @@ import {
 import type { RepartoRouteName } from "../../routes.js";
 import { useRepartoRouteAccess } from "../useRepartoRole.js";
 import { repartoPanelClass } from "../styles.js";
+import { RepartoStepHelp } from "./step-help.js";
 
 /**
  * The §8.1 route map's gate: one route, one minimum role, three outcomes.
@@ -26,6 +27,13 @@ import { repartoPanelClass } from "../styles.js";
  * The guard is a client-side statement about what to show, never the boundary
  * itself: every request behind it is gated again by the service, which is where
  * authorization actually lives.
+ *
+ * It is also the one place that sees every step: all twenty-two routes pass
+ * through it, exactly once each, with the route's own name in hand. That is why
+ * the `?` help sits here rather than being repeated in twenty-two views — a
+ * step cannot be added without a guard, so a step cannot be added without its
+ * help. It is rendered only above the `view` floor: a session that may not see
+ * the route is not told how to work it.
  */
 export function RepartoRouteGuard({
   children,
@@ -72,5 +80,10 @@ export function RepartoRouteGuard({
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <RepartoStepHelp locale={locale} route={route} />
+      {children}
+    </>
+  );
 }

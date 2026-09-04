@@ -1,6 +1,6 @@
 {
   "name": "@mano8/astro-reparto-m8",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Astro integration and headless client for reparto-docente-m8.",
   "type": "module",
   "license": "MIT",
@@ -41,6 +41,7 @@
     "./i18n": "./dist/src/runtime/i18n/index.js",
     "./routes": "./dist/src/runtime/routes.js",
     "./route-access": "./dist/src/runtime/routeAccess.js",
+    "./step-help": "./dist/src/runtime/stepHelp.js",
     "./ui": "./dist/src/runtime/ui/index.js",
     "./error-mapping": "./dist/src/runtime/errorMapping.js",
     "./routes/dashboard.astro": "./src/routes/dashboard.astro",

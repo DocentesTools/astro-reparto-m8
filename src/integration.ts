@@ -4,6 +4,7 @@ import {
   type BuiltRepartoRoutes,
   type RepartoRouteFragments
 } from "./runtime/routes.js";
+import { DEFAULT_REPARTO_DOCS_BASE } from "./runtime/stepHelp.js";
 
 export type FaRepartoNavEntry = {
   labelKey: string;
@@ -39,6 +40,15 @@ export type FaRepartoAstroOptions = {
   routes?: RepartoRouteFragments;
   views?: {
     strategy?: "none" | "package" | "scaffolded";
+  };
+  docs?: {
+    /**
+     * Where this host mounts the Reparto Docente guide, for the link at the
+     * foot of every step's `?` help panel. Defaults to `/docs/reparto`; set it
+     * to an empty string on a host that publishes no guide and the link is
+     * dropped rather than pointing nowhere.
+     */
+    base?: string;
   };
 };
 
@@ -216,6 +226,7 @@ export default function faReparto(
   const apiBase = options.apiBase ?? "/reparto";
   const apiPrefix = options.apiPrefix ?? "";
   const loginPath = options.auth?.loginPath ?? "/login";
+  const docsBase = options.docs?.base ?? DEFAULT_REPARTO_DOCS_BASE;
 
   return {
     name: REPARTO_INTEGRATION_NAME,
@@ -225,7 +236,8 @@ export default function faReparto(
           vite: {
             define: {
               "import.meta.env.PUBLIC_FA_REPARTO_API_BASE": JSON.stringify(apiBase),
-              "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": JSON.stringify(apiPrefix)
+              "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": JSON.stringify(apiPrefix),
+              "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": JSON.stringify(docsBase)
             }
           }
         });

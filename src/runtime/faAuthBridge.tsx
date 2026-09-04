@@ -9,6 +9,7 @@ import {
   getRepartoAuthAdapter,
   setRepartoAuthAdapter
 } from "./authAdapter.js";
+import { sharedState } from "./moduleState.js";
 
 type FaAuthBrowserAdapter = {
   getAccessToken: () => string | null | Promise<string | null>;
@@ -35,7 +36,15 @@ export type RepartoFaAuthBridgeOptions = {
   routePrefixes?: string[];
 };
 
-let installed = false;
+/**
+ * Whether the bridge has already run, shared across copies of this module.
+ *
+ * The integration injects one page script, but a host that also imports the
+ * bridge can load a second copy of this file (see `moduleState.ts`); a
+ * module-level `let` would let each copy install its own adapter and run the
+ * route guard again, which is a second redirect on an unauthenticated route.
+ */
+const installed = sharedState<boolean>("faAuthBridge.installed", () => false);
 
 function splitLocale(pathname: string, locales: string[]): { locale: string; rest: string } {
   const [, first = "", ...rest] = pathname.split("/");
@@ -80,8 +89,8 @@ async function guardCurrentRepartoRoute(options: RepartoFaAuthBridgeOptions): Pr
 
 /** Register reparto's local adapter from auth's browser contract. */
 export function installRepartoFaAuthBridge(options: RepartoFaAuthBridgeOptions = {}): void {
-  if (installed || typeof window === "undefined") return;
-  installed = true;
+  if (installed.get() || typeof window === "undefined") return;
+  installed.set(true);
 
   setRepartoAuthAdapter(
     createFaAuthAdapter({
@@ -97,5 +106,5 @@ export function installRepartoFaAuthBridge(options: RepartoFaAuthBridgeOptions =
 
 /** Test-only: allow {@link installRepartoFaAuthBridge} to run again. */
 export function resetRepartoFaAuthBridge(): void {
-  installed = false;
+  installed.set(false);
 }

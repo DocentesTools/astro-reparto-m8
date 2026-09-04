@@ -15,6 +15,7 @@ import {
   type RepartoRole,
   type RepartoViewMode
 } from "../authAdapter.js";
+import { sharedState } from "../moduleState.js";
 
 export type RepartoRoleState = {
   /**
@@ -61,8 +62,16 @@ function readSyncSession(): RepartoRoleState {
  * in the same tick. Without this, each one would run its own refresh; the
  * issuer rotates the refresh token, so the losers of that race are refused and
  * a session that was perfectly valid reports itself expired.
+ *
+ * Shared through `moduleState.ts` rather than held in a module-level `let`,
+ * for the same reason the adapter is: a page can load two copies of this file,
+ * and two copies each holding their own "already recovering" flag is exactly
+ * the race this exists to prevent.
  */
-let coldStartRecovery: Promise<RepartoCurrentUser | null> | null = null;
+const coldStartRecovery = sharedState<Promise<RepartoCurrentUser | null> | null>(
+  "useRepartoRole.coldStartRecovery",
+  () => null
+);
 
 async function recoverSession(): Promise<RepartoCurrentUser | null> {
   const adapter = getRepartoAuthAdapter();
@@ -70,6 +79,17 @@ async function recoverSession(): Promise<RepartoCurrentUser | null> {
     await adapter.refresh();
   }
   return (await adapter.getCurrentUser?.()) ?? null;
+}
+
+/** The recovery already in flight, or a fresh one claiming the shared slot. */
+function claimColdStartRecovery(): Promise<RepartoCurrentUser | null> {
+  const inFlight = coldStartRecovery.get();
+  if (inFlight) return inFlight;
+  const started = recoverSession().finally(() => {
+    coldStartRecovery.set(null);
+  });
+  coldStartRecovery.set(started);
+  return started;
 }
 
 /**
@@ -98,15 +118,12 @@ export function useRepartoCurrentUser(): RepartoRoleState {
       if (active) setState({ resolved: true, user });
     };
     void Promise.resolve(getRepartoAuthAdapter().getCurrentUser?.() ?? null)
-      .catch(() => {
-        coldStartRecovery ??= recoverSession().finally(() => {
-          coldStartRecovery = null;
-        });
+      .catch(() =>
         // Fail closed on a second failure rather than never resolving: an
         // anonymous session renders the route's refusal, which a reader can act
         // on, where the waiting state is a dead end.
-        return coldStartRecovery.catch(() => null);
-      })
+        claimColdStartRecovery().catch(() => null)
+      )
       .then(settle);
     return () => {
       active = false;

@@ -5,6 +5,8 @@ import {
   privilegeClaimsAreConsistent
 } from "@mano8/astro-auth-m8/authorization";
 
+import { sharedState } from "./moduleState.js";
+
 export type RepartoAuthAdapter = {
   getAccessToken: () => string | null | Promise<string | null>;
   refresh?: () => string | null | Promise<string | null>;
@@ -109,7 +111,17 @@ export function canManageClassroomStages(user: RepartoCurrentUser | null): boole
   return sessionHasMinimumRole(user, REPARTO_ADMIN_MINIMUM_ROLE);
 }
 
-let activeAdapter: RepartoAuthAdapter = createInMemoryAuthAdapter();
+/**
+ * The registered adapter, in the one slot every copy of this module shares.
+ *
+ * Not a module-level `let`: the bridge that registers the adapter and the view
+ * that reads it back do not always load the same copy of this file. See
+ * `moduleState.ts` for the dev-server module split that makes that so.
+ */
+const activeAdapter = sharedState<RepartoAuthAdapter>(
+  "authAdapter.active",
+  createInMemoryAuthAdapter
+);
 
 export function createInMemoryAuthAdapter(
   initialToken: string | null = null
@@ -151,14 +163,14 @@ export function createFaAuthAdapter(options: {
 export function setRepartoAuthAdapter(
   adapter: RepartoAuthAdapter
 ): RepartoAuthAdapter {
-  activeAdapter = adapter;
-  return activeAdapter;
+  activeAdapter.set(adapter);
+  return adapter;
 }
 
 export function getRepartoAuthAdapter(): RepartoAuthAdapter {
-  return activeAdapter;
+  return activeAdapter.get();
 }
 
 export function resetRepartoAuthAdapter(): void {
-  activeAdapter = createInMemoryAuthAdapter();
+  activeAdapter.set(createInMemoryAuthAdapter());
 }

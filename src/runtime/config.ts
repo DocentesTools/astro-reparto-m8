@@ -1,3 +1,5 @@
+import { sharedState } from "./moduleState.js";
+
 export type RepartoRuntimeConfig = {
   apiBase: string;
   apiPrefix: string;
@@ -12,19 +14,32 @@ const DEFAULT_CONFIG: RepartoRuntimeConfig = {
   requestTimeoutMs: 30_000
 };
 
-let runtimeConfig: RepartoRuntimeConfig = { ...DEFAULT_CONFIG };
+/**
+ * The runtime config, in the one slot every copy of this module shares.
+ *
+ * A host or a starter route configures the API base on whichever copy of this
+ * file its own import resolved to, and `client.ts` reads it from whichever copy
+ * *its* import resolved to. Under `astro dev` those are not always the same
+ * file — see `moduleState.ts` — so the config lives beside the auth adapter in
+ * shared storage rather than in a module-level `let`.
+ */
+const runtimeConfig = sharedState<RepartoRuntimeConfig>(
+  "config.runtime",
+  () => ({ ...DEFAULT_CONFIG })
+);
 
 export function configureReparto(
   config: Partial<RepartoRuntimeConfig> = {}
 ): RepartoRuntimeConfig {
-  runtimeConfig = { ...runtimeConfig, ...config };
-  return runtimeConfig;
+  const next = { ...runtimeConfig.get(), ...config };
+  runtimeConfig.set(next);
+  return next;
 }
 
 export function getRepartoConfig(): RepartoRuntimeConfig {
-  return runtimeConfig;
+  return runtimeConfig.get();
 }
 
 export function resetRepartoConfig(): void {
-  runtimeConfig = { ...DEFAULT_CONFIG };
+  runtimeConfig.set({ ...DEFAULT_CONFIG });
 }

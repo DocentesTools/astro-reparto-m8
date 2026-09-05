@@ -10,7 +10,8 @@ export {
 } from "./DepartmentHeadWorkspace.js";
 export {
   SetupChecklistProgress,
-  SetupChecklistSteps
+  SetupChecklistSteps,
+  SetupChecklistSummary
 } from "./SetupChecklist.js";
 export {
   MeetingControlWorkspace,

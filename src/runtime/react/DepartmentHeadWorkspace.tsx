@@ -39,7 +39,7 @@ import {
   type VersionComparisonDelta,
   type VersionComparisonView
 } from "../ui/index.js";
-import { SetupChecklistSteps } from "./SetupChecklist.js";
+import { SetupChecklistSteps, SetupChecklistSummary } from "./SetupChecklist.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -503,6 +503,8 @@ export function DepartmentHeadWorkspace({
     processId: setup?.processId ?? activeSummary?.process_id ?? null,
     summary: activeSummary
   });
+  const checklistProcessId =
+    setup?.processId ?? activeSummary?.process_id ?? null;
   const actions = [
     {
       key: "initialize-turns",
@@ -694,14 +696,22 @@ export function DepartmentHeadWorkspace({
         <section className={repartoPanelClass} data-reparto-panel="setup-checklist">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.checklist}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="checklist-progress">
-              {checklist.doneCount}/{checklist.total}
-            </span>
           </div>
+          {/*
+            Summary first, list second. A dashboard is scanned before it is read,
+            so the panel opens with how far along the process is and what to do
+            next; the fifteen rows that justify those numbers follow, because
+            this is the one surface that carries the checklist in full.
+          */}
+          <SetupChecklistSummary
+            checklist={checklist}
+            locale={locale}
+            processId={checklistProcessId}
+          />
           <SetupChecklistSteps
             checklist={checklist}
             locale={locale}
-            processId={setup?.processId ?? activeSummary?.process_id ?? null}
+            processId={checklistProcessId}
           />
           <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="checklist-summary">
             {formatRepartoMessage(dict.dashboard.summary.checklist, {

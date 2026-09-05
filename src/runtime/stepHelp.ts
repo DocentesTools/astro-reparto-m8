@@ -2,21 +2,30 @@ import type { RepartoDictionary } from "./i18n/types.js";
 import type { RepartoRouteName } from "./routes.js";
 
 /**
- * Which of the three stage groups each route belongs to.
+ * The line each route prints above its title in the `?` panel.
  *
- * The same grouping the sidebar uses (`DEFAULT_REPARTO_NAV`), restated here as
- * data rather than read out of the nav: the nav is a host-overridable
- * *presentation* of the route map, and a host that reorders its menu must not
- * change which stage a step tells the reader it is in. `exports` appears in two
- * nav groups and is named for the later one, because that is the stage a reader
- * who has reached the export centre is actually in.
+ * The three stage values are the sidebar's own grouping (`DEFAULT_REPARTO_NAV`),
+ * restated here as data rather than read out of the nav: the nav is a
+ * host-overridable *presentation* of the route map, and a host that reorders its
+ * menu must not change which stage a step tells the reader it is in. `exports`
+ * appears in two nav groups and is named for the later one, because that is the
+ * stage a reader who has reached the export centre is actually in.
+ *
+ * `overview` is the fourth value and is **not** a stage. The dashboard and the
+ * process list report on the workflow rather than advance it — nothing is done
+ * on them, so labelling them *Stage 1 · Configuration* told a reader they were
+ * standing on a step they were in fact only reading about. The sidebar still
+ * groups them under Stage 1, and rightly: nothing else opens until a process is
+ * selected. That is a menu-ordering fact, and it stops at the menu.
  */
-export const REPARTO_STEP_STAGE: Record<
-  RepartoRouteName,
-  keyof RepartoDictionary["nav"]["group"]
-> = {
-  processList: "configuration",
-  dashboard: "configuration",
+export type RepartoStepStage =
+  | keyof RepartoDictionary["nav"]["group"]
+  /** A report on the workflow, not a step of it. */
+  | "overview";
+
+export const REPARTO_STEP_STAGE: Record<RepartoRouteName, RepartoStepStage> = {
+  processList: "overview",
+  dashboard: "overview",
   schools: "configuration",
   academicYears: "configuration",
   departments: "configuration",
@@ -136,7 +145,7 @@ export function repartoDocsHref(
 /** One step's guidance, resolved against a dictionary and the current path. */
 export type RepartoStepGuidance = {
   route: RepartoRouteName;
-  /** The stage group this step sits in, in the reader's language. */
+  /** The stage group this step sits in — or *Overview* — in the reader's language. */
   stage: string;
   /** The step's name, borrowed from the menu. */
   title: string;
@@ -145,6 +154,20 @@ export type RepartoStepGuidance = {
   how: string[];
   docsHref: string | null;
 };
+
+/**
+ * One stage value, in the reader's language.
+ *
+ * The three real stages borrow the sidebar's own `nav.group.*` label so the
+ * panel and the menu cannot name a stage differently; `overview` has no menu
+ * group to borrow from, because it is not one.
+ */
+export function repartoStageLabel(
+  dict: RepartoDictionary,
+  stage: RepartoStepStage
+): string {
+  return stage === "overview" ? dict.help.overview : dict.nav.group[stage];
+}
 
 /**
  * Everything the `?` panel shows for one step.
@@ -161,7 +184,7 @@ export function repartoStepGuidance(
   const step = dict.help.step[route];
   return {
     route,
-    stage: dict.nav.group[REPARTO_STEP_STAGE[route]],
+    stage: repartoStageLabel(dict, REPARTO_STEP_STAGE[route]),
     title: dict.nav.item[REPARTO_STEP_NAV_ITEM[route]],
     what: step.what,
     why: step.why,

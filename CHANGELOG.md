@@ -39,6 +39,38 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   This replaces the picker's three inline-create buttons on the checklist, which
   duplicated the *Create new* option the picker's own FK selects already offer.
 
+- **The no-process gate selects; it no longer creates.** Every process-scoped
+  route falls back to `WithSelectedProcess` when no process is remembered, and
+  that fallback was the whole `ProcessPicker` — a three-select create form. So
+  `/reparto` answered *Dashboard* with *fill in this form*, on a cold browser,
+  and the dashboard never drew. The gate is now a real empty state: a selector
+  over the existing processes, or a statement that there are none, plus a link to
+  the `processList` route. Creating an assignment process stays where it belongs
+  — that route already opens the same three-select form from its own Create
+  button, with one level of inline creation and never a raw UUID. The link is
+  withheld below the `processList` act floor, so a reader is told what is missing
+  rather than handed an affordance that would refuse them.
+
+- **The dashboard reads its checklist at a dashboard's altitude.** Fifteen
+  bordered rows beside four panels of metrics was a worklist where a report
+  belonged. `SetupChecklistSummary` opens the panel with a progress bar, the
+  three per-stage counts, and the first genuinely outstanding step named as a
+  link — and the rows still follow it, because the dashboard is the one surface
+  that carries the checklist in full. Steps the surface could not check are
+  reported beside the count and never folded into it: `11/15` with two unknown is
+  a different statement from `11/15` with none. An `unknown` step is never
+  offered as the next action, because nobody looked at it.
+
+- **The dashboard and the process list are `Overview`, not `Stage 1`.** The `?`
+  panel's first line used to read *Stage 1 · Configuration* on both, telling a
+  reader they were standing on a workflow step when nothing is performed on
+  either page — they report on the workflow. `REPARTO_STEP_STAGE` gains a fourth
+  value, `overview`, resolved through the new `repartoStageLabel` against
+  `help.overview` rather than a `nav.group.*` label it would have had to invent.
+  The sidebar still groups both under Stage 1, and rightly — nothing else opens
+  until a process is selected — but that is a menu-ordering fact and it stops at
+  the menu.
+
 ### Added
 
 - **`routes` on the runtime config**, so a link built inside a view points at
@@ -52,10 +84,12 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   path already carries one, and returning `null` for a route the host disabled
   so a dropped route yields plain text rather than a dead link.
 
-- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking`** in the
+- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking` /
+  `progress` / `unknownCount` / `next` / `allDone`**, **`picker.gateTitle` /
+  `gateHint` / `gateEmptyHint` / `gateCreate`**, and **`help.overview`** in the
   `en`/`fr`/`es` dictionaries, frozen in `docs/ui-naming-freeze.md` §8 alongside
-  the new `data-reparto-checklist-toggle` and `data-reparto-checklist-link`
-  slots.
+  the new `data-reparto-checklist-toggle`, `-link`, `-summary`, `-stage` and
+  `-next` slots.
 
 ## [2.1.0] - 2026-09-04
 

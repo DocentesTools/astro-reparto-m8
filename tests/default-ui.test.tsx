@@ -409,15 +409,18 @@ describe("default reparto UI", () => {
     expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
   });
 
-  it("shows the process picker when no process is selected", () => {
+  // The gate selects; it does not create. Every process-scoped route used to
+  // open on the create-process form when no process was remembered.
+  it("gates on a process selector, not the create form, when none is selected", () => {
     for (const view of [
       renderToStaticMarkup(<TeacherLanView />),
       renderToStaticMarkup(<DepartmentHeadView />),
       renderToStaticMarkup(<SharedScreenView />)
     ]) {
-      expect(view).toContain('data-reparto-route="process-picker"');
-      expect(view).toContain('data-reparto-form="create-process"');
-      expect(view).toContain('data-reparto-action="create-process"');
+      expect(view).toContain('data-reparto-route="no-process"');
+      expect(view).toContain('data-reparto-panel="no-process"');
+      expect(view).not.toContain('data-reparto-form="create-process"');
+      expect(view).not.toContain('data-reparto-action="create-process"');
     }
   });
 

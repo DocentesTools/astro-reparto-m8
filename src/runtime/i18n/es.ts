@@ -848,6 +848,10 @@ export const es: RepartoDictionary = {
       openChecklist: "Lista de configuración",
       closeChecklist: "Cerrar la lista de configuración",
       checking: "Comprobando lo que está hecho…",
+      progress: "{done} de {total} hechas",
+      unknownCount: "{count} sin comprobar aquí",
+      next: "Siguiente",
+      allDone: "Todos los pasos que esta pantalla puede comprobar están hechos.",
       reason: {
         "no-process": "Seleccione antes un proceso.",
         "not-observed": "Esta pantalla no lee ese dato."
@@ -1194,6 +1198,7 @@ export const es: RepartoDictionary = {
   },
   help: {
     open: "¿Qué tengo que hacer aquí?",
+    overview: "Vista general",
     close: "Ocultar esta ayuda",
     openFor: "Abrir la ayuda de {step}",
     what: "Qué es esta página",
@@ -1412,5 +1417,5 @@ export const es: RepartoDictionary = {
       }
     }
   },
-  picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante" }
+  picker: { noProcesses: "Aún no hay procesos.", selectProcess: "Seleccionar un proceso", createNew: "Crear nuevo", createMissingPrerequisite: "Crear el requisito previo faltante", gateTitle: "Ningún proceso seleccionado", gateHint: "Elija el proceso sobre el que debe informar esta página.", gateEmptyHint: "Todavía no hay nada que mostrar: primero hace falta un proceso de reparto.", gateCreate: "Crear un proceso de reparto" }
 };

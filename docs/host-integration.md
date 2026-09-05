@@ -185,7 +185,11 @@ relabel or ignore them.
 `RepartoRouteGuard` renders a `?` button above every route it admits, opening a
 collapsed panel that answers the three questions a first-time reader has, in
 order: **what** this page is, **why** it matters, and **how** to work it, as a
-numbered list. The copy lives in the dictionary (`help.step.<route>`) in all
+numbered list. Its first line is the route's stage. Twenty of the twenty-two
+routes name one of the three stages; `dashboard` and `processList` name
+**Overview** instead (`help.overview`), because they report on the workflow
+rather than advance it — nothing is done on either page. The sidebar still groups
+them under Stage 1, which is a menu-ordering fact and stops at the menu. The copy lives in the dictionary (`help.step.<route>`) in all
 three locales, so it is present at the first paint with nothing fetched, and the
 panel's heading and stage label are read from `nav.item.*` / `nav.group.*` so the
 help and the menu cannot drift apart.
@@ -338,9 +342,16 @@ data.
 | *data props* | see below | Server-supplied payloads that bypass the view's own query. |
 
 `processId="current"` (and an omitted `processId`) means "no concrete process
-yet": the view renders its process picker, remembers the choice in
+yet": the view renders the **no-process gate** — a selector over the existing
+processes plus a link to the `processList` route — remembers the choice in
 `localStorage` under `reparto.lastProcessId`, and reuses it on the next visit.
-The picker selects by academic year, school and department — never by raw UUID.
+
+The gate selects; it does not create. Creating an assignment process needs the
+academic year, school and department behind it, and that three-select form
+(`ProcessPicker`, one level of inline creation, never a raw UUID) belongs to the
+`processList` route, which opens it from its own Create button. The gate's link
+is withheld below the `processList` act floor, so a reader is told what is
+missing rather than handed an affordance that would refuse them.
 
 The data props exist so a host that already holds a payload can render without a
 second fetch; supplying one bypasses the picker for that view:

@@ -849,6 +849,10 @@ export const fr: RepartoDictionary = {
       openChecklist: "Liste de configuration",
       closeChecklist: "Fermer la liste de configuration",
       checking: "Vérification de ce qui est fait…",
+      progress: "{done} sur {total} terminées",
+      unknownCount: "{count} non vérifiées ici",
+      next: "Suite",
+      allDone: "Toutes les étapes vérifiables ici sont terminées.",
       reason: {
         "no-process": "Sélectionnez d'abord un processus.",
         "not-observed": "Cet écran ne lit pas cette donnée."
@@ -1195,6 +1199,7 @@ export const fr: RepartoDictionary = {
   },
   help: {
     open: "Que dois-je faire ici ?",
+    overview: "Vue d'ensemble",
     close: "Masquer cette aide",
     openFor: "Ouvrir l'aide de {step}",
     what: "Ce qu'est cette page",
@@ -1413,5 +1418,5 @@ export const fr: RepartoDictionary = {
       }
     }
   },
-  picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant" }
+  picker: { noProcesses: "Aucun processus pour le moment.", selectProcess: "Sélectionner un processus", createNew: "Créer un nouveau", createMissingPrerequisite: "Créer le prérequis manquant", gateTitle: "Aucun processus sélectionné", gateHint: "Choisissez le processus sur lequel cette page doit porter.", gateEmptyHint: "Rien à afficher pour le moment — un processus d'affectation vient d'abord.", gateCreate: "Créer un processus d'affectation" }
 };

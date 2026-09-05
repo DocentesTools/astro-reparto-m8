@@ -855,6 +855,13 @@ export const en = {
       openChecklist: "Setup checklist",
       closeChecklist: "Close the setup checklist",
       checking: "Checking what is done…",
+      // The dashboard's progress panel. It reads the same checklist the popup
+      // lists, at the altitude a dashboard is read at: how far along, per stage,
+      // and the one thing to do next.
+      progress: "{done} of {total} done",
+      unknownCount: "{count} not checked here",
+      next: "Next",
+      allDone: "Every step this screen can check is done.",
       reason: {
         "no-process": "Select a process first.",
         "not-observed": "This screen does not read that."
@@ -1215,6 +1222,9 @@ export const en = {
    */
   help: {
     open: "What do I do here?",
+    // The stage line for the two routes that report on the workflow rather than
+    // advance it. Every other route borrows `nav.group.*`.
+    overview: "Overview",
     close: "Hide this help",
     openFor: "Open the help for {step}",
     what: "What this page is",
@@ -1433,7 +1443,10 @@ export const en = {
       }
     }
   },
-  picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite" }
+  // The no-process gate every process-scoped route falls back to. It selects;
+  // it does not create — creating an assignment process is the process list's
+  // own job, and the gate links there rather than growing a second form.
+  picker: { noProcesses: "No processes yet.", selectProcess: "Select a process", createNew: "Create new", createMissingPrerequisite: "Create missing prerequisite", gateTitle: "No process selected", gateHint: "Pick the process this page should report on.", gateEmptyHint: "Nothing to report on yet — an assignment process comes first.", gateCreate: "Create an assignment process" }
 };
 
 export const enLocale: RepartoLocale = "en";

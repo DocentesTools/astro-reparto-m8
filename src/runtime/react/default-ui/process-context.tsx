@@ -21,6 +21,8 @@ import {
   type RepartoEventStreamState
 } from "../useRepartoEvents.js";
 import { resolveProcessId } from "../../queryKeys.js";
+import { getRepartoConfig } from "../../config.js";
+import { repartoRouteHref } from "../../routes.js";
 import {
   getRepartoDictionary,
   normalizeRepartoLocale,
@@ -39,7 +41,7 @@ import {
   repartoShellClass
 } from "../styles.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
-import type { SseAudience } from "../../schemas.js";
+import type { AssignmentProcessStatus, SseAudience } from "../../schemas.js";
 
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
@@ -437,7 +439,13 @@ export function WithSelectedProcess({
   }, [processesQuery.data, routeProcessId, selected]);
 
   if (!bypass && !effective) {
-    return <ProcessPicker locale={locale} onSelect={setSelected} />;
+    return (
+      <NoProcessSelected
+        locale={locale}
+        onSelect={setSelected}
+        processes={processes}
+      />
+    );
   }
   return (
     <>
@@ -486,6 +494,93 @@ export function WithSelectedProcess({
     </>
   );
 }
+
+/**
+ * What a process-scoped route shows before a process is chosen.
+ *
+ * This used to be the whole `ProcessPicker` — a three-select create form with
+ * inline creation — which meant `/reparto` answered *Dashboard* with *fill in
+ * this form*. A dashboard has nothing to show without a process, so a gate is
+ * right; a create form is not the gate. Creating an assignment process is the
+ * process list's job and it already does it properly, so this selects and links
+ * there rather than growing a second form beside it.
+ *
+ * The link is offered only to a session that could actually use it: below the
+ * `processList` act floor there is nothing to create, so the reader is told what
+ * is missing and not handed an affordance that would refuse them.
+ */
+function NoProcessSelected({
+  locale,
+  onSelect,
+  processes
+}: {
+  locale?: RepartoLocale;
+  onSelect: (processId: string) => void;
+  processes: { id: string; status: AssignmentProcessStatus }[];
+}) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const canAct = useRepartoCanAct("processList");
+  const createHref = repartoRouteHref(getRepartoConfig().routes, "processList", {
+    locale: dict.locale,
+    pathname: typeof window === "undefined" ? "" : window.location.pathname
+  });
+  const hasProcesses = processes.length > 0;
+
+  return (
+    <main className={repartoShellClass} data-reparto-route="no-process">
+      <section
+        className={repartoPanelClass}
+        data-reparto-panel="no-process"
+        data-reparto-slot="no-process"
+      >
+        <div className={repartoPanelHeaderClass}>
+          <div className="space-y-1">
+            <h2>{dict.picker.gateTitle}</h2>
+            <p className="text-sm text-muted-foreground">
+              {hasProcesses ? dict.picker.gateHint : dict.picker.gateEmptyHint}
+            </p>
+          </div>
+        </div>
+        {hasProcesses ? (
+          <label className={repartoFieldLabelClass} data-reparto-fk="selected-process">
+            {dict.dashboard.pickerLabel}
+            <select
+              className={repartoInputClass}
+              data-reparto-field="selected-process"
+              onChange={(event: InputChangeEvent) => onSelect(event.target.value)}
+              value=""
+            >
+              <option value="" disabled>
+                {dict.picker.selectProcess}
+              </option>
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>
+                  {dict.entity.assignmentProcess.status[process.status]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-sm text-muted-foreground" data-reparto-slot="process-empty">
+            {dict.picker.noProcesses}
+          </p>
+        )}
+        {canAct && createHref ? (
+          <p className="mt-3 text-sm">
+            <a
+              className="font-medium text-primary underline"
+              data-reparto-slot="create-process-link"
+              href={createHref}
+            >
+              {dict.picker.gateCreate}
+            </a>
+          </p>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
 
 type DictType = ReturnType<typeof getRepartoDictionary>;
 

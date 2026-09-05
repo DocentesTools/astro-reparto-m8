@@ -839,7 +839,9 @@ The table:
 > subject it already is. The dashboard is the one route with no button.
 
 The setup-checklist card is opened from the step toolbar on every route but the
-dashboard, and shown in full on the dashboard. Both render it from the
+dashboard, and shown in full on the dashboard — where a `SetupChecklistSummary`
+(progress bar, per-stage counts, next action) sits above the list. Both render it
+from the
 **one** derivation, `buildSetupChecklist` (`src/runtime/ui/setupChecklist.ts`),
 through the one component, `SetupChecklistSteps`. Dictionary root:
 `flow.bootstrap.*`; steps are grouped by the three stages under the existing
@@ -883,6 +885,10 @@ and that line stays plain text.
 | `flow.bootstrap.openChecklist` | Setup checklist | Liste de configuration | Lista de configuración |
 | `flow.bootstrap.closeChecklist` | Close the setup checklist | Fermer la liste de configuration | Cerrar la lista de configuración |
 | `flow.bootstrap.checking` | Checking what is done… | Vérification de ce qui est fait… | Comprobando lo que está hecho… |
+| `flow.bootstrap.progress` | {done} of {total} done | {done} sur {total} terminées | {done} de {total} hechas |
+| `flow.bootstrap.unknownCount` | {count} not checked here | {count} non vérifiées ici | {count} sin comprobar aquí |
+| `flow.bootstrap.next` | Next | Suite | Siguiente |
+| `flow.bootstrap.allDone` | Every step this screen can check is done. | Toutes les étapes vérifiables ici sont terminées. | Todos los pasos que esta pantalla puede comprobar están hechos. |
 | `flow.bootstrap.reason.no-process` | Select a process first. | Sélectionnez d'abord un processus. | Seleccione antes un proceso. |
 | `flow.bootstrap.reason.not-observed` | This screen does not read that. | Cet écran ne lit pas cette donnée. | Esta pantalla no lee ese dato. |
 
@@ -894,6 +900,9 @@ and that line stays plain text.
 | Toolbar toggle | `data-reparto-checklist-toggle=""` | opens the card; **not** a `data-reparto-action`, which marks the write affordances the role floors withhold |
 | Step | `data-reparto-checklist-step="<key>"` | the dictionary key is the slot name |
 | Step link | `data-reparto-checklist-link="<key>"` | the step's own page, from `SETUP_CHECKLIST_STEP_ROUTE`; absent when the host disabled that route |
+| Summary | `data-reparto-checklist-summary=""` with `data-reparto-checklist-percent` | the dashboard's progress panel, above the list |
+| Stage count | `data-reparto-checklist-stage="<stage>"` + `data-reparto-checklist-stage-done` | done-per-stage, from the same three stages the list groups by |
+| Next action | `data-reparto-checklist-next="<key>"` | the first `pending` step in stage order; an `unknown` step is never a next action |
 | Step state | `data-reparto-checklist-state="done\|pending\|unknown"` | `unknown` is new: the condition was **not tested here**, which is not the same statement as "not done" |
 | Blocked reason | `data-reparto-checklist-blocked="no-process\|not-observed"` alongside `data-reparto-disabled-reason=""` | why the condition could not be tested |
 | Status word | `data-reparto-step-status="done\|pending\|unknown"` | shown where the surface offers no way in |

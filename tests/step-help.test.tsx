@@ -17,6 +17,7 @@ import {
   REPARTO_STEP_NAV_ITEM,
   REPARTO_STEP_STAGE,
   repartoDocsHref,
+  repartoStageLabel,
   repartoStepGuidance
 } from "../src/runtime/stepHelp.js";
 import { repartoUser, resetRepartoAuthAdapter, signInReparto } from "./support/session.js";
@@ -70,7 +71,34 @@ describe("every step carries guidance", () => {
       for (const route of ROUTES) {
         const guidance = repartoStepGuidance(dict, route);
         expect(guidance.title).toBe(dict.nav.item[REPARTO_STEP_NAV_ITEM[route]]);
-        expect(guidance.stage).toBe(dict.nav.group[REPARTO_STEP_STAGE[route]]);
+        expect(guidance.stage).toBe(
+          repartoStageLabel(dict, REPARTO_STEP_STAGE[route])
+        );
+      }
+    }
+  });
+
+  /**
+   * The dashboard and the process list report on the workflow; they do not
+   * advance it. Labelling them *Stage 1 · Configuration* told a reader they were
+   * standing on a step when nothing is done on either page. The sidebar still
+   * groups them under Stage 1 — that is a menu-ordering fact, and it stops at
+   * the menu.
+   */
+  it("calls the two reporting routes Overview, not Stage 1", () => {
+    for (const locale of REPARTO_LOCALES) {
+      const dict = getRepartoDictionary(locale);
+      for (const route of ["dashboard", "processList"] as const) {
+        expect(REPARTO_STEP_STAGE[route]).toBe("overview");
+        expect(repartoStepGuidance(dict, route).stage).toBe(dict.help.overview);
+        expect(repartoStepGuidance(dict, route).stage).not.toBe(
+          dict.nav.group.configuration
+        );
+      }
+      // And every route that *is* a step still names its stage.
+      for (const route of ROUTES) {
+        if (route === "dashboard" || route === "processList") continue;
+        expect(REPARTO_STEP_STAGE[route], route).not.toBe("overview");
       }
     }
   });

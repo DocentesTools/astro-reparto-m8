@@ -1259,7 +1259,14 @@ function RepartoExportsContent({
   const [restoreAssignments, setRestoreAssignments] = useState(true);
   const hasProcess = Boolean(resolveProcessId(processId));
   const isLoading = exportsQuery.isLoading && !artifacts && hasProcess;
-  if (isLoading || exportsQuery.isError) {
+  // Only the *loading* case stands in for the center. A failed artifact-list
+  // read must not take the export affordances down with it: `GET …/exports` is
+  // the inventory of what was already built, while the planning exports sit at
+  // the service's read floor and a backup is the one document that has to be
+  // producible in every state. Returning early on `isError` meant one failed
+  // list read removed the button that takes the backup — exactly when a head
+  // most wants one. The error is reported by the `QueryState` *below* the view.
+  if (isLoading) {
     return (
       <QueryState
         error={exportsQuery.error}

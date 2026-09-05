@@ -2,6 +2,61 @@
 
 All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
+## [Unreleased]
+
+### Changed
+
+- **The setup checklist is a button on every step, not a preamble.** The
+  fifteen-step checklist used to be printed at the top of the process picker —
+  which is what every process-scoped step page falls back to while no process is
+  selected — so an operator opening *Subjects* met the state of the whole year
+  above the one form they came for. It now opens from a **Setup checklist**
+  button in the `RepartoRouteGuard` toolbar, beside the `?` help, on every route
+  but the dashboard; the dashboard keeps it laid out in full, because the state
+  of the process already *is* its subject, and is therefore the one route with
+  no button.
+
+  The panel fetches nothing until it is opened: its queries live in a component
+  that is mounted only while the dialog is, so a reader who never presses the
+  button pays nothing, and the reads it then makes are the same list reads the
+  Stage 1 routes make. Which reads those are depends on the answer it needs —
+  with a process selected it reads that process's summary and Stage 1 counts and
+  skips the school/year/department lists entirely, because a process is already
+  proof all three exist.
+
+  The toggle is deliberately not a `data-reparto-action`: that attribute marks
+  the write affordances the role floors withhold, and a read-only summary of what
+  is done is offered to every role that may see the route at all.
+
+- **Every checklist line links to the page its step is done on.** The checklist
+  answers *what is left*; a reader told they still owe the group-subject matrix
+  should not then have to find it in the menu. `SETUP_CHECKLIST_STEP_ROUTE`
+  (`src/runtime/ui/setupChecklist.ts`) names the one route per step, stated once
+  beside the derivation it belongs to. Process-scoped links carry the reader's
+  own process id and fall back to the route map's `current` placeholder when
+  none is selected.
+
+  This replaces the picker's three inline-create buttons on the checklist, which
+  duplicated the *Create new* option the picker's own FK selects already offer.
+
+### Added
+
+- **`routes` on the runtime config**, so a link built inside a view points at
+  this host's URLs rather than the package's defaults. The integration bakes its
+  resolved route map in as `import.meta.env.PUBLIC_FA_REPARTO_ROUTES` and the
+  starter routes pass it through with `apiBase` and `docsBase`; a headless host
+  passes the same fragments it gave `faReparto`, and a partial map is completed
+  from the defaults rather than taken half-filled. `repartoRouteHref`
+  (`src/runtime/routes.ts`) resolves one address from it — filling the
+  `[processId]` placeholder, adding the locale segment only when the reader's
+  path already carries one, and returning `null` for a route the host disabled
+  so a dropped route yields plain text rather than a dead link.
+
+- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking`** in the
+  `en`/`fr`/`es` dictionaries, frozen in `docs/ui-naming-freeze.md` §8 alongside
+  the new `data-reparto-checklist-toggle` and `data-reparto-checklist-link`
+  slots.
+
 ## [2.1.0] - 2026-09-04
 
 A guidance release. Every step now explains itself, and the auth adapter is

@@ -5,7 +5,11 @@ import { RepartoRouteGuard } from "../src/runtime/react/default-ui/route-guard.j
 import { RepartoStepHelp } from "../src/runtime/react/default-ui/step-help.js";
 import { configureReparto, getRepartoConfig, resetRepartoConfig } from "../src/runtime/config.js";
 import { getRepartoDictionary, REPARTO_LOCALES } from "../src/runtime/i18n/index.js";
-import { buildRepartoRoutes, type RepartoRouteName } from "../src/runtime/routes.js";
+import {
+  buildRepartoRoutes,
+  repartoRouteHref,
+  type RepartoRouteName
+} from "../src/runtime/routes.js";
 import { REPARTO_ROUTE_ACCESS } from "../src/runtime/routeAccess.js";
 import {
   DEFAULT_REPARTO_DOCS_BASE,
@@ -147,6 +151,51 @@ describe("repartoDocsHref", () => {
   });
 });
 
+describe("repartoRouteHref", () => {
+  const routes = buildRepartoRoutes();
+
+  it("fills the process placeholder with the reader's process, or the sentinel", () => {
+    expect(repartoRouteHref(routes, "subjects", { processId: "p-1" })).toBe(
+      "/reparto/processes/p-1/subjects"
+    );
+    expect(repartoRouteHref(routes, "subjects")).toBe(
+      "/reparto/processes/current/subjects"
+    );
+    // Whitespace is not an id: it falls back rather than building `//subjects`.
+    expect(repartoRouteHref(routes, "subjects", { processId: "  " })).toBe(
+      "/reparto/processes/current/subjects"
+    );
+    expect(repartoRouteHref(routes, "schools")).toBe("/reparto/setup/schools");
+  });
+
+  it("adds the locale segment only when the current path already carries it", () => {
+    expect(
+      repartoRouteHref(routes, "schools", { locale: "fr", pathname: "/fr/reparto" })
+    ).toBe("/fr/reparto/setup/schools");
+    expect(
+      repartoRouteHref(routes, "schools", {
+        locale: "fr",
+        pathname: "/reparto/setup/departments"
+      })
+    ).toBe("/reparto/setup/schools");
+    expect(repartoRouteHref(routes, "schools", { pathname: "/fr/reparto" })).toBe(
+      "/reparto/setup/schools"
+    );
+  });
+
+  it("normalizes a host pattern written without its leading slash", () => {
+    expect(
+      repartoRouteHref(buildRepartoRoutes({ schools: "setup/schools" }), "schools")
+    ).toBe("/setup/schools");
+  });
+
+  it("has no address for a route the host disabled", () => {
+    expect(
+      repartoRouteHref(buildRepartoRoutes({ meeting: false }), "meeting")
+    ).toBeNull();
+  });
+});
+
 describe("the ? button on a rendered step", () => {
   function renderStep(route: RepartoRouteName): string {
     return renderToStaticMarkup(
@@ -230,5 +279,50 @@ describe("the ? button on a rendered step", () => {
       </RepartoRouteGuard>
     );
     expect(html).not.toContain('data-reparto-help="schools"');
+  });
+});
+
+/**
+ * The setup checklist as a button, not a preamble.
+ *
+ * It used to be printed above the form on every step a reader opened, which is
+ * the complaint this suite freezes the answer to: the whole-workflow list is
+ * one press away on every step, and laid out in full on the one surface whose
+ * subject it is.
+ */
+describe("the setup-checklist button on a rendered step", () => {
+  function renderStep(route: RepartoRouteName): string {
+    return renderToStaticMarkup(
+      <RepartoRouteGuard locale="en" route={route}>
+        <p>route content</p>
+      </RepartoRouteGuard>
+    );
+  }
+
+  it("appears on every step page, closed, beside the ? toggle", () => {
+    const dict = getRepartoDictionary("en");
+    for (const route of ROUTES.filter((name) => name !== "dashboard")) {
+      signInReparto(repartoUser(REPARTO_ROUTE_ACCESS[route].view));
+      const html = renderStep(route);
+      expect(html, route).toContain("data-reparto-checklist-toggle=");
+      expect(html, route).toContain(`data-reparto-step-toolbar="${route}"`);
+      expect(html, route).toContain(asMarkup(dict.flow.bootstrap.openChecklist));
+      // Closed: the panel and everything it would fetch are unmounted.
+      expect(html, route).not.toContain("data-reparto-checklist=");
+    }
+  });
+
+  // The dashboard lays the same checklist out in full, so a button there would
+  // open a second copy of what the reader is already looking at.
+  it("is withheld from the dashboard, which shows the checklist in full", () => {
+    signInReparto(repartoUser(REPARTO_ROUTE_ACCESS.dashboard.view));
+    const html = renderStep("dashboard");
+    expect(html).toContain('data-reparto-help="dashboard"');
+    expect(html).not.toContain("data-reparto-checklist-toggle=");
+  });
+
+  it("is withheld with the rest of the route below the view floor", () => {
+    signInReparto(repartoUser("user"));
+    expect(renderStep("schools")).not.toContain("data-reparto-checklist-toggle=");
   });
 });

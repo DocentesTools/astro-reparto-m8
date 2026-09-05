@@ -848,6 +848,13 @@ export const en = {
       done: "Done",
       open: "Open",
       unknown: "Not checked here",
+      // The button every step page carries, and the panel it opens. The
+      // checklist is a whole-workflow answer, so a step page offers it rather
+      // than printing it above the form the reader came for; the dashboard is
+      // the one surface it belongs on in full.
+      openChecklist: "Setup checklist",
+      closeChecklist: "Close the setup checklist",
+      checking: "Checking what is done…",
       reason: {
         "no-process": "Select a process first.",
         "not-observed": "This screen does not read that."

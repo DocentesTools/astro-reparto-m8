@@ -830,8 +830,16 @@ The table:
 > two labels tested the same participant count. An operator who had added
 > subjects was told to add subjects. The retired step name is in §12.
 
-The setup-checklist card is shown by the process picker (before a process is
-selected) and by the department-head dashboard (after). Both render it from the
+> **Where it is shown, revised 2026-09-05.** It used to be printed at the top of
+> the process picker, which is what a step page falls back to while no process is
+> selected — so an operator met fifteen lines of whole-workflow state above the
+> one form they had opened the page for. The card is now offered by a **Setup
+> checklist** button in every step's `RepartoRouteGuard` toolbar, beside the `?`
+> help, and laid out in full on the department-head dashboard alone, whose
+> subject it already is. The dashboard is the one route with no button.
+
+The setup-checklist card is opened from the step toolbar on every route but the
+dashboard, and shown in full on the dashboard. Both render it from the
 **one** derivation, `buildSetupChecklist` (`src/runtime/ui/setupChecklist.ts`),
 through the one component, `SetupChecklistSteps`. Dictionary root:
 `flow.bootstrap.*`; steps are grouped by the three stages under the existing
@@ -841,6 +849,11 @@ identically.
 **The label states the condition.** The right-hand column below is the condition
 `buildSetupChecklist` actually tests; a change to either column without the
 other is the defect this section was rewritten to prevent.
+
+**Every label is a link.** `SETUP_CHECKLIST_STEP_ROUTE` names the one route each
+step is done on, resolved against the runtime config's `routes` map so the link
+follows a host that moved its pages; a route the host disabled has no address
+and that line stays plain text.
 
 | Key | en | Condition tested |
 | --- | --- | --- |
@@ -867,6 +880,9 @@ other is the defect this section was rewritten to prevent.
 | `flow.bootstrap.done` | Done | Terminé | Hecho |
 | `flow.bootstrap.open` | Open | Ouvrir | Abrir |
 | `flow.bootstrap.unknown` | Not checked here | Non vérifié ici | No comprobado aquí |
+| `flow.bootstrap.openChecklist` | Setup checklist | Liste de configuration | Lista de configuración |
+| `flow.bootstrap.closeChecklist` | Close the setup checklist | Fermer la liste de configuration | Cerrar la lista de configuración |
+| `flow.bootstrap.checking` | Checking what is done… | Vérification de ce qui est fait… | Comprobando lo que está hecho… |
 | `flow.bootstrap.reason.no-process` | Select a process first. | Sélectionnez d'abord un processus. | Seleccione antes un proceso. |
 | `flow.bootstrap.reason.not-observed` | This screen does not read that. | Cet écran ne lit pas cette donnée. | Esta pantalla no lee ese dato. |
 
@@ -875,7 +891,9 @@ other is the defect this section was rewritten to prevent.
 | Card | `data-reparto-panel="setup-checklist"` | one panel per surface; the list inside it is shared |
 | List | `data-reparto-checklist=""` | wraps the three stage groups |
 | Stage group | `data-reparto-checklist-group="configuration\|planning\|assignment"` | labelled from `nav.group.*`, never a second set of stage names |
+| Toolbar toggle | `data-reparto-checklist-toggle=""` | opens the card; **not** a `data-reparto-action`, which marks the write affordances the role floors withhold |
 | Step | `data-reparto-checklist-step="<key>"` | the dictionary key is the slot name |
+| Step link | `data-reparto-checklist-link="<key>"` | the step's own page, from `SETUP_CHECKLIST_STEP_ROUTE`; absent when the host disabled that route |
 | Step state | `data-reparto-checklist-state="done\|pending\|unknown"` | `unknown` is new: the condition was **not tested here**, which is not the same statement as "not done" |
 | Blocked reason | `data-reparto-checklist-blocked="no-process\|not-observed"` alongside `data-reparto-disabled-reason=""` | why the condition could not be tested |
 | Status word | `data-reparto-step-status="done\|pending\|unknown"` | shown where the surface offers no way in |

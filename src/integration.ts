@@ -237,7 +237,11 @@ export default function faReparto(
             define: {
               "import.meta.env.PUBLIC_FA_REPARTO_API_BASE": JSON.stringify(apiBase),
               "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": JSON.stringify(apiPrefix),
-              "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": JSON.stringify(docsBase)
+              "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": JSON.stringify(docsBase),
+              // The resolved route map, so a link inside a view points at this
+              // host's URLs. Baked in as an object literal rather than a string:
+              // the starter pages hand it straight to `configureReparto`.
+              "import.meta.env.PUBLIC_FA_REPARTO_ROUTES": JSON.stringify(routes)
             }
           }
         });

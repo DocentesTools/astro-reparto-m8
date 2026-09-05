@@ -845,6 +845,9 @@ export const es: RepartoDictionary = {
       done: "Hecho",
       open: "Abrir",
       unknown: "No comprobado aquí",
+      openChecklist: "Lista de configuración",
+      closeChecklist: "Cerrar la lista de configuración",
+      checking: "Comprobando lo que está hecho…",
       reason: {
         "no-process": "Seleccione antes un proceso.",
         "not-observed": "Esta pantalla no lee ese dato."

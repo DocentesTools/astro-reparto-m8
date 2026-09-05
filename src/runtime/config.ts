@@ -1,4 +1,5 @@
 import { sharedState } from "./moduleState.js";
+import { buildRepartoRoutes, type BuiltRepartoRoutes } from "./routes.js";
 import { DEFAULT_REPARTO_DOCS_BASE } from "./stepHelp.js";
 
 export type RepartoRuntimeConfig = {
@@ -12,6 +13,13 @@ export type RepartoRuntimeConfig = {
    * guide, and the link is dropped rather than pointing nowhere.
    */
   docsBase: string;
+  /**
+   * Where this host mounts each step, for the links the setup checklist points
+   * at. The integration bakes its own resolved route map in as
+   * `PUBLIC_FA_REPARTO_ROUTES`, so a host that moved or disabled a route gets
+   * links that match its own URLs rather than this package's defaults.
+   */
+  routes: BuiltRepartoRoutes;
 };
 
 const DEFAULT_CONFIG: RepartoRuntimeConfig = {
@@ -19,7 +27,8 @@ const DEFAULT_CONFIG: RepartoRuntimeConfig = {
   apiPrefix: "",
   csrfHeader: "X-Requested-With",
   requestTimeoutMs: 30_000,
-  docsBase: DEFAULT_REPARTO_DOCS_BASE
+  docsBase: DEFAULT_REPARTO_DOCS_BASE,
+  routes: buildRepartoRoutes()
 };
 
 /**
@@ -51,6 +60,10 @@ export function configureReparto(
   for (const [key, value] of Object.entries(config)) {
     if (value !== undefined) next[key] = value;
   }
+  // A fragment map is completed rather than taken as-is: a host that states
+  // only the routes it moved keeps this package's defaults for the rest, and a
+  // link is never built against a half-filled map.
+  if (config.routes) next.routes = buildRepartoRoutes(config.routes);
   const merged = next as RepartoRuntimeConfig;
   runtimeConfig.set(merged);
   return merged;
@@ -61,5 +74,5 @@ export function getRepartoConfig(): RepartoRuntimeConfig {
 }
 
 export function resetRepartoConfig(): void {
-  runtimeConfig.set({ ...DEFAULT_CONFIG });
+  runtimeConfig.set({ ...DEFAULT_CONFIG, routes: buildRepartoRoutes() });
 }

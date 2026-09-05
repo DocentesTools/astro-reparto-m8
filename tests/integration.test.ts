@@ -476,7 +476,10 @@ describe("integration", () => {
         define: {
           "import.meta.env.PUBLIC_FA_REPARTO_API_BASE": "\"/reparto\"",
           "import.meta.env.PUBLIC_FA_REPARTO_API_PREFIX": "\"\"",
-          "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": "\"/docs/reparto\""
+          "import.meta.env.PUBLIC_FA_REPARTO_DOCS_BASE": "\"/docs/reparto\"",
+          "import.meta.env.PUBLIC_FA_REPARTO_ROUTES": JSON.stringify(
+            buildRepartoRoutes()
+          )
         }
       }
     });

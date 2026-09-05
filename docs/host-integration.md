@@ -69,13 +69,21 @@ faReparto({
 });
 ```
 
-`apiBase`, `apiPrefix` and `docs.base` are baked into the build as
-`import.meta.env.PUBLIC_FA_REPARTO_API_BASE` / `PUBLIC_FA_REPARTO_API_PREFIX` /
-`PUBLIC_FA_REPARTO_DOCS_BASE`; the starter routes read them and pass them to the
+`apiBase`, `apiPrefix`, `docs.base` and the resolved `routes` map are baked into
+the build as `import.meta.env.PUBLIC_FA_REPARTO_API_BASE` /
+`PUBLIC_FA_REPARTO_API_PREFIX` / `PUBLIC_FA_REPARTO_DOCS_BASE` /
+`PUBLIC_FA_REPARTO_ROUTES`; the starter routes read them and pass them to the
 view `config` prop. A headless host passes the same values itself (§5). The
 runtime config also carries `csrfHeader` (default `X-Requested-With`) and
 `requestTimeoutMs` (default 30 000), settable through `configureReparto` or any
 view's `config` prop.
+
+`routes` on the runtime config is what the setup checklist links against (§3.2).
+A headless host that mounts the views at its own paths should pass the same
+fragments it passed to `faReparto` — `configureReparto({ routes: { subjects:
+"/teaching/[processId]/subjects" } })` completes the rest from the defaults. A
+route set to `false` has no address, and its checklist line stays plain text
+rather than becoming a dead link.
 
 `docs.base` is only ever used for the *Read the full guide* link at the foot of
 each step's `?` help panel (§3.1). Set it to `""` on a host that publishes no
@@ -192,6 +200,26 @@ package's panel: `repartoStepGuidance(dict, route, { docsBase, pathname })` from
 `@mano8/astro-reparto-m8/step-help` returns the resolved title, stage, copy and
 guide link as plain data.
 
+### 3.2 The setup checklist
+
+The fifteen-step setup checklist answers *where am I in the workflow*, which is a
+question a reader who has already opened a step has answered. So it is not
+printed above the step's own form. It is offered instead:
+
+* **Every step page** carries a **Setup checklist** button beside the `?`
+  toggle, in the same `RepartoRouteGuard` toolbar. It opens the checklist over
+  the page and fetches nothing until it is opened — a reader who never presses it
+  costs the page nothing, and the reads it then makes are the same list reads the
+  Stage 1 routes make, so the shared query cache usually answers them.
+* **The dashboard** lays the same checklist out in full, because the state of the
+  process *is* its subject. It is the one route with no button: a second copy of
+  what is already on the page is not an affordance.
+
+Every line links to the page that step is done on
+(`SETUP_CHECKLIST_STEP_ROUTE`, resolved through the runtime config's `routes`).
+Process-scoped links carry the reader's own process id, falling back to the
+`current` placeholder when none is selected.
+
 ---
 
 ## 4. Starter host example
@@ -304,7 +332,7 @@ data.
 
 | Prop | Type | Meaning |
 | --- | --- | --- |
-| `config` | `Partial<RepartoRuntimeConfig>` | `apiBase`, `apiPrefix`, `csrfHeader`, `requestTimeoutMs`. Omit only if the host already called `configureReparto`. |
+| `config` | `Partial<RepartoRuntimeConfig>` | `apiBase`, `apiPrefix`, `csrfHeader`, `requestTimeoutMs`, `docsBase`, `routes`. Omit only if the host already called `configureReparto`. |
 | `locale` | `"en" \| "fr" \| "es"` | Dictionary selection; an unknown value normalizes to `en`. |
 | `processId` | `string` | A process UUID, or the `"current"` placeholder. |
 | *data props* | see below | Server-supplied payloads that bypass the view's own query. |

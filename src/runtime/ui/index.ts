@@ -68,6 +68,7 @@ export {
 } from "./feasibility.js";
 export {
   buildSetupChecklist,
+  SETUP_CHECKLIST_STEP_ROUTE,
   type SetupChecklist,
   type SetupChecklistBlockedReason,
   type SetupChecklistObservations,

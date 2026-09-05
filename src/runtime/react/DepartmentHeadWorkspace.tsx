@@ -698,7 +698,11 @@ export function DepartmentHeadWorkspace({
               {checklist.doneCount}/{checklist.total}
             </span>
           </div>
-          <SetupChecklistSteps checklist={checklist} locale={locale} />
+          <SetupChecklistSteps
+            checklist={checklist}
+            locale={locale}
+            processId={setup?.processId ?? activeSummary?.process_id ?? null}
+          />
           <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="checklist-summary">
             {formatRepartoMessage(dict.dashboard.summary.checklist, {
               done: checklist.doneCount,

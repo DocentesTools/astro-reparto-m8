@@ -846,6 +846,9 @@ export const fr: RepartoDictionary = {
       done: "Terminé",
       open: "Ouvrir",
       unknown: "Non vérifié ici",
+      openChecklist: "Liste de configuration",
+      closeChecklist: "Fermer la liste de configuration",
+      checking: "Vérification de ce qui est fait…",
       reason: {
         "no-process": "Sélectionnez d'abord un processus.",
         "not-observed": "Cet écran ne lit pas cette donnée."

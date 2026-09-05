@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { getRepartoConfig } from "../../config.js";
 import {
@@ -24,11 +24,19 @@ import { repartoStepGuidance } from "../../stepHelp.js";
  * dictionary, so it is present at the first paint, in the reader's language,
  * whatever the network is doing. The panel stays mounted while it is hidden so
  * a reader searching the page with their browser still finds the words.
+ *
+ * `actions` is the rest of the step's toolbar — the setup-checklist button the
+ * guard adds — sharing this one row rather than opening a second strip above
+ * the page. The two answer neighbouring questions ("what is this page", "where
+ * am I in the workflow"), so they read as one control.
  */
 export function RepartoStepHelp({
+  actions,
   locale,
   route
 }: {
+  /** Extra step-level controls, shown beside the `?` toggle. */
+  actions?: ReactNode;
   locale?: RepartoLocale;
   route: RepartoRouteName;
 }) {
@@ -42,23 +50,26 @@ export function RepartoStepHelp({
 
   return (
     <section className="not-content w-full max-w-none" data-reparto-help={route}>
-      <button
-        aria-controls={panelId}
-        aria-expanded={open}
-        aria-label={formatRepartoMessage(dict.help.openFor, { step: guidance.title })}
-        className="inline-flex min-h-8 items-center gap-2 rounded-md border border-primary/40 bg-background px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
-        data-reparto-help-toggle={route}
-        onClick={() => setOpen((current) => !current)}
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          className="inline-flex size-5 items-center justify-center rounded-full border border-primary/60 text-xs font-bold leading-none"
+      <div className="flex flex-wrap items-center gap-2" data-reparto-step-toolbar={route}>
+        <button
+          aria-controls={panelId}
+          aria-expanded={open}
+          aria-label={formatRepartoMessage(dict.help.openFor, { step: guidance.title })}
+          className="inline-flex min-h-8 items-center gap-2 rounded-md border border-primary/40 bg-background px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+          data-reparto-help-toggle={route}
+          onClick={() => setOpen((current) => !current)}
+          type="button"
         >
-          ?
-        </span>
-        <span>{open ? dict.help.close : dict.help.open}</span>
-      </button>
+          <span
+            aria-hidden="true"
+            className="inline-flex size-5 items-center justify-center rounded-full border border-primary/60 text-xs font-bold leading-none"
+          >
+            ?
+          </span>
+          <span>{open ? dict.help.close : dict.help.open}</span>
+        </button>
+        {actions}
+      </div>
 
       <div
         className="mt-3 rounded-lg border bg-card p-4 text-card-foreground shadow-sm"

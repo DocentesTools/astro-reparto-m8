@@ -13,7 +13,7 @@ import { SubjectBulkDelete } from "./bulk-delete.js";
 export function RepartoSubjectsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="subjects">
+      <RepartoRouteGuard locale={locale} processId={processId} route="subjects">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoSubjectsContent

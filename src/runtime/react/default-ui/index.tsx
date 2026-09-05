@@ -207,7 +207,7 @@ export function RepartoDashboardView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="dashboard">
+      <RepartoRouteGuard locale={locale} processId={processId} route="dashboard">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
           locale={locale}
@@ -311,7 +311,7 @@ export function RepartoMeetingView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="meeting">
+      <RepartoRouteGuard locale={locale} processId={processId} route="meeting">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
           locale={locale}
@@ -628,7 +628,7 @@ export function RepartoMyView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="teacherView">
+      <RepartoRouteGuard locale={locale} processId={processId} route="teacherView">
         <WithSelectedProcess
           bypass={Boolean(summary)}
           locale={locale}
@@ -926,7 +926,7 @@ export function RepartoSharedView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="sharedScreen">
+      <RepartoRouteGuard locale={locale} processId={processId} route="sharedScreen">
         <WithSelectedProcess
           bypass={Boolean(summary)}
           locale={locale}
@@ -1020,7 +1020,7 @@ export function RepartoVersionsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="versions">
+      <RepartoRouteGuard locale={locale} processId={processId} route="versions">
         <WithSelectedProcess
           bypass={Boolean(versions)}
           locale={locale}
@@ -1192,7 +1192,7 @@ export function RepartoExportsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="exports">
+      <RepartoRouteGuard locale={locale} processId={processId} route="exports">
         <WithSelectedProcess
           bypass={Boolean(artifacts || plan)}
           locale={locale}

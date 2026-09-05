@@ -20,11 +20,6 @@ import {
   useRepartoEventStream,
   type RepartoEventStreamState
 } from "../useRepartoEvents.js";
-import {
-  SetupChecklistProgress,
-  SetupChecklistSteps
-} from "../SetupChecklist.js";
-import { buildSetupChecklist, type SetupChecklistStepKey } from "../../ui/index.js";
 import { resolveProcessId } from "../../queryKeys.js";
 import {
   getRepartoDictionary,
@@ -49,6 +44,19 @@ import type { SseAudience } from "../../schemas.js";
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
 const LAST_PROCESS_STORAGE_KEY = "reparto.lastProcessId";
+
+/**
+ * The process this browser last worked on, or `undefined`.
+ *
+ * `WithSelectedProcess` owns writing it; this is the one read for surfaces that
+ * are not inside that gate — the setup-checklist popup on a step page whose
+ * route does not name a process — so there is a single answer to "which process
+ * is this browser on" rather than a second literal key somewhere else.
+ */
+export function readLastRepartoProcessId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim() || undefined;
+}
 
 // The boundary is the outermost wrapper on purpose (`A-C3`). Inside the
 // providers it would be unmounted by a throw in a provider's own render, which
@@ -189,49 +197,8 @@ export function ProcessPicker({
     value: department.id,
     label: department.name
   }));
-  // The same derivation the dashboard uses (`S2-07`). The picker's copy used to
-  // be a second list whose last five steps were hard-coded "not done"; they are
-  // now genuinely untested here — no process is selected by construction — and
-  // the checklist says so instead of asserting an operator has not done work
-  // this screen never looked at.
-  const checklist = buildSetupChecklist({
-    academicYearCount: yearOptions.length,
-    departmentCount: departmentOptions.length,
-    processCount: processes.length,
-    schoolCount: schoolOptions.length
-  });
-  const inlineCreateHandlers: Partial<
-    Record<SetupChecklistStepKey, () => void>
-  > = {
-    school: () => setInlineCreate("school"),
-    academicYear: () => setInlineCreate("academicYear"),
-    department: () => setInlineCreate("department")
-  };
-
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
-      {canAct ? (
-      <section
-        className={repartoPanelClass}
-        data-reparto-panel="setup-checklist"
-        data-reparto-slot="setup-checklist"
-      >
-        <div className={repartoPanelHeaderClass}>
-          <div className="space-y-1">
-            <h2>{dict.flow.bootstrap.title}</h2>
-            <p className="text-sm text-muted-foreground">
-              {dict.flow.bootstrap.subtitle}
-            </p>
-          </div>
-          <SetupChecklistProgress checklist={checklist} />
-        </div>
-        <SetupChecklistSteps
-          checklist={checklist}
-          locale={locale}
-          onOpenStep={(key) => inlineCreateHandlers[key] ?? null}
-        />
-      </section>
-      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="process-picker">
         <div className={repartoPanelHeaderClass}>
           <h2>{dict.picker.selectProcess}</h2>

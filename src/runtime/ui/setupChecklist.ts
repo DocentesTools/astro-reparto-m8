@@ -1,4 +1,5 @@
 import { isMutablePlanStatus } from "./teachingPlan.js";
+import type { RepartoRouteName } from "../routes.js";
 import type { ProcessSummary } from "../schemas.js";
 
 /**
@@ -44,6 +45,39 @@ export type SetupChecklistStepKey =
   | "planLock"
   | "requirements"
   | "meeting";
+
+/**
+ * The step page each checklist line links to.
+ *
+ * The checklist names a condition; this names the one route that lets an
+ * operator satisfy it. It is the checklist's counterpart to
+ * `REPARTO_STEP_STAGE` — the same "one map, stated once" rule, so a step cannot
+ * be added to the workflow without saying where it is done.
+ *
+ * Three steps share `planning`: the plan is created, balanced and locked on the
+ * one page, and `configurationReview` points at `processSettings` because that
+ * is where §8.2 step 8's selection settings are reviewed and confirmed.
+ */
+export const SETUP_CHECKLIST_STEP_ROUTE: Record<
+  SetupChecklistStepKey,
+  RepartoRouteName
+> = {
+  school: "schools",
+  academicYear: "academicYears",
+  department: "departments",
+  process: "processList",
+  allocation: "allocation",
+  participants: "participants",
+  subjects: "subjects",
+  teachingGroups: "teachingGroups",
+  groupSubjects: "groupSubjects",
+  configurationReview: "processSettings",
+  teachingPlan: "planning",
+  planBalance: "planning",
+  planLock: "planning",
+  requirements: "requirements",
+  meeting: "meeting"
+};
 
 export type SetupChecklistStepStatus =
   /** The condition holds. */

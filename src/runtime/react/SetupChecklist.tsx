@@ -5,12 +5,15 @@ import {
   type RepartoDictionary,
   type RepartoLocale
 } from "../i18n/index.js";
-import type {
-  SetupChecklist,
-  SetupChecklistStage,
-  SetupChecklistStep,
-  SetupChecklistStepKey
+import {
+  SETUP_CHECKLIST_STEP_ROUTE,
+  type SetupChecklist,
+  type SetupChecklistStage,
+  type SetupChecklistStep,
+  type SetupChecklistStepKey
 } from "../ui/index.js";
+import { getRepartoConfig } from "../config.js";
+import { repartoRouteHref } from "../routes.js";
 import { repartoButtonClass } from "./styles.js";
 
 /**
@@ -23,11 +26,18 @@ import { repartoButtonClass } from "./styles.js";
  * `nav.group.*` labels the sidebar uses, so "where am I in the checklist" and
  * "where am I in the menu" are the same question.
  *
- * `onOpenStep` is the picker's inline-create affordance: a surface that can take
- * the operator to a step returns a handler for it and gets a button, and a
- * surface that cannot — the dashboard, whose routes are in the sidebar already —
- * passes nothing and gets a status word. An unknown step never gets a button:
- * the condition was not tested, so there is nothing to say has not been done.
+ * Every line is a link to the page that step is done on
+ * (`SETUP_CHECKLIST_STEP_ROUTE`). The checklist's whole job is to answer "what
+ * is left"; a reader who has just been told they still owe the group-subject
+ * matrix should not then have to find it in the menu. A route this host
+ * disabled has no address, and that line stays plain text rather than becoming
+ * a dead link.
+ *
+ * `onOpenStep` is the inline-create affordance on top of that link: a surface
+ * that can satisfy a step without leaving the page returns a handler for it and
+ * gets a button, and one that cannot passes nothing and gets a status word. An
+ * unknown step never gets a button: the condition was not tested, so there is
+ * nothing to say has not been done.
  */
 
 const STAGE_ORDER: readonly SetupChecklistStage[] = [
@@ -45,14 +55,26 @@ function stepStatusLabel(step: SetupChecklistStep, dict: RepartoDictionary): str
 export function SetupChecklistSteps({
   checklist,
   locale,
-  onOpenStep
+  onOpenStep,
+  processId
 }: {
   checklist: SetupChecklist;
   locale?: RepartoLocale;
   /** Return a handler to offer an Open button for that step, or null. */
   onOpenStep?: (key: SetupChecklistStepKey) => (() => void) | null;
+  /** The process the reader is on, for the process-scoped step links. */
+  processId?: string | null;
 }) {
   const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const { routes } = getRepartoConfig();
+  const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+  function stepHref(key: SetupChecklistStepKey): string | null {
+    return repartoRouteHref(routes, SETUP_CHECKLIST_STEP_ROUTE[key], {
+      locale: dict.locale,
+      pathname,
+      processId
+    });
+  }
   return (
     <div data-reparto-checklist="">
       {STAGE_ORDER.map((stage) => {
@@ -69,6 +91,8 @@ export function SetupChecklistSteps({
                   ? dict.flow.bootstrap.reason[step.blockedReason]
                   : null;
                 const onOpen = step.status === "pending" ? onOpenStep?.(step.key) : null;
+                const href = stepHref(step.key);
+                const label = dict.flow.bootstrap.step[step.key];
                 return (
                   <li
                     className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border/70 bg-muted/20 px-3 py-2 text-sm"
@@ -77,9 +101,17 @@ export function SetupChecklistSteps({
                     key={step.key}
                   >
                     <div className="min-w-0">
-                      <strong className="block text-foreground">
-                        {dict.flow.bootstrap.step[step.key]}
-                      </strong>
+                      {href ? (
+                        <a
+                          className="block font-semibold text-foreground underline decoration-primary/40 underline-offset-4 hover:text-primary hover:decoration-primary"
+                          data-reparto-checklist-link={step.key}
+                          href={href}
+                        >
+                          {label}
+                        </a>
+                      ) : (
+                        <strong className="block text-foreground">{label}</strong>
+                      )}
                       {reason ? (
                         <span
                           className="text-xs text-muted-foreground"

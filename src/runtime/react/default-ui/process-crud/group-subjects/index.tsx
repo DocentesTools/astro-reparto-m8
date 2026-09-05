@@ -41,7 +41,7 @@ export function RepartoGroupSubjectsView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="groupSubjects">
+      <RepartoRouteGuard locale={locale} processId={processId} route="groupSubjects">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoGroupSubjectsContent locale={locale} processId={resolvedId} />

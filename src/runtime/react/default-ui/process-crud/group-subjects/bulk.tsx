@@ -428,7 +428,13 @@ export function GroupSubjectBulkEditor({
   const [appliedMessage, setAppliedMessage] = useState<string | null>(null);
 
   const activeSubjects = subjects ?? subjectsQuery.data?.data ?? [];
-  const activeGroups = teachingGroups ?? groupsQuery.data?.data ?? [];
+  // Memoized because it feeds `stages` below: an un-memoized `?? []` fallback
+  // is a fresh array on every render with no `teachingGroups` prop and no
+  // query data yet, which would defeat that memo's own dependency check.
+  const activeGroups = useMemo(
+    () => teachingGroups ?? groupsQuery.data?.data ?? [],
+    [teachingGroups, groupsQuery.data]
+  );
   const stages = useMemo(
     () =>
       [...new Set(activeGroups.map((group) => group.classroom_stage.stage))].sort(

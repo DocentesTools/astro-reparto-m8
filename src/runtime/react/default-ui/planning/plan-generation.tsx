@@ -158,6 +158,11 @@ export function PlanValidationSummary({
                   className="rounded-md border border-border/70 p-3"
                   data-plan-validation-code={message.code}
                   data-plan-validation-severity={message.severity}
+                  // Same shape as ProcessValidationList's key: no id on a
+                  // finding, a composite of every field the report carries,
+                  // and the index only breaks the residual tie on a report
+                  // that is a static read, never reordered in place.
+                  // eslint-disable-next-line @eslint-react/no-array-index-key
                   key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
                 >
                   <p className="font-medium">{message.message}</p>

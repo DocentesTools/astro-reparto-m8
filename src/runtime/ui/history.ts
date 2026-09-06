@@ -2,6 +2,7 @@ import { hoursSign } from "../decimals.js";
 import type {
   AssignmentProcessStatus,
   AssignmentValidationReport,
+  ExportArtifactFormat,
   ExportArtifactPublic,
   ExportArtifactType,
   FeasibilityStatus,
@@ -13,6 +14,37 @@ import type {
   VersionComparison
 } from "../schemas.js";
 import { PlanningImportRequestSchema } from "../schemas.js";
+
+/**
+ * The MIME type stored alongside a downloaded artifact.
+ *
+ * `pdf` is the plan §15 label, not the byte format — the service renders it as
+ * deterministic text (see `reparto-docente-m8`'s `DocumentRenderingService`),
+ * so it is offered as `text/plain` rather than `application/pdf`, which a
+ * viewer would refuse to open as a real PDF.
+ */
+const EXPORT_ARTIFACT_MIME_TYPES: Record<ExportArtifactFormat, string> = {
+  json: "application/json",
+  csv: "text/csv",
+  pdf: "text/plain"
+};
+
+/** The MIME type a browser should save an artifact's content as. */
+export function exportArtifactMimeType(format: ExportArtifactFormat): string {
+  return EXPORT_ARTIFACT_MIME_TYPES[format];
+}
+
+/**
+ * The filename a downloaded artifact is offered under.
+ *
+ * `pdf` still takes a `.txt` extension, for the same reason its MIME type is
+ * `text/plain`: the content is prose, and a `.pdf` extension on a text file
+ * is the one thing more misleading than no file at all.
+ */
+export function exportArtifactFilename(artifact: ExportArtifactPublic): string {
+  const extension = artifact.format === "pdf" ? "txt" : artifact.format;
+  return `${artifact.export_type}-${artifact.id}.${extension}`;
+}
 
 /**
  * Why one planning artifact cannot be produced right now, as a stable code.

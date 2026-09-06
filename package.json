@@ -141,7 +141,7 @@
   },
   "repartoDocenteM8": {
     "contract": "reparto-docente-m8@2.0.0",
-    "testedServiceVersion": "2.0.0",
+    "testedServiceVersion": "2.1.1",
     "serviceVersionRange": ">=2.0.0 <3.0.0"
   }
 }

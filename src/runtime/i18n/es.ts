@@ -784,6 +784,8 @@ export const es: RepartoDictionary = {
     copyCode: "Copiar el código",
     unlinkUser: "Desvincular usuario",
     export: "Exportar",
+    view: "Ver",
+    download: "Descargar",
     restore: "Restaurar borrador",
     copyFrom: "Copiar del curso anterior",
     startTurn: "Iniciar turno",

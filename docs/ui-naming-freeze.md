@@ -509,6 +509,8 @@ in §12; see that entry before reusing either name.
 | Produced artifact | `data-reparto-slot="planning-artifact"` with `data-planning-artifact-mode` / `data-plan-exact` | both balances and the finding counts travel *inside* the artifact |
 | Process documents | `data-reparto-panel="export-center"` with `data-reparto-action="create-export"` + `data-reparto-export-type` | `POST /exports`; `internal_draft`, `school_leadership`, `teacher_summary`, `backup` — never `final` |
 | Document list | `data-reparto-slot="export-list"` / `data-export-artifact-id` / `data-export-artifact-type` | stored artifacts; `data-reparto-slot="backup-count"` counts JSON backups |
+| Document download | `data-reparto-action="download-export"` + `data-reparto-export-artifact-id` | saves the artifact's already-fetched `content` to the reader's device; both `POST` and `GET …/exports` return it inline, so this is a client-side save and never a second request. Offered on every stored artifact and fired once automatically on a successful `create-export`. **Not** withheld below the act floor: the panel's list is already at the read floor, and a reader who may see the content may keep it |
+| Document view | `data-reparto-action="view-export"` + `data-reparto-export-artifact-id` | opens the same content in a new tab instead of filing it — every format the centre produces is text a browser renders inline, including the plan §15 documents, which are text under a `pdf` label. Button-only by necessity: a pop-up blocker allows this from a real click and not from a mutation callback, which is why `create-export` auto-*downloads* rather than auto-viewing |
 | Planning import | `data-reparto-panel="planning-import"` / `data-reparto-action="import-planning"` | strict JSON request; never balance-gated; result shows both axes and `data-reparto-validation-code` findings |
 | Backup restore | `data-reparto-action="restore-draft"` → `data-reparto-dialog="restore-confirmation"` | latest JSON backup; draft-only known-state gate; optional generated-position/assignment restore |
 | Final assignment export | `data-reparto-panel="final-close"` with `data-final-export-allowed` | §20.25's top tier: complete reparto **and** confirmed feasibility |
@@ -637,6 +639,8 @@ the same `Cancel` button in two dialogs renders the same word.
 | `action.claimProfile` | Claim my profile | Rattacher mon profil | Vincular mi perfil | *My view* claim form submit (`W1.4`) |
 | `action.copyCode` | Copy code | Copier le code | Copiar el código | Claim-code dialog |
 | `action.export` | Export | Exporter | Exportar | Versions / exports table |
+| `action.view` | View | Consulter | Ver | Export centre document list — opens a stored artifact's content for reading, in a new tab |
+| `action.download` | Download | Télécharger | Descargar | Export centre document list — saves a stored artifact's content to the reader's device. Distinct from `action.export`, which *produces* an artifact server-side; this one only keeps a copy of one that already exists |
 | `action.restore` | Restore draft | Restaurer le brouillon | Restaurar borrador | History |
 | `action.copyFrom` | Copy from previous year | Copier depuis l'année précédente | Copiar del curso anterior | Process row action |
 | `action.startTurn` | Start turn | Démarrer le tour | Iniciar turno | Meeting turn |

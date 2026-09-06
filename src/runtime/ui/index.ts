@@ -31,6 +31,8 @@ export {
   buildVersionComparisonView,
   buildVersionSelectionState,
   canCompareVersions,
+  exportArtifactFilename,
+  exportArtifactMimeType,
   nextLeadershipWorkflowAction,
   versionSectionLabelKey,
   VERSION_SECTION_LABEL_KEYS,

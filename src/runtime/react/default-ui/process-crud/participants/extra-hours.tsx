@@ -45,7 +45,7 @@ export function ParticipantExtraHours({
 }: ParticipantExtraHoursProps) {
   const extraHoursMutation = useUpdateRepartoProcessTeacherExtraHours();
   const [mapped, setError, clearError] = useMappedError();
-  const [extraHours, setExtraHours] = useState(
+  const [extraHours, setExtraHours] = useState(() =>
     formatHoursField(participant.extra_weekly_hours)
   );
   const [reason, setReason] = useState("");

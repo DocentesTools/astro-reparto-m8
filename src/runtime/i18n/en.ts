@@ -785,6 +785,8 @@ export const en = {
     copyCode: "Copy code",
     unlinkUser: "Unlink user",
     export: "Export",
+    view: "View",
+    download: "Download",
     restore: "Restore draft",
     copyFrom: "Copy from previous year",
     startTurn: "Start turn",

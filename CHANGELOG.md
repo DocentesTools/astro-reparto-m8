@@ -4,6 +4,84 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-06
+
+A guidance release, folded rather than following `2.0.0` with a number of its
+own: `2.1.0` was prepared on 2026-09-04 and never published — `2.0.0` is still
+the newest tag on `origin` — so the checklist/UX rework this section also
+rides the same unreleased number, per the Wave 6c
+one-bump-per-unpublished-release rule that already folded
+`reparto-docente-m8`/`@mano8/astro-reparto-m8`'s own `2.0.0`. Every step now
+explains itself and the setup checklist opens from any step rather than
+sitting as a fixed preamble; a produced export document can finally be opened
+or saved, where the centre used to answer with a toast and nothing reachable;
+and the auth adapter is shared across duplicate module instances, so a local
+dev server stops refusing signed-in administrators. No backend or contract
+change — `reparto-docente-m8@2.0.0` is unaffected throughout, and the
+`repartoDocenteM8.testedServiceVersion` metadata moves `2.0.0` → `2.1.1` to
+name the service this client is actually exercised against.
+
+### Added
+
+- **A `?` help panel on every step.** `RepartoRouteGuard` renders a *What do I
+  do here?* button above every route it admits, opening a collapsed panel that
+  answers the three questions a first-time reader actually has, in order: what
+  this page is, why it matters, and how to work it as a numbered list. The copy
+  is written for somebody who has never used the application, and it is the same
+  material as the host-side Reparto Docente guide, which each panel links to at
+  its foot.
+
+  It sits on the guard rather than in twenty-two views because the guard is the
+  one place every route passes through, exactly once, with its own name in hand:
+  a step cannot be added without a guard, so a step cannot be added without its
+  help. It is withheld below the route's `view` floor and while the session is
+  unresolved — a session that may not see a route is not told how to work it —
+  and it fetches nothing, so the words are present at the first paint whatever
+  the network is doing.
+
+  The panel's heading and stage label are read from `nav.item.*` and
+  `nav.group.*` rather than restated, so the help and the menu cannot drift
+  apart. `tests/step-help.test.tsx` asserts all twenty-two steps carry real
+  guidance in all three locales, that the panel renders on every route a viewer
+  may open, and that it is absent on the two cases where it must be.
+
+- **`help.*` in the `en`/`fr`/`es` dictionaries** — the panel's own labels and
+  `help.step.<route>` for each of the twenty-two steps, fully translated rather
+  than an English string in three files. The existing key-parity test covers the
+  new subtree, so a step added in one language and not the others fails the
+  build.
+
+- **`docs.base` integration option**, baked in as
+  `PUBLIC_FA_REPARTO_DOCS_BASE` and carried on the runtime config as `docsBase`
+  (default `/docs/reparto`). It is used only for the *Read the full guide* link;
+  a host that publishes no guide sets it to `""` and the link is dropped rather
+  than pointing at a page that is not there. The locale segment is taken from
+  the path the reader is already on, the same test `faAuthBridge` applies to the
+  login path, so a localized host needs no separate setting.
+
+- **`@mano8/astro-reparto-m8/step-help`** — `repartoStepGuidance(dict, route)`
+  returns one step's resolved title, stage, copy and guide link as plain data,
+  so a headless host composing its own views can render the same guidance
+  without this package's panel.
+
+- **`routes` on the runtime config**, so a link built inside a view points at
+  this host's URLs rather than the package's defaults. The integration bakes its
+  resolved route map in as `import.meta.env.PUBLIC_FA_REPARTO_ROUTES` and the
+  starter routes pass it through with `apiBase` and `docsBase`; a headless host
+  passes the same fragments it gave `faReparto`, and a partial map is completed
+  from the defaults rather than taken half-filled. `repartoRouteHref`
+  (`src/runtime/routes.ts`) resolves one address from it — filling the
+  `[processId]` placeholder, adding the locale segment only when the reader's
+  path already carries one, and returning `null` for a route the host disabled
+  so a dropped route yields plain text rather than a dead link.
+
+- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking` /
+  `progress` / `unknownCount` / `next` / `allDone`**, **`picker.gateTitle` /
+  `gateHint` / `gateEmptyHint` / `gateCreate`**, and **`help.overview`** in the
+  `en`/`fr`/`es` dictionaries, frozen in `docs/ui-naming-freeze.md` §8 alongside
+  the new `data-reparto-checklist-toggle`, `-link`, `-summary`, `-stage` and
+  `-next` slots.
+
 ### Changed
 
 - **The setup checklist is a button on every step, not a preamble.** The
@@ -71,76 +149,36 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   until a process is selected — but that is a menu-ordering fact and it stops at
   the menu.
 
-### Added
-
-- **`routes` on the runtime config**, so a link built inside a view points at
-  this host's URLs rather than the package's defaults. The integration bakes its
-  resolved route map in as `import.meta.env.PUBLIC_FA_REPARTO_ROUTES` and the
-  starter routes pass it through with `apiBase` and `docsBase`; a headless host
-  passes the same fragments it gave `faReparto`, and a partial map is completed
-  from the defaults rather than taken half-filled. `repartoRouteHref`
-  (`src/runtime/routes.ts`) resolves one address from it — filling the
-  `[processId]` placeholder, adding the locale segment only when the reader's
-  path already carries one, and returning `null` for a route the host disabled
-  so a dropped route yields plain text rather than a dead link.
-
-- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking` /
-  `progress` / `unknownCount` / `next` / `allDone`**, **`picker.gateTitle` /
-  `gateHint` / `gateEmptyHint` / `gateCreate`**, and **`help.overview`** in the
-  `en`/`fr`/`es` dictionaries, frozen in `docs/ui-naming-freeze.md` §8 alongside
-  the new `data-reparto-checklist-toggle`, `-link`, `-summary`, `-stage` and
-  `-next` slots.
-
-## [2.1.0] - 2026-09-04
-
-A guidance release. Every step now explains itself, and the auth adapter is
-shared across duplicate module instances so a local dev server stops refusing
-signed-in administrators.
-
-### Added
-
-- **A `?` help panel on every step.** `RepartoRouteGuard` renders a *What do I
-  do here?* button above every route it admits, opening a collapsed panel that
-  answers the three questions a first-time reader actually has, in order: what
-  this page is, why it matters, and how to work it as a numbered list. The copy
-  is written for somebody who has never used the application, and it is the same
-  material as the host-side Reparto Docente guide, which each panel links to at
-  its foot.
-
-  It sits on the guard rather than in twenty-two views because the guard is the
-  one place every route passes through, exactly once, with its own name in hand:
-  a step cannot be added without a guard, so a step cannot be added without its
-  help. It is withheld below the route's `view` floor and while the session is
-  unresolved — a session that may not see a route is not told how to work it —
-  and it fetches nothing, so the words are present at the first paint whatever
-  the network is doing.
-
-  The panel's heading and stage label are read from `nav.item.*` and
-  `nav.group.*` rather than restated, so the help and the menu cannot drift
-  apart. `tests/step-help.test.tsx` asserts all twenty-two steps carry real
-  guidance in all three locales, that the panel renders on every route a viewer
-  may open, and that it is absent on the two cases where it must be.
-
-- **`help.*` in the `en`/`fr`/`es` dictionaries** — the panel's own labels and
-  `help.step.<route>` for each of the twenty-two steps, fully translated rather
-  than an English string in three files. The existing key-parity test covers the
-  new subtree, so a step added in one language and not the others fails the
-  build.
-
-- **`docs.base` integration option**, baked in as
-  `PUBLIC_FA_REPARTO_DOCS_BASE` and carried on the runtime config as `docsBase`
-  (default `/docs/reparto`). It is used only for the *Read the full guide* link;
-  a host that publishes no guide sets it to `""` and the link is dropped rather
-  than pointing at a page that is not there. The locale segment is taken from
-  the path the reader is already on, the same test `faAuthBridge` applies to the
-  login path, so a localized host needs no separate setting.
-
-- **`@mano8/astro-reparto-m8/step-help`** — `repartoStepGuidance(dict, route)`
-  returns one step's resolved title, stage, copy and guide link as plain data,
-  so a headless host composing its own views can render the same guidance
-  without this package's panel.
-
 ### Fixed
+
+- **A produced export document could not be read or kept.** The export centre
+  answered a successful `POST …/exports` with a toast and a line in the
+  artifact list, and stopped there — no link, no download, no new tab. The
+  document was rendered, checksummed and stored, and there was no way to reach
+  its content from the interface that had just asked for it. Both readings of
+  "give me the document" are now offered on every stored artifact:
+  **View** (`data-reparto-action="view-export"`) opens it in a new tab and
+  **Download** (`data-reparto-action="download-export"`) saves it, with the
+  download also fired once automatically when an export is created.
+
+  Neither is a request. `POST …/exports` and `GET …/exports` both return the
+  artifact's full `content` inline, so the page already holds what it is
+  handing over, and both actions are a client-side save off the query cache.
+  They sit on the artifact list rather than behind the act floor, which is
+  deliberate: the list is already at the read floor, and a reader who may see
+  a document may keep it.
+
+  `exportArtifactFilename` / `exportArtifactMimeType` (`src/runtime/ui`) name
+  the file and its type. A **`pdf` artifact is saved as `.txt` and served as
+  `text/plain`**, because that is what it is — `reparto-docente-m8` renders
+  the plan §15 documents as deterministic text under a `pdf` label, and a
+  `.pdf` extension on a file no viewer can open is more misleading than no
+  file at all. The blob URL is revoked on a timer rather than in the same
+  tick: `a.click()` only *starts* a save and `window.open` hands the URL to a
+  document that has not loaded yet, so an immediate revoke cancels the very
+  thing the click was for — and leaves the UI looking like it worked, which is
+  the shape of the original bug. `tests/export-artifact-delivery.test.tsx`
+  holds all three properties.
 
 - **A signed-in administrator was refused every reparto route under
   `astro dev`,** client-side, before a single request reached the service, and

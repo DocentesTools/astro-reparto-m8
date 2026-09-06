@@ -366,6 +366,14 @@ export function ProcessValidationList({
           data-reparto-validation-code={message.code}
           data-reparto-validation-entity={message.entity_type}
           data-reparto-validation-severity={message.severity}
+          // The service assigns a finding no id, and two distinct findings can
+          // share code, entity and severity (the same rule firing twice on one
+          // entity for two different reasons in its own text) — the composite
+          // key already covers every field the report carries, and the index
+          // only breaks that residual tie. The report is a static read on
+          // mount, never reordered in place, so the index is stable for the
+          // lifetime of this list.
+          // eslint-disable-next-line @eslint-react/no-array-index-key
           key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
         >
           <strong className="block">{message.message}</strong>
@@ -1200,6 +1208,8 @@ export function ExportCenterView({
   onCreateDocumentExport,
   onCreateFinalExport,
   onCreatePlanningExport,
+  onDownload,
+  onView,
   onImportPlanning,
   onPlanningImportContentChange,
   onCancelRestore,
@@ -1229,6 +1239,10 @@ export function ExportCenterView({
   onCreateDocumentExport?: (exportType: ExportArtifactType) => void;
   onCreateFinalExport?: () => void;
   onCreatePlanningExport?: (mode: PlanningExportMode) => void;
+  /** Save an already-generated artifact's content to the reader's device. */
+  onDownload?: (artifact: ExportArtifactPublic) => void;
+  /** Open an already-generated artifact's content for reading. */
+  onView?: (artifact: ExportArtifactPublic) => void;
   onImportPlanning?: () => void;
   onPlanningImportContentChange?: (content: string) => void;
   onCancelRestore?: () => void;
@@ -1296,6 +1310,8 @@ export function ExportCenterView({
           artifacts={artifacts}
           canAct={canAct}
           dict={dict}
+          onDownload={onDownload}
+          onView={onView}
           onExport={onCreateDocumentExport}
           onCancelRestore={onCancelRestore}
           onConfirmRestore={onConfirmRestore}
@@ -1594,6 +1610,8 @@ function ProcessDocumentPanel({
   artifacts,
   canAct,
   dict,
+  onDownload,
+  onView,
   onExport,
   onCancelRestore,
   onConfirmRestore,
@@ -1609,6 +1627,8 @@ function ProcessDocumentPanel({
   /** Decided once by the export centre from the session; never by a route. */
   canAct: boolean;
   dict: RepartoDictionary;
+  onDownload?: (artifact: ExportArtifactPublic) => void;
+  onView?: (artifact: ExportArtifactPublic) => void;
   onExport?: (exportType: ExportArtifactType) => void;
   onCancelRestore?: () => void;
   onConfirmRestore?: () => void;
@@ -1724,10 +1744,32 @@ function ProcessDocumentPanel({
                 data-export-artifact-type={artifact.export_type}
                 key={artifact.id}
               >
-                {formatRepartoMessage(dict.view.exports.documents.item, {
-                  document: dict.view.exports.type[artifact.export_type],
-                  format: artifact.format.toUpperCase()
-                })}
+                <span>
+                  {formatRepartoMessage(dict.view.exports.documents.item, {
+                    document: dict.view.exports.type[artifact.export_type],
+                    format: artifact.format.toUpperCase()
+                  })}
+                </span>
+                <div className={repartoActionRowClass}>
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="view-export"
+                    data-reparto-export-artifact-id={artifact.id}
+                    onClick={() => onView?.(artifact)}
+                    type="button"
+                  >
+                    {dict.action.view}
+                  </button>
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="download-export"
+                    data-reparto-export-artifact-id={artifact.id}
+                    onClick={() => onDownload?.(artifact)}
+                    type="button"
+                  >
+                    {dict.action.download}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

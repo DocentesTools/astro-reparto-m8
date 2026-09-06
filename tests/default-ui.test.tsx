@@ -851,6 +851,14 @@ describe("default reparto UI", () => {
       'data-final-blocked-reason="feasibility_not_confirmed"'
     );
     expect(exports).toContain('data-export-artifact-type="backup"');
+    // Every stored artifact offers both readings of "give me the document":
+    // open it, or keep it. `POST`/`GET …/exports` both return the content
+    // inline, so neither is a second fetch.
+    expect(exports).toContain('data-reparto-action="download-export"');
+    expect(exports).toContain('data-reparto-action="view-export"');
+    expect(exports).toContain(
+      'data-reparto-export-artifact-id="99999999-9999-4999-8999-999999999999"'
+    );
     expect(exports).toContain('data-reparto-action="restore-draft"');
     expect(exports).toContain(
       'data-reparto-backup-id="99999999-9999-4999-8999-999999999999"'

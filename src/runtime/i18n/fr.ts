@@ -785,6 +785,8 @@ export const fr: RepartoDictionary = {
     copyCode: "Copier le code",
     unlinkUser: "Délier le compte",
     export: "Exporter",
+    view: "Consulter",
+    download: "Télécharger",
     restore: "Restaurer le brouillon",
     copyFrom: "Copier depuis l'année précédente",
     startTurn: "Démarrer le tour",

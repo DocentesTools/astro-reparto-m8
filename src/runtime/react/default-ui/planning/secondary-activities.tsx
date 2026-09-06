@@ -675,7 +675,7 @@ function SecondaryActivityEditorBody({ locale, processId }: PlanningPanelProps) 
   const retireMutation = useRetireRepartoTeachingActivity();
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [retiring, setRetiring] = useState<TeachingActivityPublic | null>(null);
-  const [values, setValues] = useState<SecondaryActivityFormValues>(
+  const [values, setValues] = useState<SecondaryActivityFormValues>(() =>
     secondaryActivityFormValues(null)
   );
   const [errors, setErrors] = useState<
@@ -683,10 +683,22 @@ function SecondaryActivityEditorBody({ locale, processId }: PlanningPanelProps) 
   >({});
   const [mapped, setMappedError, clearMappedError] = useMappedError();
 
-  const subjects = subjectsQuery.data?.data ?? [];
-  const groupSubjects = groupSubjectsQuery.data?.data ?? [];
-  const teachingGroups = groupsQuery.data?.data ?? [];
-  const activities = activitiesQuery.data?.data ?? [];
+  // Each `?? []` fallback is a fresh array on every render the query has no
+  // data yet, which would otherwise defeat the two memos below: their
+  // dependency would never be `===` its previous value, so they would
+  // recompute every render regardless of the `useMemo`. Memoizing the
+  // fallback itself keeps that identity stable across renders that carry the
+  // same (or still-absent) query data.
+  const subjects = useMemo(() => subjectsQuery.data?.data ?? [], [subjectsQuery.data]);
+  const groupSubjects = useMemo(
+    () => groupSubjectsQuery.data?.data ?? [],
+    [groupSubjectsQuery.data]
+  );
+  const teachingGroups = useMemo(() => groupsQuery.data?.data ?? [], [groupsQuery.data]);
+  const activities = useMemo(
+    () => activitiesQuery.data?.data ?? [],
+    [activitiesQuery.data]
+  );
   const secondarySubjects = useMemo(
     () =>
       subjects.filter(

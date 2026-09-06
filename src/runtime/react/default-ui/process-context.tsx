@@ -404,10 +404,17 @@ export function WithSelectedProcess({
   const processesQuery = useRepartoProcesses();
   const processes = processesQuery.data?.data ?? [];
 
+  // This effect is what makes the `useState` initialiser above safe. That
+  // initialiser reads `localStorage`, which does not exist while the page is
+  // server-rendered, so the first client render must agree with the server's
+  // `undefined` or hydration mismatches. Recovering the stored id *after*
+  // hydration is the only correct place for it, which is why the set-state
+  // rule is declined here rather than obeyed.
   useEffect(() => {
     if (routeProcessId || selected || typeof window === "undefined") return;
     const stored = window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim();
     if (stored) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setSelected(stored);
     }
   }, [routeProcessId, selected]);
@@ -435,6 +442,11 @@ export function WithSelectedProcess({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(LAST_PROCESS_STORAGE_KEY);
     }
+    // Set in an effect because the proof arrives asynchronously: the id is
+    // only known to be dead once the *server's* list says so, which no render
+    // can decide on its own. The guards above make it terminal — it fires once
+    // per list that disproves the id, and the id it clears is its own trigger.
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setSelected(undefined);
   }, [processesQuery.data, routeProcessId, selected]);
 

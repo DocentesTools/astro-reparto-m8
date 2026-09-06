@@ -1093,7 +1093,12 @@ export const en = {
     createError: "The matrix cell could not be added.",
     updateError: "The matrix cell could not be updated.",
     selectTeachingGroup: "Select a teaching group",
-    selectSubject: "Select a subject"
+    selectSubject: "Select a subject",
+    retired: "Matrix cell retired",
+    retireError: "The matrix cell could not be retired.",
+    retireTitle: "Retire matrix cell?",
+    retireBody: "Retire {subject} for {teachingGroup}? It stops counting towards the plan and leaves this list.",
+    retireConsequence: "Nothing is deleted: the cell keeps its history and is stamped as retired. A live main activity generated from it must be retired through its own flow first."
   },
   allocation: {
     pageTitle: "Leadership allocation",

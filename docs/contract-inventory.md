@@ -423,10 +423,14 @@ resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
 
 Frontend coverage: `useRepartoGroupSubjects`,
 `useCreateRepartoGroupSubject`, `useUpdateRepartoGroupSubject`,
-`usePreviewRepartoGroupSubjects` and `useApplyRepartoGroupSubjects` isolate the
-HTTP calls and cache invalidation; all four writes invalidate exactly the matrix
-prefix. `RepartoGroupSubjectsView` is the route they are reachable from —
-without it the matrix stays empty and Stage 2 has no input.
+`useRetireRepartoGroupSubject`, `usePreviewRepartoGroupSubjects` and
+`useApplyRepartoGroupSubjects` isolate the HTTP calls and cache invalidation;
+all five writes invalidate exactly the matrix prefix. `RepartoGroupSubjectsView`
+is the route they are reachable from — without it the matrix stays empty and
+Stage 2 has no input; the matrix list filters to `active` cells and offers a
+per-row retire action gated behind a confirmation dialog, mirroring the
+secondary-activity retirement flow — there is no bulk retire, matching the
+absence of a bulk endpoint on the backend.
 `GroupSubjectBulkEditor` owns the default UI
 surface: it maps blank hour inputs to explicit `null`, canonicalizes typed zero
 to `"0.00"`, renders every preview outcome in a table, disables apply before a

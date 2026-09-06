@@ -1080,7 +1080,12 @@ export const fr: RepartoDictionary = {
     createError: "La cellule de la matrice n'a pas pu être ajoutée.",
     updateError: "La cellule de la matrice n'a pas pu être mise à jour.",
     selectTeachingGroup: "Sélectionner une classe",
-    selectSubject: "Sélectionner une matière"
+    selectSubject: "Sélectionner une matière",
+    retired: "Cellule de la matrice retirée",
+    retireError: "La cellule de la matrice n'a pas pu être retirée.",
+    retireTitle: "Retirer la cellule de la matrice ?",
+    retireBody: "Retirer {subject} pour {teachingGroup} ? Elle cesse de compter dans le plan et quitte cette liste.",
+    retireConsequence: "Rien n'est supprimé : la cellule conserve son historique et reçoit une date de retrait. Toute activité principale active générée à partir d'elle doit d'abord être retirée via son propre flux."
   },
   allocation: {
     pageTitle: "Dotation de la direction",

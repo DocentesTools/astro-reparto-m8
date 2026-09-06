@@ -99,6 +99,7 @@ const state = vi.hoisted(() => ({
 const hooks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
+  retire: vi.fn(),
   preview: vi.fn(),
   apply: vi.fn()
 }));
@@ -131,6 +132,10 @@ vi.mock("../src/runtime/react/hooks.js", () => ({
   useUpdateRepartoGroupSubject: () => ({
     isPending: false,
     mutate: hooks.update
+  }),
+  useRetireRepartoGroupSubject: () => ({
+    isPending: false,
+    mutate: hooks.retire
   }),
   usePreviewRepartoGroupSubjects: () => ({
     isPending: false,
@@ -445,6 +450,98 @@ describe("per-cell writes", () => {
         "This group already carries this subject."
       );
     });
+  });
+});
+
+describe("taking a cell out of the plan", () => {
+  it("offers retirement rather than deletion, and no bulk selection", async () => {
+    state.cells = [cell];
+    await renderView();
+
+    // §20.12: the path carries no `DELETE` and no bulk retirement, so the row
+    // offers the one guarded action the service actually has. A checkbox
+    // column would promise a combined write no endpoint can commit.
+    expect(
+      document.querySelector('[data-reparto-row-action="retire"]')
+    ).not.toBeNull();
+    expect(
+      document.querySelector('[data-reparto-row-action="delete"]')
+    ).toBeNull();
+    expect(
+      document.querySelector("[data-data-table-row-selection]")
+    ).toBeNull();
+    expect(
+      document.querySelector("[data-data-table-selection-actions]")
+    ).toBeNull();
+  });
+
+  it("retires only after the focused confirmation", async () => {
+    state.cells = [cell];
+    await renderView();
+    expect(hooks.retire).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      document.querySelector('[data-reparto-row-action="retire"]')!
+    );
+    // The confirmation names the pair, because the cell has no other name.
+    await waitFor(() => {
+      expect(document.body.textContent).toContain("Mathematics");
+      expect(document.body.textContent).toContain("1 Secondary A");
+    });
+    expect(document.body.textContent).toContain(
+      dict.groupSubjectMatrix.retireConsequence
+    );
+
+    const confirm = [
+      ...document.querySelectorAll('[role="alertdialog"] button')
+    ].find((button) => button.textContent === dict.action.retire)!;
+    fireEvent.click(confirm);
+
+    expect(hooks.retire).toHaveBeenCalledTimes(1);
+    expect(hooks.retire.mock.calls[0][0]).toEqual({
+      processId,
+      groupSubjectId: cellId
+    });
+  });
+
+  it("reports a refused retirement with the service's own words", async () => {
+    state.cells = [cell];
+    await renderView();
+    fireEvent.click(
+      document.querySelector('[data-reparto-row-action="retire"]')!
+    );
+    const confirm = [
+      ...document.querySelectorAll('[role="alertdialog"] button')
+    ].find((button) => button.textContent === dict.action.retire)!;
+    fireEvent.click(confirm);
+
+    const { RepartoApiError } = await import("../src/runtime/errors.js");
+    hooks.retire.mock.calls[0][1].onError(
+      new RepartoApiError(409, "A live activity still points at this cell.")
+    );
+
+    // The 409 is the informative half of this flow: it names the downstream
+    // activity that has to be retired first.
+    await waitFor(() => {
+      expect(toasts.error).toHaveBeenCalledWith(
+        dict.groupSubjectMatrix.retireError,
+        "A live activity still points at this cell."
+      );
+    });
+  });
+
+  it("drops a retired cell from the matrix", async () => {
+    // The service keeps the row and clears `active`; the matrix states what is
+    // taught now, so a retired cell leaves the list rather than lingering.
+    state.cells = [{ ...cell, active: false }];
+    await renderView();
+
+    expect(
+      document.querySelector(`[data-group-subject-id="${cellId}"]`)
+    ).toBeNull();
+    expect(
+      document.querySelector('[data-reparto-state="empty-matrix"]')?.textContent
+    ).toBe(dict.groupSubjectMatrix.emptyHint);
   });
 });
 

@@ -1255,6 +1255,32 @@ export function useUpdateRepartoGroupSubject() {
 }
 
 /**
+ * Guarded retirement (§20.12) of one matrix cell; there is no `DELETE` on this
+ * path (see `groupSubjects.retire`). The backend clears `active` rather than
+ * removing the row, and 409s when the process is not draft, the cell is
+ * already retired, or a live downstream activity still points at it — so this
+ * invalidates only the matrix read, same as create/update: a refused retire
+ * changes nothing, and an accepted one only changes what the matrix now says.
+ */
+export function useRetireRepartoGroupSubject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      processId,
+      groupSubjectId
+    }: {
+      processId: string;
+      groupSubjectId: string;
+    }) => groupSubjects.retire(processId, groupSubjectId),
+    onSuccess: (_data, { processId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: repartoKeys.groupSubjects(processId)
+      });
+    }
+  });
+}
+
+/**
  * Fetch the source/current/diff/impact preview for one materialized activity.
  *
  * A mutation rather than a query even though it changes nothing: the preview

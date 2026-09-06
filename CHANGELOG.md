@@ -23,6 +23,28 @@ name the service this client is actually exercised against.
 
 ### Added
 
+- **A way out of the group-subject matrix.** The matrix route listed its cells
+  with an *Edit* action and nothing else, so a cell added by mistake — or a
+  subject a group stopped taking — could be re-valued but never taken out of the
+  plan. `GroupSubjectMatrixList` now carries a per-row *Retire* action behind
+  the same focused confirmation the secondary-activity flow uses, driven by a
+  new `useRetireRepartoGroupSubject` hook over the existing
+  `POST …/group-subjects/{id}/retire`, and the list filters to `active` cells so
+  a retired one leaves rather than lingering.
+
+  It is retirement, not deletion, because that is the only shape the service
+  offers: the path carries no `DELETE`, the backend clears `active` and keeps
+  the row, and it answers **409** when the process is not draft, when the cell is
+  already retired, or while a live downstream activity still points at it. The
+  refusal travels to the operator in the service's own words, since naming the
+  activity that has to go first is the useful half of it.
+
+  For the same reason there is no selection column and no combined retire: the
+  matrix has no bulk-retirement endpoint, and a checkbox promising one write per
+  selected row would be an affordance no request can commit — and it would hide
+  exactly the per-cell 409 that explains why one of them was refused. The bulk
+  editor above the list stays what it is: a create/update tool.
+
 - **A `?` help panel on every step.** `RepartoRouteGuard` renders a *What do I
   do here?* button above every route it admits, opening a collapsed panel that
   answers the three questions a first-time reader actually has, in order: what

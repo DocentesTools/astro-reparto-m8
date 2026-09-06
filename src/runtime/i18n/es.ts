@@ -1079,7 +1079,12 @@ export const es: RepartoDictionary = {
     createError: "No se pudo añadir la celda de la matriz.",
     updateError: "No se pudo actualizar la celda de la matriz.",
     selectTeachingGroup: "Seleccionar un grupo",
-    selectSubject: "Seleccionar una materia"
+    selectSubject: "Seleccionar una materia",
+    retired: "Celda de la matriz retirada",
+    retireError: "No se pudo retirar la celda de la matriz.",
+    retireTitle: "¿Retirar celda de la matriz?",
+    retireBody: "¿Retirar {subject} para {teachingGroup}? Deja de contar en el plan y sale de esta lista.",
+    retireConsequence: "No se elimina nada: la celda conserva su historial y queda marcada con su fecha de retiro. Toda actividad principal activa generada a partir de ella debe retirarse primero con su propio flujo."
   },
   allocation: {
     pageTitle: "Dotación de dirección",

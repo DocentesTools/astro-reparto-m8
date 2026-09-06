@@ -64,6 +64,7 @@ export {
   useRepartoGroupSubjects,
   useCreateRepartoGroupSubject,
   useUpdateRepartoGroupSubject,
+  useRetireRepartoGroupSubject,
   useRepartoTeachingActivities,
   useCreateRepartoTeachingActivity,
   useUpdateRepartoTeachingActivity,

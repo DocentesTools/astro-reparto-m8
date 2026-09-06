@@ -2,10 +2,12 @@ import { useState } from "react";
 
 import {
   ActionButton,
+  EntityDeleteDialog,
   RepartoRouteGuard,
   resolveProcessId,
   Shell,
   useDict,
+  useMappedError,
   useRepartoCanAct,
   WithSelectedProcess,
   type EntityViewProps
@@ -13,12 +15,13 @@ import {
 import {
   useRepartoGroupSubjects,
   useRepartoSubjects,
-  useRepartoTeachingGroups
+  useRepartoTeachingGroups,
+  useRetireRepartoGroupSubject
 } from "../../../hooks.js";
 import { formatRepartoMessage } from "../../../../i18n/index.js";
 import type { GroupSubjectPublic } from "../../../../schemas.js";
 import { repartoFieldCaptionClass } from "../../../styles.js";
-import { RepartoToastHost } from "../../../ui/toast-notification.js";
+import { repartoToast, RepartoToastHost } from "../../../ui/toast-notification.js";
 
 import { GroupSubjectBulkEditor } from "./bulk.js";
 import { GroupSubjectCellForm } from "./cell-form.js";
@@ -58,14 +61,20 @@ function RepartoGroupSubjectsContent({ locale, processId }: EntityViewProps) {
   const cellsQuery = useRepartoGroupSubjects(processId);
   const subjectsQuery = useRepartoSubjects(processId);
   const groupsQuery = useRepartoTeachingGroups(processId);
+  const retireMutation = useRetireRepartoGroupSubject();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<GroupSubjectPublic | null>(null);
+  const [retiring, setRetiring] = useState<GroupSubjectPublic | null>(null);
+  const [mapped, setMappedError, clearMappedError] = useMappedError();
 
-  const cells = cellsQuery.data?.data ?? [];
+  // A retired cell said its piece the moment §20.12 retired it; the matrix
+  // states what is currently taught, so it drops out of this list rather than
+  // lingering as a strikethrough row.
+  const cells = (cellsQuery.data?.data ?? []).filter((cell) => cell.active);
   const subjects = subjectsQuery.data?.data ?? [];
   const teachingGroups = groupsQuery.data?.data ?? [];
   const hasProcess = Boolean(resolveProcessId(processId));
-  const hasActiveForm = adding || Boolean(editing);
+  const hasActiveForm = adding || Boolean(editing) || Boolean(retiring);
   // A cell names one teaching group and one subject, so neither list may be empty:
   // the refusal states which prerequisite is missing rather than offering a
   // select with nothing in it.
@@ -82,6 +91,30 @@ function RepartoGroupSubjectsContent({ locale, processId }: EntityViewProps) {
           prereq: missingPrereq.toLowerCase()
         })
       : null;
+
+  const confirmRetire = () => {
+    if (!retiring || !processId) return;
+    clearMappedError();
+    retireMutation.mutate(
+      { processId, groupSubjectId: retiring.id },
+      {
+        onSuccess: () => {
+          repartoToast.success(dict.groupSubjectMatrix.retired);
+          setRetiring(null);
+        },
+        onError: (error) => {
+          setMappedError(error);
+          // The 409s this call answers with are the informative part — already
+          // retired, process not draft, a live activity still pointing at the
+          // cell — so the service's own words travel with the refusal.
+          repartoToast.error(
+            dict.groupSubjectMatrix.retireError,
+            error instanceof Error ? error.message : undefined
+          );
+        }
+      }
+    );
+  };
 
   return (
     <main
@@ -131,6 +164,7 @@ function RepartoGroupSubjectsContent({ locale, processId }: EntityViewProps) {
             setAdding(false);
             setEditing(cell);
           }}
+          onRetire={setRetiring}
           rows={cells}
           subjects={subjects}
           teachingGroups={teachingGroups}
@@ -176,6 +210,31 @@ function RepartoGroupSubjectsContent({ locale, processId }: EntityViewProps) {
           processId={processId ?? ""}
           subjects={subjects}
           teachingGroups={teachingGroups}
+        />
+      ) : null}
+      {retiring ? (
+        <EntityDeleteDialog
+          body={formatRepartoMessage(dict.groupSubjectMatrix.retireBody, {
+            teachingGroup:
+              teachingGroups.find(
+                (group) => group.id === retiring.teaching_group_id
+              )?.label ?? retiring.teaching_group_id,
+            subject:
+              subjects.find((subject) => subject.id === retiring.subject_id)
+                ?.name ?? retiring.subject_id
+          })}
+          cancelLabel={dict.action.cancel}
+          confirmWarning={
+            <p data-reparto-slot="group-subject-retire-consequence">
+              {dict.groupSubjectMatrix.retireConsequence}
+            </p>
+          }
+          isPending={retireMutation.isPending}
+          mapped={mapped}
+          onClose={() => setRetiring(null)}
+          onConfirm={confirmRetire}
+          proceedLabel={dict.action.retire}
+          title={dict.groupSubjectMatrix.retireTitle}
         />
       ) : null}
     </main>

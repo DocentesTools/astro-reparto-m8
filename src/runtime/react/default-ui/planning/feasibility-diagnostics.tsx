@@ -183,7 +183,7 @@ export function FeasibilityDiagnosticsView({
                   data-feasibility-diagnostic-code={row.code}
                   key={`${row.code}-${row.message}`}
                 >
-                  <p className="font-medium">{row.message}</p>
+                  <p className="font-medium">{labels.finding[row.code]}</p>
                   <p className={repartoFieldCaptionClass}>{row.code}</p>
                   {row.affected.length > 0 ? (
                     <p className="text-sm">

@@ -669,6 +669,15 @@ export const es: RepartoDictionary = {
       affectedTitle: "Afectados",
       affectedSlot: "{activity} · {position}",
       unresolvedReferences: "{count} referencia(s) afectada(s) no se pueden resolver a una actividad o puesto actual.",
+      finding: {
+        incompatible_residual_totals: "Los totales restantes de participantes y actividades no coinciden exactamente.",
+        slot_exceeds_every_target: "Las horas de un puesto superan la meta restante de todos los participantes.",
+        distinct_teacher_shortfall: "No hay suficientes docentes distintos activos para los puestos de esta actividad.",
+        unsatisfiable_targets: "Ningún reparto exacto puede cubrir a cada participante hasta su meta.",
+        instance_size_limit: "Esta instancia supera los límites de tamaño configurados del solucionador.",
+        step_limit: "El solucionador se detuvo al alcanzar su límite de pasos sin un resultado determinado.",
+        time_limit: "El solucionador se detuvo al alcanzar su límite de tiempo sin un resultado determinado."
+      },
       suggestionTitle: "Remediación sugerida",
       suggestion: {
         incompatible_residual_totals: "Ajusta las metas de los participantes o las horas de las actividades para que los totales restantes coincidan exactamente.",

@@ -670,6 +670,15 @@ export const en = {
       affectedTitle: "Affected",
       affectedSlot: "{activity} · {position}",
       unresolvedReferences: "{count} affected reference(s) cannot be resolved to a current activity or slot.",
+      finding: {
+        incompatible_residual_totals: "The remaining participant and activity totals do not match exactly.",
+        slot_exceeds_every_target: "A position's hours exceed every participant's remaining target.",
+        distinct_teacher_shortfall: "Not enough distinct teachers are active for this activity's positions.",
+        unsatisfiable_targets: "No exact assignment can fill every participant to their target.",
+        instance_size_limit: "This instance exceeds the configured solver size limits.",
+        step_limit: "The solver stopped after reaching its step limit without a determined result.",
+        time_limit: "The solver stopped after reaching its time limit without a determined result."
+      },
       suggestionTitle: "Suggested remediation",
       suggestion: {
         incompatible_residual_totals: "Adjust participant targets or activity hours so the remaining totals match exactly.",

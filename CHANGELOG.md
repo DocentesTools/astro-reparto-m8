@@ -173,6 +173,32 @@ name the service this client is actually exercised against.
 
 ### Fixed
 
+- **A structured service error lost its message.** `messageFromDetail` and the
+  error mapper accepted only a string `detail` or a FastAPI 422 array, and
+  answered `undefined` for anything else. Three responses already send
+  `detail={"code","message"}` — `classroom_stage_in_use`,
+  `classroom_stage_exists` (classroom stages) and `classroom_conflict`
+  (teaching groups) — so the operator was shown the generic API-failure line
+  instead of the refusal the service had actually written. Both extractors now
+  read `{code, message, params}` through one `structuredDetail` reader in
+  `src/runtime/errors.ts`, and `RepartoFormError` carries the `code` and
+  `params` alongside the message for a caller that wants to render its own
+  copy.
+
+  The **code decides the error key**, ahead of the status and whatever language
+  the message happens to be in: that is the point of a machine code, and it is
+  what lets a translated `detail` classify at all. A code the package does not
+  know is not a failure — it falls back to the status, so a newer service never
+  loses its text on an older client. String details are untouched, 422 arrays
+  still map to their fields, and the HTTP 400 English-substring branch is
+  **kept**, because the other 161 error sites in the service still send an
+  English sentence and classifying them is still the only thing that branch is
+  for.
+
+  This is the tolerant client that has to ship before the service can widen the
+  structured shape; expanding it first would lose error text and the 400
+  classification in between.
+
 - **A produced export document could not be read or kept.** The export centre
   answered a successful `POST …/exports` with a toast and a line in the
   artifact list, and stopped there — no link, no download, no new tab. The

@@ -24,7 +24,8 @@ import {
   messageFromDetail,
   normalizeFastApiError,
   RepartoApiError,
-  RepartoUnauthenticatedError
+  RepartoUnauthenticatedError,
+  structuredDetail
 } from "../src/runtime/errors.js";
 
 const okSchema = z.object({ ok: z.boolean() });
@@ -94,6 +95,44 @@ describe("errors", () => {
     expect(messageFromDetail({ no: 1 })).toBeUndefined();
     expect(new RepartoApiError(500, {}).message).toBe("Reparto API request failed");
     expect(new RepartoUnauthenticatedError().message).toBe("Authentication required");
+  });
+
+  it("reads the service's structured {code, message, params} detail", () => {
+    expect(
+      messageFromDetail({
+        code: "classroom_stage_in_use",
+        message: "The classroom stage is referenced by classrooms."
+      })
+    ).toBe("The classroom stage is referenced by classrooms.");
+    expect(messageFromDetail({ code: "x", message: "  padded  " })).toBe("padded");
+    expect(
+      new RepartoApiError(409, {
+        code: "classroom_conflict",
+        message: "A classroom with this label already exists."
+      }).message
+    ).toBe("A classroom with this label already exists.");
+  });
+
+  it("treats a code-only detail as structured and a message-less record as not", () => {
+    expect(structuredDetail({ code: "classroom_conflict" })).toEqual({
+      code: "classroom_conflict",
+      message: undefined,
+      params: undefined
+    });
+    expect(structuredDetail({ detail: "forbidden" })).toBeUndefined();
+    expect(structuredDetail({ code: "  ", message: "" })).toBeUndefined();
+    expect(structuredDetail("plain")).toBeUndefined();
+    expect(structuredDetail([{ code: "a", message: "b" }])).toBeUndefined();
+    expect(structuredDetail(null)).toBeUndefined();
+    expect(messageFromDetail({ code: "classroom_conflict" })).toBeUndefined();
+  });
+
+  it("keeps params only when they are a plain object", () => {
+    expect(
+      structuredDetail({ code: "c", message: "m", params: { count: 2 } })?.params
+    ).toEqual({ count: 2 });
+    expect(structuredDetail({ code: "c", message: "m", params: [1] })?.params).toBeUndefined();
+    expect(structuredDetail({ code: "c", message: "m", params: "no" })?.params).toBeUndefined();
   });
 });
 

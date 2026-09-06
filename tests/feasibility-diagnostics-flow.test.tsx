@@ -221,7 +221,7 @@ describe("department-head feasibility diagnostics panel", () => {
     ).not.toBeNull();
     expect(
       document.querySelector(
-        '[data-feasibility-diagnostic-code="slot_exceeds_every_target"]'
+        '[data-reparto-validation-code="slot_exceeds_every_target"]'
       )?.textContent
     ).toContain("Mathematics · Ordinary · Position 1");
     expect(

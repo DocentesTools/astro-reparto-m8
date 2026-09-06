@@ -152,8 +152,9 @@ describe("plan lock and requirement-generation UI", () => {
       />
     );
     expect(findings).toContain('data-plan-validation-count="blocking"');
-    expect(findings).toContain('data-plan-validation-severity="warning"');
+    expect(findings).toContain('data-reparto-validation-severity="warning"');
     expect(findings).toContain("plan.group_balance_mismatch");
+    expect(findings).not.toContain(">plan.group_balance_mismatch<");
 
     const empty = renderToStaticMarkup(
       <PlanValidationSummary

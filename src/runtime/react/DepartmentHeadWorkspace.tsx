@@ -9,7 +9,6 @@ import type {
   ParticipantBalance,
   PlanBalance,
   PlanReadiness,
-  PlanValidationMessage,
   PlanValidationReport,
   PlanningExportArtifact,
   PlanningExportMode,
@@ -40,6 +39,7 @@ import {
   type VersionComparisonView
 } from "../ui/index.js";
 import { SetupChecklistSteps, SetupChecklistSummary } from "./SetupChecklist.js";
+import { ProcessValidationList } from "./ProcessValidationList.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -325,62 +325,6 @@ export function PlanningBalancePanel({
         </p>
       )}
     </section>
-  );
-}
-
-/**
- * One stage's findings, printed as the service wrote them.
- *
- * What this replaces was a twelve-branch table that re-derived each sentence
- * from `requirement.over_assigned`, `teacher.overloaded` and their friends,
- * resolving `{available}` and `{pending}` out of the balance rows — a second
- * copy of the backend's validation vocabulary, kept in a client that cannot be
- * redeployed with it. The service now owns both the stable `code` and the human
- * `message`: the code is stamped on the DOM for tests and skins to key off, and
- * the sentence is printed untranslated rather than paraphrased.
- */
-export function ProcessValidationList({
-  dict,
-  messages,
-  stage
-}: {
-  dict: ReturnType<typeof getRepartoDictionary>;
-  messages: PlanValidationMessage[];
-  stage: "planning" | "assignment";
-}) {
-  if (messages.length === 0) {
-    return (
-      <p
-        className="mt-3 text-sm text-muted-foreground"
-        data-reparto-slot={`${stage}-validations-empty`}
-      >
-        {dict.dashboard.state.noValidations}
-      </p>
-    );
-  }
-  return (
-    <ul className={repartoListClass} data-reparto-slot={`${stage}-validations`}>
-      {messages.map((message, index) => (
-        <li
-          className={repartoListItemClass}
-          data-reparto-validation-code={message.code}
-          data-reparto-validation-entity={message.entity_type}
-          data-reparto-validation-severity={message.severity}
-          // The service assigns a finding no id, and two distinct findings can
-          // share code, entity and severity (the same rule firing twice on one
-          // entity for two different reasons in its own text) — the composite
-          // key already covers every field the report carries, and the index
-          // only breaks that residual tie. The report is a static read on
-          // mount, never reordered in place, so the index is stable for the
-          // lifetime of this list.
-          // eslint-disable-next-line @eslint-react/no-array-index-key
-          key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
-        >
-          <strong className="block">{message.message}</strong>
-          <span className="text-xs text-muted-foreground">{message.code}</span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

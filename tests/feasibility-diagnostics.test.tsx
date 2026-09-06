@@ -407,8 +407,9 @@ describe("FeasibilityDiagnosticsView", () => {
     expect(html).toContain('data-feasibility-status="infeasible"');
     expect(html).toContain('data-reparto-list="feasibility-diagnostics"');
     expect(html).toContain(
-      'data-feasibility-diagnostic-code="distinct_teacher_shortfall"'
+      'data-reparto-validation-code="distinct_teacher_shortfall"'
     );
+    expect(html).not.toContain(">distinct_teacher_shortfall<");
     expect(html).toContain("Mathematics · Ordinary");
     expect(html).toContain('data-feasibility-unresolved-count="2"');
     // C2-feasibility-catalog: the headline is the catalog's own translated

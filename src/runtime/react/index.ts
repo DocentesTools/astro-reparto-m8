@@ -4,10 +4,14 @@ export {
   PlanningBalancePanel,
   ProcessInvariantRow,
   ProcessListView,
-  ProcessValidationList,
   VersionsView,
   type VersionComparisonSource
 } from "./DepartmentHeadWorkspace.js";
+export {
+  ProcessValidationList,
+  type ProcessValidationFinding,
+  type ProcessValidationStage
+} from "./ProcessValidationList.js";
 export {
   SetupChecklistProgress,
   SetupChecklistSteps,

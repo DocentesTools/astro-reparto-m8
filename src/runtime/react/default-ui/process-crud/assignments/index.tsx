@@ -35,6 +35,7 @@ import type {
   TeacherProfilePublic,
   TeachingActivityPublic
 } from "../../../../schemas.js";
+import { ProcessValidationList } from "../../../ProcessValidationList.js";
 
 import { AssignmentsList } from "./list.js";
 import { AssignmentAdd } from "./add.js";
@@ -244,22 +245,12 @@ function RepartoAssignmentsContent({ locale, processId }: EntityViewProps) {
                   warnings: validations.warning_count
                 })}
               </p>
-              <ul className="mt-2 grid gap-1 text-sm">
-                {validations.messages.map((message) => (
-                  <li
-                    data-validation-code={message.code}
-                    data-validation-severity={message.severity}
-                    key={`${message.code}-${message.entity_id ?? "process"}`}
-                  >
-                    {message.message}
-                  </li>
-                ))}
-              </ul>
-              {validations.messages.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {dict.assignments.noValidations}
-                </p>
-              ) : null}
+              <ProcessValidationList
+                dict={dict}
+                emptyMessage={dict.assignments.noValidations}
+                messages={validations.messages}
+                stage="assignment"
+              />
             </>
           ) : (
             <p className="text-sm text-muted-foreground">

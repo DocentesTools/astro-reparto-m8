@@ -1,7 +1,55 @@
 import type { RepartoDictionary } from "./types.js";
 
 export const fr: RepartoDictionary = {
-  locale: "fr",  entity: {
+  locale: "fr",
+  validationFindings: {
+    "plan.missing_allocation":
+      "Aucune révision actuelle de la dotation horaire de la direction n’existe.",
+    "plan.group_hours_imbalanced":
+      "Le total des heures des groupes, {group_hours}, diffère de la dotation actuelle de {allocation_hours} ; écart {difference_hours}.",
+    "plan.teacher_load_imbalanced":
+      "La charge des enseignants, {teacher_hours}, diffère du total cible des participants, {target_hours} ; écart {difference_hours}.",
+    "plan.main_subject_not_materialized":
+      "Le groupe {group_label} · {subject_label} n’a aucune activité d’enseignement matérialisée.",
+    "activity.missing_groups":
+      "L’activité {activity_label} n’est liée à aucun groupe, alors que sa matière en exige un.",
+    "activity.multiple_groups_not_allowed": {
+      zero: "L’activité {activity_label} n’est liée à aucun groupe, alors que ce constat en attendait plusieurs.",
+      one: "L’activité {activity_label} est liée à 1 groupe, alors que ce constat en attendait plusieurs.",
+      many: "L’activité {activity_label} est liée à {group_count} groupes, mais sa matière interdit les groupes multiples."
+    },
+    "activity.linked_subject_mismatch":
+      "L’activité {activity_label} est liée à un groupe dont la matière ne correspond pas.",
+    "activity.out_of_sync":
+      "L’activité {activity_label} diffère de sa source ; prévisualisez puis appliquez explicitement la synchronisation.",
+    "plan.requirements_not_generated":
+      "Aucun poste horaire d’enseignement n’a été généré pour le plan.",
+    "requirement.stale": {
+      zero: "Aucun poste horaire généré n’est obsolète.",
+      one: "1 poste horaire généré est obsolète.",
+      many: "{count} postes horaires générés sont obsolètes."
+    },
+    "plan.stale": "Le plan est {status} et doit être réconcilié.",
+    "plan.feasibility_not_confirmed":
+      "La faisabilité de l’affectation est {status} ; une évaluation réalisable est requise avant l’affectation.",
+    "teacher.overloaded_authorized":
+      "Le participant {teacher_label} dispose de {extra_hours} heures supplémentaires autorisées.",
+    "plan.secondary_activities_available": {
+      zero: "Aucune cellule facultative groupe-matière ne reste hors d’une activité.",
+      one: "1 cellule facultative groupe-matière ne fait pas encore partie d’une activité.",
+      many: "{count} cellules facultatives groupe-matière ne font pas encore partie d’une activité."
+    },
+    "requirement.unassigned": {
+      zero: "Aucun poste horaire actif n’est non attribué.",
+      one: "1 poste horaire actif n’a aucune affectation active ; il doit être attribué en totalité.",
+      many: "{count} postes horaires actifs n’ont aucune affectation active ; chacun doit être attribué en totalité."
+    },
+    "participant.over_target":
+      "Le participant {teacher_label} a {assigned_hours} heures attribuées, au-dessus de la cible de {target_hours} ; écart {difference_hours}.",
+    "participant.below_target":
+      "Le participant {teacher_label} a {assigned_hours} heures attribuées, sous la cible de {target_hours} ; écart {difference_hours}."
+  },
+  entity: {
     school: { singular: "Établissement", plural: "Établissements", status: {} },
     academicYear: { singular: "Année scolaire", plural: "Années scolaires", status: { active: "Actif", archived: "Archivé" } },
     department: { singular: "Département", plural: "Départements", status: {} },

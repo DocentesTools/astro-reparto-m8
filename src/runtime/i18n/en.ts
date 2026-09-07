@@ -2,6 +2,53 @@ import type { RepartoLocale } from "./types.js";
 
 export const en = {
   locale: "en" as RepartoLocale,
+  validationFindings: {
+    "plan.missing_allocation":
+      "No current school-leadership allocation revision exists.",
+    "plan.group_hours_imbalanced":
+      "Group hours total {group_hours} differs from the current allocation of {allocation_hours}; difference {difference_hours}.",
+    "plan.teacher_load_imbalanced":
+      "Teacher load {teacher_hours} differs from the participant target total of {target_hours}; difference {difference_hours}.",
+    "plan.main_subject_not_materialized":
+      "Group {group_label} · {subject_label} has no materialized teaching activity.",
+    "activity.missing_groups":
+      "Activity {activity_label} links no group, but its subject requires one.",
+    "activity.multiple_groups_not_allowed": {
+      zero: "Activity {activity_label} links no groups, but this finding expected multiple groups.",
+      one: "Activity {activity_label} links 1 group, but this finding expected multiple groups.",
+      many: "Activity {activity_label} links {group_count} groups, but its subject forbids multiple groups."
+    },
+    "activity.linked_subject_mismatch":
+      "Activity {activity_label} links a group whose subject does not match.",
+    "activity.out_of_sync":
+      "Activity {activity_label} differs from its source; preview and explicitly apply the synchronization.",
+    "plan.requirements_not_generated":
+      "No teacher-requirement slots have been generated for the plan.",
+    "requirement.stale": {
+      zero: "No generated requirement slots are stale.",
+      one: "1 generated requirement slot is stale.",
+      many: "{count} generated requirement slots are stale."
+    },
+    "plan.stale": "The plan is {status} and must be reconciled.",
+    "plan.feasibility_not_confirmed":
+      "Assignment feasibility is {status}; a feasible evaluation is required before assignment.",
+    "teacher.overloaded_authorized":
+      "Participant {teacher_label} has {extra_hours} authorized extra hours.",
+    "plan.secondary_activities_available": {
+      zero: "No optional secondary group-subject cells remain outside an activity.",
+      one: "1 optional secondary group-subject cell is not yet part of an activity.",
+      many: "{count} optional secondary group-subject cells are not yet part of an activity."
+    },
+    "requirement.unassigned": {
+      zero: "No live requirement slots are unassigned.",
+      one: "1 live requirement slot has no active assignment; it must be assigned in full.",
+      many: "{count} live requirement slots have no active assignment; every slot must be assigned in full."
+    },
+    "participant.over_target":
+      "Participant {teacher_label} is assigned {assigned_hours} hours, above the target of {target_hours}; difference {difference_hours}.",
+    "participant.below_target":
+      "Participant {teacher_label} is assigned {assigned_hours} hours, below the target of {target_hours}; difference {difference_hours}."
+  },
   entity: {
     school: { singular: "School", plural: "Schools", status: {} },
     academicYear: { singular: "Academic year", plural: "Academic years", status: { active: "Active", archived: "Archived" } },

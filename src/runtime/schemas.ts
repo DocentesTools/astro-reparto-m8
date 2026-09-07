@@ -1,4 +1,9 @@
 import { z } from "zod";
+
+import {
+  hasValidValidationParams,
+  type ValidationParams
+} from "./validationFindings.js";
 import {
   CanonicalHoursSchema,
   HoursSchema,
@@ -1799,10 +1804,27 @@ export const PlanValidationMessageSchema = z
     severity: ValidationSeveritySchema,
     code: z.string().min(1).max(80),
     message: z.string().min(1),
+    params: z
+      .record(z.string(), z.union([z.string(), z.number().int()]))
+      .optional(),
     entity_type: z.string().min(1).max(50),
     entity_id: uuidSchema.nullable()
   })
-  .strict();
+  .strict()
+  .superRefine((message, context) => {
+    if (
+      !hasValidValidationParams(
+        message.code,
+        message.params as ValidationParams | undefined
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: `Invalid params for validation code ${message.code}`,
+        path: ["params"]
+      });
+    }
+  });
 export type PlanValidationMessage = z.infer<
   typeof PlanValidationMessageSchema
 >;

@@ -26,6 +26,7 @@ describe("shared validation renderer", () => {
             entity_id: "11111111-1111-4111-8111-111111111111",
             entity_type: "teaching_plan",
             message: "The plan needs attention.",
+            params: { status: "stale" },
             severity: "warning"
           }
         ]}
@@ -37,7 +38,8 @@ describe("shared validation renderer", () => {
     expect(html).toContain('data-reparto-validation-code="plan.stale"');
     expect(html).toContain('data-reparto-validation-entity="teaching_plan"');
     expect(html).toContain('data-reparto-validation-severity="warning"');
-    expect(html).toContain("The plan needs attention.");
+    expect(html).toContain("The plan is Stale and must be reconciled.");
+    expect(html).not.toContain("The plan needs attention.");
     expect(html).toContain("Catalog-authored detail");
     expect(html).not.toContain(">plan.stale<");
   });

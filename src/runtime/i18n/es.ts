@@ -1,7 +1,55 @@
 import type { RepartoDictionary } from "./types.js";
 
 export const es: RepartoDictionary = {
-  locale: "es",  entity: {
+  locale: "es",
+  validationFindings: {
+    "plan.missing_allocation":
+      "No existe ninguna revisión vigente de la asignación horaria de la dirección.",
+    "plan.group_hours_imbalanced":
+      "El total de horas de los grupos, {group_hours}, difiere de la asignación vigente de {allocation_hours}; diferencia {difference_hours}.",
+    "plan.teacher_load_imbalanced":
+      "La carga docente, {teacher_hours}, difiere del total objetivo de los participantes, {target_hours}; diferencia {difference_hours}.",
+    "plan.main_subject_not_materialized":
+      "El grupo {group_label} · {subject_label} no tiene una actividad docente materializada.",
+    "activity.missing_groups":
+      "La actividad {activity_label} no está vinculada a ningún grupo, pero su materia exige uno.",
+    "activity.multiple_groups_not_allowed": {
+      zero: "La actividad {activity_label} no está vinculada a ningún grupo, aunque este hallazgo esperaba varios.",
+      one: "La actividad {activity_label} está vinculada a 1 grupo, aunque este hallazgo esperaba varios.",
+      many: "La actividad {activity_label} está vinculada a {group_count} grupos, pero su materia no permite varios grupos."
+    },
+    "activity.linked_subject_mismatch":
+      "La actividad {activity_label} está vinculada a un grupo cuya materia no coincide.",
+    "activity.out_of_sync":
+      "La actividad {activity_label} difiere de su origen; previsualiza y aplica explícitamente la sincronización.",
+    "plan.requirements_not_generated":
+      "No se han generado puestos horarios docentes para el plan.",
+    "requirement.stale": {
+      zero: "Ningún puesto horario generado está obsoleto.",
+      one: "1 puesto horario generado está obsoleto.",
+      many: "{count} puestos horarios generados están obsoletos."
+    },
+    "plan.stale": "El plan está {status} y debe conciliarse.",
+    "plan.feasibility_not_confirmed":
+      "La viabilidad del reparto está {status}; se necesita una evaluación viable antes del reparto.",
+    "teacher.overloaded_authorized":
+      "El participante {teacher_label} tiene {extra_hours} horas extra autorizadas.",
+    "plan.secondary_activities_available": {
+      zero: "No queda ninguna celda opcional de grupo y materia fuera de una actividad.",
+      one: "1 celda opcional de grupo y materia todavía no forma parte de una actividad.",
+      many: "{count} celdas opcionales de grupo y materia todavía no forman parte de una actividad."
+    },
+    "requirement.unassigned": {
+      zero: "No hay puestos horarios vigentes sin asignar.",
+      one: "1 puesto horario vigente no tiene una asignación activa; debe asignarse por completo.",
+      many: "{count} puestos horarios vigentes no tienen una asignación activa; todos deben asignarse por completo."
+    },
+    "participant.over_target":
+      "El participante {teacher_label} tiene asignadas {assigned_hours} horas, por encima del objetivo de {target_hours}; diferencia {difference_hours}.",
+    "participant.below_target":
+      "El participante {teacher_label} tiene asignadas {assigned_hours} horas, por debajo del objetivo de {target_hours}; diferencia {difference_hours}."
+  },
+  entity: {
     school: { singular: "Centro", plural: "Centros", status: {} },
     academicYear: { singular: "Curso académico", plural: "Cursos académicos", status: { active: "Activo", archived: "Archivado" } },
     department: { singular: "Departamento", plural: "Departamentos", status: {} },

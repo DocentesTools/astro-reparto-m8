@@ -173,6 +173,16 @@ name the service this client is actually exercised against.
 
 ### Fixed
 
+- **Validation findings now render from code and typed parameters in all three
+  locales.** `PlanValidationMessage` accepts optional scalar `params`, with an
+  exact key/type contract for the service's 17 current validation codes.
+  `ProcessValidationList` formats those codes through the `en`/`fr`/`es`
+  catalogs, including zero/one/many count forms and signed decimal-hour
+  strings, while an older service without parameters and an additive unknown
+  code still fall back to the service message. Teacher, group, subject and
+  activity labels are substitutions; `entity_id` remains machine data and is
+  never promoted to the finding headline.
+
 - **A structured service error lost its message.** `messageFromDetail` and the
   error mapper accepted only a string `detail` or a FastAPI 422 array, and
   answered `undefined` for anything else. Three responses already send

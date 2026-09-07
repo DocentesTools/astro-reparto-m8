@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import type { RepartoDictionary } from "../i18n/index.js";
 import type { PlanValidationMessage } from "../schemas.js";
+import { formatValidationFinding } from "../validationFindings.js";
 import {
   repartoListClass,
   repartoListItemClass
@@ -9,7 +10,7 @@ import {
 
 export type ProcessValidationFinding = Pick<
   PlanValidationMessage,
-  "code" | "message"
+  "code" | "message" | "params"
 > &
   Partial<Pick<PlanValidationMessage, "entity_id" | "entity_type" | "severity">> & {
     /** Optional catalog-authored detail shown below the finding headline. */
@@ -71,7 +72,7 @@ export function ProcessValidationList({
           // eslint-disable-next-line @eslint-react/no-array-index-key
           key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
         >
-          <strong className="block">{message.message}</strong>
+          <strong className="block">{formatValidationFinding(dict, message)}</strong>
           {message.details}
         </li>
       ))}

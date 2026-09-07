@@ -2190,6 +2190,7 @@ describe("teaching-plan and activity schemas", () => {
           severity: "blocking",
           code: "activity.missing_groups",
           message: "The activity requires at least one group.",
+          params: { activity_label: "Mathematics" },
           entity_type: "teaching_activity",
           entity_id: activityId
         },
@@ -2204,6 +2205,9 @@ describe("teaching-plan and activity schemas", () => {
     });
     expect(report.messages).toHaveLength(2);
     expect(report.messages[0]?.entity_id).toBe(activityId);
+    expect(report.messages[0]?.params).toEqual({
+      activity_label: "Mathematics"
+    });
     expect(() =>
       PlanValidationReportSchema.parse({
         ...report,
@@ -2216,6 +2220,37 @@ describe("teaching-plan and activity schemas", () => {
         messages: [{ ...report.messages[0], code: "" }]
       })
     ).toThrow();
+    expect(() =>
+      PlanValidationReportSchema.parse({
+        ...report,
+        messages: [
+          {
+            ...report.messages[0],
+            params: { activity_label: "Mathematics", unexpected: 1 }
+          }
+        ]
+      })
+    ).toThrow();
+    expect(() =>
+      PlanValidationReportSchema.parse({
+        ...report,
+        messages: [
+          { ...report.messages[0], params: { activity_label: 42 } }
+        ]
+      })
+    ).toThrow();
+    expect(
+      PlanValidationReportSchema.parse({
+        ...report,
+        messages: [
+          {
+            ...report.messages[0],
+            code: "future.additive_code",
+            params: { count: 1, label: "Future" }
+          }
+        ]
+      }).messages[0]?.code
+    ).toBe("future.additive_code");
   });
 
   it("reads every activity field and enforces linked-group integrity", () => {

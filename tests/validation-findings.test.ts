@@ -4,7 +4,12 @@ import { en } from "../src/runtime/i18n/en.js";
 import { es } from "../src/runtime/i18n/es.js";
 import { fr } from "../src/runtime/i18n/fr.js";
 import {
+  GroupSubjectBulkConflictSchema,
+  GroupSubjectBulkPreviewSchema
+} from "../src/runtime/schemas.js";
+import {
   formatValidationFinding,
+  groupSubjectBulkValidationErrorText,
   hasValidValidationParams,
   VALIDATION_PARAM_CONTRACT,
   type ValidationParams
@@ -210,5 +215,95 @@ describe("validation finding catalog", () => {
     expect(render("plan.feasibility_not_confirmed", "future_status")).toContain(
       "future_status"
     );
+  });
+});
+
+describe("C11 forward-compatible bulk prose", () => {
+  it("accepts a bare sentence and a coded object for one validation error", () => {
+    const base = {
+      mode: "upsert" as const,
+      subject_id: "11111111-1111-4111-8111-111111111111",
+      matched_group_ids: [],
+      to_create: [],
+      to_update: [],
+      unchanged: [],
+      conflicts: [],
+      expected_affected_count: 0
+    };
+
+    const legacy = GroupSubjectBulkPreviewSchema.parse({
+      ...base,
+      validation_errors: ["minimum_grade must be less than or equal to maximum_grade."]
+    });
+    expect(legacy.validation_errors[0]).toBe(
+      "minimum_grade must be less than or equal to maximum_grade."
+    );
+
+    const migrated = GroupSubjectBulkPreviewSchema.parse({
+      ...base,
+      validation_errors: [
+        {
+          code: "group_subject.inverted_grade_range",
+          message: "minimum_grade must be less than or equal to maximum_grade.",
+          params: { minimum_grade: 3, maximum_grade: 1 }
+        }
+      ]
+    });
+    expect(migrated.validation_errors[0]).toEqual({
+      code: "group_subject.inverted_grade_range",
+      message: "minimum_grade must be less than or equal to maximum_grade.",
+      params: { minimum_grade: 3, maximum_grade: 1 }
+    });
+
+    expect(() =>
+      GroupSubjectBulkPreviewSchema.parse({ ...base, validation_errors: [""] })
+    ).toThrow();
+    expect(() =>
+      GroupSubjectBulkPreviewSchema.parse({
+        ...base,
+        validation_errors: [{ code: "x", message: "y", extra: true }]
+      })
+    ).toThrow();
+  });
+
+  it("reads display text from either arm", () => {
+    expect(groupSubjectBulkValidationErrorText("plain sentence")).toBe("plain sentence");
+    expect(
+      groupSubjectBulkValidationErrorText({
+        code: "group_subject.inverted_grade_range",
+        message: "coded sentence"
+      })
+    ).toBe("coded sentence");
+  });
+
+  it("accepts a conflict with and without the staged code and params", () => {
+    const teaching_group_id = "22222222-2222-4222-8222-222222222222";
+
+    expect(
+      GroupSubjectBulkConflictSchema.parse({
+        teaching_group_id,
+        reason: "No existing group-subject row to update."
+      })
+    ).toEqual({
+      teaching_group_id,
+      reason: "No existing group-subject row to update."
+    });
+
+    expect(
+      GroupSubjectBulkConflictSchema.parse({
+        teaching_group_id,
+        reason: "No existing group-subject row to update.",
+        code: "group_subject.no_row_to_update",
+        params: { group_label: "1A", subject_label: "Maths" }
+      }).code
+    ).toBe("group_subject.no_row_to_update");
+
+    expect(() =>
+      GroupSubjectBulkConflictSchema.parse({
+        teaching_group_id,
+        reason: "r",
+        params: { hours: 1.5 }
+      })
+    ).toThrow();
   });
 });

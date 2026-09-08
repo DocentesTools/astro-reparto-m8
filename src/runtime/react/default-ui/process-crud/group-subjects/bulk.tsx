@@ -23,6 +23,7 @@ import {
   repartoInputClass,
   repartoPanelClass
 } from "../../../styles.js";
+import { groupSubjectBulkValidationErrorText } from "../../../../validationFindings.js";
 import { repartoToast } from "../../../ui/toast-notification.js";
 import {
   ActionButton,
@@ -261,9 +262,10 @@ export function GroupSubjectBulkPreviewTable({
         >
           <strong>{dict.groupSubjectBulk.validationTitle}</strong>
           <ul className="list-disc pl-5">
-            {preview.validation_errors.map((message) => (
-              <li key={message}>{message}</li>
-            ))}
+            {preview.validation_errors.map((entry) => {
+              const text = groupSubjectBulkValidationErrorText(entry);
+              return <li key={text}>{text}</li>;
+            })}
           </ul>
         </div>
       ) : null}

@@ -3,7 +3,10 @@ import {
   type RepartoDictionary,
   type RepartoMessageVars
 } from "./i18n/index.js";
-import type { PlanValidationMessage } from "./schemas.js";
+import type {
+  GroupSubjectBulkValidationError,
+  PlanValidationMessage
+} from "./schemas.js";
 
 export type ValidationParamKind = "integer" | "string";
 
@@ -162,4 +165,18 @@ function localizedParams(
     return { ...params, status: labels[params.status] ?? params.status };
   }
   return params;
+}
+
+/**
+ * Displayable text for one bulk-preview validation error.
+ *
+ * The service sends a bare sentence today and a `{code, message, params}`
+ * object once `C11-non-exception-prose` lands. Until the client catalog exists,
+ * both arms render the service's own prose — the point of accepting the object
+ * arm now is that a migrated service is not rejected by the strict schema.
+ */
+export function groupSubjectBulkValidationErrorText(
+  entry: GroupSubjectBulkValidationError
+): string {
+  return typeof entry === "string" ? entry : entry.message;
 }

@@ -421,6 +421,14 @@ resulting values), `conflicts` (`teaching_group_id` + `reason`; a matched group
 `expected_affected_count` (`len(to_create) + len(to_update)`). Result shape:
 `created_count`, `updated_count`, `data` (the affected cells), `count`.
 
+Forward-declared for `C11-non-exception-prose` (staged 2026-09-08, service does
+not send them yet): a conflict may additionally carry an optional stable `code`
+and language-neutral `params`, and one `validation_errors` entry may arrive as
+`{code, message, params?}` instead of a bare sentence. Both objects stay
+`.strict()`; the arms exist so a migrated service is not rejected by a client
+already published. Until the catalog lands, either arm renders the service's own
+prose through `groupSubjectBulkValidationErrorText`.
+
 Frontend coverage: `useRepartoGroupSubjects`,
 `useCreateRepartoGroupSubject`, `useUpdateRepartoGroupSubject`,
 `useRetireRepartoGroupSubject`, `usePreviewRepartoGroupSubjects` and

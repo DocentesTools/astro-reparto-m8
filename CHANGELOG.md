@@ -183,6 +183,20 @@ name the service this client is actually exercised against.
   activity labels are substitutions; `entity_id` remains machine data and is
   never promoted to the finding headline.
 
+- **Two bulk-preview prose fields are already forward-compatible.** The
+  group-subject bulk preview is the next surface the service will give stable
+  codes (`C11-non-exception-prose`): a conflict's `reason` and each
+  `validation_errors` entry are service-authored English today. Both response
+  objects are `.strict()`, so a service that starts sending a code would be
+  rejected by a client already on npm — the same trap the validation `params`
+  field had. So the arms are declared now, ahead of the service: a conflict may
+  carry an optional `code` and language-neutral `params`, and one
+  `validation_errors` entry may arrive as `{code, message, params?}` instead of
+  a bare sentence. Nothing renders differently yet — either arm shows the
+  service's own prose through the single `groupSubjectBulkValidationErrorText`
+  reader — but the service can now migrate those two fields on its own
+  schedule, without a client release standing in front of it.
+
 - **A structured service error lost its message.** `messageFromDetail` and the
   error mapper accepted only a string `detail` or a FastAPI 422 array, and
   answered `undefined` for anything else. Three responses already send

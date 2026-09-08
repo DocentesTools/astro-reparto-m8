@@ -65,6 +65,7 @@ import {
   type RepartoMappedError
 } from "../../errorMapping.js";
 import { RepartoFormError } from "./feedback.js";
+import { exportArtifactFilename, exportArtifactMimeType } from "../../ui/index.js";
 import { ActionButton, RowActions } from "./process-crud/shared.js";
 import type { RepartoEventStreamState } from "../useRepartoEvents.js";
 import {
@@ -184,6 +185,75 @@ function dashboardSummary(dashboard?: ProcessDashboard | null): ProcessSummary |
   return dashboard ? summarizeProcessDashboard(dashboard) : null;
 }
 
+/**
+ * How long an artifact's blob URL stays alive after it is handed out.
+ *
+ * It is **not** revoked in the same tick, which is the mistake this constant
+ * exists to prevent: `a.click()` only *starts* the save, and `window.open`
+ * hands the URL to a document that has not loaded yet, so revoking
+ * immediately cancels the very thing the call was for. A minute outlives both
+ * and still bounds the leak — the page is not holding the content, which it
+ * already has in the query cache either way.
+ */
+const REPARTO_ARTIFACT_URL_TTL_MS = 60_000;
+
+/**
+ * Hand one artifact's already-fetched content to the browser as a blob URL.
+ *
+ * `POST …/exports` and `GET …/exports` both return the artifact's full
+ * `content` inline — the service never asks the client to fetch it a second
+ * time — so everything here is a client-side save and never a request. It is
+ * a no-op wherever the platform cannot do it (no `document`, as in SSR, or no
+ * `createObjectURL`, as in a bare jsdom), so a caller may fire it from a
+ * mutation callback in any environment this package is built in.
+ */
+function withRepartoArtifactUrl(
+  artifact: ExportArtifactPublic,
+  hand: (url: string) => void
+): void {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+  if (typeof URL?.createObjectURL !== "function") return;
+  const blob = new Blob([artifact.content], {
+    type: exportArtifactMimeType(artifact.format)
+  });
+  const url = URL.createObjectURL(blob);
+  try {
+    hand(url);
+  } finally {
+    window.setTimeout(() => URL.revokeObjectURL(url), REPARTO_ARTIFACT_URL_TTL_MS);
+  }
+}
+
+/** Save an export artifact's content to the reader's device. */
+function downloadRepartoExportArtifact(artifact: ExportArtifactPublic): void {
+  withRepartoArtifactUrl(artifact, (url) => {
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = exportArtifactFilename(artifact);
+    link.rel = "noopener";
+    // Appended rather than clicked detached: Firefox ignores a click on an
+    // element that is not in the document.
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  });
+}
+
+/**
+ * Open an export artifact's content in a new tab.
+ *
+ * Every document format this package produces is text the browser renders
+ * inline (`application/json`, `text/csv`, and `text/plain` for the plan §15
+ * documents, which are text under a `pdf` label), so this reads the artifact
+ * rather than filing it. Pop-up blockers only allow it from a real click, so
+ * it is offered as a button and never fired from a mutation callback.
+ */
+function viewRepartoExportArtifact(artifact: ExportArtifactPublic): void {
+  withRepartoArtifactUrl(artifact, (url) => {
+    window.open(url, "_blank", "noopener,noreferrer");
+  });
+}
+
 function latestMeetingSession(
   sessions?: { data: MeetingSessionPublic[] } | null
 ): MeetingSessionPublic | null {
@@ -207,7 +277,7 @@ export function RepartoDashboardView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="dashboard">
+      <RepartoRouteGuard locale={locale} processId={processId} route="dashboard">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
           locale={locale}
@@ -311,7 +381,7 @@ export function RepartoMeetingView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="meeting">
+      <RepartoRouteGuard locale={locale} processId={processId} route="meeting">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
           locale={locale}
@@ -628,7 +698,7 @@ export function RepartoMyView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="teacherView">
+      <RepartoRouteGuard locale={locale} processId={processId} route="teacherView">
         <WithSelectedProcess
           bypass={Boolean(summary)}
           locale={locale}
@@ -926,7 +996,7 @@ export function RepartoSharedView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="sharedScreen">
+      <RepartoRouteGuard locale={locale} processId={processId} route="sharedScreen">
         <WithSelectedProcess
           bypass={Boolean(summary)}
           locale={locale}
@@ -1020,7 +1090,7 @@ export function RepartoVersionsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="versions">
+      <RepartoRouteGuard locale={locale} processId={processId} route="versions">
         <WithSelectedProcess
           bypass={Boolean(versions)}
           locale={locale}
@@ -1192,7 +1262,7 @@ export function RepartoExportsView({
 }) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="exports">
+      <RepartoRouteGuard locale={locale} processId={processId} route="exports">
         <WithSelectedProcess
           bypass={Boolean(artifacts || plan)}
           locale={locale}
@@ -1259,7 +1329,14 @@ function RepartoExportsContent({
   const [restoreAssignments, setRestoreAssignments] = useState(true);
   const hasProcess = Boolean(resolveProcessId(processId));
   const isLoading = exportsQuery.isLoading && !artifacts && hasProcess;
-  if (isLoading || exportsQuery.isError) {
+  // Only the *loading* case stands in for the center. A failed artifact-list
+  // read must not take the export affordances down with it: `GET …/exports` is
+  // the inventory of what was already built, while the planning exports sit at
+  // the service's read floor and a backup is the one document that has to be
+  // producible in every state. Returning early on `isError` meant one failed
+  // list read removed the button that takes the backup — exactly when a head
+  // most wants one. The error is reported by the `QueryState` *below* the view.
+  if (isLoading) {
     return (
       <QueryState
         error={exportsQuery.error}
@@ -1297,7 +1374,7 @@ function RepartoExportsContent({
         body: { export_type: exportType, format: exportType === "backup" ? "json" : "pdf" }
       },
       {
-        onSuccess: () => {
+        onSuccess: (artifact) => {
           setFinalConfirming(false);
           repartoToast.success(
             exportType === "final"
@@ -1306,6 +1383,7 @@ function RepartoExportsContent({
                   document: dict.view.exports.type[exportType]
                 })
           );
+          downloadRepartoExportArtifact(artifact);
         },
         onError: (error) =>
           repartoToast.error(
@@ -1376,6 +1454,8 @@ function RepartoExportsContent({
         onCreateDocumentExport={runDocumentExport}
         onCreateFinalExport={() => runDocumentExport("final")}
         onCreatePlanningExport={runPlanningExport}
+        onDownload={downloadRepartoExportArtifact}
+        onView={viewRepartoExportArtifact}
         onImportPlanning={runPlanningImport}
         onPlanningImportContentChange={setPlanningImportContent}
         onCancelRestore={() => setRestoreConfirming(false)}

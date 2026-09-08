@@ -409,15 +409,18 @@ describe("default reparto UI", () => {
     expect(sharedHtml).toContain('data-reparto-slot="current-turn"');
   });
 
-  it("shows the process picker when no process is selected", () => {
+  // The gate selects; it does not create. Every process-scoped route used to
+  // open on the create-process form when no process was remembered.
+  it("gates on a process selector, not the create form, when none is selected", () => {
     for (const view of [
       renderToStaticMarkup(<TeacherLanView />),
       renderToStaticMarkup(<DepartmentHeadView />),
       renderToStaticMarkup(<SharedScreenView />)
     ]) {
-      expect(view).toContain('data-reparto-route="process-picker"');
-      expect(view).toContain('data-reparto-form="create-process"');
-      expect(view).toContain('data-reparto-action="create-process"');
+      expect(view).toContain('data-reparto-route="no-process"');
+      expect(view).toContain('data-reparto-panel="no-process"');
+      expect(view).not.toContain('data-reparto-form="create-process"');
+      expect(view).not.toContain('data-reparto-action="create-process"');
     }
   });
 
@@ -848,6 +851,14 @@ describe("default reparto UI", () => {
       'data-final-blocked-reason="feasibility_not_confirmed"'
     );
     expect(exports).toContain('data-export-artifact-type="backup"');
+    // Every stored artifact offers both readings of "give me the document":
+    // open it, or keep it. `POST`/`GET …/exports` both return the content
+    // inline, so neither is a second fetch.
+    expect(exports).toContain('data-reparto-action="download-export"');
+    expect(exports).toContain('data-reparto-action="view-export"');
+    expect(exports).toContain(
+      'data-reparto-export-artifact-id="99999999-9999-4999-8999-999999999999"'
+    );
     expect(exports).toContain('data-reparto-action="restore-draft"');
     expect(exports).toContain(
       'data-reparto-backup-id="99999999-9999-4999-8999-999999999999"'

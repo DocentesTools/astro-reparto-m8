@@ -421,6 +421,37 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     );
   });
 
+  // C2-feasibility-catalog (§5.4, adopted closed): `planning.feasibility.finding`
+  // carries the 7 closed feasibility codes' headlines in all three locales.
+  // `FeasibilityDiagnosticCodeSchema` stays a closed z.enum — an unknown code
+  // is rejected at the Zod boundary, so there is no fallback to type-cast or
+  // test here.
+  it("localizes the closed feasibility finding catalog (§5.4)", () => {
+    const codes = [
+      "incompatible_residual_totals",
+      "slot_exceeds_every_target",
+      "distinct_teacher_shortfall",
+      "unsatisfiable_targets",
+      "instance_size_limit",
+      "step_limit",
+      "time_limit"
+    ] as const;
+    expect(Object.keys(en.planning.feasibility.finding).sort()).toEqual(
+      [...codes].sort()
+    );
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(Object.keys(dict.planning.feasibility.finding).sort()).toEqual(
+        [...codes].sort()
+      );
+      for (const code of codes) {
+        expect(dict.planning.feasibility.finding[code]).not.toBe(
+          en.planning.feasibility.finding[code]
+        );
+      }
+    }
+  });
+
   it("fully localizes teaching group bulk and stage CRUD surfaces", () => {
     const roots = ["teachingGroupBulk", "classroomStages"] as const;
     for (const root of roots) {

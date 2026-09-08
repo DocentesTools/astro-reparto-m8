@@ -509,6 +509,8 @@ in §12; see that entry before reusing either name.
 | Produced artifact | `data-reparto-slot="planning-artifact"` with `data-planning-artifact-mode` / `data-plan-exact` | both balances and the finding counts travel *inside* the artifact |
 | Process documents | `data-reparto-panel="export-center"` with `data-reparto-action="create-export"` + `data-reparto-export-type` | `POST /exports`; `internal_draft`, `school_leadership`, `teacher_summary`, `backup` — never `final` |
 | Document list | `data-reparto-slot="export-list"` / `data-export-artifact-id` / `data-export-artifact-type` | stored artifacts; `data-reparto-slot="backup-count"` counts JSON backups |
+| Document download | `data-reparto-action="download-export"` + `data-reparto-export-artifact-id` | saves the artifact's already-fetched `content` to the reader's device; both `POST` and `GET …/exports` return it inline, so this is a client-side save and never a second request. Offered on every stored artifact and fired once automatically on a successful `create-export`. **Not** withheld below the act floor: the panel's list is already at the read floor, and a reader who may see the content may keep it |
+| Document view | `data-reparto-action="view-export"` + `data-reparto-export-artifact-id` | opens the same content in a new tab instead of filing it — every format the centre produces is text a browser renders inline, including the plan §15 documents, which are text under a `pdf` label. Button-only by necessity: a pop-up blocker allows this from a real click and not from a mutation callback, which is why `create-export` auto-*downloads* rather than auto-viewing |
 | Planning import | `data-reparto-panel="planning-import"` / `data-reparto-action="import-planning"` | strict JSON request; never balance-gated; result shows both axes and `data-reparto-validation-code` findings |
 | Backup restore | `data-reparto-action="restore-draft"` → `data-reparto-dialog="restore-confirmation"` | latest JSON backup; draft-only known-state gate; optional generated-position/assignment restore |
 | Final assignment export | `data-reparto-panel="final-close"` with `data-final-export-allowed` | §20.25's top tier: complete reparto **and** confirmed feasibility |
@@ -637,6 +639,8 @@ the same `Cancel` button in two dialogs renders the same word.
 | `action.claimProfile` | Claim my profile | Rattacher mon profil | Vincular mi perfil | *My view* claim form submit (`W1.4`) |
 | `action.copyCode` | Copy code | Copier le code | Copiar el código | Claim-code dialog |
 | `action.export` | Export | Exporter | Exportar | Versions / exports table |
+| `action.view` | View | Consulter | Ver | Export centre document list — opens a stored artifact's content for reading, in a new tab |
+| `action.download` | Download | Télécharger | Descargar | Export centre document list — saves a stored artifact's content to the reader's device. Distinct from `action.export`, which *produces* an artifact server-side; this one only keeps a copy of one that already exists |
 | `action.restore` | Restore draft | Restaurer le brouillon | Restaurar borrador | History |
 | `action.copyFrom` | Copy from previous year | Copier depuis l'année précédente | Copiar del curso anterior | Process row action |
 | `action.startTurn` | Start turn | Démarrer le tour | Iniciar turno | Meeting turn |
@@ -830,8 +834,18 @@ The table:
 > two labels tested the same participant count. An operator who had added
 > subjects was told to add subjects. The retired step name is in §12.
 
-The setup-checklist card is shown by the process picker (before a process is
-selected) and by the department-head dashboard (after). Both render it from the
+> **Where it is shown, revised 2026-09-05.** It used to be printed at the top of
+> the process picker, which is what a step page falls back to while no process is
+> selected — so an operator met fifteen lines of whole-workflow state above the
+> one form they had opened the page for. The card is now offered by a **Setup
+> checklist** button in every step's `RepartoRouteGuard` toolbar, beside the `?`
+> help, and laid out in full on the department-head dashboard alone, whose
+> subject it already is. The dashboard is the one route with no button.
+
+The setup-checklist card is opened from the step toolbar on every route but the
+dashboard, and shown in full on the dashboard — where a `SetupChecklistSummary`
+(progress bar, per-stage counts, next action) sits above the list. Both render it
+from the
 **one** derivation, `buildSetupChecklist` (`src/runtime/ui/setupChecklist.ts`),
 through the one component, `SetupChecklistSteps`. Dictionary root:
 `flow.bootstrap.*`; steps are grouped by the three stages under the existing
@@ -841,6 +855,11 @@ identically.
 **The label states the condition.** The right-hand column below is the condition
 `buildSetupChecklist` actually tests; a change to either column without the
 other is the defect this section was rewritten to prevent.
+
+**Every label is a link.** `SETUP_CHECKLIST_STEP_ROUTE` names the one route each
+step is done on, resolved against the runtime config's `routes` map so the link
+follows a host that moved its pages; a route the host disabled has no address
+and that line stays plain text.
 
 | Key | en | Condition tested |
 | --- | --- | --- |
@@ -867,6 +886,13 @@ other is the defect this section was rewritten to prevent.
 | `flow.bootstrap.done` | Done | Terminé | Hecho |
 | `flow.bootstrap.open` | Open | Ouvrir | Abrir |
 | `flow.bootstrap.unknown` | Not checked here | Non vérifié ici | No comprobado aquí |
+| `flow.bootstrap.openChecklist` | Setup checklist | Liste de configuration | Lista de configuración |
+| `flow.bootstrap.closeChecklist` | Close the setup checklist | Fermer la liste de configuration | Cerrar la lista de configuración |
+| `flow.bootstrap.checking` | Checking what is done… | Vérification de ce qui est fait… | Comprobando lo que está hecho… |
+| `flow.bootstrap.progress` | {done} of {total} done | {done} sur {total} terminées | {done} de {total} hechas |
+| `flow.bootstrap.unknownCount` | {count} not checked here | {count} non vérifiées ici | {count} sin comprobar aquí |
+| `flow.bootstrap.next` | Next | Suite | Siguiente |
+| `flow.bootstrap.allDone` | Every step this screen can check is done. | Toutes les étapes vérifiables ici sont terminées. | Todos los pasos que esta pantalla puede comprobar están hechos. |
 | `flow.bootstrap.reason.no-process` | Select a process first. | Sélectionnez d'abord un processus. | Seleccione antes un proceso. |
 | `flow.bootstrap.reason.not-observed` | This screen does not read that. | Cet écran ne lit pas cette donnée. | Esta pantalla no lee ese dato. |
 
@@ -875,7 +901,12 @@ other is the defect this section was rewritten to prevent.
 | Card | `data-reparto-panel="setup-checklist"` | one panel per surface; the list inside it is shared |
 | List | `data-reparto-checklist=""` | wraps the three stage groups |
 | Stage group | `data-reparto-checklist-group="configuration\|planning\|assignment"` | labelled from `nav.group.*`, never a second set of stage names |
+| Toolbar toggle | `data-reparto-checklist-toggle=""` | opens the card; **not** a `data-reparto-action`, which marks the write affordances the role floors withhold |
 | Step | `data-reparto-checklist-step="<key>"` | the dictionary key is the slot name |
+| Step link | `data-reparto-checklist-link="<key>"` | the step's own page, from `SETUP_CHECKLIST_STEP_ROUTE`; absent when the host disabled that route |
+| Summary | `data-reparto-checklist-summary=""` with `data-reparto-checklist-percent` | the dashboard's progress panel, above the list |
+| Stage count | `data-reparto-checklist-stage="<stage>"` + `data-reparto-checklist-stage-done` | done-per-stage, from the same three stages the list groups by |
+| Next action | `data-reparto-checklist-next="<key>"` | the first `pending` step in stage order; an `unknown` step is never a next action |
 | Step state | `data-reparto-checklist-state="done\|pending\|unknown"` | `unknown` is new: the condition was **not tested here**, which is not the same statement as "not done" |
 | Blocked reason | `data-reparto-checklist-blocked="no-process\|not-observed"` alongside `data-reparto-disabled-reason=""` | why the condition could not be tested |
 | Status word | `data-reparto-step-status="done\|pending\|unknown"` | shown where the surface offers no way in |

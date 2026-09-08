@@ -8,6 +8,8 @@ import {
   buildVersionSelectionState,
   canCompareVersions,
   classifyDirectChoiceConflict,
+  exportArtifactFilename,
+  exportArtifactMimeType,
   getLanConnectionState,
   nextLeadershipWorkflowAction,
   versionSectionLabelKey
@@ -572,6 +574,23 @@ describe("history UI state", () => {
       latestBackupId: null,
       restore: { allowed: false, reason: "no_backup", backup: null }
     });
+  });
+
+  it("names a downloaded artifact's file and MIME type by format", () => {
+    // json/csv are saved as themselves; pdf is downgraded to .txt/text/plain
+    // because the content behind it is deterministic text, not real PDF
+    // bytes — see `DocumentRenderingService` on the service side. Offering it
+    // as `.pdf`/`application/pdf` is the one thing more misleading than no
+    // file at all.
+    expect(exportArtifactFilename(backup)).toBe(
+      "backup-77777777-7777-4777-8777-777777777777.json"
+    );
+    expect(exportArtifactMimeType("json")).toBe("application/json");
+    expect(exportArtifactMimeType("csv")).toBe("text/csv");
+    expect(exportArtifactMimeType("pdf")).toBe("text/plain");
+    expect(
+      exportArtifactFilename({ ...backup, export_type: "internal_draft", format: "pdf" })
+    ).toBe("internal_draft-77777777-7777-4777-8777-777777777777.txt");
   });
 
   it("validates planning import JSON without applying a balance gate", () => {

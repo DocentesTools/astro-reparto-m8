@@ -66,6 +66,17 @@ export type EntityViewProps = {
   processId?: string;
 };
 
+/**
+ * The dictionary for a view's locale.
+ *
+ * Calls no hook today, and keeps the `use` prefix anyway: it is the locale
+ * half of the pair every view opens with — `useDict` beside `useMappedError`,
+ * which *is* a hook — and it is called under the same rules, unconditionally
+ * and at the top. Renaming it would split that pair across 50-odd call sites
+ * to describe an implementation detail rather than the contract, and would
+ * have to be undone the first time this needs context or memoization.
+ */
+// eslint-disable-next-line @eslint-react/no-unnecessary-use-prefix
 export function useDict(locale?: RepartoLocale): Dict {
   return getRepartoDictionary(locale ?? normalizeRepartoLocale());
 }

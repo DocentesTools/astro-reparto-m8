@@ -27,6 +27,7 @@ import {
   repartoMetricValueLargeClass,
   repartoPanelClass
 } from "../../styles.js";
+import { ProcessValidationList } from "../../ProcessValidationList.js";
 import { repartoToast } from "../../ui/toast-notification.js";
 import {
   ActionButton,
@@ -152,19 +153,12 @@ export function PlanValidationSummary({
               {dict.planning.generation.noValidations}
             </p>
           ) : (
-            <ul className="space-y-2" data-reparto-list="plan-validations">
-              {report.messages.map((message, index) => (
-                <li
-                  className="rounded-md border border-border/70 p-3"
-                  data-plan-validation-code={message.code}
-                  data-plan-validation-severity={message.severity}
-                  key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
-                >
-                  <p className="font-medium">{message.message}</p>
-                  <p className={repartoFieldCaptionClass}>{message.code}</p>
-                </li>
-              ))}
-            </ul>
+            <ProcessValidationList
+              dict={dict}
+              listName="plan-validations"
+              messages={report.messages}
+              stage="planning"
+            />
           )}
         </>
       ) : null}

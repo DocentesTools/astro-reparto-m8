@@ -102,7 +102,7 @@ describe("remembered process id — recovery from a process that no longer exist
 
     await waitFor(() => {
       expect(
-        document.querySelector('[data-reparto-route="process-picker"]')
+        document.querySelector('[data-reparto-route="no-process"]')
       ).not.toBeNull();
     });
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
@@ -116,7 +116,7 @@ describe("remembered process id — recovery from a process that no longer exist
 
     await waitFor(() => {
       expect(
-        document.querySelector('[data-reparto-route="process-picker"]')
+        document.querySelector('[data-reparto-route="no-process"]')
       ).not.toBeNull();
     });
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
@@ -133,7 +133,7 @@ describe("remembered process id — recovery from a process that no longer exist
     });
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe(liveProcessId);
     expect(
-      document.querySelector('[data-reparto-route="process-picker"]')
+      document.querySelector('[data-reparto-route="no-process"]')
     ).toBeNull();
   });
 

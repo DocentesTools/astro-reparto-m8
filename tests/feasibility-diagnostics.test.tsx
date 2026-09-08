@@ -407,10 +407,23 @@ describe("FeasibilityDiagnosticsView", () => {
     expect(html).toContain('data-feasibility-status="infeasible"');
     expect(html).toContain('data-reparto-list="feasibility-diagnostics"');
     expect(html).toContain(
-      'data-feasibility-diagnostic-code="distinct_teacher_shortfall"'
+      'data-reparto-validation-code="distinct_teacher_shortfall"'
     );
+    expect(html).not.toContain(">distinct_teacher_shortfall<");
     expect(html).toContain("Mathematics · Ordinary");
     expect(html).toContain('data-feasibility-unresolved-count="2"');
+    // C2-feasibility-catalog: the headline is the catalog's own translated
+    // text for the code, never the service-authored English `message`.
+    // renderToStaticMarkup escapes the apostrophe in the finding text.
+    expect(html).toContain(
+      dict.planning.feasibility.finding.distinct_teacher_shortfall.replace(
+        /'/g,
+        "&#x27;"
+      )
+    );
+    expect(html).not.toContain(
+      "An activity has too few distinct participants."
+    );
     expect(html).toContain(dict.planning.feasibility.suggestionTitle);
     // renderToStaticMarkup escapes the apostrophe in the suggestion text.
     expect(html).toContain(

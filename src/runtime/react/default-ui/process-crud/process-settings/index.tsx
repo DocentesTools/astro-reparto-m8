@@ -29,7 +29,7 @@ export function RepartoProcessSettingsView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="processSettings">
+      <RepartoRouteGuard locale={locale} processId={processId} route="processSettings">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoProcessSettingsContent locale={locale} processId={resolvedId} />

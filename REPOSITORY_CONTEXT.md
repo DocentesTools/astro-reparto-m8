@@ -18,7 +18,12 @@ host source edits outside documented registration points.
 - Communicate with `reparto-docente-m8` over HTTP only; never import service code.
 - Publish `@mano8/astro-reparto-m8` and keep `repartoDocenteM8` package metadata,
   schemas, and compatibility checks aligned with the `reparto-docente-m8@2.0.0`
-  contract, tested at service version `2.0.0` and supporting `>=2.0.0 <3.0.0`.
+  contract, tested at service version `2.1.1` and supporting `>=2.0.0 <3.0.0`.
+  The three move independently: the **contract** is the compatibility gate and
+  an exact-match `Set`, so it moves only when the served surface does; the
+  **range** brackets the service *package* versions this client admits; and
+  the **tested** version is simply the newest service the client was exercised
+  against, and is the one that moves on an ordinary service patch.
 - Require `@mano8/astro-auth-m8` as the official M8 auth peer. Couple only through
   `RepartoAuthAdapter` / `createFaAuthAdapter`, wiring it after `faAuth`.
 - The role hierarchy is the auth peer's, imported. `authAdapter.ts` re-exports
@@ -86,6 +91,13 @@ host source edits outside documented registration points.
   the read floor and `useRepartoCanAct` the write floor, both from the signed-in
   user and never from a caller-supplied prop. The guard states what to show; the
   service remains the authorization boundary.
+- `src/runtime/stepHelp.ts` owns the per-step guidance map: which stage each
+  route belongs to, the `nav.item.*` entry it is titled by, and the guide page
+  its help links out to. `RepartoRouteGuard` mounts the `?` panel for every
+  route it admits, so a step cannot exist without its help; the copy itself is
+  `help.step.<route>` in the three dictionaries. The guide is host-mounted, so
+  the package states the page slug and the host states the base (`docs.base`,
+  baked in as `PUBLIC_FA_REPARTO_DOCS_BASE`); an empty base drops the link.
 - `src/runtime/react/**` owns providers and default UI. Its process picker uses
   academic year, school, and department selects with one-level inline creation;
   it never exposes raw UUID inputs. `src/runtime/ui/**` owns framework-neutral

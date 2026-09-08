@@ -15,7 +15,7 @@ import { RepartoToastHost } from "../../../ui/toast-notification.js";
 export function RepartoTeachingGroupsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="teachingGroups">
+      <RepartoRouteGuard locale={locale} processId={processId} route="teachingGroups">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoTeachingGroupsContent locale={locale} processId={resolvedId} />

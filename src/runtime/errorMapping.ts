@@ -1,4 +1,8 @@
-import { RepartoApiError, RepartoUnauthenticatedError } from "./errors.js";
+import {
+  RepartoApiError,
+  RepartoUnauthenticatedError,
+  structuredDetail
+} from "./errors.js";
 
 export type RepartoFieldKey =
   | "name"
@@ -68,6 +72,10 @@ export type RepartoFieldError = {
 export type RepartoFormError = {
   message: string;
   errorKey?: RepartoErrorKey;
+  /** Machine code from a structured `{code, message, params}` detail, if any. */
+  code?: string;
+  /** Substitution values that accompany that code, if any. */
+  params?: Record<string, unknown>;
 };
 
 export type RepartoMappedError = {
@@ -129,6 +137,19 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   previous_academic_year_id: "previousAcademicYear"
 };
 
+/**
+ * Domain codes the service already emits under a structured `detail`, mapped to
+ * the error key this package classifies by. A code is authoritative: it decides
+ * the key whatever the status or the language the message happens to be in.
+ * Codes absent here fall through to the status and the legacy text branch, so a
+ * newer service never loses its message on an older client.
+ */
+const ERROR_KEY_BY_CODE: Record<string, RepartoErrorKey> = {
+  classroom_stage_in_use: "fkViolation",
+  classroom_stage_exists: "duplicate",
+  classroom_conflict: "duplicate"
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -144,10 +165,15 @@ function extractDetailMessage(detail: unknown): string | undefined {
       .filter((value): value is string => typeof value === "string")
       .join("; ");
   }
-  return undefined;
+  return structuredDetail(detail)?.message;
 }
 
 function classifyDetail(detail: unknown, status: number): RepartoErrorKey {
+  const code = structuredDetail(detail)?.code;
+  if (code !== undefined) {
+    const byCode = ERROR_KEY_BY_CODE[code];
+    if (byCode) return byCode;
+  }
   if (status === 401) return "unauthorized";
   if (status === 403) return "permission";
   if (status === 404) return "fkMissing";
@@ -202,6 +228,7 @@ export function mapRepartoError(
     const detail = error.detail;
     const message = extractDetailMessage(detail) ?? error.message;
     const errorKey = classifyDetail(detail, status);
+    const structured = structuredDetail(detail);
 
     if (status === 422 && Array.isArray(detail)) {
       const fieldErrors: RepartoFieldError[] = [];
@@ -226,7 +253,12 @@ export function mapRepartoError(
 
     return {
       fieldErrors: [],
-      formError: { message, errorKey }
+      formError: {
+        message,
+        errorKey,
+        ...(structured?.code !== undefined ? { code: structured.code } : {}),
+        ...(structured?.params !== undefined ? { params: structured.params } : {})
+      }
     };
   }
 

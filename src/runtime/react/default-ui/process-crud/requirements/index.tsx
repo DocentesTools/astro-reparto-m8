@@ -21,7 +21,7 @@ export function RepartoHourRequirementsView({
 }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="requirements">
+      <RepartoRouteGuard locale={locale} processId={processId} route="requirements">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoRequirementsContent locale={locale} processId={resolvedId} />

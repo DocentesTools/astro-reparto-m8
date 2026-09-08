@@ -7,7 +7,16 @@ import {
   resetRepartoAuthAdapter,
   signInReparto
 } from "./support/session.js";
-import { buildSetupChecklist } from "../src/runtime/ui/index.js";
+import {
+  buildSetupChecklist,
+  SETUP_CHECKLIST_STEP_ROUTE
+} from "../src/runtime/ui/index.js";
+import {
+  SetupChecklistSteps,
+  SetupChecklistSummary
+} from "../src/runtime/react/SetupChecklist.js";
+import { configureReparto, resetRepartoConfig } from "../src/runtime/config.js";
+import { buildRepartoRoutes, repartoRouteHref } from "../src/runtime/routes.js";
 import { DepartmentHeadWorkspace } from "../src/runtime/react/DepartmentHeadWorkspace.js";
 import { en } from "../src/runtime/i18n/en.js";
 import type { ProcessSummary } from "../src/runtime/schemas.js";
@@ -455,7 +464,7 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: () => undefined })
 }));
 
-describe("setup checklist — the process-picker surface", () => {
+describe("setup checklist — the process picker no longer opens with it", () => {
   beforeEach(() => {
     signInReparto(repartoUser("admin"));
     pickerState.schools = [];
@@ -477,32 +486,214 @@ describe("setup checklist — the process-picker surface", () => {
     );
   }
 
-  it("renders the same steps the dashboard does, in the same order", async () => {
+  // The picker is what a step page falls back to while no process is selected,
+  // so its checklist was the copy an operator met above *every* form. The list
+  // now lives behind the step toolbar's button, and the picker shows the one
+  // thing the reader came for.
+  it("leads with the process form, not with fifteen lines of workflow", async () => {
     const html = await renderPicker();
-    const rendered = [
-      ...html.matchAll(/data-reparto-checklist-step="([a-zA-Z]+)"/g)
+    expect(html).toContain('data-reparto-panel="process-picker"');
+    expect(html).toContain('data-reparto-form="create-process"');
+    expect(html).not.toContain("data-reparto-checklist=");
+    expect(html).not.toContain('data-reparto-panel="setup-checklist"');
+  });
+
+  it("keeps the inline creation it always had, in the selects", async () => {
+    const html = await renderPicker();
+    // One level of inline creation, from the FK selects — the affordance the
+    // checklist's Open buttons duplicated.
+    expect(html).toContain('data-reparto-fk-action="create-new"');
+    expect(html).toContain('data-reparto-fk="school"');
+    expect(html).toContain('data-reparto-fk="academic-year"');
+    expect(html).toContain('data-reparto-fk="department"');
+  });
+});
+
+describe("setup checklist — every line links to the page its step is done on", () => {
+  afterEach(() => {
+    resetRepartoConfig();
+  });
+
+  function renderSteps(processId?: string | null) {
+    return renderToStaticMarkup(
+      <SetupChecklistSteps
+        checklist={buildSetupChecklist()}
+        locale="en"
+        processId={processId}
+      />
+    );
+  }
+
+  it("gives every step a link, and points it at that step's route", () => {
+    const html = renderSteps(null);
+    const routes = buildRepartoRoutes();
+    for (const step of buildSetupChecklist().steps) {
+      const href = repartoRouteHref(routes, SETUP_CHECKLIST_STEP_ROUTE[step.key]);
+      expect(html, step.key).toContain(
+        `data-reparto-checklist-link="${step.key}" href="${href}"`
+      );
+    }
+  });
+
+  it("names every step key exactly once, so no step is left without a link", () => {
+    const linked = [
+      ...renderSteps(null).matchAll(/data-reparto-checklist-link="([a-zA-Z]+)"/g)
     ].map((match) => match[1]);
-    expect(rendered).toEqual(buildSetupChecklist().steps.map((step) => step.key));
+    expect(linked).toEqual(buildSetupChecklist().steps.map((step) => step.key));
   });
 
-  it("offers the inline create only for what it can actually open", async () => {
-    const html = await renderPicker();
-    expect(html).toContain('data-reparto-action="open-school"');
-    expect(html).toContain('data-reparto-action="open-academicYear"');
-    expect(html).toContain('data-reparto-action="open-department"');
-    // The picker cannot create a subject: no process is selected there by
-    // construction, which is the reason it now states.
-    expect(html).not.toContain('data-reparto-action="open-subjects"');
-    expect(html).toContain('data-reparto-checklist-blocked="no-process"');
-    expect(html).toContain(en.flow.bootstrap.reason["no-process"]);
+  it("carries the reader's own process into the process-scoped links", () => {
+    const html = renderSteps(processId);
+    expect(html).toContain(
+      `data-reparto-checklist-link="subjects" href="/reparto/processes/${processId}/subjects"`
+    );
+    // A school is not process-scoped, so its address does not change.
+    expect(html).toContain(
+      'data-reparto-checklist-link="school" href="/reparto/setup/schools"'
+    );
   });
 
-  it("counts progress against the real total, not a hard-coded nine", async () => {
-    pickerState.schools = [{ id: "s1", name: "IES" }];
-    pickerState.years = [{ id: "y1", label: "2025-2026" }];
-    const html = await renderPicker();
-    const total = buildSetupChecklist().total;
-    expect(html).toContain(`2/${total}`);
-    expect(html).not.toContain("2/9");
+  it("falls back to the `current` placeholder when no process is selected", () => {
+    expect(renderSteps(null)).toContain(
+      'href="/reparto/processes/current/subjects"'
+    );
+  });
+
+  it("follows a host that moved its routes, and drops a route it disabled", () => {
+    configureReparto({ routes: { subjects: "/teaching/[processId]/subjects", meeting: false } });
+    const html = renderSteps(processId);
+    expect(html).toContain(`href="/teaching/${processId}/subjects"`);
+    expect(html).not.toContain('data-reparto-checklist-link="meeting"');
+    // Dropped, not dead: the step is still listed, just not as a link.
+    expect(html).toContain('data-reparto-checklist-step="meeting"');
+  });
+
+  it("links the dashboard's own checklist too", () => {
+    signInReparto(repartoUser("admin"));
+    const html = renderToStaticMarkup(
+      <DepartmentHeadWorkspace locale="en" summary={summaryFixture()} />
+    );
+    expect(html).toContain(
+      `data-reparto-checklist-link="requirements" href="/reparto/processes/${processId}/requirements"`
+    );
+    resetRepartoAuthAdapter();
+  });
+});
+
+/**
+ * The dashboard reads the checklist at a dashboard's altitude.
+ *
+ * Fifteen bordered rows beside four panels of metrics was a worklist where a
+ * report belonged. The summary answers how far along, how far along per stage,
+ * and what to do next; the rows still follow it, because the dashboard is the
+ * one surface that carries the checklist in full.
+ */
+describe("setup checklist — the dashboard's progress summary", () => {
+  beforeEach(() => {
+    signInReparto(repartoUser("admin"));
+  });
+
+  afterEach(() => {
+    resetRepartoAuthAdapter();
+    resetRepartoConfig();
+  });
+
+  function renderSummary(
+    observations: Parameters<typeof buildSetupChecklist>[0],
+    processIdArg: string | null = null
+  ) {
+    return renderToStaticMarkup(
+      <SetupChecklistSummary
+        checklist={buildSetupChecklist(observations)}
+        locale="en"
+        processId={processIdArg}
+      />
+    );
+  }
+
+  it("prints the completed share as a progress bar the reader can scan", () => {
+    const html = renderSummary({ summary: summaryFixture() });
+    const checklist = buildSetupChecklist({ summary: summaryFixture() });
+    const percent = Math.round((checklist.doneCount / checklist.total) * 100);
+    expect(html).toContain(`data-reparto-checklist-percent="${percent}"`);
+    expect(html).toContain('role="progressbar"');
+    expect(html).toContain(`aria-valuenow="${checklist.doneCount}"`);
+    expect(html).toContain(`aria-valuemax="${checklist.total}"`);
+  });
+
+  it("counts each stage separately, and marks a finished stage", () => {
+    const html = renderSummary({ summary: summaryFixture() });
+    for (const stage of ["configuration", "planning", "assignment"]) {
+      expect(html, stage).toContain(`data-reparto-checklist-stage="${stage}"`);
+    }
+    const configurationDone = buildSetupChecklist({ summary: summaryFixture() })
+      .steps.filter((step) => step.stage === "configuration" && step.status === "done")
+      .length;
+    expect(html).toContain(
+      `data-reparto-checklist-stage-done="${configurationDone}"`
+    );
+  });
+
+  // Unknown is reported beside the count, never folded into it: a screen that
+  // read less must not be able to claim more progress.
+  it("reports what it could not check without counting it as done or as owed", () => {
+    const html = renderSummary({ processId });
+    const checklist = buildSetupChecklist({ processId });
+    expect(checklist.unknownCount).toBeGreaterThan(0);
+    expect(html).toContain(
+      `data-reparto-checklist-unknown="${checklist.unknownCount}"`
+    );
+    expect(html).toContain(
+      en.flow.bootstrap.unknownCount.replace("{count}", String(checklist.unknownCount))
+    );
+  });
+
+  it("names the first genuinely outstanding step as the next action, and links it", () => {
+    const checklist = buildSetupChecklist({ summary: summaryFixture() });
+    const next = checklist.steps.find((step) => step.status === "pending");
+    expect(next).toBeDefined();
+    const html = renderSummary({ summary: summaryFixture() }, processId);
+    expect(html).toContain(`data-reparto-checklist-next="${next?.key}"`);
+    expect(html).toContain(en.flow.bootstrap.next);
+  });
+
+  it("says so when nothing this screen can check is outstanding", () => {
+    // Every observed count satisfied and no plan data to contradict it.
+    const html = renderSummary({
+      academicYearCount: 1,
+      allocationRevisionCount: 1,
+      departmentCount: 1,
+      groupSubjectCount: 1,
+      participantCount: 1,
+      processCount: 1,
+      schoolCount: 1,
+      subjectCount: 1,
+      teachingGroupCount: 1
+    });
+    expect(html).toContain(en.flow.bootstrap.allDone);
+    expect(html).not.toContain("data-reparto-checklist-next=");
+  });
+
+  it("drops the next-step link, but not the step, when the host disabled that route", () => {
+    const checklist = buildSetupChecklist({ summary: summaryFixture() });
+    const next = checklist.steps.find((step) => step.status === "pending");
+    configureReparto({
+      routes: { [SETUP_CHECKLIST_STEP_ROUTE[next!.key]]: false }
+    });
+    const html = renderSummary({ summary: summaryFixture() }, processId);
+    expect(html).toContain(`data-reparto-checklist-next="${next?.key}"`);
+    expect(html).not.toContain("<a");
+  });
+
+  it("shows the summary above the full list, not instead of it", () => {
+    const html = renderToStaticMarkup(
+      <DepartmentHeadWorkspace locale="en" summary={summaryFixture()} />
+    );
+    const summaryAt = html.indexOf("data-reparto-checklist-summary=");
+    const listAt = html.indexOf("data-reparto-checklist=\"\"");
+    expect(summaryAt).toBeGreaterThan(-1);
+    expect(listAt).toBeGreaterThan(summaryAt);
+    // The fifteen rows are still there — the dashboard carries it in full.
+    expect(html).toContain('data-reparto-checklist-step="planLock"');
   });
 });

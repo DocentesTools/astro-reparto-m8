@@ -22,6 +22,7 @@ export type GroupSubjectMatrixListProps = {
   isLoading: boolean;
   hasActiveForm: boolean;
   onEdit: (cell: GroupSubjectPublic) => void;
+  onRetire: (cell: GroupSubjectPublic) => void;
 };
 
 /**
@@ -41,7 +42,8 @@ export function GroupSubjectMatrixList({
   isError,
   isLoading,
   hasActiveForm,
-  onEdit
+  onEdit,
+  onRetire
 }: GroupSubjectMatrixListProps) {
   // Matrix writes are department-head-only (§21.3), so below `ADMIN` the row
   // action is absent rather than disabled; the cells themselves stay readable,
@@ -90,6 +92,13 @@ export function GroupSubjectMatrixList({
                   disabled={hasActiveForm}
                   label={dict.action.edit}
                   onClick={() => onEdit(cell)}
+                  row
+                />
+                <ActionButton
+                  action="retire"
+                  disabled={hasActiveForm}
+                  label={dict.action.retire}
+                  onClick={() => onRetire(cell)}
                   row
                 />
               </RowActions>

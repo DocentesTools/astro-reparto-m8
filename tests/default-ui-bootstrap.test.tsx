@@ -61,17 +61,31 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ invalidateQueries: () => undefined })
 }));
 
+/**
+ * The create-process form is asserted through `ProcessPicker`, which is the
+ * component the **process list** route opens (`RepartoProcessesContent`). It
+ * used to be asserted through the dashboard, because the dashboard's no-process
+ * gate *was* this form — which is the defect the gate below now fixes. The
+ * invariants are unchanged: three cascading selects, no raw UUID, one level of
+ * inline creation.
+ */
 describe("empty-DB bootstrap — create-process dialog (Phase 1 component gate)", () => {
-  it("renders three cascading selects (no raw UUID inputs) for academic year, school, department", async () => {
-    const { RepartoDashboardView } = await import(
+  async function renderPicker() {
+    const { ProcessPicker } = await import(
       "../src/runtime/react/default-ui/index.js"
     );
+    return renderToStaticMarkup(
+      <ProcessPicker onSelect={() => undefined} />
+    );
+  }
+
+  it("renders three cascading selects (no raw UUID inputs) for academic year, school, department", async () => {
     queryState.schools = [];
     queryState.years = [];
     queryState.departments = [];
     queryState.processes = [];
 
-    const html = renderToStaticMarkup(<RepartoDashboardView />);
+    const html = await renderPicker();
 
     expect(html).toContain('data-reparto-route="process-picker"');
     expect(html).toContain('data-reparto-form="create-process"');
@@ -87,15 +101,12 @@ describe("empty-DB bootstrap — create-process dialog (Phase 1 component gate)"
   });
 
   it("create-process button is disabled with a visible disabled reason until all three selects are populated", async () => {
-    const { RepartoDashboardView } = await import(
-      "../src/runtime/react/default-ui/index.js"
-    );
     queryState.schools = [{ id: schoolId, name: "IES Almería Centro" }];
     queryState.years = [{ id: yearId, label: "2025-2026" }];
     queryState.departments = [{ id: departmentId, name: "Matemáticas" }];
     queryState.processes = [];
 
-    const empty = renderToStaticMarkup(<RepartoDashboardView />);
+    const empty = await renderPicker();
     const buttonMatch = empty.match(
       /<button[^>]*data-reparto-action="create-process"[^>]*>/
     );
@@ -106,11 +117,8 @@ describe("empty-DB bootstrap — create-process dialog (Phase 1 component gate)"
   });
 
   it("each select exposes a one-level + Create new entry (D-7, no nested modals)", async () => {
-    const { RepartoDashboardView } = await import(
-      "../src/runtime/react/default-ui/index.js"
-    );
     queryState.processes = [];
-    const html = renderToStaticMarkup(<RepartoDashboardView />);
+    const html = await renderPicker();
     const createNewCount = (html.match(/data-reparto-fk-action="create-new"/g) ?? []).length;
     expect(createNewCount).toBe(3);
   });
@@ -131,13 +139,60 @@ describe("empty-DB bootstrap — create-process dialog (Phase 1 component gate)"
   });
 
   it("when processes exist, the picker lists them and still offers create-process", async () => {
+    queryState.processes = [{ id: processId, status: "draft" }];
+    const html = await renderPicker();
+    expect(html).toContain('data-reparto-action="select-process"');
+    expect(html).toContain('data-reparto-form="create-process"');
+  });
+
+  /**
+   * A dashboard is a report, and a report has nothing to say without a process
+   * — so a gate is right. A create form is not the gate: it answered *Dashboard*
+   * with *fill in this form*, and it was the first screen a cold browser met on
+   * every process-scoped route, not just this one.
+   */
+  it("gates the dashboard with a selector and a link out, never with the form", async () => {
     const { RepartoDashboardView } = await import(
       "../src/runtime/react/default-ui/index.js"
     );
     queryState.processes = [{ id: processId, status: "draft" }];
     const html = renderToStaticMarkup(<RepartoDashboardView />);
-    expect(html).toContain('data-reparto-action="select-process"');
-    expect(html).toContain('data-reparto-form="create-process"');
+
+    expect(html).toContain('data-reparto-route="no-process"');
+    expect(html).toContain('data-reparto-panel="no-process"');
+    expect(html).toContain('data-reparto-field="selected-process"');
+    // Creating belongs to the route that owns it, and the gate links there.
+    expect(html).not.toContain('data-reparto-form="create-process"');
+    expect(html).not.toContain('data-reparto-fk-action="create-new"');
+    expect(html).toContain('data-reparto-slot="create-process-link"');
+    expect(html).toContain('href="/reparto/processes"');
+  });
+
+  it("says there is nothing to select yet, rather than offering an empty select", async () => {
+    const { RepartoDashboardView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    queryState.processes = [];
+    const html = renderToStaticMarkup(<RepartoDashboardView />);
+
+    expect(html).toContain('data-reparto-slot="process-empty"');
+    expect(html).not.toContain('data-reparto-field="selected-process"');
+    expect(html).toContain('data-reparto-slot="create-process-link"');
+  });
+
+  // On a route a reader may actually open — the dashboard's own view floor is
+  // `admin`, so a reader never reaches its gate at all.
+  it("withholds the create link from a session that could not use it", async () => {
+    const { RepartoMyView } = await import(
+      "../src/runtime/react/default-ui/index.js"
+    );
+    signInReparto(repartoUser("reader"));
+    queryState.processes = [{ id: processId, status: "draft" }];
+    const html = renderToStaticMarkup(<RepartoMyView />);
+
+    expect(html).toContain('data-reparto-panel="no-process"');
+    expect(html).toContain('data-reparto-field="selected-process"');
+    expect(html).not.toContain('data-reparto-slot="create-process-link"');
   });
 
   it("uses the remembered process on the first client-only render", async () => {

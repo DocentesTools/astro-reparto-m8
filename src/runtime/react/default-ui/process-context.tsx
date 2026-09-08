@@ -20,12 +20,9 @@ import {
   useRepartoEventStream,
   type RepartoEventStreamState
 } from "../useRepartoEvents.js";
-import {
-  SetupChecklistProgress,
-  SetupChecklistSteps
-} from "../SetupChecklist.js";
-import { buildSetupChecklist, type SetupChecklistStepKey } from "../../ui/index.js";
 import { resolveProcessId } from "../../queryKeys.js";
+import { getRepartoConfig } from "../../config.js";
+import { repartoRouteHref } from "../../routes.js";
 import {
   getRepartoDictionary,
   normalizeRepartoLocale,
@@ -44,11 +41,24 @@ import {
   repartoShellClass
 } from "../styles.js";
 import type { RepartoRuntimeConfig } from "../../config.js";
-import type { SseAudience } from "../../schemas.js";
+import type { AssignmentProcessStatus, SseAudience } from "../../schemas.js";
 
 export type ViewConfig = Partial<RepartoRuntimeConfig>;
 
 const LAST_PROCESS_STORAGE_KEY = "reparto.lastProcessId";
+
+/**
+ * The process this browser last worked on, or `undefined`.
+ *
+ * `WithSelectedProcess` owns writing it; this is the one read for surfaces that
+ * are not inside that gate — the setup-checklist popup on a step page whose
+ * route does not name a process — so there is a single answer to "which process
+ * is this browser on" rather than a second literal key somewhere else.
+ */
+export function readLastRepartoProcessId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim() || undefined;
+}
 
 // The boundary is the outermost wrapper on purpose (`A-C3`). Inside the
 // providers it would be unmounted by a throw in a provider's own render, which
@@ -189,49 +199,8 @@ export function ProcessPicker({
     value: department.id,
     label: department.name
   }));
-  // The same derivation the dashboard uses (`S2-07`). The picker's copy used to
-  // be a second list whose last five steps were hard-coded "not done"; they are
-  // now genuinely untested here — no process is selected by construction — and
-  // the checklist says so instead of asserting an operator has not done work
-  // this screen never looked at.
-  const checklist = buildSetupChecklist({
-    academicYearCount: yearOptions.length,
-    departmentCount: departmentOptions.length,
-    processCount: processes.length,
-    schoolCount: schoolOptions.length
-  });
-  const inlineCreateHandlers: Partial<
-    Record<SetupChecklistStepKey, () => void>
-  > = {
-    school: () => setInlineCreate("school"),
-    academicYear: () => setInlineCreate("academicYear"),
-    department: () => setInlineCreate("department")
-  };
-
   return (
     <main className={repartoShellClass} data-reparto-route="process-picker">
-      {canAct ? (
-      <section
-        className={repartoPanelClass}
-        data-reparto-panel="setup-checklist"
-        data-reparto-slot="setup-checklist"
-      >
-        <div className={repartoPanelHeaderClass}>
-          <div className="space-y-1">
-            <h2>{dict.flow.bootstrap.title}</h2>
-            <p className="text-sm text-muted-foreground">
-              {dict.flow.bootstrap.subtitle}
-            </p>
-          </div>
-          <SetupChecklistProgress checklist={checklist} />
-        </div>
-        <SetupChecklistSteps
-          checklist={checklist}
-          locale={locale}
-          onOpenStep={(key) => inlineCreateHandlers[key] ?? null}
-        />
-      </section>
-      ) : null}
       <section className={repartoPanelClass} data-reparto-panel="process-picker">
         <div className={repartoPanelHeaderClass}>
           <h2>{dict.picker.selectProcess}</h2>
@@ -435,10 +404,17 @@ export function WithSelectedProcess({
   const processesQuery = useRepartoProcesses();
   const processes = processesQuery.data?.data ?? [];
 
+  // This effect is what makes the `useState` initialiser above safe. That
+  // initialiser reads `localStorage`, which does not exist while the page is
+  // server-rendered, so the first client render must agree with the server's
+  // `undefined` or hydration mismatches. Recovering the stored id *after*
+  // hydration is the only correct place for it, which is why the set-state
+  // rule is declined here rather than obeyed.
   useEffect(() => {
     if (routeProcessId || selected || typeof window === "undefined") return;
     const stored = window.localStorage.getItem(LAST_PROCESS_STORAGE_KEY)?.trim();
     if (stored) {
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setSelected(stored);
     }
   }, [routeProcessId, selected]);
@@ -466,11 +442,22 @@ export function WithSelectedProcess({
     if (typeof window !== "undefined") {
       window.localStorage.removeItem(LAST_PROCESS_STORAGE_KEY);
     }
+    // Set in an effect because the proof arrives asynchronously: the id is
+    // only known to be dead once the *server's* list says so, which no render
+    // can decide on its own. The guards above make it terminal — it fires once
+    // per list that disproves the id, and the id it clears is its own trigger.
+    // eslint-disable-next-line @eslint-react/set-state-in-effect
     setSelected(undefined);
   }, [processesQuery.data, routeProcessId, selected]);
 
   if (!bypass && !effective) {
-    return <ProcessPicker locale={locale} onSelect={setSelected} />;
+    return (
+      <NoProcessSelected
+        locale={locale}
+        onSelect={setSelected}
+        processes={processes}
+      />
+    );
   }
   return (
     <>
@@ -519,6 +506,93 @@ export function WithSelectedProcess({
     </>
   );
 }
+
+/**
+ * What a process-scoped route shows before a process is chosen.
+ *
+ * This used to be the whole `ProcessPicker` — a three-select create form with
+ * inline creation — which meant `/reparto` answered *Dashboard* with *fill in
+ * this form*. A dashboard has nothing to show without a process, so a gate is
+ * right; a create form is not the gate. Creating an assignment process is the
+ * process list's job and it already does it properly, so this selects and links
+ * there rather than growing a second form beside it.
+ *
+ * The link is offered only to a session that could actually use it: below the
+ * `processList` act floor there is nothing to create, so the reader is told what
+ * is missing and not handed an affordance that would refuse them.
+ */
+function NoProcessSelected({
+  locale,
+  onSelect,
+  processes
+}: {
+  locale?: RepartoLocale;
+  onSelect: (processId: string) => void;
+  processes: { id: string; status: AssignmentProcessStatus }[];
+}) {
+  const dict = getRepartoDictionary(locale ?? normalizeRepartoLocale());
+  const canAct = useRepartoCanAct("processList");
+  const createHref = repartoRouteHref(getRepartoConfig().routes, "processList", {
+    locale: dict.locale,
+    pathname: typeof window === "undefined" ? "" : window.location.pathname
+  });
+  const hasProcesses = processes.length > 0;
+
+  return (
+    <main className={repartoShellClass} data-reparto-route="no-process">
+      <section
+        className={repartoPanelClass}
+        data-reparto-panel="no-process"
+        data-reparto-slot="no-process"
+      >
+        <div className={repartoPanelHeaderClass}>
+          <div className="space-y-1">
+            <h2>{dict.picker.gateTitle}</h2>
+            <p className="text-sm text-muted-foreground">
+              {hasProcesses ? dict.picker.gateHint : dict.picker.gateEmptyHint}
+            </p>
+          </div>
+        </div>
+        {hasProcesses ? (
+          <label className={repartoFieldLabelClass} data-reparto-fk="selected-process">
+            {dict.dashboard.pickerLabel}
+            <select
+              className={repartoInputClass}
+              data-reparto-field="selected-process"
+              onChange={(event: InputChangeEvent) => onSelect(event.target.value)}
+              value=""
+            >
+              <option value="" disabled>
+                {dict.picker.selectProcess}
+              </option>
+              {processes.map((process) => (
+                <option key={process.id} value={process.id}>
+                  {dict.entity.assignmentProcess.status[process.status]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-sm text-muted-foreground" data-reparto-slot="process-empty">
+            {dict.picker.noProcesses}
+          </p>
+        )}
+        {canAct && createHref ? (
+          <p className="mt-3 text-sm">
+            <a
+              className="font-medium text-primary underline"
+              data-reparto-slot="create-process-link"
+              href={createHref}
+            >
+              {dict.picker.gateCreate}
+            </a>
+          </p>
+        ) : null}
+      </section>
+    </main>
+  );
+}
+
 
 type DictType = ReturnType<typeof getRepartoDictionary>;
 

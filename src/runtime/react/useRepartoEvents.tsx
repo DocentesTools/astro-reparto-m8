@@ -184,6 +184,11 @@ export function useRepartoEventStream(
   useEffect(() => {
     if (!resolvedProcessId) {
       lastEventAtRef.current = null;
+      // Set in an effect deliberately: this is a *subscription* being torn
+      // down, not state derived from a render. Losing the process id means the
+      // stream this state describes no longer exists, and the reset belongs
+      // with the teardown rather than in a render that has nothing to say.
+      // eslint-disable-next-line @eslint-react/set-state-in-effect
       setState(DISCONNECTED_EVENT_STATE);
       return;
     }
@@ -272,7 +277,11 @@ export function useRepartoEventStream(
       clearInterval(freshnessTimer);
       if (reconnectTimer) clearTimeout(reconnectTimer);
     };
-  }, [audience, queryClient, resolvedProcessId, staleAfterMs]);
+    // `lastEventAtRef` is listed for the linter's benefit and is a no-op at
+    // runtime: it is a `useState` container whose setter is discarded, so its
+    // identity is fixed for the life of the hook exactly as `useRef`'s would
+    // be. The rule cannot tell the two apart and asks for it either way.
+  }, [audience, lastEventAtRef, queryClient, resolvedProcessId, staleAfterMs]);
 
   return state;
 }

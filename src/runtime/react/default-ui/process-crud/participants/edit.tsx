@@ -36,7 +36,7 @@ export function ParticipantEdit({
 }: ParticipantEditProps) {
   const updateMutation = useUpdateRepartoProcessTeacher();
   const [mapped, setError, clearError] = useMappedError();
-  const [baseHours, setBaseHours] = useState(
+  const [baseHours, setBaseHours] = useState(() =>
     formatHoursField(participant.base_weekly_hours)
   );
   const [participatesInSelection, setParticipatesInSelection] = useState(

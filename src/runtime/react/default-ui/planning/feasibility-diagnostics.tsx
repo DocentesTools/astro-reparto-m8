@@ -30,6 +30,7 @@ import {
   repartoFieldCaptionClass,
   repartoPanelClass
 } from "../../styles.js";
+import { ProcessValidationList } from "../../ProcessValidationList.js";
 import { repartoToast } from "../../ui/toast-notification.js";
 import {
   ActionButton,
@@ -176,38 +177,39 @@ export function FeasibilityDiagnosticsView({
             <p data-reparto-state="no-findings">{labels.evaluatedNone}</p>
           ) : null}
           {state.rows.length > 0 ? (
-            <ul className="space-y-2" data-reparto-list="feasibility-diagnostics">
-              {state.rows.map((row) => (
-                <li
-                  className="space-y-1 rounded-md border border-border/70 p-3"
-                  data-feasibility-diagnostic-code={row.code}
-                  key={`${row.code}-${row.message}`}
-                >
-                  <p className="font-medium">{row.message}</p>
-                  <p className={repartoFieldCaptionClass}>{row.code}</p>
-                  {row.affected.length > 0 ? (
+            <ProcessValidationList
+              dict={dict}
+              listName="feasibility-diagnostics"
+              messages={state.rows.map((row) => ({
+                code: row.code,
+                message: labels.finding[row.code],
+                details: (
+                  <>
+                    {row.affected.length > 0 ? (
+                      <p className="text-sm">
+                        <span className="font-medium">{labels.affectedTitle}: </span>
+                        {row.affected.join(" · ")}
+                      </p>
+                    ) : null}
+                    {row.unresolvedCount > 0 ? (
+                      <p
+                        className={repartoFieldCaptionClass}
+                        data-feasibility-unresolved-count={row.unresolvedCount}
+                      >
+                        {formatRepartoMessage(labels.unresolvedReferences, {
+                          count: row.unresolvedCount
+                        })}
+                      </p>
+                    ) : null}
                     <p className="text-sm">
-                      <span className="font-medium">{labels.affectedTitle}: </span>
-                      {row.affected.join(" · ")}
+                      <span className="font-medium">{labels.suggestionTitle}: </span>
+                      {labels.suggestion[row.code]}
                     </p>
-                  ) : null}
-                  {row.unresolvedCount > 0 ? (
-                    <p
-                      className={repartoFieldCaptionClass}
-                      data-feasibility-unresolved-count={row.unresolvedCount}
-                    >
-                      {formatRepartoMessage(labels.unresolvedReferences, {
-                        count: row.unresolvedCount
-                      })}
-                    </p>
-                  ) : null}
-                  <p className="text-sm">
-                    <span className="font-medium">{labels.suggestionTitle}: </span>
-                    {labels.suggestion[row.code]}
-                  </p>
-                </li>
-              ))}
-            </ul>
+                  </>
+                )
+              }))}
+              stage="feasibility"
+            />
           ) : null}
         </div>
       ) : null}

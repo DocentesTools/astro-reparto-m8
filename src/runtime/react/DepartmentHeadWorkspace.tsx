@@ -9,7 +9,6 @@ import type {
   ParticipantBalance,
   PlanBalance,
   PlanReadiness,
-  PlanValidationMessage,
   PlanValidationReport,
   PlanningExportArtifact,
   PlanningExportMode,
@@ -39,7 +38,8 @@ import {
   type VersionComparisonDelta,
   type VersionComparisonView
 } from "../ui/index.js";
-import { SetupChecklistSteps } from "./SetupChecklist.js";
+import { SetupChecklistSteps, SetupChecklistSummary } from "./SetupChecklist.js";
+import { ProcessValidationList } from "./ProcessValidationList.js";
 import {
   formatRepartoMessage,
   getRepartoDictionary,
@@ -329,54 +329,6 @@ export function PlanningBalancePanel({
 }
 
 /**
- * One stage's findings, printed as the service wrote them.
- *
- * What this replaces was a twelve-branch table that re-derived each sentence
- * from `requirement.over_assigned`, `teacher.overloaded` and their friends,
- * resolving `{available}` and `{pending}` out of the balance rows — a second
- * copy of the backend's validation vocabulary, kept in a client that cannot be
- * redeployed with it. The service now owns both the stable `code` and the human
- * `message`: the code is stamped on the DOM for tests and skins to key off, and
- * the sentence is printed untranslated rather than paraphrased.
- */
-export function ProcessValidationList({
-  dict,
-  messages,
-  stage
-}: {
-  dict: ReturnType<typeof getRepartoDictionary>;
-  messages: PlanValidationMessage[];
-  stage: "planning" | "assignment";
-}) {
-  if (messages.length === 0) {
-    return (
-      <p
-        className="mt-3 text-sm text-muted-foreground"
-        data-reparto-slot={`${stage}-validations-empty`}
-      >
-        {dict.dashboard.state.noValidations}
-      </p>
-    );
-  }
-  return (
-    <ul className={repartoListClass} data-reparto-slot={`${stage}-validations`}>
-      {messages.map((message, index) => (
-        <li
-          className={repartoListItemClass}
-          data-reparto-validation-code={message.code}
-          data-reparto-validation-entity={message.entity_type}
-          data-reparto-validation-severity={message.severity}
-          key={`${message.code}-${message.entity_id ?? "none"}-${index}`}
-        >
-          <strong className="block">{message.message}</strong>
-          <span className="text-xs text-muted-foreground">{message.code}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-/**
  * Per-participant progress against an exact target.
  *
  * The chart this replaces drew `assigned / available` as a fill bar: a
@@ -503,6 +455,8 @@ export function DepartmentHeadWorkspace({
     processId: setup?.processId ?? activeSummary?.process_id ?? null,
     summary: activeSummary
   });
+  const checklistProcessId =
+    setup?.processId ?? activeSummary?.process_id ?? null;
   const actions = [
     {
       key: "initialize-turns",
@@ -694,11 +648,23 @@ export function DepartmentHeadWorkspace({
         <section className={repartoPanelClass} data-reparto-panel="setup-checklist">
           <div className={repartoPanelHeaderClass}>
             <h2>{dict.dashboard.section.checklist}</h2>
-            <span className="text-sm text-muted-foreground" data-reparto-slot="checklist-progress">
-              {checklist.doneCount}/{checklist.total}
-            </span>
           </div>
-          <SetupChecklistSteps checklist={checklist} locale={locale} />
+          {/*
+            Summary first, list second. A dashboard is scanned before it is read,
+            so the panel opens with how far along the process is and what to do
+            next; the fifteen rows that justify those numbers follow, because
+            this is the one surface that carries the checklist in full.
+          */}
+          <SetupChecklistSummary
+            checklist={checklist}
+            locale={locale}
+            processId={checklistProcessId}
+          />
+          <SetupChecklistSteps
+            checklist={checklist}
+            locale={locale}
+            processId={checklistProcessId}
+          />
           <p className="mt-3 text-sm text-muted-foreground" data-reparto-slot="checklist-summary">
             {formatRepartoMessage(dict.dashboard.summary.checklist, {
               done: checklist.doneCount,
@@ -1186,6 +1152,8 @@ export function ExportCenterView({
   onCreateDocumentExport,
   onCreateFinalExport,
   onCreatePlanningExport,
+  onDownload,
+  onView,
   onImportPlanning,
   onPlanningImportContentChange,
   onCancelRestore,
@@ -1215,6 +1183,10 @@ export function ExportCenterView({
   onCreateDocumentExport?: (exportType: ExportArtifactType) => void;
   onCreateFinalExport?: () => void;
   onCreatePlanningExport?: (mode: PlanningExportMode) => void;
+  /** Save an already-generated artifact's content to the reader's device. */
+  onDownload?: (artifact: ExportArtifactPublic) => void;
+  /** Open an already-generated artifact's content for reading. */
+  onView?: (artifact: ExportArtifactPublic) => void;
   onImportPlanning?: () => void;
   onPlanningImportContentChange?: (content: string) => void;
   onCancelRestore?: () => void;
@@ -1282,6 +1254,8 @@ export function ExportCenterView({
           artifacts={artifacts}
           canAct={canAct}
           dict={dict}
+          onDownload={onDownload}
+          onView={onView}
           onExport={onCreateDocumentExport}
           onCancelRestore={onCancelRestore}
           onConfirmRestore={onConfirmRestore}
@@ -1580,6 +1554,8 @@ function ProcessDocumentPanel({
   artifacts,
   canAct,
   dict,
+  onDownload,
+  onView,
   onExport,
   onCancelRestore,
   onConfirmRestore,
@@ -1595,6 +1571,8 @@ function ProcessDocumentPanel({
   /** Decided once by the export centre from the session; never by a route. */
   canAct: boolean;
   dict: RepartoDictionary;
+  onDownload?: (artifact: ExportArtifactPublic) => void;
+  onView?: (artifact: ExportArtifactPublic) => void;
   onExport?: (exportType: ExportArtifactType) => void;
   onCancelRestore?: () => void;
   onConfirmRestore?: () => void;
@@ -1710,10 +1688,32 @@ function ProcessDocumentPanel({
                 data-export-artifact-type={artifact.export_type}
                 key={artifact.id}
               >
-                {formatRepartoMessage(dict.view.exports.documents.item, {
-                  document: dict.view.exports.type[artifact.export_type],
-                  format: artifact.format.toUpperCase()
-                })}
+                <span>
+                  {formatRepartoMessage(dict.view.exports.documents.item, {
+                    document: dict.view.exports.type[artifact.export_type],
+                    format: artifact.format.toUpperCase()
+                  })}
+                </span>
+                <div className={repartoActionRowClass}>
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="view-export"
+                    data-reparto-export-artifact-id={artifact.id}
+                    onClick={() => onView?.(artifact)}
+                    type="button"
+                  >
+                    {dict.action.view}
+                  </button>
+                  <button
+                    className={repartoButtonClass}
+                    data-reparto-action="download-export"
+                    data-reparto-export-artifact-id={artifact.id}
+                    onClick={() => onDownload?.(artifact)}
+                    type="button"
+                  >
+                    {dict.action.download}
+                  </button>
+                </div>
               </li>
             ))}
           </ul>

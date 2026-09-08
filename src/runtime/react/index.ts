@@ -4,13 +4,18 @@ export {
   PlanningBalancePanel,
   ProcessInvariantRow,
   ProcessListView,
-  ProcessValidationList,
   VersionsView,
   type VersionComparisonSource
 } from "./DepartmentHeadWorkspace.js";
 export {
+  ProcessValidationList,
+  type ProcessValidationFinding,
+  type ProcessValidationStage
+} from "./ProcessValidationList.js";
+export {
   SetupChecklistProgress,
-  SetupChecklistSteps
+  SetupChecklistSteps,
+  SetupChecklistSummary
 } from "./SetupChecklist.js";
 export {
   MeetingControlWorkspace,
@@ -63,6 +68,7 @@ export {
   useRepartoGroupSubjects,
   useCreateRepartoGroupSubject,
   useUpdateRepartoGroupSubject,
+  useRetireRepartoGroupSubject,
   useRepartoTeachingActivities,
   useCreateRepartoTeachingActivity,
   useUpdateRepartoTeachingActivity,

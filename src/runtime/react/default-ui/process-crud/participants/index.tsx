@@ -20,7 +20,7 @@ import { ParticipantBulkDelete } from "./bulk-delete.js";
 export function RepartoProcessParticipantsView({ config, locale, processId }: EntityViewProps) {
   return (
     <Shell config={config}>
-      <RepartoRouteGuard locale={locale} route="participants">
+      <RepartoRouteGuard locale={locale} processId={processId} route="participants">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (
             <RepartoParticipantsContent locale={locale} processId={resolvedId} />

@@ -1,30 +1,78 @@
+import { sharedState } from "./moduleState.js";
+import { buildRepartoRoutes, type BuiltRepartoRoutes } from "./routes.js";
+import { DEFAULT_REPARTO_DOCS_BASE } from "./stepHelp.js";
+
 export type RepartoRuntimeConfig = {
   apiBase: string;
   apiPrefix: string;
   csrfHeader: string;
   requestTimeoutMs: number;
+  /**
+   * Where the host mounts the Reparto Docente guide, for the link at the foot
+   * of every step's help panel. An empty string means the host publishes no
+   * guide, and the link is dropped rather than pointing nowhere.
+   */
+  docsBase: string;
+  /**
+   * Where this host mounts each step, for the links the setup checklist points
+   * at. The integration bakes its own resolved route map in as
+   * `PUBLIC_FA_REPARTO_ROUTES`, so a host that moved or disabled a route gets
+   * links that match its own URLs rather than this package's defaults.
+   */
+  routes: BuiltRepartoRoutes;
 };
 
 const DEFAULT_CONFIG: RepartoRuntimeConfig = {
   apiBase: "/reparto",
   apiPrefix: "",
   csrfHeader: "X-Requested-With",
-  requestTimeoutMs: 30_000
+  requestTimeoutMs: 30_000,
+  docsBase: DEFAULT_REPARTO_DOCS_BASE,
+  routes: buildRepartoRoutes()
 };
 
-let runtimeConfig: RepartoRuntimeConfig = { ...DEFAULT_CONFIG };
+/**
+ * The runtime config, in the one slot every copy of this module shares.
+ *
+ * A host or a starter route configures the API base on whichever copy of this
+ * file its own import resolved to, and `client.ts` reads it from whichever copy
+ * *its* import resolved to. Under `astro dev` those are not always the same
+ * file — see `moduleState.ts` — so the config lives beside the auth adapter in
+ * shared storage rather than in a module-level `let`.
+ */
+const runtimeConfig = sharedState<RepartoRuntimeConfig>(
+  "config.runtime",
+  () => ({ ...DEFAULT_CONFIG })
+);
 
+/**
+ * Merge `config` onto the current runtime configuration.
+ *
+ * A key whose value is `undefined` is *skipped*, not written: a starter route
+ * passes `import.meta.env.PUBLIC_FA_REPARTO_*` straight through, and a host
+ * that has not defined one of those would otherwise spread `undefined` over a
+ * perfectly good default and take the setting away.
+ */
 export function configureReparto(
   config: Partial<RepartoRuntimeConfig> = {}
 ): RepartoRuntimeConfig {
-  runtimeConfig = { ...runtimeConfig, ...config };
-  return runtimeConfig;
+  const next: Record<string, unknown> = { ...runtimeConfig.get() };
+  for (const [key, value] of Object.entries(config)) {
+    if (value !== undefined) next[key] = value;
+  }
+  // A fragment map is completed rather than taken as-is: a host that states
+  // only the routes it moved keeps this package's defaults for the rest, and a
+  // link is never built against a half-filled map.
+  if (config.routes) next.routes = buildRepartoRoutes(config.routes);
+  const merged = next as RepartoRuntimeConfig;
+  runtimeConfig.set(merged);
+  return merged;
 }
 
 export function getRepartoConfig(): RepartoRuntimeConfig {
-  return runtimeConfig;
+  return runtimeConfig.get();
 }
 
 export function resetRepartoConfig(): void {
-  runtimeConfig = { ...DEFAULT_CONFIG };
+  runtimeConfig.set({ ...DEFAULT_CONFIG, routes: buildRepartoRoutes() });
 }

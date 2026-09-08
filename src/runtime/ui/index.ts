@@ -31,6 +31,8 @@ export {
   buildVersionComparisonView,
   buildVersionSelectionState,
   canCompareVersions,
+  exportArtifactFilename,
+  exportArtifactMimeType,
   nextLeadershipWorkflowAction,
   versionSectionLabelKey,
   VERSION_SECTION_LABEL_KEYS,
@@ -68,6 +70,7 @@ export {
 } from "./feasibility.js";
 export {
   buildSetupChecklist,
+  SETUP_CHECKLIST_STEP_ROUTE,
   type SetupChecklist,
   type SetupChecklistBlockedReason,
   type SetupChecklistObservations,

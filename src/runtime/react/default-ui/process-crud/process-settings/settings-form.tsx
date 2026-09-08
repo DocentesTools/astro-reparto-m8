@@ -100,11 +100,17 @@ export function ProcessSettingsForm({
   const [seededFrom, setSeededFrom] = useState<string | null>(
     process ? process.updated_at : null
   );
+  // Re-seeding is driven by a row that arrives and changes asynchronously, so
+  // the write belongs in an effect; `seededFrom` is the guard that makes it
+  // terminal — it records the revision the draft was seeded from, so each
+  // distinct `updated_at` re-seeds exactly once and a re-render never does.
   useEffect(() => {
     if (!process) return;
     if (seededFrom === process.updated_at) return;
+    /* eslint-disable @eslint-react/set-state-in-effect */
     setValues(buildProcessSettingsValues(process));
     setSeededFrom(process.updated_at);
+    /* eslint-enable @eslint-react/set-state-in-effect */
   }, [process, seededFrom]);
 
   if (!canAct) {

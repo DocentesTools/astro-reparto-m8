@@ -607,7 +607,10 @@ describe("Phase 3 step 2 — process-scoped CRUD islands", () => {
     expect(html).toContain('data-data-table-row-selection="77777777-7777-4777-8777-777777777777"');
     expect(html).toContain("Select all visible assignments");
     expect(html).toContain('data-reparto-row-action="reassign"');
-    expect(html).toContain('data-validation-code="ASSIGNMENT_PARTICIPANT_BELOW_TARGET"');
+    expect(html).toContain(
+      'data-reparto-validation-code="ASSIGNMENT_PARTICIPANT_BELOW_TARGET"'
+    );
+    expect(html).not.toContain(">ASSIGNMENT_PARTICIPANT_BELOW_TARGET<");
     expect(html).toContain('data-assignment-final-ready="false"');
     expect(html).toContain('data-reparto-safe-choice-status="not_required"');
     // Retired with this bullet: no reasonless delete, no bulk cancellation and

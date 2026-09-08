@@ -219,6 +219,74 @@ describe("mapRepartoError", () => {
     expect(mapped.formError?.message).toBe("Unknown error");
   });
 
+  it("surfaces the message of the three structured detail responses the service already sends", () => {
+    const cases: Array<[number, string, string, string]> = [
+      [
+        409,
+        "classroom_stage_in_use",
+        "The classroom stage is referenced by classrooms.",
+        "fkViolation"
+      ],
+      [
+        409,
+        "classroom_stage_exists",
+        "A classroom stage with this name already exists.",
+        "duplicate"
+      ],
+      [
+        409,
+        "classroom_conflict",
+        "A classroom with this label already exists.",
+        "duplicate"
+      ]
+    ];
+    for (const [status, code, message, errorKey] of cases) {
+      const mapped = mapRepartoError(new RepartoApiError(status, { code, message }));
+      expect(mapped.fieldErrors, code).toEqual([]);
+      expect(mapped.formError?.message, code).toBe(message);
+      expect(mapped.formError?.errorKey, code).toBe(errorKey);
+      expect(mapped.formError?.code, code).toBe(code);
+    }
+  });
+
+  it("classifies a structured detail by its code, whatever language the message is in", () => {
+    const mapped = mapRepartoError(
+      new RepartoApiError(400, {
+        code: "classroom_stage_exists",
+        message: "Ya existe una etapa de aula con este nombre."
+      })
+    );
+    expect(mapped.formError?.message).toBe("Ya existe una etapa de aula con este nombre.");
+    expect(mapped.formError?.errorKey).toBe("duplicate");
+  });
+
+  it("carries the structured params through to the form error", () => {
+    const mapped = mapRepartoError(
+      new RepartoApiError(409, {
+        code: "classroom_stage_in_use",
+        message: "The classroom stage is referenced by classrooms.",
+        params: { count: 3 }
+      })
+    );
+    expect(mapped.formError?.params).toEqual({ count: 3 });
+  });
+
+  it("falls back to the status for a structured detail whose code it does not know", () => {
+    const mapped = mapRepartoError(
+      new RepartoApiError(409, { code: "some_newer_code", message: "Newer service." })
+    );
+    expect(mapped.formError?.message).toBe("Newer service.");
+    expect(mapped.formError?.errorKey).toBe("conflict");
+    expect(mapped.formError?.code).toBe("some_newer_code");
+  });
+
+  it("retains the English-substring branch for services that still send a string detail", () => {
+    const mapped = mapRepartoError(new RepartoApiError(400, "The slug is not unique"));
+    expect(mapped.formError?.errorKey).toBe("duplicate");
+    expect(mapped.formError?.code).toBeUndefined();
+    expect(mapped.formError?.params).toBeUndefined();
+  });
+
   it("returns the EMPTY_REPARTO_MAPPED_ERROR shape for mapped.fieldErrors and formError", () => {
     expect(EMPTY_REPARTO_MAPPED_ERROR).toEqual({
       fieldErrors: [],

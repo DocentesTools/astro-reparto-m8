@@ -1,4 +1,9 @@
 import { z } from "zod";
+
+import {
+  hasValidValidationParams,
+  type ValidationParams
+} from "./validationFindings.js";
 import {
   CanonicalHoursSchema,
   HoursSchema,
@@ -1176,15 +1181,58 @@ export type GroupSubjectBulkChange = z.infer<
   typeof GroupSubjectBulkChangeSchema
 >;
 
-/** A matched group the requested mode cannot satisfy, with the reason why. */
+/**
+ * The language-neutral substitution values a service-authored prose field
+ * carries alongside its stable code. Shared by the validation-finding contract
+ * and by the bulk-preview surfaces staged for `C11-non-exception-prose`.
+ */
+export const ServiceProseParamsSchema = z.record(
+  z.string(),
+  z.union([z.string(), z.number().int()])
+);
+
+/**
+ * A matched group the requested mode cannot satisfy, with the reason why.
+ *
+ * `code`/`params` are declared optional ahead of the service emitting them
+ * (`C11-non-exception-prose`), so a service that starts sending the stable code
+ * is not rejected by this strict object and needs no client release of its own.
+ * `reason` stays required and remains what the UI renders until the catalog
+ * lands.
+ */
 export const GroupSubjectBulkConflictSchema = z
   .object({
     teaching_group_id: uuidSchema,
-    reason: z.string()
+    reason: z.string(),
+    code: z.string().min(1).max(80).optional(),
+    params: ServiceProseParamsSchema.optional()
   })
   .strict();
 export type GroupSubjectBulkConflict = z.infer<
   typeof GroupSubjectBulkConflictSchema
+>;
+
+/**
+ * One selection-level problem in a bulk dry run.
+ *
+ * Today the service sends a bare English sentence. The object arm is staged for
+ * `C11-non-exception-prose`, which gives the same problem a stable code and
+ * language-neutral params; both arms are accepted so the service can migrate
+ * without a client release. `groupSubjectBulkValidationErrorText` is the one
+ * place that turns either arm into displayable text.
+ */
+export const GroupSubjectBulkValidationErrorSchema = z.union([
+  z.string().min(1),
+  z
+    .object({
+      code: z.string().min(1).max(80),
+      message: z.string().min(1),
+      params: ServiceProseParamsSchema.optional()
+    })
+    .strict()
+]);
+export type GroupSubjectBulkValidationError = z.infer<
+  typeof GroupSubjectBulkValidationErrorSchema
 >;
 
 /**
@@ -1201,7 +1249,7 @@ export const GroupSubjectBulkPreviewSchema = z
     to_update: z.array(GroupSubjectBulkChangeSchema),
     unchanged: z.array(GroupSubjectBulkChangeSchema),
     conflicts: z.array(GroupSubjectBulkConflictSchema),
-    validation_errors: z.array(z.string()),
+    validation_errors: z.array(GroupSubjectBulkValidationErrorSchema),
     // `to_create.length + to_update.length`; echoed back to apply.
     expected_affected_count: z.number().int().nonnegative()
   })
@@ -1799,10 +1847,27 @@ export const PlanValidationMessageSchema = z
     severity: ValidationSeveritySchema,
     code: z.string().min(1).max(80),
     message: z.string().min(1),
+    params: z
+      .record(z.string(), z.union([z.string(), z.number().int()]))
+      .optional(),
     entity_type: z.string().min(1).max(50),
     entity_id: uuidSchema.nullable()
   })
-  .strict();
+  .strict()
+  .superRefine((message, context) => {
+    if (
+      !hasValidValidationParams(
+        message.code,
+        message.params as ValidationParams | undefined
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: `Invalid params for validation code ${message.code}`,
+        path: ["params"]
+      });
+    }
+  });
 export type PlanValidationMessage = z.infer<
   typeof PlanValidationMessageSchema
 >;

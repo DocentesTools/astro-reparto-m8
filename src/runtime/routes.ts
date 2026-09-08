@@ -79,4 +79,42 @@ export function buildRepartoRoutes(
   };
 }
 
+
+
 export type RepartoRouteName = keyof BuiltRepartoRoutes;
+
+/**
+ * The address of one step, for a link that points at it.
+ *
+ * The route map is a set of *patterns* (`/reparto/processes/[processId]/subjects`),
+ * which is what the integration injects and what `buildRepartoNav` renders in the
+ * sidebar. A link inside a running view knows one thing the sidebar does not —
+ * which process the reader is on — so the placeholder is filled with that id
+ * when there is one, and with the same `current` sentinel the nav uses when
+ * there is not (`resolveProcessId` reads `current` back as *no concrete id*, so
+ * the target page falls back to the stored selection exactly as it does today).
+ *
+ * A route the host disabled (`false`) has no address and returns `null`: a
+ * checklist step whose page this deployment does not publish gets no link
+ * rather than a dead one, which is the same rule `repartoDocsHref` applies to a
+ * host that publishes no guide.
+ *
+ * The locale prefix is added only when the current path already carries it —
+ * again the `repartoDocsHref` test — so a single-locale host, or one that
+ * leaves its default locale unprefixed, is never given a prefix it does not use.
+ */
+export function repartoRouteHref(
+  routes: BuiltRepartoRoutes,
+  route: RepartoRouteName,
+  options: { locale?: string; pathname?: string; processId?: string | null } = {}
+): string | null {
+  const pattern = routes[route];
+  if (!pattern) return null;
+  const processId = options.processId?.trim() || "current";
+  const path = String(pattern).replace(/\[([^\]]+)\]/g, () => processId);
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  const locale = (options.locale ?? "").trim();
+  const pathname = options.pathname ?? "";
+  const prefix = locale && pathname.startsWith(`/${locale}/`) ? `/${locale}` : "";
+  return `${prefix}${normalized}`;
+}

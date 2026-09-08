@@ -2,6 +2,283 @@
 
 All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
+## [Unreleased]
+
+## [2.1.0] - 2026-09-06
+
+A guidance release, folded rather than following `2.0.0` with a number of its
+own: `2.1.0` was prepared on 2026-09-04 and never published — `2.0.0` is still
+the newest tag on `origin` — so the checklist/UX rework this section also
+rides the same unreleased number, per the Wave 6c
+one-bump-per-unpublished-release rule that already folded
+`reparto-docente-m8`/`@mano8/astro-reparto-m8`'s own `2.0.0`. Every step now
+explains itself and the setup checklist opens from any step rather than
+sitting as a fixed preamble; a produced export document can finally be opened
+or saved, where the centre used to answer with a toast and nothing reachable;
+and the auth adapter is shared across duplicate module instances, so a local
+dev server stops refusing signed-in administrators. No backend or contract
+change — `reparto-docente-m8@2.0.0` is unaffected throughout, and the
+`repartoDocenteM8.testedServiceVersion` metadata moves `2.0.0` → `2.1.1` to
+name the service this client is actually exercised against.
+
+### Added
+
+- **A way out of the group-subject matrix.** The matrix route listed its cells
+  with an *Edit* action and nothing else, so a cell added by mistake — or a
+  subject a group stopped taking — could be re-valued but never taken out of the
+  plan. `GroupSubjectMatrixList` now carries a per-row *Retire* action behind
+  the same focused confirmation the secondary-activity flow uses, driven by a
+  new `useRetireRepartoGroupSubject` hook over the existing
+  `POST …/group-subjects/{id}/retire`, and the list filters to `active` cells so
+  a retired one leaves rather than lingering.
+
+  It is retirement, not deletion, because that is the only shape the service
+  offers: the path carries no `DELETE`, the backend clears `active` and keeps
+  the row, and it answers **409** when the process is not draft, when the cell is
+  already retired, or while a live downstream activity still points at it. The
+  refusal travels to the operator in the service's own words, since naming the
+  activity that has to go first is the useful half of it.
+
+  For the same reason there is no selection column and no combined retire: the
+  matrix has no bulk-retirement endpoint, and a checkbox promising one write per
+  selected row would be an affordance no request can commit — and it would hide
+  exactly the per-cell 409 that explains why one of them was refused. The bulk
+  editor above the list stays what it is: a create/update tool.
+
+- **A `?` help panel on every step.** `RepartoRouteGuard` renders a *What do I
+  do here?* button above every route it admits, opening a collapsed panel that
+  answers the three questions a first-time reader actually has, in order: what
+  this page is, why it matters, and how to work it as a numbered list. The copy
+  is written for somebody who has never used the application, and it is the same
+  material as the host-side Reparto Docente guide, which each panel links to at
+  its foot.
+
+  It sits on the guard rather than in twenty-two views because the guard is the
+  one place every route passes through, exactly once, with its own name in hand:
+  a step cannot be added without a guard, so a step cannot be added without its
+  help. It is withheld below the route's `view` floor and while the session is
+  unresolved — a session that may not see a route is not told how to work it —
+  and it fetches nothing, so the words are present at the first paint whatever
+  the network is doing.
+
+  The panel's heading and stage label are read from `nav.item.*` and
+  `nav.group.*` rather than restated, so the help and the menu cannot drift
+  apart. `tests/step-help.test.tsx` asserts all twenty-two steps carry real
+  guidance in all three locales, that the panel renders on every route a viewer
+  may open, and that it is absent on the two cases where it must be.
+
+- **`help.*` in the `en`/`fr`/`es` dictionaries** — the panel's own labels and
+  `help.step.<route>` for each of the twenty-two steps, fully translated rather
+  than an English string in three files. The existing key-parity test covers the
+  new subtree, so a step added in one language and not the others fails the
+  build.
+
+- **`docs.base` integration option**, baked in as
+  `PUBLIC_FA_REPARTO_DOCS_BASE` and carried on the runtime config as `docsBase`
+  (default `/docs/reparto`). It is used only for the *Read the full guide* link;
+  a host that publishes no guide sets it to `""` and the link is dropped rather
+  than pointing at a page that is not there. The locale segment is taken from
+  the path the reader is already on, the same test `faAuthBridge` applies to the
+  login path, so a localized host needs no separate setting.
+
+- **`@mano8/astro-reparto-m8/step-help`** — `repartoStepGuidance(dict, route)`
+  returns one step's resolved title, stage, copy and guide link as plain data,
+  so a headless host composing its own views can render the same guidance
+  without this package's panel.
+
+- **`routes` on the runtime config**, so a link built inside a view points at
+  this host's URLs rather than the package's defaults. The integration bakes its
+  resolved route map in as `import.meta.env.PUBLIC_FA_REPARTO_ROUTES` and the
+  starter routes pass it through with `apiBase` and `docsBase`; a headless host
+  passes the same fragments it gave `faReparto`, and a partial map is completed
+  from the defaults rather than taken half-filled. `repartoRouteHref`
+  (`src/runtime/routes.ts`) resolves one address from it — filling the
+  `[processId]` placeholder, adding the locale segment only when the reader's
+  path already carries one, and returning `null` for a route the host disabled
+  so a dropped route yields plain text rather than a dead link.
+
+- **`flow.bootstrap.openChecklist` / `closeChecklist` / `checking` /
+  `progress` / `unknownCount` / `next` / `allDone`**, **`picker.gateTitle` /
+  `gateHint` / `gateEmptyHint` / `gateCreate`**, and **`help.overview`** in the
+  `en`/`fr`/`es` dictionaries, frozen in `docs/ui-naming-freeze.md` §8 alongside
+  the new `data-reparto-checklist-toggle`, `-link`, `-summary`, `-stage` and
+  `-next` slots.
+
+### Changed
+
+- **The setup checklist is a button on every step, not a preamble.** The
+  fifteen-step checklist used to be printed at the top of the process picker —
+  which is what every process-scoped step page falls back to while no process is
+  selected — so an operator opening *Subjects* met the state of the whole year
+  above the one form they came for. It now opens from a **Setup checklist**
+  button in the `RepartoRouteGuard` toolbar, beside the `?` help, on every route
+  but the dashboard; the dashboard keeps it laid out in full, because the state
+  of the process already *is* its subject, and is therefore the one route with
+  no button.
+
+  The panel fetches nothing until it is opened: its queries live in a component
+  that is mounted only while the dialog is, so a reader who never presses the
+  button pays nothing, and the reads it then makes are the same list reads the
+  Stage 1 routes make. Which reads those are depends on the answer it needs —
+  with a process selected it reads that process's summary and Stage 1 counts and
+  skips the school/year/department lists entirely, because a process is already
+  proof all three exist.
+
+  The toggle is deliberately not a `data-reparto-action`: that attribute marks
+  the write affordances the role floors withhold, and a read-only summary of what
+  is done is offered to every role that may see the route at all.
+
+- **Every checklist line links to the page its step is done on.** The checklist
+  answers *what is left*; a reader told they still owe the group-subject matrix
+  should not then have to find it in the menu. `SETUP_CHECKLIST_STEP_ROUTE`
+  (`src/runtime/ui/setupChecklist.ts`) names the one route per step, stated once
+  beside the derivation it belongs to. Process-scoped links carry the reader's
+  own process id and fall back to the route map's `current` placeholder when
+  none is selected.
+
+  This replaces the picker's three inline-create buttons on the checklist, which
+  duplicated the *Create new* option the picker's own FK selects already offer.
+
+- **The no-process gate selects; it no longer creates.** Every process-scoped
+  route falls back to `WithSelectedProcess` when no process is remembered, and
+  that fallback was the whole `ProcessPicker` — a three-select create form. So
+  `/reparto` answered *Dashboard* with *fill in this form*, on a cold browser,
+  and the dashboard never drew. The gate is now a real empty state: a selector
+  over the existing processes, or a statement that there are none, plus a link to
+  the `processList` route. Creating an assignment process stays where it belongs
+  — that route already opens the same three-select form from its own Create
+  button, with one level of inline creation and never a raw UUID. The link is
+  withheld below the `processList` act floor, so a reader is told what is missing
+  rather than handed an affordance that would refuse them.
+
+- **The dashboard reads its checklist at a dashboard's altitude.** Fifteen
+  bordered rows beside four panels of metrics was a worklist where a report
+  belonged. `SetupChecklistSummary` opens the panel with a progress bar, the
+  three per-stage counts, and the first genuinely outstanding step named as a
+  link — and the rows still follow it, because the dashboard is the one surface
+  that carries the checklist in full. Steps the surface could not check are
+  reported beside the count and never folded into it: `11/15` with two unknown is
+  a different statement from `11/15` with none. An `unknown` step is never
+  offered as the next action, because nobody looked at it.
+
+- **The dashboard and the process list are `Overview`, not `Stage 1`.** The `?`
+  panel's first line used to read *Stage 1 · Configuration* on both, telling a
+  reader they were standing on a workflow step when nothing is performed on
+  either page — they report on the workflow. `REPARTO_STEP_STAGE` gains a fourth
+  value, `overview`, resolved through the new `repartoStageLabel` against
+  `help.overview` rather than a `nav.group.*` label it would have had to invent.
+  The sidebar still groups both under Stage 1, and rightly — nothing else opens
+  until a process is selected — but that is a menu-ordering fact and it stops at
+  the menu.
+
+### Fixed
+
+- **Validation findings now render from code and typed parameters in all three
+  locales.** `PlanValidationMessage` accepts optional scalar `params`, with an
+  exact key/type contract for the service's 17 current validation codes.
+  `ProcessValidationList` formats those codes through the `en`/`fr`/`es`
+  catalogs, including zero/one/many count forms and signed decimal-hour
+  strings, while an older service without parameters and an additive unknown
+  code still fall back to the service message. Teacher, group, subject and
+  activity labels are substitutions; `entity_id` remains machine data and is
+  never promoted to the finding headline.
+
+- **Two bulk-preview prose fields are already forward-compatible.** The
+  group-subject bulk preview is the next surface the service will give stable
+  codes (`C11-non-exception-prose`): a conflict's `reason` and each
+  `validation_errors` entry are service-authored English today. Both response
+  objects are `.strict()`, so a service that starts sending a code would be
+  rejected by a client already on npm — the same trap the validation `params`
+  field had. So the arms are declared now, ahead of the service: a conflict may
+  carry an optional `code` and language-neutral `params`, and one
+  `validation_errors` entry may arrive as `{code, message, params?}` instead of
+  a bare sentence. Nothing renders differently yet — either arm shows the
+  service's own prose through the single `groupSubjectBulkValidationErrorText`
+  reader — but the service can now migrate those two fields on its own
+  schedule, without a client release standing in front of it.
+
+- **A structured service error lost its message.** `messageFromDetail` and the
+  error mapper accepted only a string `detail` or a FastAPI 422 array, and
+  answered `undefined` for anything else. Three responses already send
+  `detail={"code","message"}` — `classroom_stage_in_use`,
+  `classroom_stage_exists` (classroom stages) and `classroom_conflict`
+  (teaching groups) — so the operator was shown the generic API-failure line
+  instead of the refusal the service had actually written. Both extractors now
+  read `{code, message, params}` through one `structuredDetail` reader in
+  `src/runtime/errors.ts`, and `RepartoFormError` carries the `code` and
+  `params` alongside the message for a caller that wants to render its own
+  copy.
+
+  The **code decides the error key**, ahead of the status and whatever language
+  the message happens to be in: that is the point of a machine code, and it is
+  what lets a translated `detail` classify at all. A code the package does not
+  know is not a failure — it falls back to the status, so a newer service never
+  loses its text on an older client. String details are untouched, 422 arrays
+  still map to their fields, and the HTTP 400 English-substring branch is
+  **kept**, because the other 161 error sites in the service still send an
+  English sentence and classifying them is still the only thing that branch is
+  for.
+
+  This is the tolerant client that has to ship before the service can widen the
+  structured shape; expanding it first would lose error text and the 400
+  classification in between.
+
+- **A produced export document could not be read or kept.** The export centre
+  answered a successful `POST …/exports` with a toast and a line in the
+  artifact list, and stopped there — no link, no download, no new tab. The
+  document was rendered, checksummed and stored, and there was no way to reach
+  its content from the interface that had just asked for it. Both readings of
+  "give me the document" are now offered on every stored artifact:
+  **View** (`data-reparto-action="view-export"`) opens it in a new tab and
+  **Download** (`data-reparto-action="download-export"`) saves it, with the
+  download also fired once automatically when an export is created.
+
+  Neither is a request. `POST …/exports` and `GET …/exports` both return the
+  artifact's full `content` inline, so the page already holds what it is
+  handing over, and both actions are a client-side save off the query cache.
+  They sit on the artifact list rather than behind the act floor, which is
+  deliberate: the list is already at the read floor, and a reader who may see
+  a document may keep it.
+
+  `exportArtifactFilename` / `exportArtifactMimeType` (`src/runtime/ui`) name
+  the file and its type. A **`pdf` artifact is saved as `.txt` and served as
+  `text/plain`**, because that is what it is — `reparto-docente-m8` renders
+  the plan §15 documents as deterministic text under a `pdf` label, and a
+  `.pdf` extension on a file no viewer can open is more misleading than no
+  file at all. The blob URL is revoked on a timer rather than in the same
+  tick: `a.click()` only *starts* a save and `window.open` hands the URL to a
+  document that has not loaded yet, so an immediate revoke cancels the very
+  thing the click was for — and leaves the UI looking like it worked, which is
+  the shape of the original bug. `tests/export-artifact-delivery.test.tsx`
+  holds all three properties.
+
+- **A signed-in administrator was refused every reparto route under
+  `astro dev`,** client-side, before a single request reached the service, and
+  the route painted its read-only reader notice. The production bundle was
+  unaffected, which is why this only ever appeared locally.
+
+  Astro serves a `client:only` island from the package's raw path while a bare
+  specifier — the integration's injected bridge script, or a host importing
+  `@mano8/astro-reparto-m8/react` — is served from Vite's optimized dependency
+  cache. Both graphs load `authAdapter.js`, and they load *different copies of
+  it*, each evaluating its own `let activeAdapter`. So
+  `installRepartoFaAuthBridge` registered the fa-auth session on one copy while
+  `useRepartoCurrentUser` read the other, still the anonymous in-memory adapter,
+  and every role gate failed closed as designed on a session it could not see.
+
+  `src/runtime/moduleState.ts` now holds the package's mutable runtime state in
+  one slot per realm, keyed by `Symbol.for`, so every copy of a module reads and
+  writes the same storage. Four values move into it: the auth adapter and the
+  runtime config, which one module registers and another reads back; the
+  bridge's install guard, so a second copy cannot install an adapter and
+  redirect again; and the role hook's cold-start recovery, whose whole purpose
+  is that concurrent mounts refresh once. The public surface is unchanged.
+
+- **`configureReparto` no longer erases a setting when handed `undefined`.** A
+  starter route passes `import.meta.env.PUBLIC_FA_REPARTO_*` straight through,
+  and a host that has not defined one of those would otherwise spread
+  `undefined` over a working default and take the setting away.
+
 ## [2.0.0] - 2026-08-29
 
 `2.0.0` is a major release. Read the **Breaking changes** section before

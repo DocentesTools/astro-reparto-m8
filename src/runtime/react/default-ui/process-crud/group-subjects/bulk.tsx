@@ -23,6 +23,7 @@ import {
   repartoInputClass,
   repartoPanelClass
 } from "../../../styles.js";
+import { groupSubjectBulkValidationErrorText } from "../../../../validationFindings.js";
 import { repartoToast } from "../../../ui/toast-notification.js";
 import {
   ActionButton,
@@ -261,9 +262,10 @@ export function GroupSubjectBulkPreviewTable({
         >
           <strong>{dict.groupSubjectBulk.validationTitle}</strong>
           <ul className="list-disc pl-5">
-            {preview.validation_errors.map((message) => (
-              <li key={message}>{message}</li>
-            ))}
+            {preview.validation_errors.map((entry) => {
+              const text = groupSubjectBulkValidationErrorText(entry);
+              return <li key={text}>{text}</li>;
+            })}
           </ul>
         </div>
       ) : null}
@@ -428,7 +430,13 @@ export function GroupSubjectBulkEditor({
   const [appliedMessage, setAppliedMessage] = useState<string | null>(null);
 
   const activeSubjects = subjects ?? subjectsQuery.data?.data ?? [];
-  const activeGroups = teachingGroups ?? groupsQuery.data?.data ?? [];
+  // Memoized because it feeds `stages` below: an un-memoized `?? []` fallback
+  // is a fresh array on every render with no `teachingGroups` prop and no
+  // query data yet, which would defeat that memo's own dependency check.
+  const activeGroups = useMemo(
+    () => teachingGroups ?? groupsQuery.data?.data ?? [],
+    [teachingGroups, groupsQuery.data]
+  );
   const stages = useMemo(
     () =>
       [...new Set(activeGroups.map((group) => group.classroom_stage.stage))].sort(

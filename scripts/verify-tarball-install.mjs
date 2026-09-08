@@ -51,6 +51,7 @@ const EXPECTED_EXPORT_SUBPATHS = [
   "./i18n",
   "./routes",
   "./route-access",
+  "./step-help",
   "./ui",
   "./error-mapping",
   "./compatibility"

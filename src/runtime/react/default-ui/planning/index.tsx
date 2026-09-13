@@ -91,7 +91,7 @@ export function RepartoPlanningView({
   processId
 }: EntityViewProps) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="planning">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedProcessId) => (

@@ -66,15 +66,22 @@ export function readLastRepartoProcessId(): string | undefined {
 // there is no server-rendered markup underneath to fall back to.
 export function Shell({
   children,
-  config
+  config,
+  locale
 }: {
   children: ReactNode;
   config?: ViewConfig;
+  locale?: RepartoLocale;
 }) {
   return (
     <RepartoErrorBoundary>
       <RepartoQueryProvider>
-        <RepartoProvider config={config}>{children}</RepartoProvider>
+        <RepartoProvider
+          config={config}
+          locale={normalizeRepartoLocale(locale)}
+        >
+          {children}
+        </RepartoProvider>
       </RepartoQueryProvider>
     </RepartoErrorBoundary>
   );

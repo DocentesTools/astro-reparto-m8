@@ -25,7 +25,7 @@ export function RepartoAllocationView({
   processId
 }: EntityViewProps) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="allocation">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (

@@ -6,6 +6,11 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Changed
 
+- The locale selected by the Reparto route now has one provider/request-layer
+  owner. Every ordinary request, authentication retry, and bearer-authenticated
+  SSE connection sends the normalized `en` / `fr` / `es` value as
+  `Accept-Language`, independent of the browser's preferred language.
+
 - Structured errors from the service's 157-code C7 taxonomy are now classified
   without inspecting English message text. Bare string details from an older
   service retain the legacy HTTP 400 compatibility classifier. A future unknown

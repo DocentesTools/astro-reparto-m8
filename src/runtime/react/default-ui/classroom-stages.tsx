@@ -316,7 +316,7 @@ export function RepartoClassroomStagesView({
   const resolvedLocale = locale ?? normalizeRepartoLocale();
   const dict = getRepartoDictionary(resolvedLocale);
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={resolvedLocale}>
       <RepartoRouteGuard locale={resolvedLocale} route="classroomStages">
         <ClassroomStagesContent dict={dict} locale={resolvedLocale} />
       </RepartoRouteGuard>

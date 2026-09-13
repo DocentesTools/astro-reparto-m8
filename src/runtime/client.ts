@@ -50,6 +50,10 @@ export async function request<T>(
     [config.csrfHeader]: "XMLHttpRequest",
     ...options.headers
   });
+  // The selected Reparto route is authoritative. Set this after caller headers
+  // so an individual wrapper cannot accidentally substitute browser language
+  // or create a second locale owner.
+  headers.set("Accept-Language", config.locale);
   if (options.auth) {
     let token = await adapter.getAccessToken();
     if (!token && !options.skipRefresh) {

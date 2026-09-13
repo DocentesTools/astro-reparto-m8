@@ -303,11 +303,20 @@ import {
   RepartoRouteGuard
 } from "@mano8/astro-reparto-m8/default-ui";
 
-export function HostPlanning({ processId }: { processId: string }) {
+export function HostPlanning({
+  locale,
+  processId
+}: {
+  locale: "en" | "fr" | "es";
+  processId: string;
+}) {
   return (
     <RepartoQueryProvider>
-      <RepartoProvider config={{ apiBase: "/reparto", apiPrefix: "/fastapi" }}>
-        <RepartoRouteGuard route="planning">
+      <RepartoProvider
+        config={{ apiBase: "/reparto", apiPrefix: "/fastapi" }}
+        locale={locale}
+      >
+        <RepartoRouteGuard locale={locale} route="planning">
           <MainSubjectMaterialization processId={processId} />
         </RepartoRouteGuard>
       </RepartoProvider>
@@ -317,9 +326,10 @@ export function HostPlanning({ processId }: { processId: string }) {
 ```
 
 `RepartoQueryProvider` supplies the React Query client, `RepartoProvider`
-applies `config` and resolves the auth adapter, and `RepartoRouteGuard` applies
-the route's `view` floor. Any package hook used outside that pair throws rather
-than silently issuing an unauthenticated request.
+applies `config`, normalizes the selected route `locale` to `en` / `fr` / `es`,
+and resolves the auth adapter, and `RepartoRouteGuard` applies the route's
+`view` floor. Any package hook used outside that pair throws rather than
+silently issuing an unauthenticated request.
 
 A host with no React at all can still use the package as a typed client:
 `@mano8/astro-reparto-m8/api` (wrappers), `/schemas` (Zod types), `/decimals`
@@ -336,8 +346,8 @@ data.
 
 | Prop | Type | Meaning |
 | --- | --- | --- |
-| `config` | `Partial<RepartoRuntimeConfig>` | `apiBase`, `apiPrefix`, `csrfHeader`, `requestTimeoutMs`, `docsBase`, `routes`. Omit only if the host already called `configureReparto`. |
-| `locale` | `"en" \| "fr" \| "es"` | Dictionary selection; an unknown value normalizes to `en`. |
+| `config` | `Partial<RepartoRuntimeConfig>` | `apiBase`, `apiPrefix`, `csrfHeader`, `requestTimeoutMs`, `locale`, `docsBase`, `routes`. Omit only if the host already called `configureReparto`. |
+| `locale` | `"en" \| "fr" \| "es"` | Dictionary and request-language selection; an unknown value normalizes to `en`. Every Reparto Fetch, retry, and SSE connection sends this value as `Accept-Language`, even when the browser prefers another language. |
 | `processId` | `string` | A process UUID, or the `"current"` placeholder. |
 | *data props* | see below | Server-supplied payloads that bypass the view's own query. |
 
@@ -673,11 +683,20 @@ const { connectionState, lastEventType } = useRepartoEventStream(
 
 The stream is bearer-authenticated through the auth adapter (native
 `EventSource` cannot carry the header, so the client reads the Fetch body while
-preserving SSE framing). It validates all eleven backend event types against the
-audience, invalidates exactly the affected queries, and refetches the
-authoritative process after a reconnect, a sequence gap or a non-increasing
-sequence. `connectionState` reports `live` / `stale` / `disconnected` so a LAN
-view can say so instead of showing silence as agreement.
+preserving SSE framing). It sends the same selected-locale `Accept-Language`
+header as ordinary and retried requests. It validates all eleven backend event
+types against the audience, invalidates exactly the affected queries, and
+refetches the authoritative process after a reconnect, a sequence gap or a
+non-increasing sequence. `connectionState` reports `live` / `stale` /
+`disconnected` so a LAN view can say so instead of showing silence as agreement.
+
+The service does not vary response bodies by `Accept-Language` until the
+service-side i18n boundary lands. Therefore ordinary responses do not yet need
+`Content-Language` or `Vary: Accept-Language`; the SSE response is already
+`Cache-Control: no-store`. When translated service bodies are introduced, the
+service owns both response-language headers. Persisting a document-export
+locale is a separate client-first contract change and is not inferred from the
+request header.
 
 ---
 

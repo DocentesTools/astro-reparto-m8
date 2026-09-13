@@ -276,7 +276,7 @@ export function RepartoDashboardView({
   summary?: ProcessSummary | null;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="dashboard">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
@@ -380,7 +380,7 @@ export function RepartoMeetingView({
   summary?: ProcessSummary | null;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="meeting">
         <WithSelectedProcess
           bypass={Boolean(dashboard || summary)}
@@ -617,7 +617,7 @@ export function RepartoProcessesView({
   params?: RepartoListParams;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} route="processList">
         <RepartoProcessesContent locale={locale} params={params} />
       </RepartoRouteGuard>
@@ -697,7 +697,7 @@ export function RepartoMyView({
   summary?: TeacherLanSummary | null;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="teacherView">
         <WithSelectedProcess
           bypass={Boolean(summary)}
@@ -995,7 +995,7 @@ export function RepartoSharedView({
   summary?: ProcessSummary | null;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="sharedScreen">
         <WithSelectedProcess
           bypass={Boolean(summary)}
@@ -1089,7 +1089,7 @@ export function RepartoVersionsView({
   versions?: ProcessVersionPublic[];
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="versions">
         <WithSelectedProcess
           bypass={Boolean(versions)}
@@ -1261,7 +1261,7 @@ export function RepartoExportsView({
   processStatus?: AssignmentProcessStatus;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="exports">
         <WithSelectedProcess
           bypass={Boolean(artifacts || plan)}

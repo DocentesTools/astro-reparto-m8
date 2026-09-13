@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { C7_DOMAIN_ERROR_CODES } from "../src/runtime/c7DomainErrorCodes.js";
 import {
   EMPTY_REPARTO_MAPPED_ERROR,
   describeErrorKey,
@@ -11,6 +12,10 @@ import {
 } from "../src/runtime/errors.js";
 
 const translate = (key: string) => `[${key}]`;
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("mapRepartoError", () => {
   it("returns the unauthenticated branch with errorKey=unauthorized", () => {
@@ -272,12 +277,37 @@ describe("mapRepartoError", () => {
   });
 
   it("falls back to the status for a structured detail whose code it does not know", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const mapped = mapRepartoError(
-      new RepartoApiError(409, { code: "some_newer_code", message: "Newer service." })
+      new RepartoApiError(409, {
+        code: "some.newer_code",
+        message: "Newer service with secret-compatible prose.",
+        params: { token: "must-not-be-logged" }
+      })
     );
-    expect(mapped.formError?.message).toBe("Newer service.");
+    expect(mapped.formError?.message).toBe("Newer service with secret-compatible prose.");
     expect(mapped.formError?.errorKey).toBe("conflict");
-    expect(mapped.formError?.code).toBe("some_newer_code");
+    expect(mapped.formError?.code).toBe("some.newer_code");
+    expect(warn).toHaveBeenCalledWith(
+      "[astro-reparto-m8] Unexpected structured error code: some.newer_code (HTTP 409)"
+    );
+    expect(warn.mock.calls.flat().join(" ")).not.toContain("must-not-be-logged");
+    expect(warn.mock.calls.flat().join(" ")).not.toContain("secret-compatible prose");
+  });
+
+  it("redacts an invalid unexpected code from the warning", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const mapped = mapRepartoError(
+      new RepartoApiError(400, {
+        code: "Secret value with spaces",
+        message: "duplicate should not drive a structured error"
+      })
+    );
+    expect(mapped.formError?.errorKey).toBe("server");
+    expect(warn).toHaveBeenCalledWith(
+      "[astro-reparto-m8] Unexpected structured error code: <invalid> (HTTP 400)"
+    );
+    expect(warn.mock.calls.flat().join(" ")).not.toContain("Secret value with spaces");
   });
 
   it("retains the English-substring branch for services that still send a string detail", () => {
@@ -285,6 +315,32 @@ describe("mapRepartoError", () => {
     expect(mapped.formError?.errorKey).toBe("duplicate");
     expect(mapped.formError?.code).toBeUndefined();
     expect(mapped.formError?.params).toBeUndefined();
+  });
+
+  it("classifies migrated 400 errors by code without reading their message", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const duplicate = mapRepartoError(
+      new RepartoApiError(400, {
+        code: "departments.could_not_create_department_check_slug_is_unique",
+        message: "No classification words are present."
+      })
+    );
+    const processState = mapRepartoError(
+      new RepartoApiError(400, {
+        code: "assignment_processes.copy_is_only_allowed_into_process_status_draft",
+        message: "duplicate unique already not found date permission not allowed"
+      })
+    );
+    expect(duplicate.formError?.errorKey).toBe("duplicate");
+    expect(processState.formError?.errorKey).toBe("server");
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it("pins the complete C7 migrated-code snapshot", () => {
+    expect(C7_DOMAIN_ERROR_CODES.size).toBe(157);
+    for (const code of C7_DOMAIN_ERROR_CODES) {
+      expect(code).toMatch(/^[a-z][a-z0-9_.]{0,79}$/);
+    }
   });
 
   it("returns the EMPTY_REPARTO_MAPPED_ERROR shape for mapped.fieldErrors and formError", () => {

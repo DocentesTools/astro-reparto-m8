@@ -4,6 +4,15 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+### Changed
+
+- Structured errors from the service's 157-code C7 taxonomy are now classified
+  without inspecting English message text. Bare string details from an older
+  service retain the legacy HTTP 400 compatibility classifier. A future unknown
+  structured code falls back by status and emits a sanitized warning containing
+  only a validated machine code and HTTP status; message prose and params are
+  never logged.
+
 ## [2.1.0] - 2026-09-06
 
 A guidance release, folded rather than following `2.0.0` with a number of its

@@ -4,6 +4,20 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **The language of a stored document travels with it.** `ExportArtifactCreate`
+  and `ExportArtifactPublic` carry an optional closed `locale` (`en` / `fr` /
+  `es`). `history.createExport` fills it from the runtime config — the same
+  value every request already sends as `Accept-Language` — unless the caller
+  names one, so a persisted document's language and the request language
+  cannot disagree by accident. The export centre names that language on
+  document rows (`data-export-artifact-locale`), in the reader's own locale,
+  and stays silent on `json` / `csv` rows, whose bytes are language-neutral.
+  Staged ahead of the service per the contract strategy: a `2.1.1` service
+  ignores the request field and answers without the response field, and both
+  shapes parse.
+
 ### Changed
 
 - The locale selected by the Reparto route now has one provider/request-layer

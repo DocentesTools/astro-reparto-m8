@@ -452,6 +452,28 @@ describe("reparto i18n dictionary (Phase 1)", () => {
     }
   });
 
+  it("names the three export document languages in every locale (C13)", () => {
+    const locales = ["en", "fr", "es"] as const;
+    expect(Object.keys(en.view.exports.documents.language).sort()).toEqual(
+      [...locales].sort()
+    );
+    expect(en.view.exports.documents.itemWithLanguage).toContain("{language}");
+    for (const locale of ["fr", "es"] as const) {
+      const dict = getRepartoDictionary(locale);
+      expect(Object.keys(dict.view.exports.documents.language).sort()).toEqual(
+        [...locales].sort()
+      );
+      expect(dict.view.exports.documents.itemWithLanguage).toContain("{language}");
+      // Each language is named in the reader's own language — the only
+      // cognate allowed is a language naming itself.
+      for (const named of locales) {
+        const label = dict.view.exports.documents.language[named];
+        if (named === locale) continue;
+        expect(label).not.toBe(en.view.exports.documents.language[named]);
+      }
+    }
+  });
+
   it("fully localizes teaching group bulk and stage CRUD surfaces", () => {
     const roots = ["teachingGroupBulk", "classroomStages"] as const;
     for (const root of roots) {

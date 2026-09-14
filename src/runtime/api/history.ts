@@ -1,4 +1,5 @@
 import { request } from "../client.js";
+import { getRepartoConfig } from "../config.js";
 import {
   AssignmentProcessPublicSchema,
   ExportBackupRestoreSchema,
@@ -63,11 +64,25 @@ export const history = {
       schema: ExportArtifactsPublicSchema,
       auth: true
     }),
+  /**
+   * Store one process document.
+   *
+   * The body's `locale` defaults to the runtime config's — the same value the
+   * request layer sends as `Accept-Language` — so the persisted document
+   * language and the request language cannot disagree by accident. A caller
+   * that names one explicitly keeps it: a head on the Spanish route may still
+   * ask for the French leadership copy. It is a staged optional field (C13):
+   * an older service never sees a body shape it rejects only because the
+   * value is one it does not read.
+   */
   createExport: (processId: string, body: ExportArtifactCreate) =>
     request<ExportArtifactPublic>({
       method: "POST",
       path: `/assignment-processes/${processId}/exports`,
-      body: ExportArtifactCreateSchema.parse(body),
+      body: ExportArtifactCreateSchema.parse({
+        locale: getRepartoConfig().locale,
+        ...body
+      }),
       schema: ExportArtifactPublicSchema,
       auth: true
     }),

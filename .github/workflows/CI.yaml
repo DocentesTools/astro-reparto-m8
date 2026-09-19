@@ -134,5 +134,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The advisory bulk endpoint occasionally answers registry-side outages
+      # (503 maintenance, or a malformed-tree 400 during a bad deploy) rather
+      # than a real finding. Retry those transient responses with backoff so
+      # an npmjs.org hiccup can't block a merge or a release; a genuine
+      # HIGH/CRITICAL advisory still fails the job on the first attempt.
       - name: Run npm audit (HIGH/CRITICAL advisories)
-        run: npm audit --audit-level=high
+        run: |
+          attempt=1
+          max_attempts=5
+          while true; do
+            output="$(npm audit --audit-level=high 2>&1)"
+            status=$?
+            echo "$output"
+            if [ $status -eq 0 ]; then
+              exit 0
+            fi
+            if ! echo "$output" | grep -qiE "audit endpoint returned an error|Invalid package tree|E(CONNRESET|TIMEDOUT|NOTFOUND|AI_AGAIN)|5[0-9]{2} .*(Service Unavailable|Bad Gateway|Gateway Timeout|Internal Server Error)"; then
+              echo "npm audit reported real findings (not a registry-side error); failing."
+              exit $status
+            fi
+            if [ $attempt -ge $max_attempts ]; then
+              echo "npm audit endpoint kept erroring after $max_attempts attempts; giving up."
+              exit $status
+            fi
+            delay=$((attempt * 15))
+            echo "npm audit endpoint error looks transient (attempt $attempt/$max_attempts); retrying in ${delay}s..."
+            sleep $delay
+            attempt=$((attempt + 1))
+          done

@@ -695,6 +695,17 @@ Endpoints (already partially modelled in `src/runtime/api/history.ts`):
 - `POST /exports` body `ExportArtifactCreate` → `ExportArtifactPublic`
 - `POST /restore-draft` body `ExportBackupRestoreRequest` → `AssignmentProcessPublic`
 
+Forward-declared for `C13-export-locale-contract` (staged 2026-09-14, the
+`2.1.0` service neither reads nor emits it): `ExportArtifactCreate` and
+`ExportArtifactPublic` carry an optional closed `locale` (`en` / `fr` / `es`),
+the language a stored document was requested under. `history.createExport`
+fills it from the runtime config — the same value the request layer sends as
+`Accept-Language` — unless the caller names one. Only the `pdf` document
+renderer will read it; `json` / `csv` bytes stay language-neutral, so the
+export centre names a language on document rows alone. Both objects stay
+`.strict()`; an older service ignores the request field and answers without
+the response field, and both shapes parse.
+
 These are **read-only surfaces** as far as the admin management console
 goes — no new table needed beyond what `history.ts` already exposes; the
 existing runtime handles them. The plan's §7 information architecture

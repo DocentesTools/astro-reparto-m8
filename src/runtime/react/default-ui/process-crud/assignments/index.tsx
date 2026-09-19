@@ -46,7 +46,7 @@ import { AssignmentReassignDialog } from "./reassign.js";
 
 export function RepartoAssignmentsView({ config, locale, processId }: EntityViewProps) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="assignments">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (

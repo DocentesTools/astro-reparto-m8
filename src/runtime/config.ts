@@ -1,4 +1,5 @@
 import { sharedState } from "./moduleState.js";
+import { normalizeRepartoLocale, type RepartoLocale } from "./i18n/index.js";
 import { buildRepartoRoutes, type BuiltRepartoRoutes } from "./routes.js";
 import { DEFAULT_REPARTO_DOCS_BASE } from "./stepHelp.js";
 
@@ -7,6 +8,12 @@ export type RepartoRuntimeConfig = {
   apiPrefix: string;
   csrfHeader: string;
   requestTimeoutMs: number;
+  /**
+   * The locale selected by the Reparto route. This is the single request-layer
+   * source for `Accept-Language`; browser language preferences never override
+   * the route the reader chose.
+   */
+  locale: RepartoLocale;
   /**
    * Where the host mounts the Reparto Docente guide, for the link at the foot
    * of every step's help panel. An empty string means the host publishes no
@@ -27,6 +34,7 @@ const DEFAULT_CONFIG: RepartoRuntimeConfig = {
   apiPrefix: "",
   csrfHeader: "X-Requested-With",
   requestTimeoutMs: 30_000,
+  locale: "en",
   docsBase: DEFAULT_REPARTO_DOCS_BASE,
   routes: buildRepartoRoutes()
 };
@@ -59,6 +67,9 @@ export function configureReparto(
   const next: Record<string, unknown> = { ...runtimeConfig.get() };
   for (const [key, value] of Object.entries(config)) {
     if (value !== undefined) next[key] = value;
+  }
+  if (config.locale !== undefined) {
+    next.locale = normalizeRepartoLocale(config.locale);
   }
   // A fragment map is completed rather than taken as-is: a host that states
   // only the routes it moved keeps this package's defaults for the rest, and a

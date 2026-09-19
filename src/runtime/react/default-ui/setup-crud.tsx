@@ -71,10 +71,20 @@ type InputChangeEvent = { target: { value: string } };
 type CheckboxChangeEvent = { target: { checked: boolean } };
 type FormEvent = { preventDefault: () => void };
 
-function Shell({ children, config }: { children: React.ReactNode; config?: ViewConfig }) {
+function Shell({
+  children,
+  config,
+  locale
+}: {
+  children: React.ReactNode;
+  config?: ViewConfig;
+  locale?: RepartoLocale;
+}) {
   return (
     <RepartoQueryProvider>
-      <RepartoProvider config={config}>{children}</RepartoProvider>
+      <RepartoProvider config={config} locale={normalizeRepartoLocale(locale)}>
+        {children}
+      </RepartoProvider>
     </RepartoQueryProvider>
   );
 }
@@ -141,7 +151,7 @@ export function RepartoSchoolsView({
   locale?: RepartoLocale;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} route="schools">
         <RepartoSchoolsContent locale={locale} />
       </RepartoRouteGuard>
@@ -400,7 +410,7 @@ export function RepartoAcademicYearsView({
   locale?: RepartoLocale;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} route="academicYears">
         <RepartoAcademicYearsContent locale={locale} />
       </RepartoRouteGuard>
@@ -687,7 +697,7 @@ export function RepartoDepartmentsView({
   locale?: RepartoLocale;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} route="departments">
         <RepartoDepartmentsContent locale={locale} />
       </RepartoRouteGuard>
@@ -920,7 +930,7 @@ export function RepartoTeacherRosterView({
   locale?: RepartoLocale;
 }) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} route="teacherRoster">
         <RepartoTeacherRosterContent locale={locale} />
       </RepartoRouteGuard>

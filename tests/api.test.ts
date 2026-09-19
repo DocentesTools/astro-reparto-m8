@@ -23,7 +23,7 @@ import {
   teachingPlans
 } from "../src/runtime/api/index.js";
 import { setRepartoAuthAdapter } from "../src/runtime/authAdapter.js";
-import { resetRepartoConfig } from "../src/runtime/config.js";
+import { configureReparto, resetRepartoConfig } from "../src/runtime/config.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const sessionId = "22222222-2222-4222-8222-222222222222";
@@ -671,11 +671,52 @@ describe("history API", () => {
     });
   });
 
+  it("sends the route locale in the export body unless the caller names one (C13)", async () => {
+    // The body locale comes from the same runtime config that owns
+    // `Accept-Language`, so the persisted document language and the request
+    // language cannot disagree by accident.
+    configureReparto({ locale: "es" });
+    fetchMock.mockResolvedValueOnce(response({ ...artifactBody, locale: "es" }));
+    await expect(
+      history.createExport(processId, { export_type: "internal_draft", format: "pdf" })
+    ).resolves.toMatchObject({ locale: "es" });
+    const [, defaulted] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(String(defaulted.body))).toEqual({
+      export_type: "internal_draft",
+      format: "pdf",
+      locale: "es"
+    });
+    expect((defaulted.headers as Headers).get("Accept-Language")).toBe("es");
+
+    // An explicit locale is the caller's choice and survives the default.
+    fetchMock.mockResolvedValueOnce(response({ ...artifactBody, locale: "fr" }));
+    await history.createExport(processId, {
+      export_type: "school_leadership",
+      format: "pdf",
+      locale: "fr"
+    });
+    const [, explicit] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(JSON.parse(String(explicit.body))).toMatchObject({ locale: "fr" });
+
+    // A `2.1.0` service answers without the field; the row still parses.
+    fetchMock.mockResolvedValueOnce(response(artifactBody));
+    await expect(
+      history.createExport(processId, { export_type: "backup", format: "json" })
+    ).resolves.not.toHaveProperty("locale");
+  });
+
   it("validates export calls", () => {
     expect(() =>
       history.createExport(processId, {
         export_type: "backup",
         format: "xml"
+      } as never)
+    ).toThrow();
+    expect(() =>
+      history.createExport(processId, {
+        export_type: "internal_draft",
+        format: "pdf",
+        locale: "de"
       } as never)
     ).toThrow();
     expect(() => history.restoreDraft(processId, { content: "" })).toThrow();

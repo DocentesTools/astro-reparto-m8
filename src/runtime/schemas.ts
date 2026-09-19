@@ -587,6 +587,21 @@ export type ExportArtifactType = z.infer<typeof ExportArtifactTypeSchema>;
 export const ExportArtifactFormatSchema = z.enum(["pdf", "csv", "json"]);
 export type ExportArtifactFormat = z.infer<typeof ExportArtifactFormatSchema>;
 
+/**
+ * The language a stored export was requested under (C13, staged 2026-09-14).
+ *
+ * The same three values the route locale normalizes to and the service's own
+ * catalog set — a fourth language is a coordinated change on both sides, so
+ * the enum is closed rather than an open string. It is optional on both the
+ * request and the response while the service is still the `2.1.0` that does
+ * not carry it: a published client must read an older service's rows, and an
+ * older service must not receive a field it would reject. Only the `pdf`
+ * *document* renderer reads it; the `json` / `csv` data formats are
+ * language-neutral and the row's locale describes the request, not its bytes.
+ */
+export const ExportArtifactLocaleSchema = z.enum(["en", "fr", "es"]);
+export type ExportArtifactLocale = z.infer<typeof ExportArtifactLocaleSchema>;
+
 export const ProcessVersionCreateSchema = z
   .object({
     reason: z.string().max(500).nullable().optional()
@@ -683,7 +698,8 @@ export const ExportArtifactCreateSchema = z
   .object({
     export_type: ExportArtifactTypeSchema,
     format: ExportArtifactFormatSchema,
-    process_version_id: uuidSchema.nullable().optional()
+    process_version_id: uuidSchema.nullable().optional(),
+    locale: ExportArtifactLocaleSchema.optional()
   })
   .strict();
 export type ExportArtifactCreate = z.infer<typeof ExportArtifactCreateSchema>;

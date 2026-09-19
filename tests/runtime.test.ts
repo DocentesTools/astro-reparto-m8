@@ -65,10 +65,12 @@ afterEach(() => {
 
 describe("runtime config", () => {
   it("merges and resets config", () => {
-    expect(configureReparto({ apiBase: "/r" }).apiBase).toBe("/r");
+    expect(configureReparto({ apiBase: "/r", locale: "fr" }).apiBase).toBe("/r");
     expect(configureReparto().apiBase).toBe("/r");
+    expect(getRepartoConfig().locale).toBe("fr");
     resetRepartoConfig();
     expect(getRepartoConfig().apiBase).toBe("/reparto");
+    expect(getRepartoConfig().locale).toBe("en");
   });
 
   // A starter route hands `import.meta.env.PUBLIC_FA_REPARTO_*` straight
@@ -268,13 +270,14 @@ describe("client", () => {
   });
 
   it("performs authed requests with query, headers, and body", async () => {
+    configureReparto({ locale: "es" });
     setRepartoAuthAdapter(createInMemoryAuthAdapter("abc"));
     fetchMock.mockResolvedValueOnce(makeResponse(200, { ok: true }));
     const result = await request({
       method: "POST",
       path: "/x",
       query: { a: 1, b: null, c: false },
-      headers: { "X-Test": "1" },
+      headers: { "X-Test": "1", "Accept-Language": "fr" },
       body: { y: 2 },
       schema: okSchema,
       auth: true
@@ -286,6 +289,7 @@ describe("client", () => {
     expect(url).toContain("c=false");
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer abc");
     expect((init.headers as Headers).get("X-Test")).toBe("1");
+    expect((init.headers as Headers).get("Accept-Language")).toBe("es");
     expect(init.body).toBe(JSON.stringify({ y: 2 }));
   });
 
@@ -370,6 +374,7 @@ describe("client", () => {
   });
 
   it("refreshes once after 401", async () => {
+    configureReparto({ locale: "fr" });
     setRepartoAuthAdapter({ getAccessToken: () => "old", refresh: async () => "new" });
     fetchMock
       .mockResolvedValueOnce(makeResponse(401, { detail: "expired" }))
@@ -379,6 +384,8 @@ describe("client", () => {
     ).resolves.toEqual({ ok: true });
     const [, retryInit] = fetchMock.mock.calls[1];
     expect((retryInit.headers as Headers).get("Authorization")).toBe("Bearer new");
+    expect((fetchMock.mock.calls[0][1].headers as Headers).get("Accept-Language")).toBe("fr");
+    expect((retryInit.headers as Headers).get("Accept-Language")).toBe("fr");
   });
 
   it("maps failed refresh and plain 401", async () => {

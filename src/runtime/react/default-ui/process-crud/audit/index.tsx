@@ -6,7 +6,7 @@ import { AuditList } from "./list.js";
 
 export function RepartoAuditView({ config, locale, processId }: EntityViewProps) {
   return (
-    <Shell config={config}>
+    <Shell config={config} locale={locale}>
       <RepartoRouteGuard locale={locale} processId={processId} route="audit">
         <WithSelectedProcess locale={locale} processId={processId}>
           {(resolvedId) => (

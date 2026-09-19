@@ -972,6 +972,45 @@ describe("default reparto UI", () => {
     expect(withArtifact).toContain("1 blocking · 2 warning");
   });
 
+  it("names the language of a stored document, and only of a document (C13)", () => {
+    const spanishDraft: ExportArtifactPublic = {
+      ...backupExport,
+      id: "10101010-1010-4101-8101-101010101010",
+      export_type: "internal_draft",
+      format: "pdf",
+      file_path: "exports/internal_draft.pdf",
+      content: "REPARTO",
+      locale: "es"
+    };
+    // A `2.1.0` service row: the same document with no locale on it.
+    const undatedDraft: ExportArtifactPublic = {
+      ...spanishDraft,
+      id: "20202020-2020-4202-8202-202020202020",
+      locale: undefined
+    };
+    // A backup requested from the Spanish route: the row records the request
+    // locale, but the file is language-neutral JSON.
+    const spanishBackup: ExportArtifactPublic = { ...backupExport, locale: "es" };
+    const html = renderToStaticMarkup(
+      <ExportCenterView
+        artifacts={[spanishDraft, undatedDraft, spanishBackup]}
+        locale="fr"
+        plan={exportPlan}
+        processStatus="draft"
+      />
+    );
+    // The document names its language in the *reader's* locale (fr here).
+    expect(html).toContain("Brouillon interne · PDF · Espagnol");
+    expect(html).toContain('data-export-artifact-locale="es"');
+    // The older row keeps the two-part label rather than inventing "English".
+    expect(html).toContain("Brouillon interne · PDF</span>");
+    expect(html).not.toContain("Brouillon interne · PDF · Anglais");
+    // The data row shows no language at all and carries no locale attribute.
+    expect(html).toContain("Sauvegarde · JSON</span>");
+    expect(html).not.toContain("Sauvegarde · JSON · Espagnol");
+    expect(html.match(/data-export-artifact-locale=/g)).toHaveLength(1);
+  });
+
   it("exports Phase 3 island-root names for full and headless consumers", () => {
     expect(renderToStaticMarkup(<RepartoDashboardView dashboard={dashboard} />)).toContain(
       'data-reparto-route="dashboard"'

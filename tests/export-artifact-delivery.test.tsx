@@ -44,7 +44,10 @@ const documentArtifact: ExportArtifactPublic = {
   checksum: "a".repeat(64),
   content: "REPARTO — INTERNAL DRAFT\n========================\n",
   created_at: now,
-  updated_at: now
+  updated_at: now,
+  // C13: the persisted document language rides the row. It changes what the
+  // list *says* about the artifact, never how the artifact is handed over.
+  locale: "es"
 };
 
 const objectUrls = vi.hoisted(() => ({
@@ -136,6 +139,9 @@ describe("handing a produced export document to the reader", () => {
 
     expect(clicked).toHaveLength(1);
     expect(clicked[0].download).toBe(exportArtifactFilename(documentArtifact));
+    // The language is metadata on the row, not part of the filename: two
+    // exports of one document in two languages already differ by id.
+    expect(clicked[0].download).not.toContain("es");
     // A plan §15 document is text under a `pdf` label, so it is saved as the
     // text it is rather than as bytes no viewer could open.
     expect(clicked[0].download).toMatch(/\.txt$/);

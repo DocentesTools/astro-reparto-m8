@@ -3,11 +3,17 @@ import {
   getRepartoAuthAdapter,
   type RepartoAuthAdapter
 } from "../authAdapter.js";
-import { configureReparto, type RepartoRuntimeConfig } from "../config.js";
+import {
+  configureReparto,
+  getRepartoConfig,
+  type RepartoRuntimeConfig
+} from "../config.js";
+import { normalizeRepartoLocale, type RepartoLocale } from "../i18n/index.js";
 
 export type RepartoContextValue = {
   adapter: RepartoAuthAdapter;
   config?: Partial<RepartoRuntimeConfig>;
+  locale: RepartoLocale;
 };
 
 const RepartoContext = createContext<RepartoContextValue | null>(null);
@@ -15,17 +21,22 @@ const RepartoContext = createContext<RepartoContextValue | null>(null);
 export function RepartoProvider({
   children,
   config,
-  adapter
+  adapter,
+  locale
 }: {
   children: ReactNode;
   config?: Partial<RepartoRuntimeConfig>;
   adapter?: RepartoAuthAdapter;
+  locale?: string;
 }) {
-  if (config) configureReparto(config);
+  const activeLocale = normalizeRepartoLocale(
+    locale ?? config?.locale ?? getRepartoConfig().locale
+  );
+  configureReparto({ ...config, locale: activeLocale });
   const resolved = adapter ?? getRepartoAuthAdapter();
   const value = useMemo<RepartoContextValue>(
-    () => ({ adapter: resolved, config }),
-    [config, resolved]
+    () => ({ adapter: resolved, config, locale: activeLocale }),
+    [activeLocale, config, resolved]
   );
   // `<RepartoContext>` as the provider, and `use()` in place of `useContext()`
   // below, are React 19-only spellings. This package's `react` peer range is

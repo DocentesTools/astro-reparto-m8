@@ -262,6 +262,12 @@ export const en = {
         action: "Export {document}",
         empty: "No document has been exported yet.",
         item: "{document} · {format}",
+        itemWithLanguage: "{document} · {format} · {language}",
+        language: {
+          en: "English",
+          fr: "French",
+          es: "Spanish"
+        },
         success: "{document} exported.",
         error: "The export failed."
       },

@@ -73,6 +73,7 @@ afterEach(() => {
 
 describe("authenticated React SSE transport", () => {
   it("sends the bearer and audience, accepts split frames, and counts heartbeats", async () => {
+    configureReparto({ locale: "es" });
     setRepartoAuthAdapter({ getAccessToken: () => "token" });
     const frame = openedFrame();
     fetchMock.mockResolvedValueOnce(
@@ -93,10 +94,12 @@ describe("authenticated React SSE transport", () => {
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain(`/${processId}/events?audience=department_head`);
     expect((init.headers as Headers).get("Authorization")).toBe("Bearer token");
+    expect((init.headers as Headers).get("Accept-Language")).toBe("es");
     expect(init.credentials).toBe("include");
   });
 
   it("refreshes a missing token and retries one 401 with the new bearer", async () => {
+    configureReparto({ locale: "fr" });
     const refresh = vi.fn().mockResolvedValue("fresh");
     setRepartoAuthAdapter({ getAccessToken: () => null, refresh });
     fetchMock.mockResolvedValueOnce(streamResponse([openedFrame()]));
@@ -129,6 +132,16 @@ describe("authenticated React SSE transport", () => {
         "Authorization"
       )
     ).toBe("Bearer fresh");
+    expect(
+      ((fetchMock.mock.calls[0][1] as RequestInit).headers as Headers).get(
+        "Accept-Language"
+      )
+    ).toBe("fr");
+    expect(
+      ((fetchMock.mock.calls[1][1] as RequestInit).headers as Headers).get(
+        "Accept-Language"
+      )
+    ).toBe("fr");
   });
 
   it("refuses a process id or audience that is not the shape the service issues", async () => {

@@ -24,6 +24,8 @@ import {
   DepartmentHourAllocationSourceSchema,
   DepartmentPublicSchema,
   DepartmentsPublicSchema,
+  ExportArtifactCreateSchema,
+  ExportArtifactLocaleSchema,
   ExportArtifactPublicSchema,
   VersionComparisonSchema,
   FeasibilityDiagnosticCodeSchema,
@@ -98,6 +100,7 @@ import {
   TeachingPlansPublicSchema,
   TeachingPlanStatusSchema
 } from "../src/runtime/schemas.js";
+import { REPARTO_LOCALES } from "../src/runtime/i18n/index.js";
 
 const processId = "11111111-1111-4111-8111-111111111111";
 const teacherId = "22222222-2222-4222-8222-222222222222";
@@ -541,6 +544,57 @@ describe("reparto schemas", () => {
         updated_at: now
       })
     ).toThrow();
+
+    // C13 staged export locale (§5.6): optional on both sides of the contract
+    // while the `2.1.0` service neither reads nor emits it, closed to the three
+    // fleet locales once present, and `.strict()` still refuses a field that
+    // is not on the contract.
+    const artifactRow = {
+      id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      assignment_process_id: processId,
+      process_version_id: null,
+      export_type: "internal_draft",
+      format: "pdf",
+      file_path: "exports/internal_draft.pdf",
+      created_by_user_id: userId,
+      checksum: "a".repeat(64),
+      content: "REPARTO",
+      created_at: now,
+      updated_at: now
+    };
+    expect(ExportArtifactPublicSchema.parse(artifactRow).locale).toBeUndefined();
+    expect(
+      ExportArtifactPublicSchema.parse({ ...artifactRow, locale: "es" }).locale
+    ).toBe("es");
+    expect(() =>
+      ExportArtifactPublicSchema.parse({ ...artifactRow, locale: "de" })
+    ).toThrow();
+    expect(() =>
+      ExportArtifactPublicSchema.parse({ ...artifactRow, language: "es" })
+    ).toThrow();
+    expect(
+      ExportArtifactCreateSchema.parse({ export_type: "backup", format: "json" })
+        .locale
+    ).toBeUndefined();
+    expect(
+      ExportArtifactCreateSchema.parse({
+        export_type: "school_leadership",
+        format: "pdf",
+        locale: "fr"
+      }).locale
+    ).toBe("fr");
+    expect(() =>
+      ExportArtifactCreateSchema.parse({
+        export_type: "school_leadership",
+        format: "pdf",
+        locale: "en-GB"
+      })
+    ).toThrow();
+    // The wire enum and the dictionary set are the same three values; a fourth
+    // language is a coordinated change, not a drift one side can make alone.
+    expect([...ExportArtifactLocaleSchema.options].sort()).toEqual(
+      [...REPARTO_LOCALES].sort()
+    );
 
     // §10.3 comparison. The retired float pair (`required_hours_delta` /
     // `assigned_hours_delta`) described a single aggregate axis and a partial

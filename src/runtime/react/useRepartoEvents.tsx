@@ -96,6 +96,7 @@ export async function consumeRepartoEventStream(
 
   const headers = new Headers({
     Accept: "text/event-stream",
+    "Accept-Language": config.locale,
     [config.csrfHeader]: "XMLHttpRequest",
     Authorization: `Bearer ${token}`
   });

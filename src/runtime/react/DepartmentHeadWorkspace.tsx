@@ -3,6 +3,7 @@ import type {
   AssignmentProcessStatus,
   AssignmentValidationReport,
   CurrentTurnSummary,
+  ExportArtifactLocale,
   ExportArtifactPublic,
   ExportArtifactType,
   FeasibilityStatus,
@@ -1550,6 +1551,36 @@ function PlanningExportPanel({
   );
 }
 
+/**
+ * The language a stored artifact was *written in*, or `null` when the row does
+ * not say — an older service that predates the persisted export locale — or
+ * when the row is data rather than a document. A `json` / `csv` row carries
+ * the locale it was requested under, but its bytes are language-neutral, so
+ * naming a language on it would describe the request, not the file.
+ */
+function exportArtifactLanguage(
+  artifact: ExportArtifactPublic
+): ExportArtifactLocale | null {
+  return artifact.format === "pdf" ? (artifact.locale ?? null) : null;
+}
+
+function exportArtifactItemLabel(
+  artifact: ExportArtifactPublic,
+  dict: RepartoDictionary
+): string {
+  const language = exportArtifactLanguage(artifact);
+  const vars = {
+    document: dict.view.exports.type[artifact.export_type],
+    format: artifact.format.toUpperCase()
+  };
+  return language === null
+    ? formatRepartoMessage(dict.view.exports.documents.item, vars)
+    : formatRepartoMessage(dict.view.exports.documents.itemWithLanguage, {
+        ...vars,
+        language: dict.view.exports.documents.language[language]
+      });
+}
+
 function ProcessDocumentPanel({
   artifacts,
   canAct,
@@ -1685,15 +1716,11 @@ function ProcessDocumentPanel({
               <li
                 className={repartoListItemClass}
                 data-export-artifact-id={artifact.id}
+                data-export-artifact-locale={exportArtifactLanguage(artifact) ?? undefined}
                 data-export-artifact-type={artifact.export_type}
                 key={artifact.id}
               >
-                <span>
-                  {formatRepartoMessage(dict.view.exports.documents.item, {
-                    document: dict.view.exports.type[artifact.export_type],
-                    format: artifact.format.toUpperCase()
-                  })}
-                </span>
+                <span>{exportArtifactItemLabel(artifact, dict)}</span>
                 <div className={repartoActionRowClass}>
                   <button
                     className={repartoButtonClass}

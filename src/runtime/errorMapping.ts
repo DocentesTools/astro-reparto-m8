@@ -3,6 +3,7 @@ import {
   RepartoUnauthenticatedError,
   structuredDetail
 } from "./errors.js";
+import { C7_DOMAIN_ERROR_CODES } from "./c7DomainErrorCodes.js";
 
 export type RepartoFieldKey =
   | "name"
@@ -137,18 +138,50 @@ const FIELD_ALIASES: Record<string, RepartoFieldKey> = {
   previous_academic_year_id: "previousAcademicYear"
 };
 
-/**
- * Domain codes the service already emits under a structured `detail`, mapped to
- * the error key this package classifies by. A code is authoritative: it decides
- * the key whatever the status or the language the message happens to be in.
- * Codes absent here fall through to the status and the legacy text branch, so a
- * newer service never loses its message on an older client.
- */
+/** Domain codes whose C7 classification is more specific than their status. */
 const ERROR_KEY_BY_CODE: Record<string, RepartoErrorKey> = {
   classroom_stage_in_use: "fkViolation",
   classroom_stage_exists: "duplicate",
-  classroom_conflict: "duplicate"
+  classroom_conflict: "duplicate",
+  "academic_years.end_date_must_be_strictly_after_start_date": "invalidDate",
+  "assignment_processes.target_process_already_has_group_subject_cells": "duplicate",
+  "assignment_processes.target_process_already_has_subjects": "duplicate",
+  "assignment_processes.target_process_already_has_teachers": "duplicate",
+  "assignment_processes.target_process_already_has_teaching_groups": "duplicate",
+  "assignment_processes.target_process_already_has_teaching_plan": "duplicate",
+  "assignments.requirement_is_already_assigned_slot_cannot_be_shared": "duplicate",
+  "assignments.teacher_already_occupies_position_activity_distinct_teachers_are": "duplicate",
+  "departments.could_not_create_department_check_slug_is_unique": "duplicate",
+  "departments.could_not_update_department_check_slug_is_unique": "duplicate",
+  "group_subjects.could_not_create_group_subject_group_subject_pair": "duplicate",
+  "meeting_sessions.active_meeting_session_already_exists_process": "duplicate",
+  "process_teachers.cannot_reduce_extra_hours_below_hours_already_assigned": "duplicate",
+  "process_teachers.could_not_create_process_teacher_binding_teacher_profile": "duplicate",
+  "selection_turns.duplicate_selection_positions_are_not_allowed": "duplicate",
+  "selection_turns.selection_turn_is_already_active": "duplicate",
+  "selection_turns.selection_turns_already_exist_meeting_session": "duplicate",
+  "subjects.could_not_create_subject_subject_with_name_already": "duplicate",
+  "subjects.could_not_update_subject_subject_with_name_already": "duplicate",
+  "teaching_activities.duplicate_linked_group_subject": "duplicate"
 };
+
+const DOMAIN_ERROR_CODE_PATTERN = /^[a-z][a-z0-9_.]{0,79}$/;
+
+function classifyStatus(status: number): RepartoErrorKey {
+  if (status === 401) return "unauthorized";
+  if (status === 403) return "permission";
+  if (status === 404) return "fkMissing";
+  if (status === 409) return "conflict";
+  if (status === 422) return "required";
+  return "server";
+}
+
+function reportUnexpectedStructuredCode(code: string, status: number): void {
+  const observableCode = DOMAIN_ERROR_CODE_PATTERN.test(code) ? code : "<invalid>";
+  console.warn(
+    `[astro-reparto-m8] Unexpected structured error code: ${observableCode} (HTTP ${status})`
+  );
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -169,16 +202,17 @@ function extractDetailMessage(detail: unknown): string | undefined {
 }
 
 function classifyDetail(detail: unknown, status: number): RepartoErrorKey {
-  const code = structuredDetail(detail)?.code;
-  if (code !== undefined) {
-    const byCode = ERROR_KEY_BY_CODE[code];
+  const structured = structuredDetail(detail);
+  if (structured?.code !== undefined) {
+    const byCode = ERROR_KEY_BY_CODE[structured.code];
     if (byCode) return byCode;
+    if (!C7_DOMAIN_ERROR_CODES.has(structured.code)) {
+      reportUnexpectedStructuredCode(structured.code, status);
+    }
+    return classifyStatus(status);
   }
-  if (status === 401) return "unauthorized";
-  if (status === 403) return "permission";
-  if (status === 404) return "fkMissing";
-  if (status === 409) return "conflict";
-  if (status === 422) return "required";
+  const byStatus = classifyStatus(status);
+  if (byStatus !== "server") return byStatus;
   if (status === 400) {
     const text = (extractDetailMessage(detail) ?? "").toLowerCase();
     if (text.includes("unique") || text.includes("duplicate") || text.includes("already")) {

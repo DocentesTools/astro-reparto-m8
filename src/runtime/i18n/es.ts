@@ -262,6 +262,12 @@ export const es: RepartoDictionary = {
         action: "Exportar: {document}",
         empty: "Todavía no se ha exportado ningún documento.",
         item: "{document} · {format}",
+        itemWithLanguage: "{document} · {format} · {language}",
+        language: {
+          en: "Inglés",
+          fr: "Francés",
+          es: "Español"
+        },
         success: "Documento exportado: {document}.",
         error: "La exportación ha fallado."
       },

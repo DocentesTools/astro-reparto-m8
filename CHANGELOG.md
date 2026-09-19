@@ -20,6 +20,18 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ### Changed
 
+- **The auth peer floor is `@mano8/astro-auth-m8` `^2.6.0`** in both
+  `peerDependencies` and `devDependencies`, and the dev lockfile resolves it.
+  `2.5.0` and `2.6.0` only move the peer's tested-issuer constant to track the
+  published `fa-auth-m8` `2.2.x` line; the `authorization` subpath this package
+  re-exports is unchanged, and `tests/authorization-mirror.test.ts` still
+  asserts the bindings are the peer's own. The same lockfile refresh takes
+  `js-yaml` `4.3.1` → `4.3.2`, closing the high-severity advisory
+  `npm audit --audit-level=high` had been reporting against the locked tree
+  since the C8 pass; the audit is clean. `README.md`'s requirements table,
+  which still named `^2.3.0` and `astro-ui-m8` `^1.5.0`, now matches
+  `package.json`.
+
 - The locale selected by the Reparto route now has one provider/request-layer
   owner. Every ordinary request, authentication retry, and bearer-authenticated
   SSE connection sends the normalized `en` / `fr` / `es` value as

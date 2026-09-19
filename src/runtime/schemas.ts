@@ -593,7 +593,7 @@ export type ExportArtifactFormat = z.infer<typeof ExportArtifactFormatSchema>;
  * The same three values the route locale normalizes to and the service's own
  * catalog set — a fourth language is a coordinated change on both sides, so
  * the enum is closed rather than an open string. It is optional on both the
- * request and the response while the service is still the `2.1.1` that does
+ * request and the response while the service is still the `2.1.0` that does
  * not carry it: a published client must read an older service's rows, and an
  * older service must not receive a field it would reject. Only the `pdf`
  * *document* renderer reads it; the `json` / `csv` data formats are

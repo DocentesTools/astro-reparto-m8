@@ -4,6 +4,19 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-19
+
+Tracks `reparto-docente-m8` `2.2.0`: `repartoDocenteM8.testedServiceVersion`
+moves `2.1.1` (a service version that was bumped but never published) →
+`2.2.0`. The `contract` stays `reparto-docente-m8@2.0.0` and
+`serviceVersionRange` stays `>=2.0.0 <3.0.0`; `verify:contract-operations`
+confirms all 116 declared operations are still served. A minor, not a patch:
+the export schemas gain a field and every request gains a header.
+
+**Publish this before the service deploys.** `reparto-docente-m8@2.2.0` emits
+`locale` on every export row; the `2.1.0` client's strict `ExportArtifactPublic`
+schema rejects it, so the host must be on `2.2.0` first.
+
 ### Added
 
 - **The language of a stored document travels with it.** `ExportArtifactCreate`
@@ -14,7 +27,7 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   cannot disagree by accident. The export centre names that language on
   document rows (`data-export-artifact-locale`), in the reader's own locale,
   and stays silent on `json` / `csv` rows, whose bytes are language-neutral.
-  Staged ahead of the service per the contract strategy: a `2.1.1` service
+  Staged ahead of the service per the contract strategy: a pre-`2.2.0` service
   ignores the request field and answers without the response field, and both
   shapes parse.
 

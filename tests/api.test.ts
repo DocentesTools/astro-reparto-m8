@@ -698,7 +698,7 @@ describe("history API", () => {
     const [, explicit] = fetchMock.mock.calls[1] as [string, RequestInit];
     expect(JSON.parse(String(explicit.body))).toMatchObject({ locale: "fr" });
 
-    // A `2.1.1` service answers without the field; the row still parses.
+    // A `2.1.0` service answers without the field; the row still parses.
     fetchMock.mockResolvedValueOnce(response(artifactBody));
     await expect(
       history.createExport(processId, { export_type: "backup", format: "json" })

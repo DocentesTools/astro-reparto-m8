@@ -696,7 +696,7 @@ Endpoints (already partially modelled in `src/runtime/api/history.ts`):
 - `POST /restore-draft` body `ExportBackupRestoreRequest` → `AssignmentProcessPublic`
 
 Forward-declared for `C13-export-locale-contract` (staged 2026-09-14, the
-`2.1.1` service neither reads nor emits it): `ExportArtifactCreate` and
+`2.1.0` service neither reads nor emits it): `ExportArtifactCreate` and
 `ExportArtifactPublic` carry an optional closed `locale` (`en` / `fr` / `es`),
 the language a stored document was requested under. `history.createExport`
 fills it from the runtime config — the same value the request layer sends as

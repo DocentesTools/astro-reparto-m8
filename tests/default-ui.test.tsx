@@ -982,7 +982,7 @@ describe("default reparto UI", () => {
       content: "REPARTO",
       locale: "es"
     };
-    // A `2.1.1` service row: the same document with no locale on it.
+    // A `2.1.0` service row: the same document with no locale on it.
     const undatedDraft: ExportArtifactPublic = {
       ...spanishDraft,
       id: "20202020-2020-4202-8202-202020202020",

@@ -546,7 +546,7 @@ describe("reparto schemas", () => {
     ).toThrow();
 
     // C13 staged export locale (§5.6): optional on both sides of the contract
-    // while the `2.1.1` service neither reads nor emits it, closed to the three
+    // while the `2.1.0` service neither reads nor emits it, closed to the three
     // fleet locales once present, and `.strict()` still refuses a field that
     // is not on the contract.
     const artifactRow = {

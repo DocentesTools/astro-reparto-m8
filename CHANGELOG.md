@@ -31,9 +31,9 @@ job — no schema, route, adapter or export changes.
   outside the range or is not a numeric `major.minor.patch` core. The check
   runs **after** the `contract.name` and contract-version checks, so a wrong
   service is still reported as a wrong service and a wrong contract as a wrong
-  contract, never as a version mismatch. A payload that names no service version is admitted
-  on its contract alone, as before. The existing contract-identity behaviour
-  is unchanged.
+  contract, never as a version mismatch. A payload that names no service
+  version is admitted on its contract alone, as before. The existing
+  contract-identity behaviour is unchanged.
 
 ## [2.2.0] - 2026-09-19
 

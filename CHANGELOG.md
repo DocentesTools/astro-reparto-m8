@@ -28,10 +28,10 @@ job — no schema, route, adapter or export changes.
   of the GET `{API_PREFIX}/meta` payload (`service_version` accepted as the flat
   legacy key) and throws `Expected reparto-docente-m8 service version
   >=2.0.0 <3.0.0, received 1.9.0` (naming the served version) when it falls
-  outside the range or is not a numeric `major.minor.patch` core. The check runs **after** the
-  `contract.name` and contract-version checks, so a wrong service is still
-  reported as a wrong service and a wrong contract as a wrong contract, never
-  as a version mismatch. A payload that names no service version is admitted
+  outside the range or is not a numeric `major.minor.patch` core. The check
+  runs **after** the `contract.name` and contract-version checks, so a wrong
+  service is still reported as a wrong service and a wrong contract as a wrong
+  contract, never as a version mismatch. A payload that names no service version is admitted
   on its contract alone, as before. The existing contract-identity behaviour
   is unchanged.
 

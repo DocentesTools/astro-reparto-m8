@@ -18,6 +18,19 @@ export const REPARTO_CONTRACT_VERSION_NUMBER = "2.0.0";
 export const REPARTO_CONTRACT_VERSION =
   `${REPARTO_CONTRACT_ID}@${REPARTO_CONTRACT_VERSION_NUMBER}` as const;
 
+// The service *package* version this client admits, as ``package.json``
+// ``repartoDocenteM8.serviceVersionRange`` already advertises. The contract
+// above is an exact-match set and moves only when the served surface does; the
+// range brackets the reparto-docente-m8 releases that keep serving it, and the
+// tested version is simply the newest one this client was exercised against.
+// GET /meta carries the package version as the top-level ``version`` key
+// (auth-sdk-m8 ServiceMeta), read below after the contract identity check.
+export const REPARTO_TESTED_SERVICE_VERSION = "2.2.0";
+export const REPARTO_MIN_SERVICE_VERSION = "2.0.0";
+export const REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE = "3.0.0";
+export const REPARTO_SERVICE_VERSION_RANGE =
+  `>=${REPARTO_MIN_SERVICE_VERSION} <${REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE}`;
+
 export type RepartoContractMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export type RepartoContractOperation = {
@@ -664,6 +677,46 @@ function contractObjectName(value: unknown): string | undefined {
   return undefined;
 }
 
+// Numeric semver core only: a pre-release or build suffix is dropped before
+// comparison, anything that is not ``major.minor.patch`` digits is unparseable
+// and therefore never admitted. Mirrors the reader astro-media-m8 carries.
+function parseSemver(version: string): [number, number, number] | undefined {
+  const [withoutBuild = ""] = version.split("+", 1);
+  const [core = ""] = withoutBuild.split("-", 1);
+  const parts = core.split(".");
+  if (
+    parts.length !== 3 ||
+    parts.some(
+      (part) =>
+        part.length === 0 || [...part].some((character) => character < "0" || character > "9")
+    )
+  ) {
+    return undefined;
+  }
+  const [major, minor, patch] = parts.map(Number);
+  return [major, minor, patch];
+}
+
+function compareSemver(left: string, right: string): number | undefined {
+  const parsedLeft = parseSemver(left);
+  const parsedRight = parseSemver(right);
+  if (!parsedLeft || !parsedRight) return undefined;
+  const [leftMajor, leftMinor, leftPatch] = parsedLeft;
+  const [rightMajor, rightMinor, rightPatch] = parsedRight;
+  return leftMajor - rightMajor || leftMinor - rightMinor || leftPatch - rightPatch;
+}
+
+/**
+ * Whether a reparto-docente-m8 package version falls inside
+ * ``REPARTO_SERVICE_VERSION_RANGE``. Unparseable input is incompatible: the
+ * gate is fail-closed, never fail-open on a version it cannot read.
+ */
+export function isRepartoServiceVersionCompatible(version: string): boolean {
+  const aboveMin = compareSemver(version, REPARTO_MIN_SERVICE_VERSION);
+  const belowMax = compareSemver(version, REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE);
+  return aboveMin !== undefined && belowMax !== undefined && aboveMin >= 0 && belowMax < 0;
+}
+
 // Qualify a bare version (``"2.0.0"``) with the issuer id, but only once the
 // payload has named this service. An unnamed bare version stays unqualified and
 // therefore unsupported: it could have come from any sibling.
@@ -681,7 +734,12 @@ function qualifyContract(contract: string, contractName: string | undefined): st
  *
  * ``contract.name`` is checked *before* the version so a host pointed at the
  * wrong sibling is reported as a wrong service rather than as a version
- * mismatch.
+ * mismatch. The numeric service-version gate runs *last*, once the contract
+ * identity has been accepted, so a wrong contract is never reported as an
+ * out-of-range service either. The service version is the top-level
+ * ``version`` GET /meta carries (``service_version`` is accepted as the flat
+ * legacy key); a payload naming none is admitted on its contract alone, but a
+ * named version outside ``REPARTO_SERVICE_VERSION_RANGE`` is refused.
  */
 export function assertRepartoCompatibility(meta: RepartoMetaLike): void {
   const contractName = contractObjectName(meta.contract);
@@ -699,5 +757,15 @@ export function assertRepartoCompatibility(meta: RepartoMetaLike): void {
     stringValue(meta.contract);
   if (!contract || !SUPPORTED_CONTRACTS.has(qualifyContract(contract, contractName))) {
     throw new Error(`Unsupported reparto-docente-m8 contract: ${contract ?? "unknown"}`);
+  }
+
+  // Ordered after the contract identity: a wrong service reports as a wrong
+  // service, and a wrong contract as a wrong contract, before any version
+  // arithmetic runs.
+  const serviceVersion = stringValue(meta.service_version) ?? stringValue(meta.version);
+  if (serviceVersion && !isRepartoServiceVersionCompatible(serviceVersion)) {
+    throw new Error(
+      `Expected ${REPARTO_CONTRACT_ID} service version ${REPARTO_SERVICE_VERSION_RANGE}, received ${serviceVersion}`
+    );
   }
 }

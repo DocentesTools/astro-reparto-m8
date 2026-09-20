@@ -4,6 +4,37 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-09-20
+
+An out-of-range `reparto-docente-m8` is now **refused at preflight**. Since
+`2.0.0` the manifest has advertised `repartoDocenteM8.serviceVersionRange`
+`>=2.0.0 <3.0.0` while `assertRepartoCompatibility` compared only the contract
+identity, so a service outside that range was silently admitted (`G6`). The
+`contract` stays `reparto-docente-m8@2.0.0`, the range stays `>=2.0.0 <3.0.0`
+and `testedServiceVersion` stays `2.2.0`; nothing about the served surface
+moves. A minor, not a patch: a host that was reaching a `1.x` or `3.x` service
+through this guard will start failing at startup, which is the guard doing its
+job — no schema, route, adapter or export changes.
+
+### Added
+
+- **The service package version is gated numerically.** `compatibility`
+  exports `REPARTO_MIN_SERVICE_VERSION` (`2.0.0`),
+  `REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE` (`3.0.0`),
+  `REPARTO_SERVICE_VERSION_RANGE` (`>=2.0.0 <3.0.0`),
+  `REPARTO_TESTED_SERVICE_VERSION` (`2.2.0`) and
+  `isRepartoServiceVersionCompatible(version)`, the same shape the other three
+  M8 plugins carry. `assertRepartoCompatibility` reads the top-level `version`
+  of the GET `{API_PREFIX}/meta` payload (`service_version` accepted as the flat
+  legacy key) and throws `Expected reparto-docente-m8 service version
+  >=2.0.0 <3.0.0, received <version>` when it falls outside the range or is not
+  a numeric `major.minor.patch` core. The check runs **after** the
+  `contract.name` and contract-version checks, so a wrong service is still
+  reported as a wrong service and a wrong contract as a wrong contract, never
+  as a version mismatch. A payload that names no service version is admitted
+  on its contract alone, as before. The existing contract-identity behaviour
+  is unchanged.
+
 ## [2.2.0] - 2026-09-19
 
 Tracks `reparto-docente-m8` `2.2.0`: `repartoDocenteM8.testedServiceVersion`

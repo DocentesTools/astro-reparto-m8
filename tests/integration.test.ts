@@ -9,7 +9,12 @@ import faReparto, {
 import {
   REPARTO_CONTRACT_OPERATIONS,
   REPARTO_CONTRACT_VERSION,
-  assertRepartoCompatibility
+  REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE,
+  REPARTO_MIN_SERVICE_VERSION,
+  REPARTO_SERVICE_VERSION_RANGE,
+  REPARTO_TESTED_SERVICE_VERSION,
+  assertRepartoCompatibility,
+  isRepartoServiceVersionCompatible
 } from "../src/runtime/compatibility.js";
 import { buildRepartoRoutes } from "../src/runtime/routes.js";
 
@@ -134,9 +139,11 @@ describe("compatibility", () => {
     // {API_PREFIX}/meta: the contract identity is nested under `contract`, and
     // the flat `*_contract_version` keys the guard used to read exclusively are
     // absent — so this payload made the guard throw against its own service.
+    // `version` is the service *package* version (`reparto_service.__version__`,
+    // re-surfaced as `SERVICE_VERSION`), the value the numeric gate reads.
     const meta = {
       service: "M8FastApi",
-      version: "1.0.0",
+      version: REPARTO_TESTED_SERVICE_VERSION,
       api_version: "v1",
       contract: {
         name: "reparto-docente-m8",
@@ -154,6 +161,80 @@ describe("compatibility", () => {
     expect(() => assertRepartoCompatibility({ ...meta, contract: {} })).toThrow(
       "Unsupported reparto-docente-m8 contract: unknown"
     );
+  });
+
+  it("gates the service package version against the advertised range", () => {
+    // The range `package.json` `repartoDocenteM8.serviceVersionRange` has
+    // advertised since 2.0.0 is now enforced, not merely stated (`G6`).
+    expect(REPARTO_SERVICE_VERSION_RANGE).toBe(
+      `>=${REPARTO_MIN_SERVICE_VERSION} <${REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE}`
+    );
+    const contract = { name: "reparto-docente-m8", version: "2.0.0", range: ">=2.0.0 <3.0.0" };
+    const rangeMismatch = /Expected reparto-docente-m8 service version >=2\.0\.0 <3\.0\.0, received/;
+
+    // The floor admits; so does the newest tested release and a patch above it.
+    for (const version of ["2.0.0", REPARTO_TESTED_SERVICE_VERSION, "2.9.7", "2.0.0-rc.1+build.5"]) {
+      expect(() => assertRepartoCompatibility({ version, contract })).not.toThrow();
+      expect(isRepartoServiceVersionCompatible(version)).toBe(true);
+    }
+
+    // Below the floor and at the exclusive ceiling are refused with a
+    // range-mismatch reason — never a contract-name or contract-version one.
+    for (const version of ["1.9.0", "3.0.0", "1.9.99", "3.0.1"]) {
+      expect(() => assertRepartoCompatibility({ version, contract })).toThrow(rangeMismatch);
+      expect(() => assertRepartoCompatibility({ version, contract })).not.toThrow(
+        /received the .* contract|Unsupported reparto-docente-m8 contract/
+      );
+      expect(isRepartoServiceVersionCompatible(version)).toBe(false);
+    }
+    expect(() => assertRepartoCompatibility({ version: "1.9.0", contract })).toThrow(
+      "Expected reparto-docente-m8 service version >=2.0.0 <3.0.0, received 1.9.0"
+    );
+
+    // Fail-closed on anything that is not a numeric semver core.
+    for (const version of ["x", "2.0", "2.0.0.1", "2.a.0", "2..0", "2.0."]) {
+      expect(isRepartoServiceVersionCompatible(version)).toBe(false);
+      expect(() => assertRepartoCompatibility({ version, contract })).toThrow(rangeMismatch);
+    }
+    // Digit-by-digit, not string order: "10" sorts above "9".
+    expect(isRepartoServiceVersionCompatible("2.10.0")).toBe(true);
+    expect(isRepartoServiceVersionCompatible("2.0.10")).toBe(true);
+
+    // The flat legacy `service_version` key is read ahead of `version`, and a
+    // blank one is ignored rather than gated.
+    expect(() =>
+      assertRepartoCompatibility({ service_version: "1.0.0", version: "2.2.0", contract })
+    ).toThrow(rangeMismatch);
+    expect(() =>
+      assertRepartoCompatibility({ service_version: "   ", version: "2.2.0", contract })
+    ).not.toThrow();
+
+    // A payload naming no service version is still admitted on its contract
+    // alone — the legacy flat shape carries none.
+    expect(() => assertRepartoCompatibility({ contract })).not.toThrow();
+    expect(() =>
+      assertRepartoCompatibility({ reparto_contract_version: REPARTO_CONTRACT_VERSION })
+    ).not.toThrow();
+  });
+
+  it("orders the service-version gate after the contract identity checks", () => {
+    // A wrong service with an out-of-range version is a wrong service.
+    expect(() =>
+      assertRepartoCompatibility({
+        version: "1.0.0",
+        contract: { name: "prompt-engine-m8", version: "2.0.0" }
+      })
+    ).toThrow("received the prompt-engine-m8 contract");
+    // A wrong contract with an out-of-range version is a wrong contract.
+    expect(() =>
+      assertRepartoCompatibility({
+        version: "1.0.0",
+        contract: { name: "reparto-docente-m8", version: "3.0.0" }
+      })
+    ).toThrow("Unsupported reparto-docente-m8 contract: 3.0.0");
+    expect(() =>
+      assertRepartoCompatibility({ version: "1.0.0", contract_version: "2.0.0" })
+    ).toThrow("Unsupported reparto-docente-m8 contract: 2.0.0");
   });
 
   it("prefers the flat legacy keys over the nested contract object", () => {

@@ -47,6 +47,13 @@ every M8 service serves this same payload shape from the shared `auth-sdk-m8`
 accepted once `contract.name` has identified the service; unqualified, pass the
 name-qualified `reparto-docente-m8@2.0.0` form instead.
 
+Once the contract identity is accepted, the payload's top-level `version` — the
+service *package* version — is compared numerically against
+`REPARTO_SERVICE_VERSION_RANGE` (`>=2.0.0 <3.0.0`, the manifest's
+`repartoDocenteM8.serviceVersionRange`), and an out-of-range service is refused
+with a range-mismatch reason; `isRepartoServiceVersionCompatible(version)` is the
+same check on its own.
+
 `REPARTO_CONTRACT_VERSION` is that expected version string, and
 `REPARTO_CONTRACT_OPERATIONS` is the frozen method/path/response table every
 wrapper is checked against — the package's own record of the contract it speaks.

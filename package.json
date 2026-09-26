@@ -78,6 +78,7 @@
     "refresh:served-surface": "node scripts/refresh-served-surface.mjs",
     "verify:contract-operations": "node scripts/verify-contract-operations.mjs",
     "verify:fleet-gates": "node scripts/verify-fleet-gates.mjs",
+    "verify:lock-integrity": "node scripts/verify-lock-integrity.mjs",
     "verify:registry-consumer": "node scripts/verify-registry-consumer.mjs",
     "verify:registry-drift": "node scripts/verify-registry-drift.mjs",
     "verify:starter-routes": "node scripts/verify-starter-routes.mjs",

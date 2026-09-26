@@ -4,6 +4,14 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-09-26
+
+**Patch.** Tracks the published `@mano8/astro-ui-m8` `1.5.2` and
+`@mano8/astro-auth-m8` `2.7.1` (`B39-astro-ui-changelog-release`, finding
+`G38`). The only shipped change is `package.json`'s floors, with the README
+that states them. The contract stays `reparto-docente-m8@2.0.0`, range
+`>=2.0.0 <3.0.0`, and the tested service version stays `2.2.2`.
+
 ### Added
 
 - **A lock that does not pin every package fails the build**
@@ -20,6 +28,27 @@ All notable changes to `@mano8/astro-reparto-m8` are documented here.
   dependency-free and byte-identical in the fleet's six npm repositories.
   This lock already passed; the fixtures prove the red path. Only
   `package.json`'s `scripts` gains an entry, so no release is owed.
+
+### Changed
+
+- `@mano8/astro-ui-m8` floor `^1.5.1` → `^1.5.2` (`dependencies`) and
+  `@mano8/astro-auth-m8` `^2.7.0` → `^2.7.1` (`peerDependencies` and
+  `devDependencies`, still equal), the newest published releases (§0.5's
+  explicit-pin rule). The lock moves those two entries, each with its
+  registry `resolved` and `sha512` `integrity`. The README states the new
+  floors.
+- The `astro` peer floor `^7.0.8` → `^7.0.9`, the value
+  `astro-auth-m8`, `astro-media-m8` and `astro-prompt-m8` already declare
+  (a peer-range alignment found in the same review, riding this patch).
+
+### Security
+
+- **The publish job verifies the lock before it installs**
+  (`B37-publish-lock-guard`, finding `G36`). `B34` guarded every `CI.yaml`
+  job but not the one that holds `id-token: write` and builds the tarball,
+  and the environment's `tag:v*` rule matches a tag by name, not by where it
+  points. `npm-publish.yml` now runs `npm run verify:lock-integrity` before
+  `npm ci`, and `tests/publish-workflow.test.ts` holds the order.
 
 ## [2.3.0] - 2026-09-20
 

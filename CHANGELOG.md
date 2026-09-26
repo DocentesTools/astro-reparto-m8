@@ -50,6 +50,11 @@ changes.
   insert). Timestamps now always carry a UTC offset, which this package's
   `z.iso.datetime({ offset: true, local: true })` already admits. This rides
   the unreleased `2.3.0`; it takes no version of its own.
+- **The `@mano8/astro-auth-m8` peer floor is `^2.7.0`**, in both
+  `peerDependencies` and `devDependencies` (`B31-plugin-tracking-tail` leg 2),
+  up from `^2.6.0`. `2.7.0` is the auth tracking release for `fa-auth-m8`
+  `2.2.3`, published before this one; `package-lock.json` resolves its tarball
+  and the `README.md` requirements table names it.
 
 ### Security
 

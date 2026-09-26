@@ -12,9 +12,10 @@ An out-of-range `reparto-docente-m8` is now **refused at preflight**. Since
 identity, so a service outside that range was silently admitted (`G6`). The
 `contract` stays `reparto-docente-m8@2.0.0` and the range stays
 `>=2.0.0 <3.0.0`; `testedServiceVersion` tracks the published `2.2.2`, and
-nothing about the served surface moves. A minor, not a patch: a host that was reaching a `1.x` or `3.x` service
-through this guard will start failing at startup, which is the guard doing its
-job — no schema, route, adapter or export changes.
+nothing about the served surface moves. A minor, not a patch: a host that was
+reaching a `1.x` or `3.x` service through this guard will start failing at
+startup, which is the guard doing its job — no schema, route, adapter or export
+changes.
 
 ### Added
 

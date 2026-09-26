@@ -10,9 +10,9 @@ An out-of-range `reparto-docente-m8` is now **refused at preflight**. Since
 `2.0.0` the manifest has advertised `repartoDocenteM8.serviceVersionRange`
 `>=2.0.0 <3.0.0` while `assertRepartoCompatibility` compared only the contract
 identity, so a service outside that range was silently admitted (`G6`). The
-`contract` stays `reparto-docente-m8@2.0.0`, the range stays `>=2.0.0 <3.0.0`
-and `testedServiceVersion` stays `2.2.0`; nothing about the served surface
-moves. A minor, not a patch: a host that was reaching a `1.x` or `3.x` service
+`contract` stays `reparto-docente-m8@2.0.0` and the range stays
+`>=2.0.0 <3.0.0`; `testedServiceVersion` tracks the published `2.2.2`, and
+nothing about the served surface moves. A minor, not a patch: a host that was reaching a `1.x` or `3.x` service
 through this guard will start failing at startup, which is the guard doing its
 job — no schema, route, adapter or export changes.
 
@@ -22,7 +22,7 @@ job — no schema, route, adapter or export changes.
   exports `REPARTO_MIN_SERVICE_VERSION` (`2.0.0`),
   `REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE` (`3.0.0`),
   `REPARTO_SERVICE_VERSION_RANGE` (`>=2.0.0 <3.0.0`),
-  `REPARTO_TESTED_SERVICE_VERSION` (`2.2.0`) and
+  `REPARTO_TESTED_SERVICE_VERSION` (`2.2.2`) and
   `isRepartoServiceVersionCompatible(version)`, the same shape the other three
   M8 plugins carry. `assertRepartoCompatibility` reads the top-level `version`
   of the GET `{API_PREFIX}/meta` payload (`service_version` accepted as the flat
@@ -34,6 +34,21 @@ job — no schema, route, adapter or export changes.
   contract, never as a version mismatch. A payload that names no service
   version is admitted on its contract alone, as before. The existing
   contract-identity behaviour is unchanged.
+
+### Changed
+
+- **Tracks the published `reparto-docente-m8` `2.2.2`**
+  (`B31-plugin-tracking-tail`, finding `G32`).
+  `REPARTO_TESTED_SERVICE_VERSION` and `package.json`'s
+  `repartoDocenteM8.testedServiceVersion` move `2.2.0` → `2.2.2`, and
+  `REPOSITORY_CONTEXT.md` names it. Read from `v2.2.0` to `v2.2.2` on the
+  service, no route or schema moved: `2.2.1` is the Debian patch layer, and
+  `2.2.2` adds the hash-locked release set, a UTC PostgreSQL session clock and
+  controller typing fixes (a bulk-created cell with an explicit `null`
+  `required_teacher_count` now falls back to `1` instead of failing on
+  insert). Timestamps now always carry a UTC offset, which this package's
+  `z.iso.datetime({ offset: true, local: true })` already admits. This rides
+  the unreleased `2.3.0`; it takes no version of its own.
 
 ### Security
 

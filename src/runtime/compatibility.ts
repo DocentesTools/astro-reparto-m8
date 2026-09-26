@@ -25,7 +25,7 @@ export const REPARTO_CONTRACT_VERSION =
 // tested version is simply the newest one this client was exercised against.
 // GET /meta carries the package version as the top-level ``version`` key
 // (auth-sdk-m8 ServiceMeta), read below after the contract identity check.
-export const REPARTO_TESTED_SERVICE_VERSION = "2.2.0";
+export const REPARTO_TESTED_SERVICE_VERSION = "2.2.2";
 export const REPARTO_MIN_SERVICE_VERSION = "2.0.0";
 export const REPARTO_MAX_SERVICE_VERSION_EXCLUSIVE = "3.0.0";
 export const REPARTO_SERVICE_VERSION_RANGE =

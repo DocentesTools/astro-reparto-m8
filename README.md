@@ -32,8 +32,8 @@ export default defineConfig({
 | Requirement | Version |
 | --- | --- |
 | `reparto-docente-m8` (backend) | **`2.0.0`** — the compatibility gate refuses an older contract |
-| `@mano8/astro-auth-m8` (peer) | **`^2.7.1`** — the release tracking `astro-ui-m8` `1.5.2` and the `fa-auth-m8` `2.2.3` issuer; `2.4.0` is where the shared role hierarchy this package re-exports first appeared |
-| `@mano8/astro-ui-m8` (dependency) | `^1.5.2`, installed for you |
+| `@mano8/astro-auth-m8` (peer) | **`^2.7.2`** — the release that admits `@astrojs/react` 7 and Starlight 0.42 and tracks `astro-ui-m8` `1.5.3`; `2.4.0` is where the shared role hierarchy this package re-exports first appeared |
+| `@mano8/astro-ui-m8` (dependency) | `^1.5.3`, installed for you |
 
 `2.0.0` is a major release: the backend contract, the UI vocabulary (Classroom →
 teaching group) and the auth peer all move. See

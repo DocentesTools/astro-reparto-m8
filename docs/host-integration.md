@@ -19,7 +19,7 @@ npm i @mano8/astro-reparto-m8 @mano8/astro-auth-m8 zod
 | Peer | Why |
 | --- | --- |
 | `astro` ^7 | host framework |
-| `@astrojs/starlight` ^0.41 or ^0.42 | the starter routes render inside `StarlightPage` |
+| `@astrojs/starlight` ^0.41, ^0.42 | starter routes render in `StarlightPage` |
 | `@astrojs/react`, `react`, `react-dom` | the views are React islands (optional only for a pure-schema, no-UI consumer) |
 | `@tanstack/react-query` ^5 | every hook is a React Query query/mutation |
 | `zod` ^4 | every response is parsed before it reaches a view |
